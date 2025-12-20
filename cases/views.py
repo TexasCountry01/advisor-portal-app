@@ -144,8 +144,13 @@ def case_submit(request):
         messages.success(request, f'Case {case.external_case_id} submitted successfully!')
         return redirect('member_dashboard')
     
+    # Generate subject line for email submissions
+    employee_name = "CLIENT_NAME"  # Will be filled when form is completed
+    subject_line = f"0"  # Auto-fills from form data
+    
     context = {
         'workshop_code': user.workshop_code,
+        'subject_line': subject_line,
     }
     
     return render(request, 'cases/fact_finder_form.html', context)
