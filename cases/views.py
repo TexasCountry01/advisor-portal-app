@@ -3,7 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils import timezone
+from django.http import JsonResponse
 from .models import Case, CaseDocument, CaseReport, CaseNote
+from .forms import CaseDocumentForm, CaseReportForm, CaseNoteForm
 from accounts.models import User
 
 
@@ -250,7 +252,7 @@ def case_detail(request, pk):
     # Get related objects
     documents = CaseDocument.objects.filter(case=case).order_by('-uploaded_at')
     reports = CaseReport.objects.filter(case=case).order_by('-uploaded_at')
-    notes = CaseNote.objects.filter(case=case).select_related('created_by').order_by('-created_at')
+    notes = CaseNote.objects.filter(case=case).select_related('author').order_by('-created_at')
     
     context = {
         'case': case,
@@ -261,3 +263,109 @@ def case_detail(request, pk):
     }
     
     return render(request, 'cases/case_detail.html', context)
+
+
+@login_required
+def upload_document(request, case_id):
+    """Upload a document to a case"""
+    case = get_object_or_404(Case, pk=case_id)
+    
+    # Permission check - only technicians/admins/managers can upload
+    can_edit = False
+    if request.user.role == 'technician' and case.assigned_to == request.user:
+        can_edit = True
+    elif request.user.role in ['admin', 'manager']:
+        can_edit = True
+    
+    if not can_edit:
+        messages.error(request, 'You do not have permission to upload documents to this case.')
+        return redirect('case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        form = CaseDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            document = form.save(commit=False)
+            document.case = case
+            document.uploaded_by = request.user
+            # Set file metadata
+            uploaded_file = request.FILES['file']
+            document.original_filename = uploaded_file.name
+            document.file_size = uploaded_file.size
+            document.save()
+            messages.success(request, f'{document.document_type} uploaded successfully!')
+            return redirect('case_detail', pk=case_id)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    
+    return redirect('case_detail', pk=case_id)
+
+
+@login_required
+def upload_report(request, case_id):
+    """Upload a report to a case"""
+    case = get_object_or_404(Case, pk=case_id)
+    
+    # Permission check - only technicians/admins/managers can upload
+    can_edit = False
+    if request.user.role == 'technician' and case.assigned_to == request.user:
+        can_edit = True
+    elif request.user.role in ['admin', 'manager']:
+        can_edit = True
+    
+    if not can_edit:
+        messages.error(request, 'You do not have permission to upload reports to this case.')
+        return redirect('case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        form = CaseReportForm(request.POST, request.FILES)
+        if form.is_valid():
+            report = form.save(commit=False)
+            report.case = case
+            report.assigned_to = request.user
+            # Set report_number to next available number
+            existing_reports = CaseReport.objects.filter(case=case).count()
+            report.report_number = existing_reports + 1
+            report.save()
+            messages.success(request, f'Report #{report.report_number} uploaded successfully!')
+            return redirect('case_detail', pk=case_id)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    
+    return redirect('case_detail', pk=case_id)
+
+
+@login_required
+def add_note(request, case_id):
+    """Add a note to a case"""
+    case = get_object_or_404(Case, pk=case_id)
+    
+    # Permission check
+    can_edit = False
+    if request.user.role == 'technician' and case.assigned_to == request.user:
+        can_edit = True
+    elif request.user.role in ['admin', 'manager']:
+        can_edit = True
+    
+    if not can_edit:
+        messages.error(request, 'You do not have permission to add notes to this case.')
+        return redirect('case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        form = CaseNoteForm(request.POST)
+        if form.is_valid():
+            note = form.save(commit=False)
+            note.case = case
+            note.author = request.user
+            note.save()
+            messages.success(request, 'Note added successfully!')
+            return redirect('case_detail', pk=case_id)
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    
+    return redirect('case_detail', pk=case_id)

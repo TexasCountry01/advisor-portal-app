@@ -86,7 +86,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Documents</h5>
                     {% if can_edit %}
-                    <button class="btn btn-sm btn-primary" disabled>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
                         <i class="bi bi-upload"></i> Upload Document
                     </button>
                     {% endif %}
@@ -99,13 +99,18 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <i class="bi bi-file-earmark-text"></i>
-                                    <strong>{{ doc.document_type }}</strong>
-                                    {% if doc.description %}
-                                        <br><small class="text-muted">{{ doc.description }}</small>
+                                    <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                        <strong>{{ doc.document_type }}</strong>
+                                    </a>
+                                    {% if doc.notes %}
+                                        <br><small class="text-muted">{{ doc.notes }}</small>
                                     {% endif %}
                                 </div>
-                                <div>
-                                    <small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                <div class="text-end">
+                                    <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
                                 </div>
                             </div>
                         </div>
@@ -122,7 +127,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Reports</h5>
                     {% if can_edit %}
-                    <button class="btn btn-sm btn-primary" disabled>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReportModal">
                         <i class="bi bi-upload"></i> Upload Report
                     </button>
                     {% endif %}
@@ -135,11 +140,16 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <i class="bi bi-file-earmark-pdf"></i>
-                                    <strong>{{ report.report_type }}</strong>
-                                    <br><small class="text-muted">Uploaded by {{ report.uploaded_by.username }}</small>
+                                    <a href="{{ report.report_file.url }}" target="_blank" class="text-decoration-none">
+                                        <strong>Report #{{ report.report_number }}</strong>
+                                    </a>
+                                    <br><small class="text-muted">Assigned to {{ report.assigned_to.username }}</small>
                                 </div>
-                                <div>
-                                    <small class="text-muted">{{ report.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                <div class="text-end">
+                                    <a href="{{ report.report_file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                    <br><small class="text-muted">{{ report.uploaded_at|date:"m/d/Y H:i" }}</small>
                                 </div>
                             </div>
                         </div>
@@ -156,7 +166,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Notes</h5>
                     {% if can_edit %}
-                    <button class="btn btn-sm btn-primary" disabled>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
                         <i class="bi bi-plus"></i> Add Note
                     </button>
                     {% endif %}
@@ -269,6 +279,103 @@
                 </div>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Upload Document Modal -->
+<div class="modal fade" id="uploadDocumentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'upload_document' case.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_document_type" class="form-label">Document Type</label>
+                        <select name="document_type" id="id_document_type" class="form-select" required>
+                            <option value="">Select type...</option>
+                            <option value="Medical Form">Medical Form</option>
+                            <option value="ID Document">ID Document</option>
+                            <option value="Supporting Document">Supporting Document</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_file" class="form-label">Select File</label>
+                        <input type="file" name="file" id="id_file" class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" required>
+                        <small class="text-muted">Accepted formats: PDF, DOC, DOCX, JPG, PNG</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_notes" class="form-label">Notes (Optional)</label>
+                        <textarea name="notes" id="id_notes" class="form-control" rows="3" placeholder="Add notes about this document"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Report Modal -->
+<div class="modal fade" id="uploadReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'upload_report' case.pk %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_report_file" class="form-label">Select PDF File</label>
+                        <input type="file" name="report_file" id="id_report_file" class="form-control" accept=".pdf" required>
+                        <small class="text-muted">Only PDF files are accepted. Report will be numbered automatically.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'add_note' case.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="id_note" class="form-label">Note</label>
+                        <textarea name="note" id="id_note" class="form-control" rows="4" placeholder="Enter note details..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus"></i> Add Note
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
