@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 text-center">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">
+                <i class="bi bi-briefcase text-primary"></i>
+                Welcome to Advisor Portal
+            </h1>
+            <p class="lead">Financial benefits case management system</p>
+            <hr class="my-4">
+            <p>Streamlined workflow for members, technicians, and administrators</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">
+                <i class="bi bi-box-arrow-in-right"></i> Login to Continue
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-person-badge display-4 text-primary"></i>
+                <h5 class="card-title mt-3">For Members</h5>
+                <p class="card-text">Submit cases, track progress, and view reports</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-kanban display-4 text-success"></i>
+                <h5 class="card-title mt-3">For Technicians</h5>
+                <p class="card-text">Manage workload, review cases, and generate reports</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="bi bi-gear display-4 text-info"></i>
+                <h5 class="card-title mt-3">For Administrators</h5>
+                <p class="card-text">Oversee operations, manage users, and view analytics</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

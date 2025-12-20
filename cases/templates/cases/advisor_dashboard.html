@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advisor Dashboard - Advisor Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .navbar { background-color: #2E7D32 !important; }
+        .stat-card { border-left: 4px solid #2E7D32; }
+        .stat-card.submitted { border-left-color: #0d6efd; }
+        .stat-card.in-progress { border-left-color: #ffc107; }
+        .stat-card.completed { border-left-color: #198754; }
+        .stat-card.need-info { border-left-color: #dc3545; }
+        .badge.status-submitted { background-color: #0d6efd; }
+        .badge.status-in_progress { background-color: #ffc107; color: #000; }
+        .badge.status-completed { background-color: #198754; }
+        .badge.status-need_more_info { background-color: #dc3545; }
+        .badge.status-draft { background-color: #6c757d; }
+        .credit-progress { height: 25px; }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark navbar-expand-lg mb-4">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-briefcase-fill"></i> Advisor Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard/">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-plus-circle"></i> New Case
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="bi bi-folder"></i> My Cases
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#">Profile</a></li>
+                            <li><a class="dropdown-item" href="#">Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/admin/logout/">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="bi bi-speedometer2"></i> Advisor Dashboard
+                </h2>
+            </div>
+        </div>
+
+        <!-- Credit Information -->
+        <div class="row mb-4">
+            <div class="col-lg-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-credit-card"></i> Monthly Credit Usage
+                        </h5>
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="progress credit-progress">
+                                    {% widthratio credits_info.credits_used credits_info.monthly_credits 100 as percentage %}
+                                    <div class="progress-bar {% if percentage >= 80 %}bg-danger{% elif percentage >= 60 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" 
+                                         style="width: {{ percentage }}%">
+                                        {{ credits_info.credits_used }} / {{ credits_info.monthly_credits }} credits used
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <h4 class="mb-0">
+                                    <span class="badge bg-primary">{{ credits_info.credits_remaining }} Credits Remaining</span>
+                                </h4>
+                            </div>
+                        </div>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> You receive 10 credits per month (30 per quarter). Excess credits are billed at $25 each.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Total Cases</h6>
+                                <h2 class="mb-0">{{ stats.total_cases }}</h2>
+                            </div>
+                            <div class="text-primary">
+                                <i class="bi bi-folder-fill" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card submitted shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Submitted</h6>
+                                <h2 class="mb-0">{{ stats.submitted }}</h2>
+                            </div>
+                            <div class="text-info">
+                                <i class="bi bi-send-fill" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card in-progress shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">In Progress</h6>
+                                <h2 class="mb-0">{{ stats.in_progress }}</h2>
+                            </div>
+                            <div class="text-warning">
+                                <i class="bi bi-hourglass-split" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-md-6 mb-3">
+                <div class="card stat-card completed shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="text-muted mb-1">Completed</h6>
+                                <h2 class="mb-0">{{ stats.completed }}</h2>
+                            </div>
+                            <div class="text-success">
+                                <i class="bi bi-check-circle-fill" style="font-size: 2.5rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Cases Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history"></i> Recent Cases
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% if recent_cases %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Case #</th>
+                                        <th>Client Name</th>
+                                        <th>Status</th>
+                                        <th>Credits</th>
+                                        <th>Submitted</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for case in recent_cases %}
+                                    <tr>
+                                        <td><strong>#{{ case.id }}</strong></td>
+                                        <td>{{ case.client_name }}</td>
+                                        <td>
+                                            <span class="badge status-{{ case.status }}">
+                                                {{ case.get_status_display }}
+                                            </span>
+                                            {% if case.is_rush %}
+                                            <span class="badge bg-danger ms-1">RUSH</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ case.credits_charged }} credits</td>
+                                        <td>
+                                            {% if case.submitted_at %}
+                                                {{ case.submitted_at|date:"M d, Y" }}
+                                            {% else %}
+                                                <em class="text-muted">Draft</em>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                            <p class="mt-3">No cases yet. Submit your first case to get started!</p>
+                            <a href="#" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Create New Case
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if recent_cases %}
+                    <div class="card-footer bg-white text-center">
+                        <a href="#" class="btn btn-link">View All Cases <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mt-4 mb-5">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="bi bi-lightning-fill"></i> Quick Actions
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-3 mb-2">
+                                <a href="#" class="btn btn-outline-primary w-100">
+                                    <i class="bi bi-plus-circle"></i> Submit New Case
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="#" class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-folder"></i> View All Cases
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="#" class="btn btn-outline-info w-100">
+                                    <i class="bi bi-credit-card"></i> View Billing
+                                </a>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <a href="#" class="btn btn-outline-success w-100">
+                                    <i class="bi bi-question-circle"></i> Help & Support
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

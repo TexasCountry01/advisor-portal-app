@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit New Case{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <h2 class="mb-4">Submit New Case</h2>
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Basic Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="external_case_id" class="form-label">Case ID <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="external_case_id" name="external_case_id" required>
+                                <small class="form-text text-muted">Your internal case tracking number</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Workshop Code</label>
+                                <input type="text" class="form-control" value="{{ workshop_code }}" disabled>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="employee_first_name" class="form-label">Employee First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="employee_first_name" name="employee_first_name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="employee_last_name" class="form-label">Employee Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="employee_last_name" name="employee_last_name" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="client_email" class="form-label">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="client_email" name="client_email" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="num_reports_requested" class="form-label">Reports Requested <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="num_reports_requested" name="num_reports_requested" value="1" min="1" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="urgency" class="form-label">Urgency <span class="text-danger">*</span></label>
+                                <select class="form-select" id="urgency" name="urgency" required>
+                                    <option value="normal">Normal</option>
+                                    <option value="urgent">Urgent</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Additional Notes -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Additional Notes</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                      placeholder="Any additional information or special instructions..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Submit Buttons -->
+                <div class="d-flex justify-content-between mb-5">
+                    <a href="{% url 'member_dashboard' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-circle"></i> Submit Case
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

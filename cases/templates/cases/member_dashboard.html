@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}Member Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Member Dashboard</h2>
+            <p class="text-muted">Workshop Code: <strong>{{ user.workshop_code }}</strong></p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'case_submit' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Submit New Case
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.total_cases }}</div>
+                <div class="stat-label">Total Cases</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.submitted }}</div>
+                <div class="stat-label">Submitted</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.accepted }}</div>
+                <div class="stat-label">Accepted</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.on_hold }}</div>
+                <div class="stat-label">On Hold</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.completed }}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
+                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                        <option value="hold" {% if status_filter == 'hold' %}selected{% endif %}>On Hold</option>
+                        <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Pending Review</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Search by Case ID, Employee Name..." 
+                           value="{{ search_query|default:'' }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cases Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">My Cases</h5>
+        </div>
+        <div class="card-body">
+            {% if cases %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Employee Name</th>
+                            <th>Email</th>
+                            <th>Reports</th>
+                            <th>Urgency</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                            <th>Reviewed By</th>
+                            <th>Submitted</th>
+                            <th>Accepted</th>
+                            <th>Completed</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in cases %}
+                        <tr>
+                            <td><strong>{{ case.external_case_id }}</strong></td>
+                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td>{{ case.client_email|truncatechars:30 }}</td>
+                            <td>{{ case.num_reports_requested }}</td>
+                            <td>
+                                {% if case.urgency == 'urgent' %}
+                                    <span class="badge bg-warning">Urgent</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ case.status }}">
+                                    {{ case.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if case.assigned_to %}
+                                    {{ case.assigned_to.username }}
+                                {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if case.reviewed_by %}
+                                    {{ case.reviewed_by.username }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
+                            <td>
+                                {% if case.date_accepted %}
+                                    {{ case.accepted_at|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if case.date_completed %}
+                                    {{ case.date_completed|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No cases found.</p>
+                <a href="{% url 'case_submit' %}" class="btn btn-primary">Submit Your First Case</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

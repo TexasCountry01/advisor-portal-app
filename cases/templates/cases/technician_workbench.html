@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Technician Workbench{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Technician Workbench</h2>
+            <p class="text-muted">User Level: <strong>{{ user_level }}</strong></p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.assigned }}</div>
+                <div class="stat-label">Assigned Cases</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.accepted }}</div>
+                <div class="stat-label">Accepted</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.on_hold }}</div>
+                <div class="stat-label">On Hold</div>
+            </div>
+        </div>
+        {% if user_level == 'Level 2' or user_level == 'Level 3' %}
+        <div class="col-md-2">
+            <div class="stat-card bg-warning text-white">
+                <div class="stat-value">{{ stats.pending_review }}</div>
+                <div class="stat-label">Pending Review</div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="col-md-2">
+            <div class="stat-card">
+                <div class="stat-value">{{ stats.completed_this_week }}</div>
+                <div class="stat-label">Completed This Week</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Review Queue (Level 2 and Level 3 only) -->
+    {% if user_level == 'Level 2' or user_level == 'Level 3' %}
+    {% if review_queue %}
+    <div class="card mb-4 border-warning">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Cases Pending Quality Review</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Workshop</th>
+                            <th>Employee Name</th>
+                            <th>Email</th>
+                            <th>Assigned To</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in review_queue %}
+                        <tr>
+                            <td><strong>{{ case.external_case_id }}</strong></td>
+                            <td>{{ case.workshop_code }}</td>
+                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td>{{ case.client_email|truncatechars:30 }}</td>
+                            <td>{{ case.assigned_to.username }}</td>
+                            <td>{{ case.submitted_at|date:"m/d/Y" }}</td>
+                            <td>
+                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-warning">
+                                    <i class="bi bi-eye"></i> Review
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
+                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                        <option value="hold" {% if status_filter == 'hold' %}selected{% endif %}>On Hold</option>
+                        <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Pending Review</option>
+                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Search by Case ID, Employee Name, Workshop..." 
+                           value="{{ search_query|default:'' }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assigned Cases -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">My Assigned Cases</h5>
+        </div>
+        <div class="card-body">
+            {% if assigned_cases %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Workshop</th>
+                            <th>Employee Name</th>
+                            <th>Email</th>
+                            <th>Reports</th>
+                            <th>Urgency</th>
+                            <th>Status</th>
+                            <th>Reviewed By</th>
+                            <th>Submitted</th>
+                            <th>Accepted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in assigned_cases %}
+                        <tr>
+                            <td><strong>{{ case.external_case_id }}</strong></td>
+                            <td>{{ case.workshop_code }}</td>
+                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td>{{ case.email|truncatechars:30 }}</td>
+                            <td>{{ case.num_reports_requested }}</td>
+                            <td>
+                                {% if case.urgency == 'urgent' %}
+                                    <span class="badge bg-warning">Urgent</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ case.status }}">
+                                    {{ case.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if case.reviewed_by %}
+                                    {{ case.reviewed_by.username }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
+                            <td>
+                                {% if case.date_accepted %}
+                                    {{ case.accepted_at|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
+                                    Work On
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No assigned cases found.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
