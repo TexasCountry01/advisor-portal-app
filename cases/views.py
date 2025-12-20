@@ -59,7 +59,7 @@ def member_dashboard(request):
 
 @login_required
 def case_submit(request):
-    """Case submission form for Members"""
+    """Case submission with Federal Fact Finder form for Members"""
     user = request.user
     
     # Ensure user is a member
@@ -68,23 +68,76 @@ def case_submit(request):
         return redirect('home')
     
     if request.method == 'POST':
+        # Generate unique external_case_id (temporary - would be replaced by API integration)
+        import uuid
+        external_case_id = f"CASE-{uuid.uuid4().hex[:8].upper()}"
+        
+        # Build Federal Fact Finder data structure
+        fact_finder_data = {
+            'employee_info': {
+                'first_name': request.POST.get('employee_first_name'),
+                'last_name': request.POST.get('employee_last_name'),
+                'date_of_birth': request.POST.get('date_of_birth'),
+                'ssn_last_four': request.POST.get('ssn_last_four', ''),
+                'email': request.POST.get('client_email'),
+                'phone': request.POST.get('phone'),
+            },
+            'employment': {
+                'agency': request.POST.get('agency'),
+                'position_title': request.POST.get('position_title'),
+                'retirement_system': request.POST.get('retirement_system'),
+                'service_computation_date': request.POST.get('service_computation_date'),
+                'years_of_service': float(request.POST.get('years_of_service', 0) or 0),
+                'creditable_military_service': float(request.POST.get('creditable_military_service', 0) or 0),
+                'leo_coverage': request.POST.get('leo_coverage') == 'on',
+                'special_provisions': request.POST.get('special_provisions', ''),
+                'grade_step': request.POST.get('grade_step', ''),
+                'locality_pay': request.POST.get('locality_pay', ''),
+            },
+            'salary': {
+                'current_annual_salary': float(request.POST.get('current_annual_salary', 0) or 0),
+                'high_three_average': float(request.POST.get('high_three_average', 0) or 0),
+            },
+            'retirement_goals': {
+                'desired_retirement_date': request.POST.get('desired_retirement_date'),
+                'retirement_age': int(request.POST.get('retirement_age', 0) or 0),
+                'continuation_of_health_benefits': request.POST.get('continuation_of_health_benefits') == 'on',
+                'survivor_benefit_election': request.POST.get('survivor_benefit_election', ''),
+            },
+            'tsp': {
+                'current_balance': float(request.POST.get('tsp_current_balance', 0) or 0),
+                'employee_contribution_pct': float(request.POST.get('tsp_employee_contribution_pct', 0) or 0),
+                'agency_match_pct': float(request.POST.get('tsp_agency_match_pct', 5) or 5),
+                'roth_balance': float(request.POST.get('tsp_roth_balance', 0) or 0),
+                'traditional_balance': float(request.POST.get('tsp_traditional_balance', 0) or 0),
+                'loan_balance': float(request.POST.get('tsp_loan_balance', 0) or 0),
+            },
+            'social_security': {
+                'covered_employment': request.POST.get('ss_covered_employment') == 'on',
+                'estimated_benefit_age_62': float(request.POST.get('ss_estimated_benefit_age_62', 0) or 0),
+                'estimated_benefit_fra': float(request.POST.get('ss_estimated_benefit_fra', 0) or 0),
+            },
+            'other_income': {
+                'spouse_income': float(request.POST.get('spouse_income', 0) or 0),
+                'rental_income': float(request.POST.get('rental_income', 0) or 0),
+                'pension_income': float(request.POST.get('pension_income', 0) or 0),
+            },
+        }
+        
         # Create new case
         case = Case(
             member=user,
             workshop_code=user.workshop_code,
-            external_case_id=request.POST.get('external_case_id'),
+            external_case_id=external_case_id,
             employee_first_name=request.POST.get('employee_first_name'),
             employee_last_name=request.POST.get('employee_last_name'),
             client_email=request.POST.get('client_email'),
             urgency=request.POST.get('urgency', 'normal'),
             num_reports_requested=int(request.POST.get('num_reports_requested', 1)),
             status='submitted',
+            fact_finder_data=fact_finder_data,
+            notes=request.POST.get('additional_notes', ''),
         )
-        
-        # Note: date_submitted is auto_now_add, so it's set automatically
-        
-        # Notes
-        case.notes = request.POST.get('notes', '')
         
         case.save()
         
@@ -95,7 +148,7 @@ def case_submit(request):
         'workshop_code': user.workshop_code,
     }
     
-    return render(request, 'cases/case_submit.html', context)
+    return render(request, 'cases/fact_finder_form.html', context)
 
 
 @login_required

@@ -116,6 +116,13 @@ class Case(models.Model):
         help_text='Array of report statuses for multi-report cases'
     )
     
+    # Federal Fact Finder Data (structured JSON)
+    fact_finder_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Federal Fact Finder form data in structured JSON format'
+    )
+    
     # Additional fields for internal tracking
     notes = models.TextField(blank=True, help_text='Internal notes not visible to member')
     created_at = models.DateTimeField(auto_now_add=True)
