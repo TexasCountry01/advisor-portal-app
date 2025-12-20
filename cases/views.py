@@ -68,72 +68,155 @@ def case_submit(request):
         return redirect('home')
     
     if request.method == 'POST':
-        # Generate unique external_case_id (temporary - would be replaced by API integration)
+        # Generate unique external_case_id
         import uuid
         external_case_id = f"CASE-{uuid.uuid4().hex[:8].upper()}"
         
-        # Build Federal Fact Finder data structure
+        # Build comprehensive Federal Fact Finder data structure
         fact_finder_data = {
-            'employee_info': {
-                'first_name': request.POST.get('employee_first_name'),
-                'last_name': request.POST.get('employee_last_name'),
-                'date_of_birth': request.POST.get('date_of_birth'),
-                'ssn_last_four': request.POST.get('ssn_last_four', ''),
-                'email': request.POST.get('client_email'),
-                'phone': request.POST.get('phone'),
+            'basic_information': {
+                'employee_name': request.POST.get('employee_name', ''),
+                'employee_dob': request.POST.get('employee_dob', ''),
+                'spouse_name': request.POST.get('spouse_name', ''),
+                'spouse_fed_emp': request.POST.get('spouse_fed_emp') == 'on',
+                'spouse_dob': request.POST.get('spouse_dob', ''),
+                'address': request.POST.get('address', ''),
+                'city': request.POST.get('city', ''),
+                'state': request.POST.get('state', ''),
+                'zip': request.POST.get('zip', ''),
             },
-            'employment': {
-                'agency': request.POST.get('agency'),
-                'position_title': request.POST.get('position_title'),
-                'retirement_system': request.POST.get('retirement_system'),
-                'service_computation_date': request.POST.get('service_computation_date'),
-                'years_of_service': float(request.POST.get('years_of_service', 0) or 0),
-                'creditable_military_service': float(request.POST.get('creditable_military_service', 0) or 0),
-                'leo_coverage': request.POST.get('leo_coverage') == 'on',
-                'special_provisions': request.POST.get('special_provisions', ''),
+            'retirement_system': {
+                'system': request.POST.get('retirement_system', ''),
+                'csrs_offset_date': request.POST.get('csrs_offset_date', ''),
+                'fers_transfer_date': request.POST.get('fers_transfer_date', ''),
+            },
+            'employee_type': {
+                'type': request.POST.get('employee_type', ''),
+                'leo_start_date': request.POST.get('leo_start_date', ''),
+                'cbpo_coverage': request.POST.get('cbpo_coverage', ''),
+                'ff_start_date': request.POST.get('ff_start_date', ''),
+                'atc_start_date': request.POST.get('atc_start_date', ''),
+                'fs_start_date': request.POST.get('fs_start_date', ''),
+            },
+            'retirement_type': {
+                'type': request.POST.get('retirement_type', ''),
+                'optional_offer_date': request.POST.get('optional_offer_date', ''),
+            },
+            'retirement_pay_leave': {
+                'leave_scd': request.POST.get('leave_scd', ''),
+                'retirement_scd': request.POST.get('retirement_scd', ''),
+                'retirement_timing': request.POST.get('retirement_timing', ''),
+                'retirement_age': request.POST.get('retirement_age', ''),
+                'desired_retirement_date': request.POST.get('desired_retirement_date', ''),
+            },
+            'employment_history': {
+                'agency': request.POST.get('agency', ''),
+                'position_title': request.POST.get('position_title', ''),
                 'grade_step': request.POST.get('grade_step', ''),
-                'locality_pay': request.POST.get('locality_pay', ''),
+                'has_other_agencies': request.POST.get('has_other_agencies') == 'on',
+                'other_agencies': request.POST.get('other_agencies', ''),
+                'has_non_deduction_service': request.POST.get('has_non_deduction_service') == 'on',
+                'non_deduction_service_details': request.POST.get('non_deduction_service_details', ''),
+                'reservist_guard': request.POST.get('reservist_guard', ''),
+                'military_service': request.POST.get('military_service', ''),
+                'military_years': request.POST.get('military_years', ''),
+                'military_deposit_paid': request.POST.get('military_deposit_paid') == 'on',
             },
-            'salary': {
-                'current_annual_salary': float(request.POST.get('current_annual_salary', 0) or 0),
+            'pay_information': {
+                'annual_base_salary': float(request.POST.get('annual_base_salary', 0) or 0),
+                'locality_pay_amount': float(request.POST.get('locality_pay_amount', 0) or 0),
+                'other_regular_pay': float(request.POST.get('other_regular_pay', 0) or 0),
                 'high_three_average': float(request.POST.get('high_three_average', 0) or 0),
             },
-            'retirement_goals': {
-                'desired_retirement_date': request.POST.get('desired_retirement_date'),
-                'retirement_age': int(request.POST.get('retirement_age', 0) or 0),
-                'continuation_of_health_benefits': request.POST.get('continuation_of_health_benefits') == 'on',
-                'survivor_benefit_election': request.POST.get('survivor_benefit_election', ''),
+            'leave_balances': {
+                'annual_leave_hours': float(request.POST.get('annual_leave_hours', 0) or 0),
+                'sick_leave_hours': float(request.POST.get('sick_leave_hours', 0) or 0),
+                'other_leave': request.POST.get('other_leave', ''),
             },
             'tsp': {
-                'current_balance': float(request.POST.get('tsp_current_balance', 0) or 0),
-                'employee_contribution_pct': float(request.POST.get('tsp_employee_contribution_pct', 0) or 0),
-                'agency_match_pct': float(request.POST.get('tsp_agency_match_pct', 5) or 5),
-                'roth_balance': float(request.POST.get('tsp_roth_balance', 0) or 0),
-                'traditional_balance': float(request.POST.get('tsp_traditional_balance', 0) or 0),
-                'loan_balance': float(request.POST.get('tsp_loan_balance', 0) or 0),
+                'balance': float(request.POST.get('tsp_balance', 0) or 0),
+                'contribution_pct': float(request.POST.get('tsp_contribution_pct', 0) or 0),
+                'catchup': request.POST.get('tsp_catchup') == 'on',
+                'g_fund': float(request.POST.get('tsp_g_fund', 0) or 0),
+                'f_fund': float(request.POST.get('tsp_f_fund', 0) or 0),
+                'c_fund': float(request.POST.get('tsp_c_fund', 0) or 0),
+                's_fund': float(request.POST.get('tsp_s_fund', 0) or 0),
+                'i_fund': float(request.POST.get('tsp_i_fund', 0) or 0),
+                'l_fund': request.POST.get('tsp_l_fund', ''),
+                'loans': request.POST.get('tsp_loans', ''),
+                'loan_details': request.POST.get('tsp_loan_details', ''),
+            },
+            'other_retirement_accounts': {
+                'ira_balance': float(request.POST.get('ira_balance', 0) or 0),
+                'other_retirement_balance': float(request.POST.get('other_retirement_balance', 0) or 0),
+                'other_investments': request.POST.get('other_investments', ''),
             },
             'social_security': {
-                'covered_employment': request.POST.get('ss_covered_employment') == 'on',
-                'estimated_benefit_age_62': float(request.POST.get('ss_estimated_benefit_age_62', 0) or 0),
-                'estimated_benefit_fra': float(request.POST.get('ss_estimated_benefit_fra', 0) or 0),
+                'estimated_benefit': float(request.POST.get('ss_estimated_benefit', 0) or 0),
+                'collection_age': int(request.POST.get('ss_collection_age', 0) or 0) if request.POST.get('ss_collection_age') else None,
+                'non_covered_employment': request.POST.get('non_covered_employment', ''),
+                'spouse_benefit': float(request.POST.get('spouse_ss_benefit', 0) or 0),
+                'spouse_collection_age': int(request.POST.get('spouse_ss_age', 0) or 0) if request.POST.get('spouse_ss_age') else None,
             },
-            'other_income': {
-                'spouse_income': float(request.POST.get('spouse_income', 0) or 0),
-                'rental_income': float(request.POST.get('rental_income', 0) or 0),
-                'pension_income': float(request.POST.get('pension_income', 0) or 0),
+            'other_pension': {
+                'has_other_pension': request.POST.get('has_other_pension') == 'on',
+                'details': request.POST.get('other_pension_details', ''),
+            },
+            'income_expenses': {
+                'current_annual_income': float(request.POST.get('current_annual_income', 0) or 0),
+                'spouse_annual_income': float(request.POST.get('spouse_annual_income', 0) or 0),
+                'other_current_income': request.POST.get('other_current_income', ''),
+                'expense_housing': float(request.POST.get('expense_housing', 0) or 0),
+                'expense_utilities': float(request.POST.get('expense_utilities', 0) or 0),
+                'expense_food': float(request.POST.get('expense_food', 0) or 0),
+                'expense_healthcare': float(request.POST.get('expense_healthcare', 0) or 0),
+                'expense_transportation': float(request.POST.get('expense_transportation', 0) or 0),
+                'expense_entertainment': float(request.POST.get('expense_entertainment', 0) or 0),
+                'other_expenses': request.POST.get('other_expenses', ''),
+            },
+            'insurance_beneficiaries': {
+                'has_fegli': request.POST.get('has_fegli', ''),
+                'fegli_basic': request.POST.get('fegli_basic') == 'on',
+                'fegli_option_a': request.POST.get('fegli_option_a') == 'on',
+                'fegli_option_b': request.POST.get('fegli_option_b') == 'on',
+                'fegli_option_c': request.POST.get('fegli_option_c') == 'on',
+                'fehb_plan': request.POST.get('fehb_plan', ''),
+                'fehb_coverage_type': request.POST.get('fehb_coverage_type', ''),
+                'continue_fehb': request.POST.get('continue_fehb', ''),
+                'other_insurance': request.POST.get('other_insurance', ''),
+                'tsp_beneficiary': request.POST.get('tsp_beneficiary', ''),
+                'fegli_beneficiary': request.POST.get('fegli_beneficiary', ''),
+                'survivor_benefit_election': request.POST.get('survivor_benefit_election', ''),
+            },
+            'additional_information': {
+                'has_will': request.POST.get('has_will', ''),
+                'has_poa': request.POST.get('has_poa', ''),
+                'has_court_orders': request.POST.get('has_court_orders', ''),
+                'court_order_details': request.POST.get('court_order_details', ''),
+                'has_special_needs_dependents': request.POST.get('has_special_needs_dependents', ''),
+                'special_needs_details': request.POST.get('special_needs_details', ''),
+                'retirement_goals': request.POST.get('retirement_goals', ''),
+                'retirement_concerns': request.POST.get('retirement_concerns', ''),
+                'additional_notes': request.POST.get('additional_notes', ''),
             },
         }
+        
+        # Extract employee name for case display
+        employee_name = request.POST.get('employee_name', '')
+        name_parts = employee_name.split(' ', 1)
+        first_name = name_parts[0] if len(name_parts) > 0 else ''
+        last_name = name_parts[1] if len(name_parts) > 1 else ''
         
         # Create new case
         case = Case(
             member=user,
             workshop_code=user.workshop_code,
             external_case_id=external_case_id,
-            employee_first_name=request.POST.get('employee_first_name'),
-            employee_last_name=request.POST.get('employee_last_name'),
-            client_email=request.POST.get('client_email'),
+            employee_first_name=first_name or 'Unknown',
+            employee_last_name=last_name or 'Employee',
+            client_email=user.email,  # Use member's email as client email
             urgency=request.POST.get('urgency', 'normal'),
-            num_reports_requested=int(request.POST.get('num_reports_requested', 1)),
+            num_reports_requested=1,
             status='submitted',
             fact_finder_data=fact_finder_data,
             notes=request.POST.get('additional_notes', ''),
@@ -141,19 +224,35 @@ def case_submit(request):
         
         case.save()
         
+        # Handle document uploads
+        if request.FILES.getlist('documents[]'):
+            document_types = request.POST.getlist('document_type[]')
+            document_files = request.FILES.getlist('documents[]')
+            
+            for idx, doc_file in enumerate(document_files):
+                if idx < len(document_types) and document_types[idx]:
+                    CaseDocument.objects.create(
+                        case=case,
+                        document_type=document_types[idx],
+                        file=doc_file,
+                        original_filename=doc_file.name,
+                        file_size=doc_file.size,
+                        uploaded_by=user,
+                        notes=f'Uploaded with Federal Fact Finder submission'
+                    )
+        
         messages.success(request, f'Case {case.external_case_id} submitted successfully!')
         return redirect('member_dashboard')
     
-    # Generate subject line for email submissions
-    employee_name = "CLIENT_NAME"  # Will be filled when form is completed
-    subject_line = f"0"  # Auto-fills from form data
-    
+    # GET request - display form
     context = {
         'workshop_code': user.workshop_code,
-        'subject_line': subject_line,
+        'member_name': f"{user.first_name} {user.last_name}",
+        'today': timezone.now().date(),
     }
     
     return render(request, 'cases/fact_finder_form.html', context)
+
 
 
 @login_required

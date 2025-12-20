@@ -207,153 +207,1256 @@
             {% csrf_token %}
             <input type="hidden" name="action" id="formAction" value="submit">
             
-            <!-- Section 1: Employee Information -->
+            <!-- BASIC INFORMATION -->
             <div class="form-section">
-                <h2 class="section-title">Section 1: Employee Information</h2>
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">BASIC INFORMATION</h2>
                 
                 <div class="row form-row">
                     <div class="col-md-6">
-                        <label class="form-label required-field">First Name</label>
-                        <input type="text" name="employee_first_name" class="form-control" required>
+                        <label class="form-label">Employee's name:</label>
+                        <input type="text" name="employee_name" id="employee_name" class="form-control" required>
                     </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Date of birth:</label>
+                        <input type="date" name="employee_dob" id="employee_dob" class="form-control" required>
+                    </div>
+                </div>
+                
+                <div class="row form-row align-items-center">
                     <div class="col-md-6">
-                        <label class="form-label required-field">Last Name</label>
-                        <input type="text" name="employee_last_name" class="form-control" required>
+                        <label class="form-label">Spouse's name:</label>
+                        <input type="text" name="spouse_name" class="form-control">
                     </div>
-                </div>
-                
-                <div class="row form-row">
-                    <div class="col-md-4">
-                        <label class="form-label required-field">Date of Birth</label>
-                        <input type="date" name="date_of_birth" class="form-control" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">SSN (Last 4 Digits)</label>
-                        <input type="text" name="ssn_last_four" class="form-control" maxlength="4" pattern="[0-9]{4}">
-                        <small class="help-text">For identification purposes only</small>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label required-field">Phone Number</label>
-                        <input type="tel" name="phone" class="form-control" required>
-                    </div>
-                </div>
-                
-                <div class="row form-row">
-                    <div class="col-md-12">
-                        <label class="form-label required-field">Email Address</label>
-                        <input type="email" name="client_email" class="form-control" required>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section 2: Employment Information -->
-            <div class="form-section">
-                <h2 class="section-title">Section 2: Employment Information</h2>
-                
-                <div class="row form-row">
-                    <div class="col-md-6">
-                        <label class="form-label required-field">Federal Agency</label>
-                        <input type="text" name="agency" class="form-control" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label required-field">Position Title</label>
-                        <input type="text" name="position_title" class="form-control" required>
-                    </div>
-                </div>
-                
-                <div class="row form-row">
-                    <div class="col-md-4">
-                        <label class="form-label required-field">Retirement System</label>
-                        <select name="retirement_system" class="form-select" required>
-                            <option value="">Select...</option>
-                            <option value="FERS">FERS</option>
-                            <option value="CSRS">CSRS</option>
-                            <option value="CSRS Offset">CSRS Offset</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Grade/Step</label>
-                        <input type="text" name="grade_step" class="form-control" placeholder="e.g., GS-14 Step 7">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Locality Pay</label>
-                        <input type="text" name="locality_pay" class="form-control">
-                    </div>
-                </div>
-                
-                <div class="row form-row">
-                    <div class="col-md-4">
-                        <label class="form-label required-field">Service Computation Date (SCD)</label>
-                        <input type="date" name="service_computation_date" class="form-control" required>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Years of Service</label>
-                        <input type="number" name="years_of_service" class="form-control" step="0.1" min="0">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Creditable Military Service (Years)</label>
-                        <input type="number" name="creditable_military_service" class="form-control" step="0.1" min="0" value="0">
-                    </div>
-                </div>
-                
-                <div class="row form-row">
-                    <div class="col-md-6">
+                    <div class="col-md-2">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="leo_coverage" id="leo_coverage">
-                            <label class="form-check-label" for="leo_coverage">
-                                Law Enforcement Officer (LEO) Coverage
+                            <input class="form-check-input" type="checkbox" name="spouse_fed_emp" id="spouse_fed_emp">
+                            <label class="form-check-label" for="spouse_fed_emp">
+                                Fed Emp?
                             </label>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Special Provisions/Notes</label>
-                        <input type="text" name="special_provisions" class="form-control">
+                    <div class="col-md-3">
+                        <label class="form-label">Date of birth:</label>
+                        <input type="date" name="spouse_dob" class="form-control">
+                    </div>
+                </div>
+                
+                <div class="row form-row">
+                    <div class="col-md-5">
+                        <label class="form-label">Address:</label>
+                        <input type="text" name="address" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">City</label>
+                        <input type="text" name="city" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">St</label>
+                        <input type="text" name="state" class="form-control" maxlength="2">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Zip</label>
+                        <input type="text" name="zip" class="form-control" maxlength="10">
                     </div>
                 </div>
             </div>
 
-            <!-- Section 3: Salary Information -->
-            <div class="form-section">
-                <h2 class="section-title">Section 3: Salary Information</h2>
-                
-                <div class="row form-row">
-                    <div class="col-md-6">
-                        <label class="form-label required-field">Current Annual Salary</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" name="current_annual_salary" class="form-control" required min="0" step="1">
+            <!-- RETIREMENT SYSTEM and EMPLOYEE TYPE -->
+            <div class="row">
+                <div class="col-md-6">
+                    <!-- RETIREMENT SYSTEM -->
+                    <div class="form-section">
+                        <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px; text-align: center;">RETIREMENT SYSTEM</h2>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="retirement_system" value="CSRS" id="csrs">
+                            <label class="form-check-label" for="csrs">
+                                CSRS
+                            </label>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="retirement_system" value="CSRS Offset" id="csrs_offset">
+                                    <label class="form-check-label" for="csrs_offset">
+                                        CSRS Offset
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 12px;">Offset date:</label>
+                                <input type="date" name="csrs_offset_date" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="retirement_system" value="FERS" id="fers">
+                            <label class="form-check-label" for="fers">
+                                FERS
+                            </label>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="retirement_system" value="FERS Transfer" id="fers_transfer">
+                                    <label class="form-check-label" for="fers_transfer">
+                                        FERS Transfer
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 12px;">Transfer date:</label>
+                                <input type="date" name="fers_transfer_date" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        
+                        <h3 class="section-title" style="background: #d9d9d9; padding: 8px; margin: 20px -25px 15px -25px; text-align: center; font-size: 14px;">RETIREMENT TYPE</h3>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="retirement_type" value="Regular" id="ret_regular">
+                            <label class="form-check-label" for="ret_regular">
+                                <small>Regular (fully-eligible or MRA+10 scenario)</small>
+                            </label>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-md-7">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="retirement_type" value="Optional" id="ret_optional">
+                                    <label class="form-check-label" for="ret_optional">
+                                        <small>Optional (early out)</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label" style="font-size: 11px;">Offer date:</label>
+                                <input type="date" name="optional_offer_date" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="retirement_type" value="Deferred" id="ret_deferred">
+                            <label class="form-check-label" for="ret_deferred">
+                                <small>Deferred (too young, but vested to get later)</small>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="retirement_type" value="Disability" id="ret_disability">
+                            <label class="form-check-label" for="ret_disability">
+                                <small>Disability (not already fully-eligible & must qualify)</small>
+                            </label>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <label class="form-label">High-3 Average Salary</label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" name="high_three_average" class="form-control" min="0" step="1">
+                </div>
+                
+                <div class="col-md-6">
+                    <!-- EMPLOYEE TYPE -->
+                    <div class="form-section">
+                        <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px; text-align: center;">EMPLOYEE TYPE</h2>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="employee_type" value="Regular" id="emp_regular">
+                            <label class="form-check-label" for="emp_regular">
+                                Regular
+                            </label>
                         </div>
-                        <small class="help-text">If known; otherwise leave blank</small>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="employee_type" value="Regular - Postal Worker" id="emp_postal">
+                            <label class="form-check-label" for="emp_postal">
+                                Regular – Postal Worker
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="employee_type" value="Regular - Military Reserve Technician" id="emp_military">
+                            <label class="form-check-label" for="emp_military">
+                                Regular – Military Reserve Technician
+                            </label>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="employee_type" value="Law Enforcement" id="emp_leo">
+                                    <label class="form-check-label" for="emp_leo">
+                                        Law Enforcement
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 11px;">LEO start date:</label>
+                                <input type="date" name="leo_start_date" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="radio" name="employee_type" value="Customs & Border Protection Officer" id="emp_cbpo">
+                                <label class="form-check-label" for="emp_cbpo">
+                                    <small>Customs & Border Protection Officer</small>
+                                </label>
+                            </div>
+                            <div class="ps-4">
+                                <small class="text-muted" style="font-size: 11px;">Were you a CBPO on 7/6/2008 when the position became law enforcement?</small>
+                                <div class="d-flex gap-3 mt-1">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="cbpo_coverage" value="Yes" id="cbpo_yes">
+                                        <label class="form-check-label" for="cbpo_yes">
+                                            <small>Yes</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="cbpo_coverage" value="No" id="cbpo_no">
+                                        <label class="form-check-label" for="cbpo_no">
+                                            <small>No</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="cbpo_coverage" value="Unsure" id="cbpo_unsure">
+                                        <label class="form-check-label" for="cbpo_unsure">
+                                            <small>Unsure</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="employee_type" value="Firefighter" id="emp_firefighter">
+                                    <label class="form-check-label" for="emp_firefighter">
+                                        Firefighter
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 11px;">FF start date:</label>
+                                <input type="date" name="ff_start_date" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="employee_type" value="Air Traffic Controller" id="emp_atc">
+                                    <label class="form-check-label" for="emp_atc">
+                                        Air Traffic Controller
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 11px;">ATC start date:</label>
+                                <input type="date" name="atc_start_date" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="employee_type" value="Foreign Service" id="emp_foreign">
+                                    <label class="form-check-label" for="emp_foreign">
+                                        Foreign Service
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 11px;">FS start date:</label>
+                                <input type="date" name="fs_start_date" class="form-control form-control-sm">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Section 4: Retirement Goals -->
+            <!-- RETIREMENT, PAY & LEAVE -->
             <div class="form-section">
-                <h2 class="section-title">Section 4: Retirement Goals</h2>
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">RETIREMENT, PAY & LEAVE</h2>
                 
-                <div class="row form-row">
-                    <div class="col-md-6">
-                        <label class="form-label required-field">Desired Retirement Date</label>
-                        <input type="date" name="desired_retirement_date" class="form-control" required>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Age at Retirement</label>
-                        <input type="number" name="retirement_age" class="form-control" min="0" max="120">
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">What are your Service Computation Dates?</h4>
+                    <p class="text-muted" style="font-size: 12px;"><em>The Leave SCD (on the pay stub) may be different than the Retirement SCD that is used for creditable retirement purposes. Give both, if known.</em></p>
+                    
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-weight: bold;">Leave SCD <span class="text-danger">(required)</span>:</label>
+                            <input type="date" name="leave_scd" id="leave_scd" class="form-control" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-weight: bold;">Retirement SCD <span class="text-muted">(if known)</span>:</label>
+                            <input type="date" name="retirement_scd" class="form-control">
+                        </div>
                     </div>
                 </div>
                 
-                <div class="row form-row">
-                    <div class="col-md-6">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="continuation_of_health_benefits" id="health_benefits" checked>
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">When are you planning to retire? <span class="text-muted">(Please check <u>ONE</u>)</span></h4>
+                    <p class="text-muted" style="font-size: 12px;"><em>To ensure there is no gap between payments, employees are encouraged to choose the first day of a month.</em></p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="retirement_timing" value="Fully-eligible" id="timing_eligible">
+                                <label class="form-check-label" for="timing_eligible">
+                                    Fully-eligible (no penalty)
+                                </label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="radio" name="retirement_timing" value="MRA+10" id="timing_mra">
+                                <label class="form-check-label" for="timing_mra">
+                                    MRA+10
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="retirement_timing" value="Age" id="timing_age">
+                                        <label class="form-check-label" for="timing_age">
+                                            Age:
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="number" name="retirement_age" class="form-control form-control-sm" min="0" max="120">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="retirement_timing" value="Date" id="timing_date">
+                                        <label class="form-check-label" for="timing_date">
+                                            Date:
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <input type="date" name="desired_retirement_date" id="desired_retirement_date" class="form-control form-control-sm">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Employment History</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Current Federal Agency:</label>
+                            <input type="text" name="agency" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Position Title:</label>
+                            <input type="text" name="position_title" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Grade/Step:</label>
+                            <input type="text" name="grade_step" class="form-control" placeholder="e.g., GS-14 Step 7">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Have you worked for other Federal agencies?</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="has_other_agencies" id="has_other_agencies">
+                                <label class="form-check-label" for="has_other_agencies">
+                                    Yes (Please list below)
+                                </label>
+                            </div>
+                            <textarea name="other_agencies" class="form-control mt-2" rows="3" placeholder="List agency names and approximate dates of service"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Have you had any non-deduction service? <span class="text-muted">(e.g., temporary, part-time, seasonal)</span></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="has_non_deduction_service" id="has_non_deduction_service">
+                                <label class="form-check-label" for="has_non_deduction_service">
+                                    Yes (Please provide details below)
+                                </label>
+                            </div>
+                            <textarea name="non_deduction_service_details" class="form-control mt-2" rows="2" placeholder="Provide dates and type of service"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Have you been a Reservist or National Guard member?</label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="reservist_guard" value="Yes" id="reservist_yes">
+                                    <label class="form-check-label" for="reservist_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="reservist_guard" value="No" id="reservist_no">
+                                    <label class="form-check-label" for="reservist_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you have any military service?</label>
+                            <div class="d-flex gap-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="military_service" value="Yes" id="military_yes">
+                                    <label class="form-check-label" for="military_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="military_service" value="No" id="military_no">
+                                    <label class="form-check-label" for="military_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="row" id="military_details">
+                                <div class="col-md-6">
+                                    <input type="text" name="military_years" class="form-control form-control-sm" placeholder="Years of service">
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="military_deposit_paid" id="military_deposit_paid">
+                                        <label class="form-check-label" for="military_deposit_paid">
+                                            <small>Military deposit paid?</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Pay Information</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Annual Base Salary:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="annual_base_salary" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Locality Pay <span class="text-muted">(if applicable)</span>:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="locality_pay_amount" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Other Regular Pay:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="other_regular_pay" class="form-control" min="0" step="1">
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">Shift differential, COLA, etc.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">High-3 Average Salary <span class="text-muted">(if known)</span>:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="high_three_average" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Leave Balances <span class="text-muted">(as of most recent pay stub)</span></h4>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label class="form-label">Annual Leave Hours:</label>
+                            <input type="number" name="annual_leave_hours" class="form-control" min="0" step="0.1">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Sick Leave Hours:</label>
+                            <input type="number" name="sick_leave_hours" class="form-control" min="0" step="0.1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Other Leave/Credits:</label>
+                            <input type="text" name="other_leave" class="form-control" placeholder="e.g., Comp time, credit hours">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TSP & INVESTMENTS -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">THRIFT SAVINGS PLAN (TSP) & INVESTMENTS</h2>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">TSP Account Information</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Current TSP Balance:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="tsp_balance" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Employee Contribution %:</label>
+                            <div class="input-group">
+                                <input type="number" name="tsp_contribution_pct" class="form-control" min="0" max="100" step="1">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Catch-up contributions?</label>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="tsp_catchup" id="tsp_catchup">
+                                <label class="form-check-label" for="tsp_catchup">
+                                    Yes (age 50+)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">TSP Fund Allocation:</label>
+                        <div class="row">
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size: 12px;">G Fund %:</label>
+                                <input type="number" name="tsp_g_fund" class="form-control form-control-sm" min="0" max="100" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size: 12px;">F Fund %:</label>
+                                <input type="number" name="tsp_f_fund" class="form-control form-control-sm" min="0" max="100" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size: 12px;">C Fund %:</label>
+                                <input type="number" name="tsp_c_fund" class="form-control form-control-sm" min="0" max="100" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size: 12px;">S Fund %:</label>
+                                <input type="number" name="tsp_s_fund" class="form-control form-control-sm" min="0" max="100" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size: 12px;">I Fund %:</label>
+                                <input type="number" name="tsp_i_fund" class="form-control form-control-sm" min="0" max="100" value="0">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label" style="font-size: 12px;">L Fund:</label>
+                                <input type="text" name="tsp_l_fund" class="form-control form-control-sm" placeholder="L2030">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you have any TSP loans?</label>
+                            <div class="d-flex gap-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tsp_loans" value="Yes" id="tsp_loans_yes">
+                                    <label class="form-check-label" for="tsp_loans_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="tsp_loans" value="No" id="tsp_loans_no">
+                                    <label class="form-check-label" for="tsp_loans_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="text" name="tsp_loan_details" class="form-control form-control-sm" placeholder="If yes, provide loan amount and remaining balance">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Other Retirement Accounts</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">IRA/Roth IRA Balance:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="ira_balance" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">401(k)/403(b)/457 Balance:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="other_retirement_balance" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Other Investment Accounts:</label>
+                            <textarea name="other_investments" class="form-control" rows="2" placeholder="Brokerage accounts, annuities, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SOCIAL SECURITY & PENSION -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">SOCIAL SECURITY & PENSION INFORMATION</h2>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Social Security</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Estimated Social Security Benefit at Full Retirement Age:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="ss_estimated_benefit" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/month</span>
+                            </div>
+                            <small class="text-muted" style="font-size: 11px;">From your SS statement</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">When do you plan to start collecting Social Security?</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Age</span>
+                                <input type="number" name="ss_collection_age" class="form-control" min="62" max="70">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you have substantial non-covered employment? <span class="text-muted">(Work where Social Security taxes were not withheld)</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="non_covered_employment" value="Yes" id="non_covered_yes">
+                                    <label class="form-check-label" for="non_covered_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="non_covered_employment" value="No" id="non_covered_no">
+                                    <label class="form-check-label" for="non_covered_no">
+                                        No
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="non_covered_employment" value="Unsure" id="non_covered_unsure">
+                                    <label class="form-check-label" for="non_covered_unsure">
+                                        Unsure
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Spouse's Social Security</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Spouse's Estimated SS Benefit:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="spouse_ss_benefit" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/month</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Spouse's collection age:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">Age</span>
+                                <input type="number" name="spouse_ss_age" class="form-control" min="62" max="70">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Other Pension Income</h4>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you or your spouse have any other pension income?</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="has_other_pension" id="has_other_pension">
+                                <label class="form-check-label" for="has_other_pension">
+                                    Yes (Please provide details below)
+                                </label>
+                            </div>
+                            <textarea name="other_pension_details" class="form-control" rows="3" placeholder="Describe source, estimated monthly amount, and when it starts"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INCOME & EXPENSES -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">INCOME & EXPENSES</h2>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Current Household Income</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Your current annual income:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="current_annual_income" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Spouse's current annual income:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="spouse_annual_income" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Other current income sources:</label>
+                            <textarea name="other_current_income" class="form-control" rows="2" placeholder="Rental income, dividends, part-time work, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Estimated Monthly Expenses in Retirement</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Housing (mortgage/rent):</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_housing" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Utilities:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_utilities" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Food/Groceries:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_food" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Healthcare/Insurance:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_healthcare" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Transportation:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_transportation" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Entertainment/Travel:</label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_entertainment" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Other monthly expenses:</label>
+                            <textarea name="other_expenses" class="form-control" rows="2" placeholder="Debt payments, insurance premiums, subscriptions, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INSURANCE & BENEFICIARIES -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">INSURANCE & BENEFICIARIES</h2>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Federal Employee Group Life Insurance (FEGLI)</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you have FEGLI coverage?</label>
+                            <div class="d-flex gap-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_fegli" value="Yes" id="fegli_yes">
+                                    <label class="form-check-label" for="fegli_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_fegli" value="No" id="fegli_no">
+                                    <label class="form-check-label" for="fegli_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="fegli_basic" id="fegli_basic">
+                                <label class="form-check-label" for="fegli_basic">
+                                    Basic
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="fegli_option_a" id="fegli_option_a">
+                                <label class="form-check-label" for="fegli_option_a">
+                                    Option A
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="fegli_option_b" id="fegli_option_b">
+                                <label class="form-check-label" for="fegli_option_b">
+                                    Option B (multiples: ___)
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="fegli_option_c" id="fegli_option_c">
+                                <label class="form-check-label" for="fegli_option_c">
+                                    Option C (multiples: ___)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Federal Employee Health Benefits (FEHB)</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Current FEHB Plan:</label>
+                            <input type="text" name="fehb_plan" class="form-control" placeholder="e.g., Blue Cross Blue Shield Standard">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Coverage type:</label>
+                            <select name="fehb_coverage_type" class="form-select">
+                                <option value="">Select...</option>
+                                <option value="Self Only">Self Only</option>
+                                <option value="Self Plus One">Self Plus One</option>
+                                <option value="Self and Family">Self and Family</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you plan to continue FEHB into retirement?</label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="continue_fehb" value="Yes" id="continue_fehb_yes" checked>
+                                    <label class="form-check-label" for="continue_fehb_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="continue_fehb" value="No" id="continue_fehb_no">
+                                    <label class="form-check-label" for="continue_fehb_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Other Insurance</h4>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you have any other life, health, or long-term care insurance?</label>
+                            <textarea name="other_insurance" class="form-control" rows="3" placeholder="List type, carrier, and coverage amount"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Beneficiary Designations</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">TSP Beneficiary:</label>
+                            <input type="text" name="tsp_beneficiary" class="form-control" placeholder="Name(s) of beneficiary(ies)">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">FEGLI Beneficiary:</label>
+                            <input type="text" name="fegli_beneficiary" class="form-control" placeholder="Name(s) of beneficiary(ies)">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Retirement (FERS/CSRS) Survivor Benefit Election:</label>
+                            <select name="survivor_benefit_election" class="form-select">
+                                <option value="">Select...</option>
+                                <option value="Full">Full survivor benefit for spouse</option>
+                                <option value="Partial">Partial survivor benefit (25%)</option>
+                                <option value="None">No survivor benefit</option>
+                                <option value="Former Spouse">Former spouse election</option>
+                                <option value="Undecided">Undecided</option>
+                            </select>
+                            <small class="text-muted" style="font-size: 11px;">This reduces your annuity to provide a continuing benefit to your spouse</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADDITIONAL INFORMATION -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">ADDITIONAL INFORMATION & QUESTIONS</h2>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Estate Planning</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Do you have a will?</label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_will" value="Yes" id="will_yes">
+                                    <label class="form-check-label" for="will_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_will" value="No" id="will_no">
+                                    <label class="form-check-label" for="will_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Do you have a power of attorney?</label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_poa" value="Yes" id="poa_yes">
+                                    <label class="form-check-label" for="poa_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_poa" value="No" id="poa_no">
+                                    <label class="form-check-label" for="poa_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Special Circumstances</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you have any divorce decrees, court orders, or former spouse elections that affect your federal benefits?</label>
+                            <div class="d-flex gap-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_court_orders" value="Yes" id="court_orders_yes">
+                                    <label class="form-check-label" for="court_orders_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_court_orders" value="No" id="court_orders_no">
+                                    <label class="form-check-label" for="court_orders_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                            <textarea name="court_order_details" class="form-control" rows="2" placeholder="If yes, please provide details"></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Do you have any dependents with special needs?</label>
+                            <div class="d-flex gap-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_special_needs_dependents" value="Yes" id="special_needs_yes">
+                                    <label class="form-check-label" for="special_needs_yes">
+                                        Yes
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="has_special_needs_dependents" value="No" id="special_needs_no">
+                                    <label class="form-check-label" for="special_needs_no">
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+                            <textarea name="special_needs_details" class="form-control" rows="2" placeholder="If yes, please provide details"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Goals & Concerns</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">What are your primary retirement goals?</label>
+                            <textarea name="retirement_goals" class="form-control" rows="3" placeholder="Travel, spend time with family, hobbies, volunteer work, etc."></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">What are your biggest concerns about retirement?</label>
+                            <textarea name="retirement_concerns" class="form-control" rows="3" placeholder="Healthcare costs, outliving savings, market volatility, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 14px;">Additional Notes</h4>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <label class="form-label">Is there anything else you would like us to know or consider?</label>
+                            <textarea name="additional_notes" class="form-control" rows="4" placeholder="Any additional information, questions, or special circumstances"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUPPORTING DOCUMENTS -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">SUPPORTING DOCUMENTS</h2>
+                <p class="text-muted mb-3">Please upload the following documents to help us provide accurate retirement planning advice:</p>
+                
+                <div class="mb-3">
+                    <h5 style="font-weight: bold; font-size: 13px;">Recommended Documents:</h5>
+                    <ul class="text-muted" style="font-size: 13px;">
+                        <li>Most recent pay stub (showing Leave SCD)</li>
+                        <li>Recent TSP statement</li>
+                        <li>Social Security statement (from ssa.gov)</li>
+                        <li>SF-50 (Notification of Personnel Action) - optional but helpful</li>
+                        <li>FEHB enrollment information</li>
+                        <li>FEGLI enrollment information</li>
+                        <li>Any other relevant benefit statements</li>
+                    </ul>
+                </div>
+                
+                <div id="documentSection">
+                    <label class="form-label" style="font-weight: bold;">Upload Documents:</label>
+                    <div class="mb-3">
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <select class="form-select document-type" name="document_type[]">
+                                    <option value="">Document Type...</option>
+                                    <option value="Pay Stub">Pay Stub</option>
+                                    <option value="TSP Statement">TSP Statement</option>
+                                    <option value="Social Security Statement">Social Security Statement</option>
+                                    <option value="SF-50">SF-50</option>
+                                    <option value="FEHB Information">FEHB Information</option>
+                                    <option value="FEGLI Information">FEGLI Information</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="file" class="form-control document-file" name="documents[]" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-sm btn-success" onclick="addDocumentRow()">
+                                    <i class="bi bi-plus-circle"></i> Add More
+                                </button>
+                            </div>
+                        </div>
+                        <div id="additionalDocuments"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORM ACTIONS -->
+            <div class="form-section text-center" style="border-top: 2px solid #003366; padding-top: 30px;">
+                <div class="d-flex justify-content-center gap-3">
+                    <button type="button" class="btn btn-lg btn-outline-secondary" onclick="clearForm()">
+                        <i class="bi bi-x-circle"></i> CLEAR FORM
+                    </button>
+                    <button type="button" class="btn btn-lg btn-warning" onclick="saveDraft()">
+                        <i class="bi bi-save"></i> SAVE AS DRAFT
+                    </button>
+                    <button type="submit" class="btn btn-lg btn-primary">
+                        <i class="bi bi-send"></i> SUBMIT CASE
+                    </button>
+                </div>
+                <p class="text-muted mt-3" style="font-size: 12px;">
+                    <i class="bi bi-info-circle"></i> Your draft will be saved locally for 30 days. Click "SUBMIT CASE" when ready to send to the benefits team.
+                </p>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Auto-calculate retirement age
+        document.addEventListener('DOMContentLoaded', function() {
+            const dobInput = document.getElementById('employee_dob');
+            const retirementDateInput = document.getElementById('desired_retirement_date');
+            
+            function calculateRetirementAge() {
+                if (dobInput.value && retirementDateInput.value) {
+                    const dob = new Date(dobInput.value);
+                    const retirementDate = new Date(retirementDateInput.value);
+                    const age = Math.floor((retirementDate - dob) / (365.25 * 24 * 60 * 60 * 1000));
+                    
+                    const ageInput = document.querySelector('input[name="retirement_age"]');
+                    if (ageInput) {
+                        ageInput.value = age;
+                    }
+                }
+            }
+            
+            if (dobInput && retirementDateInput) {
+                dobInput.addEventListener('change', calculateRetirementAge);
+                retirementDateInput.addEventListener('change', calculateRetirementAge);
+            }
+            
+            // Restore draft on page load
+            restoreDraft();
+        });
+        
+        // Clear form function
+        function clearForm() {
+            if (confirm('Are you sure you want to clear all form data? This cannot be undone.')) {
+                document.getElementById('factFinderForm').reset();
+                localStorage.removeItem('federal_fact_finder_draft');
+                localStorage.removeItem('federal_fact_finder_draft_timestamp');
+                alert('Form cleared successfully.');
+            }
+        }
+        
+        // Save draft function
+        function saveDraft() {
+            const form = document.getElementById('factFinderForm');
+            const formData = new FormData(form);
+            const draftData = {};
+            
+            for (let [key, value] of formData.entries()) {
+                // Skip file inputs when saving to localStorage
+                if (!key.includes('documents')) {
+                    draftData[key] = value;
+                }
+            }
+            
+            localStorage.setItem('federal_fact_finder_draft', JSON.stringify(draftData));
+            localStorage.setItem('federal_fact_finder_draft_timestamp', new Date().getTime());
+            
+            alert('Draft saved successfully! You can return to this form later to continue.');
+        }
+        
+        // Restore draft function
+        function restoreDraft() {
+            const draftData = localStorage.getItem('federal_fact_finder_draft');
+            const timestamp = localStorage.getItem('federal_fact_finder_draft_timestamp');
+            
+            if (draftData && timestamp) {
+                const daysOld = (new Date().getTime() - parseInt(timestamp)) / (1000 * 60 * 60 * 24);
+                
+                // Only restore if draft is less than 30 days old
+                if (daysOld < 30) {
+                    const shouldRestore = confirm('We found a saved draft from ' + new Date(parseInt(timestamp)).toLocaleDateString() + '. Would you like to restore it?');
+                    
+                    if (shouldRestore) {
+                        const data = JSON.parse(draftData);
+                        const form = document.getElementById('factFinderForm');
+                        
+                        for (let [key, value] of Object.entries(data)) {
+                            const elements = form.elements[key];
+                            if (elements) {
+                                if (elements.type === 'radio' || elements.type === 'checkbox') {
+                                    // Handle radio buttons and checkboxes
+                                    const element = form.querySelector(`[name="${key}"][value="${value}"]`);
+                                    if (element) element.checked = true;
+                                } else {
+                                    elements.value = value;
+                                }
+                            }
+                        }
+                        
+                        alert('Draft restored successfully!');
+                    }
+                } else {
+                    // Remove expired draft
+                    localStorage.removeItem('federal_fact_finder_draft');
+                    localStorage.removeItem('federal_fact_finder_draft_timestamp');
+                }
+            }
+        }
+        
+        // Add document row function
+        let documentRowCount = 1;
+        function addDocumentRow() {
+            documentRowCount++;
+            const container = document.getElementById('additionalDocuments');
+            const newRow = document.createElement('div');
+            newRow.className = 'row mb-2';
+            newRow.id = `documentRow${documentRowCount}`;
+            newRow.innerHTML = `
+                <div class="col-md-4">
+                    <select class="form-select document-type" name="document_type[]">
+                        <option value="">Document Type...</option>
+                        <option value="Pay Stub">Pay Stub</option>
+                        <option value="TSP Statement">TSP Statement</option>
+                        <option value="Social Security Statement">Social Security Statement</option>
+                        <option value="SF-50">SF-50</option>
+                        <option value="FEHB Information">FEHB Information</option>
+                        <option value="FEGLI Information">FEGLI Information</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <input type="file" class="form-control document-file" name="documents[]" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn btn-sm btn-danger" onclick="removeDocumentRow(${documentRowCount})">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </div>
+            `;
+            container.appendChild(newRow);
+        }
+        
+        // Remove document row function
+        function removeDocumentRow(rowId) {
+            const row = document.getElementById(`documentRow${rowId}`);
+            if (row) {
+                row.remove();
+            }
+        }
+    </script>
+</body>
+</html>
                             <label class="form-check-label" for="health_benefits">
                                 Continue Health Benefits into Retirement (FEHB)
                             </label>
