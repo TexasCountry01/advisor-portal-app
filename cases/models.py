@@ -123,6 +123,26 @@ class Case(models.Model):
         help_text='Federal Fact Finder form data in structured JSON format'
     )
     
+    # API Sync Status
+    API_SYNC_CHOICES = [
+        ('pending', 'Pending'),
+        ('synced', 'Synced'),
+        ('failed', 'Failed'),
+    ]
+    
+    api_sync_status = models.CharField(
+        max_length=20,
+        choices=API_SYNC_CHOICES,
+        default='pending',
+        help_text='Status of API sync to benefits-software'
+    )
+    
+    api_synced_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the case was successfully synced to benefits-software'
+    )
+    
     # Additional fields for internal tracking
     notes = models.TextField(blank=True, help_text='Internal notes not visible to member')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -246,4 +266,76 @@ class CaseNote(models.Model):
     
     def __str__(self):
         return f"Note by {self.author.username if self.author else 'Unknown'} on Case {self.case.external_case_id}"
+
+
+class APICallLog(models.Model):
+    """Log of all API calls to benefits-software for auditing and retry purposes"""
+    
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='api_call_logs',
+        help_text='Case associated with this API call'
+    )
+    
+    endpoint = models.CharField(
+        max_length=500,
+        help_text='API endpoint URL called'
+    )
+    
+    request_payload = models.JSONField(
+        help_text='Request data sent to API'
+    )
+    
+    response_status_code = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text='HTTP status code from API response'
+    )
+    
+    response_data = models.JSONField(
+        null=True,
+        blank=True,
+        help_text='Response data from API'
+    )
+    
+    success = models.BooleanField(
+        default=False,
+        help_text='Whether the API call was successful'
+    )
+    
+    error_message = models.TextField(
+        blank=True,
+        help_text='Error message if call failed'
+    )
+    
+    attempt_number = models.IntegerField(
+        default=1,
+        help_text='Retry attempt number (1 = first attempt)'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='When the API call was initiated'
+    )
+    
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the API call completed (success or failure)'
+    )
+    
+    class Meta:
+        verbose_name = 'API Call Log'
+        verbose_name_plural = 'API Call Logs'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['case', '-created_at']),
+            models.Index(fields=['success', '-created_at']),
+        ]
+    
+    def __str__(self):
+        status = "Success" if self.success else "Failed"
+        return f"{status} - Case {self.case.external_case_id} - Attempt {self.attempt_number}"
+
 

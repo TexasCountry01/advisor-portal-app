@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.http import JsonResponse
 from .models import Case, CaseDocument, CaseReport, CaseNote
 from .forms import CaseDocumentForm, CaseReportForm, CaseNoteForm
+from .services import submit_case_to_benefits_software
 from accounts.models import User
 
 
@@ -207,11 +208,11 @@ def case_submit(request):
         first_name = name_parts[0] if len(name_parts) > 0 else ''
         last_name = name_parts[1] if len(name_parts) > 1 else ''
         
-        # Create new case
+        # Create new case locally first (with temporary ID)
         case = Case(
             member=user,
             workshop_code=user.workshop_code,
-            external_case_id=external_case_id,
+            external_case_id=external_case_id,  # Temporary until API returns real ID
             employee_first_name=first_name or 'Unknown',
             employee_last_name=last_name or 'Employee',
             client_email=user.email,  # Use member's email as client email
@@ -220,6 +221,7 @@ def case_submit(request):
             status='submitted',
             fact_finder_data=fact_finder_data,
             notes=request.POST.get('additional_notes', ''),
+            api_sync_status='pending',  # Mark as pending API sync
         )
         
         case.save()
@@ -241,7 +243,23 @@ def case_submit(request):
                         notes=f'Uploaded with Federal Fact Finder submission'
                     )
         
-        messages.success(request, f'Case {case.external_case_id} submitted successfully!')
+        # Submit to benefits-software API
+        success, benefits_case_id, error = submit_case_to_benefits_software(case)
+        
+        if success:
+            # API call succeeded - case now has real case ID from benefits-software
+            messages.success(
+                request, 
+                f'Case submitted successfully! Case ID: {benefits_case_id}'
+            )
+        else:
+            # API call failed - case saved locally but needs retry
+            messages.warning(
+                request,
+                f'Case saved locally (ID: {case.external_case_id}) but could not sync to benefits system. '
+                f'Our team will retry automatically. Error: {error}'
+            )
+        
         return redirect('member_dashboard')
     
     # GET request - display form

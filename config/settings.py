@@ -168,3 +168,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/admin/login/'
+
+# benefits-software API Integration
+BENEFITS_SOFTWARE_API_URL = config('BENEFITS_SOFTWARE_API_URL', default='https://benefits-software.example.com/api')
+BENEFITS_SOFTWARE_API_KEY = config('BENEFITS_SOFTWARE_API_KEY', default='placeholder-api-key-change-in-production')
+BENEFITS_SOFTWARE_API_TIMEOUT = config('BENEFITS_SOFTWARE_API_TIMEOUT', default=30, cast=int)
+BENEFITS_SOFTWARE_API_MAX_RETRIES = config('BENEFITS_SOFTWARE_API_MAX_RETRIES', default=3, cast=int)

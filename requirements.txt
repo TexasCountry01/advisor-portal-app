@@ -19,6 +19,9 @@ django-celery-beat==2.5.0
 django-storages==1.14.2
 boto3==1.34.14
 
+# HTTP Client for API Integration
+requests==2.31.0
+
 # SMS Notifications
 twilio==9.0.4
 
