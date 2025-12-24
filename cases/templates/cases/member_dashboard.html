@@ -164,7 +164,7 @@
                                 <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                {% if case.fact_finder_data %}
+                                {% if case.fact_finder_data or case.fact_finder %}
                                 <a href="{% url 'view_fact_finder_pdf' case.pk %}" class="btn btn-sm btn-outline-success" target="_blank">
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>

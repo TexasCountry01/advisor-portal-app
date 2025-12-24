@@ -36,7 +36,7 @@ def member_dashboard(request):
     
     # Get all cases for this member
     cases = Case.objects.filter(member=user).select_related(
-        'assigned_to', 'reviewed_by'
+        'assigned_to', 'reviewed_by', 'fact_finder'
     ).order_by('-created_at')
     
     # Apply filters

@@ -54,15 +54,82 @@ def generate_fact_finder_pdf(case):
         
         # Get FederalFactFinder data (new structured model)
         try:
-            fact_finder = case.fact_finder
-        except:
-            # Fallback to old JSON structure if FederalFactFinder doesn't exist yet
-            fact_finder = None
+            fff = case.fact_finder
+            # Structure the data to match template expectations
+            data = {
+                # Direct fields (already fixed in template)
+                'employee_name': fff.employee_name,
+                'employee_dob': fff.employee_dob,
+                'spouse_name': fff.spouse_name,
+                'spouse_dob': fff.spouse_dob,
+                'address': fff.address,
+                'city': fff.city,
+                'state': fff.state,
+                'zip_code': fff.zip_code,
+                'retirement_system': fff.retirement_system,
+                'employee_type': fff.employee_type,
+                'retirement_type': fff.retirement_type,
+                
+                # Nested structure for compatibility with template
+                'basic_information': {
+                    'employee_name': fff.employee_name,
+                    'employee_dob': fff.employee_dob,
+                    'spouse_name': fff.spouse_name,
+                    'spouse_dob': fff.spouse_dob,
+                    'address': fff.address,
+                    'city': fff.city,
+                    'state': fff.state,
+                    'zip': fff.zip_code,
+                },
+                'retirement_system': {
+                    'system': fff.retirement_system,
+                    'csrs_offset_date': fff.csrs_offset_date,
+                    'fers_transfer_date': fff.fers_transfer_date,
+                },
+                'employee_type': {
+                    'type': fff.employee_type,
+                    'leo_start_date': fff.leo_start_date,
+                    'cbpo_on_date_7_6_2008': fff.cbpo_on_date_7_6_2008,
+                    'ff_start_date': fff.firefighter_start_date,
+                    'atc_start_date': fff.atc_start_date,
+                    'fs_start_date': fff.foreign_service_start_date,
+                },
+                'retirement_type': {
+                    'type': fff.retirement_type,
+                    'offer_date': fff.optional_offer_date,
+                },
+                'retirement_pay_leave': {
+                    'leave_scd': fff.leave_scd,
+                    'retirement_scd': fff.retirement_scd,
+                    'retirement_timing': fff.retirement_timing,
+                    'retirement_age': fff.retirement_age,
+                    'desired_retirement_date': fff.retirement_date,
+                    'spouse_protection_reason': fff.spousal_pension_reduction_reason,
+                },
+                'pay_information': {
+                    'current_salary': fff.current_annual_salary,
+                },
+                'leave_balances': {
+                    'sick_leave_hours': fff.sick_leave_hours,
+                    'annual_leave_hours': fff.annual_leave_hours,
+                },
+                'social_security': {
+                    'estimated_benefit': fff.ss_benefit_at_62,
+                    'collection_age': fff.ss_desired_start_age,
+                },
+                'additional_information': {
+                    'additional_notes': fff.additional_notes,
+                },
+            }
+        except Exception as e:
+            logger.warning(f"FederalFactFinder not found for case {case.id}: {e}")
+            # Fallback to old JSON structure
+            data = case.fact_finder_data or {}
         
         # Prepare context data for template
         context = {
             'case': case,
-            'data': fact_finder,  # Now using FederalFactFinder model instance
+            'data': data,  # Nested structure matching template expectations
             'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
             'workshop_code': case.workshop_code,
             'member_name': f"{case.member.first_name} {case.member.last_name}" if case.member else "Unknown",
