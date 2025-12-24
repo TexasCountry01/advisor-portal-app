@@ -1,16 +1,26 @@
 """
 PDF Generation Service for Federal Fact Finder Forms
 Uses WeasyPrint to convert HTML templates to PDF
+NOTE: Requires GTK libraries on Windows (works natively on Linux/production)
 """
 import io
 import logging
+import platform
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
 from django.utils import timezone
-from weasyprint import HTML, CSS
-from weasyprint.text.fonts import FontConfiguration
 
 logger = logging.getLogger(__name__)
+
+# Check if WeasyPrint is available (may fail on Windows without GTK)
+WEASYPRINT_AVAILABLE = False
+try:
+    from weasyprint import HTML, CSS
+    from weasyprint.text.fonts import FontConfiguration
+    WEASYPRINT_AVAILABLE = True
+except OSError as e:
+    logger.warning(f"WeasyPrint not fully functional: {e}. PDF generation will be skipped on this system.")
+    logger.warning("This is expected on Windows without GTK libraries. PDFs will work on Linux/production server.")
 
 
 def generate_fact_finder_pdf(case):
@@ -21,12 +31,19 @@ def generate_fact_finder_pdf(case):
         case: Case instance with fact_finder_data populated
     
     Returns:
-        CaseDocument instance with generated PDF, or None if failed
+        CaseDocument instance with generated PDF, or None if failed/unavailable
     
     Raises:
         Exception: If PDF generation fails (caller should handle)
     """
     from cases.models import CaseDocument
+    
+    # Check if WeasyPrint is available
+    if not WEASYPRINT_AVAILABLE:
+        logger.warning(f"PDF generation skipped for case {case.id} - WeasyPrint not available on this system")
+        case.fact_finder_pdf_status = 'pending'
+        case.save(update_fields=['fact_finder_pdf_status'])
+        return None
     
     try:
         logger.info(f"Starting PDF generation for case {case.id}")

@@ -602,6 +602,17 @@ def view_fact_finder_pdf(request, case_id):
         return HttpResponseForbidden('You do not have permission to view this PDF.')
     # admins and managers can view all
     
+    # Check if WeasyPrint is available on this system
+    from cases.services.pdf_generator import WEASYPRINT_AVAILABLE
+    if not WEASYPRINT_AVAILABLE:
+        messages.warning(
+            request,
+            'PDF generation is not available on this development system (Windows requires GTK libraries). '
+            'The form data is saved and PDFs will be generated automatically on the production server. '
+            'You can view the raw data in the case details.'
+        )
+        return redirect('case_detail', pk=case_id)
+    
     # Get the PDF document
     from cases.services.pdf_generator import get_fact_finder_pdf
     pdf_document = get_fact_finder_pdf(case)
