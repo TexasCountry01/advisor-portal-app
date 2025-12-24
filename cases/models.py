@@ -123,6 +123,27 @@ class Case(models.Model):
         help_text='Federal Fact Finder form data in structured JSON format'
     )
     
+    # PDF Generation Status
+    PDF_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('generating', 'Generating'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+    
+    fact_finder_pdf_status = models.CharField(
+        max_length=20,
+        choices=PDF_STATUS_CHOICES,
+        default='pending',
+        help_text='Status of Federal Fact Finder PDF generation'
+    )
+    
+    fact_finder_pdf_generated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the PDF was successfully generated'
+    )
+    
     # API Sync Status
     API_SYNC_CHOICES = [
         ('pending', 'Pending'),
