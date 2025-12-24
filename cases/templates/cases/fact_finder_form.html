@@ -95,6 +95,31 @@
         font-weight: normal;
     }
     
+    .draft-banner {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        border-radius: 4px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        display: none;
+    }
+    
+    .draft-banner.show {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .draft-banner-text {
+        flex: 1;
+        margin-right: 15px;
+    }
+    
+    .draft-banner-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
     .required-field::after {
         content: " *";
         color: #dc3545;
@@ -224,6 +249,22 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            
+            <!-- Draft Restore Banner -->
+            <div id="draftBanner" class="draft-banner">
+                <div class="draft-banner-text">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Draft Found:</strong> <span id="draftDate"></span>
+                </div>
+                <div class="draft-banner-actions">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="restoreDraftData()">
+                        <i class="bi bi-arrow-counterclockwise"></i> Restore Draft
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dismissDraft()">
+                        Dismiss
+                    </button>
                 </div>
             </div>
             
@@ -2690,43 +2731,21 @@
             alert('Draft saved successfully! You can return to this form later to continue.');
         }
         
-        // Restore draft function
+        // Restore draft function - now shows banner instead of blocking dialog
         function restoreDraft() {
             const draftData = localStorage.getItem('federal_fact_finder_draft');
             const timestamp = localStorage.getItem('federal_fact_finder_draft_timestamp');
-            const alreadyAsked = sessionStorage.getItem('draft_restore_asked');
             
-            // Only ask once per session
-            if (draftData && timestamp && !alreadyAsked) {
+            if (draftData && timestamp) {
                 const daysOld = (new Date().getTime() - parseInt(timestamp)) / (1000 * 60 * 60 * 24);
                 
-                // Only restore if draft is less than 30 days old
+                // Only show banner if draft is less than 30 days old
                 if (daysOld < 30) {
-                    sessionStorage.setItem('draft_restore_asked', 'true');
-                    const shouldRestore = confirm('We found a saved draft from ' + new Date(parseInt(timestamp)).toLocaleDateString() + '. Would you like to restore it?');
-                    
-                    if (shouldRestore) {
-                        const data = JSON.parse(draftData);
-                        const form = document.getElementById('factFinderForm');
-                        
-                        for (let [key, value] of Object.entries(data)) {
-                            const elements = form.elements[key];
-                            if (elements) {
-                                if (elements.type === 'radio' || elements.type === 'checkbox') {
-                                    // Handle radio buttons and checkboxes
-                                    const element = form.querySelector(`[name="${key}"][value="${value}"]`);
-                                    if (element) element.checked = true;
-                                } else {
-                                    elements.value = value;
-                                }
-                            }
-                        }
-                        
-                        alert('Draft restored successfully!');
-                    } else {
-                        // User declined to restore - clear the draft
-                        localStorage.removeItem('federal_fact_finder_draft');
-                        localStorage.removeItem('federal_fact_finder_draft_timestamp');
+                    const banner = document.getElementById('draftBanner');
+                    const dateSpan = document.getElementById('draftDate');
+                    if (banner && dateSpan) {
+                        dateSpan.textContent = 'You have a saved draft from ' + new Date(parseInt(timestamp)).toLocaleDateString();
+                        banner.classList.add('show');
                     }
                 } else {
                     // Remove expired draft
@@ -2734,6 +2753,40 @@
                     localStorage.removeItem('federal_fact_finder_draft_timestamp');
                 }
             }
+        }
+        
+        // Function to actually restore the draft data
+        function restoreDraftData() {
+            const draftData = localStorage.getItem('federal_fact_finder_draft');
+            if (draftData) {
+                const data = JSON.parse(draftData);
+                const form = document.getElementById('factFinderForm');
+                
+                for (let [key, value] of Object.entries(data)) {
+                    const elements = form.elements[key];
+                    if (elements) {
+                        if (elements.type === 'radio' || elements.type === 'checkbox') {
+                            // Handle radio buttons and checkboxes
+                            const element = form.querySelector(`[name="${key}"][value="${value}"]`);
+                            if (element) element.checked = true;
+                        } else {
+                            elements.value = value;
+                        }
+                    }
+                }
+                
+                // Hide banner and show success message
+                document.getElementById('draftBanner').classList.remove('show');
+                alert('Draft restored successfully!');
+            }
+        }
+        
+        // Function to dismiss the draft banner
+        function dismissDraft() {
+            document.getElementById('draftBanner').classList.remove('show');
+            // Clear the draft since user dismissed it
+            localStorage.removeItem('federal_fact_finder_draft');
+            localStorage.removeItem('federal_fact_finder_draft_timestamp');
         }
         
         // Add document row function
