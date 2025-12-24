@@ -6,6 +6,9 @@ urlpatterns = [
     path('member/dashboard/', views.member_dashboard, name='member_dashboard'),
     path('member/submit/', views.case_submit, name='case_submit'),
     
+    # DEV ONLY - Form preview without authentication
+    path('dev/form-preview/', views.form_preview, name='form_preview'),
+    
     # Technician views
     path('technician/workbench/', views.technician_workbench, name='technician_workbench'),
     

@@ -10,6 +10,17 @@ from .services import submit_case_to_benefits_software
 from accounts.models import User
 
 
+# DEV ONLY - Form preview without authentication
+def form_preview(request):
+    """Development view to preview form without authentication"""
+    context = {
+        'workshop_code': 'DEV001',
+        'member_name': 'Preview User',
+        'today': timezone.now().date(),
+    }
+    return render(request, 'cases/fact_finder_form.html', context)
+
+
 @login_required
 def member_dashboard(request):
     """Dashboard view for Member role"""
