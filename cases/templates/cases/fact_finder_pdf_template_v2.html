@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Federal Fact Finder - {{ employee_name }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.4in 0.5in;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 8.5pt;
+            line-height: 1.15;
+            color: #000;
+        }
+        
+        /* Header styling to match ProFeds form */
+        .page-header {
+            border: 2px solid #000;
+            padding: 4px 8px;
+            margin-bottom: 8px;
+            background: #f5f5f5;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 7pt;
+            margin-bottom: 4px;
+        }
+        
+        .header-warning {
+            text-align: center;
+            font-weight: bold;
+            color: #c00;
+            font-size: 8pt;
+            margin: 4px 0 4px 0;
+        }
+        
+        .header-fields {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            border-top: 1px solid #000;
+            padding-top: 6px;
+            font-size: 9pt;
+        }
+        
+        .header-field {
+            flex: 1;
+        }
+        
+        .header-field strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+        
+        .header-field-value {
+            border-bottom: 1px solid #000;
+            min-height: 14px;
+            padding: 1px 3px;
+        }
+        
+        .header-footer {
+            margin-top: 8px;
+            padding: 6px;
+            background: white;
+            border: 1px solid #000;
+            text-align: center;
+            font-size: 7pt;
+            line-height: 1.4;
+        }
+        
+        /* Section headers matching ProFeds style */
+        .section-header {
+            background-color: #d0d0d0;
+            padding: 3px 6px;
+            font-weight: bold;
+            font-size: 9pt;
+            text-transform: uppercase;
+            margin-top: 6px;
+            margin-bottom: 4px;
+            page-break-after: avoid;
+        }
+        
+        /* Two-column layout for Retirement System / Employee Type */
+        .two-columns {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        
+        .column {
+            flex: 1;
+        }
+        
+        .column-header {
+            background-color: #d0d0d0;
+            padding: 3px 6px;
+            font-weight: bold;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        
+        /* Field styling */
+        .field-row {
+            margin-bottom: 3px;
+            display: flex;
+            align-items: baseline;
+            page-break-inside: avoid;
+        }
+        
+        .field-label {
+            font-weight: 600;
+            font-size: 8pt;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+        
+        .field-value {
+            font-size: 8pt;
+            flex: 1;
+            border-bottom: 1px solid #000;
+            min-height: 12px;
+            padding: 0 2px;
+        }
+        
+        .field-value-inline {
+            font-size: 8pt;
+        }
+        
+        /* Checkbox styling */
+        .checkbox {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: 1.5px solid #000;
+            margin-right: 4px;
+            text-align: center;
+            line-height: 8px;
+            font-size: 7pt;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+            vertical-align: middle;
+        }
+        
+        .checkbox.checked::after {
+            content: '✓';
+            font-weight: bold;
+        }
+        
+        /* Form layout elements */
+        .form-group {
+            margin-bottom: 4px;
+        }
+        
+        .inline-fields {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 3px;
+        }
+        
+        .inline-field {
+            flex: 1;
+            display: flex;
+            align-items: baseline;
+        }
+        
+        .inline-field label {
+            font-weight: 600;
+            font-size: 8pt;
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+        
+        .inline-field-value {
+            flex: 1;
+            border-bottom: 1px solid #000;
+            min-height: 11px;
+            padding: 0 2px;
+            font-size: 8pt;
+        }
+        
+        /* Notes box */
+        .notes-box {
+            border: 1px solid #000;
+            min-height: 40px;
+            padding: 4px;
+            background: #fafafa;
+            white-space: pre-wrap;
+            font-size: 7.5pt;
+        }
+        
+        /* Page breaks */
+        .page-break {
+            page-break-before: always;
+        }
+        
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 4px 0;
+            font-size: 7.5pt;
+        }
+        
+        table th {
+            background: #d0d0d0;
+            padding: 2px 4px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #000;
+        }
+        
+        table td {
+            padding: 2px 4px;
+            border: 1px solid #000;
+        }
+        
+        /* Subsection headers */
+        .subsection-header {
+            font-weight: bold;
+            font-size: 8.5pt;
+            margin-top: 6px;
+            margin-bottom: 3px;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <div class="header-top">
+            <div>
+                Copyright © 2025 ProFeds LLC.<br>
+                Reproduction and use reserved for ProFeds members.
+            </div>
+            <div style="text-align: right;">
+                Federal Fact Finder (revised 01-2025)<br>
+                Page 1 of 6
+            </div>
+        </div>
+        
+        <div class="header-warning">
+            NOT FOR DISTRIBUTION TO THE PUBLIC
+        </div>
+        
+        <div class="header-fields">
+            <div class="header-field">
+                <strong>Member Name:</strong>
+                <div class="header-field-value">{{ member_name }}</div>
+            </div>
+            <div class="header-field">
+                <strong>Date submitted:</strong>
+                <div class="header-field-value">{{ date_submitted|date:"m/d/Y" }}</div>
+            </div>
+            <div class="header-field">
+                <strong>Workshop Code:</strong>
+                <div class="header-field-value">{{ workshop_code }}</div>
+            </div>
+        </div>
+        
+        <div class="header-footer">
+            <strong>ProFeds Federal Fact Finder – 2025 v1</strong><br>
+            Along with the FFF, include pay stub, TSP & SS statements<br>
+            Email to Reports@ProFeds.com / Fax to 866-779-9921<br>
+            <strong style="color: #c00;">MEMBER USE ONLY - NOT FOR DISTRIBUTION TO PUBLIC</strong>
+        </div>
+    </div>
+
+    <!-- BASIC INFORMATION -->
+    <div class="section-header">BASIC INFORMATION</div>
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Employee's name:</label>
+            <div class="inline-field-value">{{ data.basic_information.employee_name|default:"" }}</div>
+        </div>
+        <div class="inline-field">
+            <label>Date of birth:</label>
+            <div class="inline-field-value">{{ data.basic_information.employee_dob|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Spouse's name:</label>
+            <div class="inline-field-value">{{ data.basic_information.spouse_name|default:"" }}</div>
+        </div>
+        <div class="inline-field">
+            <label>Date of birth:</label>
+            <div class="inline-field-value">{{ data.basic_information.spouse_dob|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field" style="flex: 2;">
+            <label>Address:</label>
+            <div class="inline-field-value">{{ data.basic_information.address|default:"" }}</div>
+        </div>
+        <div class="inline-field" style="flex: 1;">
+            <label>City St Zip:</label>
+            <div class="inline-field-value">{{ data.basic_information.city|default:"" }}, {{ data.basic_information.state|default:"" }} {{ data.basic_information.zip|default:"" }}</div>
+        </div>
+    </div>
+
+    <!-- RETIREMENT SYSTEM & EMPLOYEE TYPE (side by side) -->
+    <div class="two-columns">
+        <div class="column">
+            <div class="column-header">RETIREMENT SYSTEM</div>
+            {% with system=data.retirement_system.system %}
+            <div class="form-group">
+                <div><span class="checkbox {% if system == 'CSRS' %}checked{% endif %}"></span> CSRS</div>
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if system == 'CSRS_Offset' %}checked{% endif %}"></span> CSRS Offset</div>
+                {% if system == 'CSRS_Offset' %}
+                <div style="margin-left: 20px; font-size: 8.5pt;">Offset date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.retirement_system.csrs_offset_date|default:"" }}</span></div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if system == 'FERS' %}checked{% endif %}"></span> FERS</div>
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if system == 'FERS_Transfer' %}checked{% endif %}"></span> FERS Transfer</div>
+                {% if system == 'FERS_Transfer' %}
+                <div style="margin-left: 20px; font-size: 8.5pt;">Transfer date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.retirement_system.fers_transfer_date|default:"" }}</span></div>
+                {% endif %}
+            </div>
+            {% endwith %}
+        </div>
+        
+        <div class="column">
+            <div class="column-header">EMPLOYEE TYPE</div>
+            {% with emp_type=data.employee_type.type %}
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'Regular' %}checked{% endif %}"></span> Regular</div>
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'Postal Worker' %}checked{% endif %}"></span> Regular – Postal Worker</div>
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'Military Reserve Technician' %}checked{% endif %}"></span> Regular – Military Reserve Technician</div>
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'Law Enforcement' %}checked{% endif %}"></span> Law Enforcement</div>
+                {% if emp_type == 'Law Enforcement' and data.employee_type.leo_start_date %}
+                <div style="margin-left: 20px; font-size: 8.5pt;">LEO start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.leo_start_date }}</span></div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'CBPO' %}checked{% endif %}"></span> Customs & Border Protection Officer</div>
+                {% if emp_type == 'CBPO' %}
+                <div style="margin-left: 20px; font-size: 8pt;">Were you a CBPO on 7/6/2008 when the position became law enforcement?</div>
+                <div style="margin-left: 20px; font-size: 8pt;">
+                    <span class="checkbox"></span> Yes &nbsp;&nbsp;
+                    <span class="checkbox"></span> No &nbsp;&nbsp;
+                    <span class="checkbox"></span> Unsure
+                </div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'Firefighter' %}checked{% endif %}"></span> Firefighter</div>
+                {% if emp_type == 'Firefighter' and data.employee_type.ff_start_date %}
+                <div style="margin-left: 20px; font-size: 8.5pt;">FF start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.ff_start_date }}</span></div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'Air Traffic Controller' %}checked{% endif %}"></span> Air Traffic Controller</div>
+                {% if emp_type == 'Air Traffic Controller' and data.employee_type.atc_start_date %}
+                <div style="margin-left: 20px; font-size: 8.5pt;">ATC start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.atc_start_date }}</span></div>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <div><span class="checkbox {% if emp_type == 'Foreign Service' %}checked{% endif %}"></span> Foreign Service</div>
+                {% if emp_type == 'Foreign Service' and data.employee_type.fs_start_date %}
+                <div style="margin-left: 20px; font-size: 8.5pt;">FS start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.fs_start_date }}</span></div>
+                {% endif %}
+            </div>
+            {% endwith %}
+        </div>
+    </div>
+
+    <!-- RETIREMENT TYPE -->
+    <div class="section-header">RETIREMENT TYPE</div>
+    {% with ret_type=data.retirement_type %}
+    <div class="form-group">
+        <div><span class="checkbox {% if ret_type.type == 'Regular' or ret_type.type == 'Full Immediate' %}checked{% endif %}"></span> Regular (fully-eligible or MRA+10 scenario)</div>
+    </div>
+    <div class="form-group">
+        <div><span class="checkbox {% if ret_type.type == 'Optional' or ret_type.type == 'Early Optional' %}checked{% endif %}"></span> Optional (early out)</div>
+        {% if ret_type.offer_date %}
+        <div style="margin-left: 20px; font-size: 8.5pt;">Offer date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ ret_type.offer_date }}</span></div>
+        {% endif %}
+    </div>
+    <div class="form-group">
+        <div><span class="checkbox {% if ret_type.type == 'Deferred' %}checked{% endif %}"></span> Deferred (too young, but vested to get later)</div>
+    </div>
+    <div class="form-group">
+        <div><span class="checkbox {% if ret_type.type == 'Disability' %}checked{% endif %}"></span> Disability (not already fully-eligible & must qualify)</div>
+    </div>
+    {% endwith %}
+
+    <!-- RETIREMENT, PAY & LEAVE -->
+    <div class="section-header">RETIREMENT, PAY & LEAVE</div>
+    {% with pay=data.pay_information rpl=data.retirement_pay_leave %}
+    <div style="font-size: 8.5pt; font-weight: 600; margin-bottom: 4px;">What are your Service Computation Dates?</div>
+    <div style="font-size: 8pt; margin-bottom: 6px; font-style: italic;">The Leave SCD (on the pay stub) may be different than the Retirement SCD that is used for retirement credit purposes. Give both, if known.</div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Leave SCD (required):</label>
+            <div class="inline-field-value">{{ rpl.leave_scd|default:"" }}</div>
+        </div>
+        <div class="inline-field">
+            <label>Retirement SCD (if known):</label>
+            <div class="inline-field-value">{{ rpl.retirement_scd|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div style="font-size: 8.5pt; font-weight: 600; margin: 8px 0 4px 0;">When are you planning to retire?</div>
+    <div style="font-size: 8pt; margin-bottom: 6px; font-style: italic;">To ensure there is no gap between payments, employees are encouraged to retire on the last day of the month.</div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <div><span class="checkbox"></span> Fully-eligible (no penalty)</div>
+        </div>
+        <div class="inline-field">
+            <label>Age:</label>
+            <div class="inline-field-value">{{ rpl.retirement_age|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <div><span class="checkbox"></span> MRA+10</div>
+        </div>
+        <div class="inline-field">
+            <label>Date:</label>
+            <div class="inline-field-value">{{ rpl.desired_retirement_date|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Is there any reason we should plan on providing less than the maximum pension protection to your current spouse?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">Your spouse is entitled to a maximum benefit, unless otherwise agreed.</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span style="font-size: 8.5pt;">Reason: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 200px;">{{ rpl.spouse_protection_reason|default:"" }}</span></span>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Is there a court order that grants any of your federal benefits (pension, SBP, TSP) to a former spouse?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span style="font-size: 8pt; font-style: italic;">(If yes, describe below or provide a copy for review)</span>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field" style="flex: 2;">
+            <label>What is your current annual salary (including locality pay)?</label>
+            <div class="inline-field-value">${{ pay.current_salary|default:"0"|floatformat:0 }} /yr</div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you expect to earn your highest 3 years of pay at the end of your career? If not, provide highest salary history below.</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span style="font-size: 8pt; font-style: italic;">(If no, describe below)</span>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">What are your current sick leave & annual leave balances?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">If you plan to use all of your leave before you retire, leave blank.</div>
+        <div class="inline-fields">
+            <div class="inline-field">
+                <label>Sick Leave:</label>
+                <div class="inline-field-value">{{ data.leave_balances.sick_leave_hours|default:"" }} hrs</div>
+            </div>
+            <div class="inline-field">
+                <label>Annual Leave:</label>
+                <div class="inline-field-value">{{ data.leave_balances.annual_leave_hours|default:"" }} hrs</div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">What is your Social Security benefit at age 62 and at your desired start age?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">The "age 62" SS benefit affects other benefits, so please include it. If already drawing SS, use current age & benefit.</div>
+        <div class="inline-fields">
+            <div class="inline-field">
+                <label>SS at age 62:</label>
+                <div class="inline-field-value">${{ data.social_security.estimated_benefit|default:"0" }} /mo</div>
+            </div>
+            <div class="inline-field">
+                <label>SS at desired start age ({{ data.social_security.collection_age|default:"" }}):</label>
+                <div class="inline-field-value">${{ data.social_security.estimated_benefit|default:"0" }} /mo</div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 40px;">{{ case.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- PAGE 2 - MILITARY SERVICE -->
+    <div class="page-break"></div>
+    
+    <div class="page-header">
+        <div class="header-top">
+            <div>
+                Copyright © 2025 ProFeds LLC.<br>
+                Reproduction and use reserved for ProFeds members.
+            </div>
+            <div style="text-align: right;">
+                Federal Fact Finder (revised 01-2025)<br>
+                Page 2 of 6
+            </div>
+        </div>
+        <div class="header-warning">
+            NOT FOR DISTRIBUTION TO THE PUBLIC
+        </div>
+    </div>
+
+    <div class="section-header">MILITARY SERVICE</div>
+    
+    <!-- Military Active Duty -->
+    <div class="subsection-header">Military – Active Duty</div>
+    {% with military=data.military_active_duty %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Do you have any military service on active duty?</label>
+            <div>
+                <span class="checkbox {% if military.has_service %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox {% if not military.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+    </div>
+    
+    {% if military.has_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Dates of ACTIVE DUTY service?</label>
+            <div class="inline-field-value">{{ military.start_date|default:"" }} to {{ military.end_date|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Have you already made a deposit into CSRS/FERS to get credit for this time?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>How much do you currently still owe?</label>
+            <div>
+                <span class="checkbox"></span> $ 0 &nbsp;&nbsp;
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 80px;">{{ military.amount_owed|default:"" }}</span> &nbsp;&nbsp;
+                <span class="checkbox"></span> Unsure
+            </div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Did any military service interrupt federal service (called "Leave Without Pay – US")? List dates.</label>
+            <div class="inline-field-value">{{ military.lwop_dates|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">If so, did you make a deposit for that time?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Did you RETIRE from ACTIVE DUTY?</div>
+        <div>
+            <span class="checkbox {% if military.retired %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox {% if not military.retired %}checked{% endif %}"></span> No
+        </div>
+    </div>
+    
+    {% if military.retired %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>If so, what is your military pension amount?</label>
+            <div class="inline-field-value">${{ military.pension_amount|default:"0" }} /mo</div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Was extra time added to your SCD for overseas/campaign service?</label>
+            <div class="inline-field-value">{{ military.extra_time|default:"" }}</div>
+        </div>
+    </div>
+    {% else %}
+    <div style="margin: 6px 0; text-align: center; font-style: italic; color: #666;">
+        <span class="checkbox checked"></span> No to ALL military service
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ military.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- Military Reserves -->
+    <div class="subsection-header" style="margin-top: 15px;">Military – Reserves</div>
+    {% with reserves=data.military_reserves %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Do you have any military service in the reserves?</label>
+            <div>
+                <span class="checkbox {% if reserves.has_service %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox {% if not reserves.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+    </div>
+    
+    {% if reserves.has_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Dates of RESERVE service?</label>
+            <div class="inline-field-value">{{ reserves.start_date|default:"" }} to {{ reserves.end_date|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>How much reserve time is creditable in CSRS/FERS?</label>
+            <div class="inline-field-value">YY {{ reserves.years|default:"" }} MM {{ reserves.months|default:"" }} DD {{ reserves.days|default:"" }}</div>
+        </div>
+        <div class="inline-field">
+            <div><span class="checkbox"></span> Unsure</div>
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Did you RETIRE from the RESERVES?</div>
+        <div>
+            <span class="checkbox {% if reserves.retired %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox {% if not reserves.retired %}checked{% endif %}"></span> No
+        </div>
+    </div>
+    
+    {% if reserves.retired %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Reserve pension amount:</label>
+            <div class="inline-field-value">${{ reserves.pension_amount|default:"0" }} /mo</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>When does your reserve pension begin?</label>
+            <div class="inline-field-value">Age {{ reserves.pension_start_age|default:"60" }}</div>
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ reserves.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- Military Academy -->
+    <div class="subsection-header" style="margin-top: 15px;">Military – Academy</div>
+    {% with academy=data.military_academy %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Do you have any military academy service?</label>
+            <div>
+                <span class="checkbox {% if academy.has_service %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox {% if not academy.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+    </div>
+    
+    {% if academy.has_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Dates of ACADEMY service?</label>
+            <div class="inline-field-value">{{ academy.start_date|default:"" }} to {{ academy.end_date|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Does it appear that your academy time is included in your Leave SCD?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ academy.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- PAGE 3 - SPECIAL TYPES OF FEDERAL SERVICE -->
+    <div class="page-break"></div>
+    
+    <div class="page-header">
+        <div class="header-top">
+            <div>
+                Copyright © 2025 ProFeds LLC.<br>
+                Reproduction and use reserved for ProFeds members.
+            </div>
+            <div style="text-align: right;">
+                Federal Fact Finder (revised 01-2025)<br>
+                Page 3 of 6
+            </div>
+        </div>
+        <div class="header-warning">
+            NOT FOR DISTRIBUTION TO THE PUBLIC
+        </div>
+    </div>
+
+    <div class="section-header">SPECIAL TYPES OF FEDERAL SERVICE</div>
+    
+    <!-- Non-Deduction Service -->
+    <div class="subsection-header">Non-Deduction Service</div>
+    <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">An employee was not contributing to the CSRS/FERS system. If they are later hired into a permanent position, some employees are allowed to make a deposit to get credit for this service.</div>
+    
+    {% with non_deduction=data.non_deduction_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Do you have any federal temporary, interim, casual, seasonal, or intern service?</label>
+            <div>
+                <span class="checkbox {% if non_deduction.has_service %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox {% if not non_deduction.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+    </div>
+    
+    {% if non_deduction.has_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Dates of NON-DEDUCTION service?</label>
+            <div class="inline-field-value">{{ non_deduction.start_date|default:"" }} to {{ non_deduction.end_date|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Have you already made a deposit into CSRS/FERS to get credit for this time?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>How much do you currently still owe?</label>
+            <div>
+                <span class="checkbox"></span> $ 0 &nbsp;&nbsp;
+                <span class="checkbox"></span> Unsure
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ non_deduction.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- Break-in-Service -->
+    <div class="subsection-header" style="margin-top: 15px;">Break-in-Service</div>
+    <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">An employee was in a position where they were contributing to CSRS/FERS, but then left federal service. If they took a refund of those contributions, they can repay those funds to regain credit for original service.</div>
+    
+    {% with break_service=data.break_in_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Have you ever left federal service (had a "break-in-service")?</label>
+            <div>
+                <span class="checkbox {% if break_service.has_break %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox {% if not break_service.has_break %}checked{% endif %}"></span> No
+            </div>
+        </div>
+    </div>
+    
+    {% if break_service.has_break %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Dates of your ORIGINAL service (before leaving)?</label>
+            <div class="inline-field-value">{{ break_service.original_start|default:"" }} to {{ break_service.original_end|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Dates of the BREAK-IN-SERVICE?</label>
+            <div class="inline-field-value">{{ break_service.break_start|default:"" }} to {{ break_service.break_end|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Did you take a refund of your CSRS/FERS funds when you left?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">If so, did you repay ("redeposit") it when you returned to federal service?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>How much do you currently still owe?</label>
+            <div>
+                <span class="checkbox"></span> $ 0 &nbsp;&nbsp;
+                <span class="checkbox"></span> Unsure
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ break_service.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- Part-Time Service -->
+    <div class="subsection-header" style="margin-top: 15px;">Part-Time Service</div>
+    <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">An employee is scheduled to work less than 40 hours per week. The pension will be prorated based on the percentage of time worked. Part-time service can also be "non-deduction" service (see above).</div>
+    
+    {% with part_time=data.part_time_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Have you had any federal part-time service?</label>
+            <div>
+                <span class="checkbox {% if part_time.has_service %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox {% if not part_time.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+    </div>
+    
+    {% if part_time.has_service %}
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Dates of PART-TIME service?</label>
+            <div class="inline-field-value">{{ part_time.start_date|default:"" }} to {{ part_time.end_date|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>How many hours per week?</label>
+            <div class="inline-field-value">{{ part_time.hours_per_week|default:"" }} hours per week</div>
+        </div>
+    </div>
+    
+    <div style="margin: 6px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">During this time, did you contribute to the retirement system (CSRS/FERS)?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ part_time.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- Other Pertinent Details -->
+    <div class="subsection-header" style="margin-top: 15px;">Other Pertinent Details</div>
+    <div style="font-size: 8.5pt; margin-bottom: 6px;">Is there anything else we should know about your service history as we prepare your report?</div>
+    <div class="notes-box" style="min-height: 60px;">{{ data.employment_history.other_agencies|default:"" }}</div>
+    
+    <div style="margin: 6px 0; text-align: center; font-style: italic; color: #666; padding: 10px; background: #f5f5f5; border: 1px solid #ccc;">
+        <span class="checkbox"></span> No to ALL special service
+    </div>
+
+    <!-- PAGE 4 - INSURANCE & BENEFITS -->
+    <div class="page-break"></div>
+    
+    <div class="page-header">
+        <div class="header-top">
+            <div>
+                Copyright © 2025 ProFeds LLC.<br>
+                Reproduction and use reserved for ProFeds members.
+            </div>
+            <div style="text-align: right;">
+                Federal Fact Finder (revised 01-2025)<br>
+                Page 4 of 6
+            </div>
+        </div>
+        <div class="header-warning">
+            NOT FOR DISTRIBUTION TO THE PUBLIC
+        </div>
+    </div>
+
+    <!-- FEGLI -->
+    <div class="section-header">FEDERAL EMPLOYEES GROUP LIFE INSURANCE (FEGLI)</div>
+    {% with fegli=data.fegli %}
+    <div style="margin-bottom: 8px;">
+        <div style="font-size: 8.5pt; font-weight: 600; margin-bottom: 4px;">How much do you currently pay for coverage?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">List all FEGLI premiums exactly as shown on the pay stub (even if you are unsure which coverage it pertains to). We will determine coverage based on the total premium.</div>
+        <div style="font-size: 8.5pt; margin-top: 6px;">
+            <strong>Basic & Optional Coverage (A, B & C) – shown on up to 4 lines on pay stub</strong>
+        </div>
+        <div style="margin: 6px 0; display: flex; gap: 10px;">
+            <div style="flex: 1;">$ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fegli.premium_1|default:"" }}</span> /pp</div>
+            <div style="flex: 1;">$ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fegli.premium_2|default:"" }}</span> /pp</div>
+            <div style="flex: 1;">$ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fegli.premium_3|default:"" }}</span> /pp</div>
+            <div style="flex: 1;">$ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fegli.premium_4|default:"" }}</span> /pp</div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Will you have ALL of this coverage in place for at least 5 years immediately before you retire?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you wish to keep this coverage in retirement?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Is FEGLI your sole source of life insurance and what is your purpose for having it?</label>
+            <div>
+                <span class="checkbox"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox"></span> No &nbsp;&nbsp;
+                <span style="font-size: 8.5pt;">Purpose: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 200px;">{{ fegli.purpose|default:"" }}</span></span>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">What are the ages of your dependent children?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">Include unmarried children under age 22 (older, if disabled).</div>
+        <div>
+            <span style="font-size: 8.5pt;">Children's ages: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 300px;">{{ fegli.children_ages|default:"" }}</span></span>
+        </div>
+        <div style="font-size: 7.5pt; font-style: italic; margin-top: 4px;">Asterisk any children disabled prior to age 22 and incapable of self-support.</div>
+    </div>
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ fegli.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- FEHB -->
+    <div class="section-header" style="margin-top: 15px;">FEDERAL EMPLOYEES HEALTH BENEFITS (FEHB)</div>
+    {% with fehb=data.fehb %}
+    <div style="margin-bottom: 8px;">
+        <div style="font-size: 8.5pt; font-weight: 600; margin-bottom: 6px;">How much do you currently pay for coverage?</div>
+        <div style="display: flex; gap: 10px; margin: 6px 0;">
+            <div style="flex: 1;">
+                Health<br>
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fehb.health_premium|default:"" }}</span> /pp
+            </div>
+            <div style="flex: 1;">
+                Dental<br>
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fehb.dental_premium|default:"" }}</span> /pp
+            </div>
+            <div style="flex: 1;">
+                Vision<br>
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fehb.vision_premium|default:"" }}</span> /pp
+            </div>
+            <div style="flex: 1;">
+                Dental/Vision<br>
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fehb.dental_vision_premium|default:"" }}</span> /pp
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">For the health insurance plan, who is covered?</div>
+        <div>
+            <span class="checkbox"></span> Self-Only &nbsp;&nbsp;
+            <span class="checkbox"></span> Self+One &nbsp;&nbsp;
+            <span class="checkbox"></span> Self+Family &nbsp;&nbsp;
+            <span class="checkbox"></span> None
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Will you have the health coverage in place for at least 5 years immediately before you retire?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">Family members do NOT have a 5-year requirement.</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you wish to keep this coverage in retirement?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">In retirement, will your spouse be reliant on federal health benefits through your plan?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you have other health coverage?</div>
+        <div>
+            <span class="checkbox"></span> TRICARE &nbsp;&nbsp;
+            <span class="checkbox"></span> VA &nbsp;&nbsp;
+            <span class="checkbox"></span> Spouse's plan &nbsp;&nbsp;
+            <span class="checkbox"></span> Private health plan
+        </div>
+    </div>
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ fehb.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- FLTCIP -->
+    <div class="section-header" style="margin-top: 15px;">FEDERAL LONG TERM CARE INSURANCE PROGRAM (FLTCIP)</div>
+    {% with fltcip=data.fltcip %}
+    <div style="margin-bottom: 8px;">
+        <div style="font-size: 8.5pt; font-weight: 600; margin-bottom: 6px;">How much do you currently pay for coverage?</div>
+        <div style="display: flex; gap: 10px; margin: 6px 0;">
+            <div style="flex: 1;">
+                Employee<br>
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fltcip.employee_premium|default:"" }}</span> /pp
+            </div>
+            <div style="flex: 1;">
+                Spouse<br>
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fltcip.spouse_premium|default:"" }}</span> /pp
+            </div>
+            <div style="flex: 1;">
+                Other Family<br>
+                $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 60px;">{{ fltcip.other_premium|default:"" }}</span> /pp
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; font-weight: 600; margin-bottom: 4px;">Do you recall what features you elected?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">The options shown are currently available in FLTCIP (with a 90-day waiting period). If purchased prior to 2020, you may have different features available to you. Print a statement of benefits at LTCFEDS.com.</div>
+        
+        <div style="margin: 6px 0;">
+            <div style="font-size: 8.5pt;">Daily Benefit: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 100px;">{{ fltcip.daily_benefit|default:"" }}</span> ($100 – $450 per day)</div>
+        </div>
+        
+        <div style="margin: 6px 0;">
+            <div style="font-size: 8.5pt;">Benefit Period:</div>
+            <div>
+                <span class="checkbox"></span> 2 yrs &nbsp;&nbsp;
+                <span class="checkbox"></span> 3 yrs &nbsp;&nbsp;
+                <span class="checkbox"></span> 5 yrs
+            </div>
+        </div>
+        
+        <div style="margin: 6px 0;">
+            <div style="font-size: 8.5pt;">Inflation Protection:</div>
+            <div>
+                <span class="checkbox"></span> ACIO 3% &nbsp;&nbsp;
+                <span class="checkbox"></span> FPO
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">If you do not currently have this coverage, would you like to discuss various options available?</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Unsure
+        </div>
+    </div>
+    
+    <div style="margin: 10px 0; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; font-size: 8.5pt;">
+        <strong>NOTE: OPM has suspended new applications until at least Dec 2026</strong>
+    </div>
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">Notes:</strong>
+        <div class="notes-box" style="min-height: 30px;">{{ fltcip.notes|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- PAGE 5 - TSP -->
+    <div class="page-break"></div>
+    
+    <div class="page-header">
+        <div class="header-top">
+            <div>
+                Copyright © 2025 ProFeds LLC.<br>
+                Reproduction and use reserved for ProFeds members.
+            </div>
+            <div style="text-align: right;">
+                Federal Fact Finder (revised 01-2025)<br>
+                Page 5 of 6
+            </div>
+        </div>
+        <div class="header-warning">
+            NOT FOR DISTRIBUTION TO THE PUBLIC
+        </div>
+    </div>
+
+    <div class="section-header">THRIFT SAVINGS PLAN (TSP)</div>
+    {% with tsp=data.tsp %}
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>What are the ways you plan to use your TSP in retirement?</label>
+            <div>
+                <span class="checkbox"></span> Income &nbsp;&nbsp;
+                <span class="checkbox"></span> Fun money &nbsp;&nbsp;
+                <span class="checkbox"></span> Legacy &nbsp;&nbsp;
+                <span class="checkbox"></span> Other
+            </div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>What is your goal to have in TSP by the time you retire?</label>
+            <div class="inline-field-value">$ {{ tsp.retirement_goal|default:"" }}</div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field" style="flex: 2;">
+            <label>HOW MUCH do you plan to need & WHEN do you need it?</label>
+            <div class="inline-field-value">$ {{ tsp.amount_needed|default:"" }}</div>
+        </div>
+        <div class="inline-field" style="flex: 1;">
+            <div>
+                <span class="checkbox"></span> ASAP! &nbsp;&nbsp;
+                At age: <span style="border-bottom: 1px solid #000; padding: 0 5px; display: inline-block; min-width: 40px;">{{ tsp.need_age|default:"" }}</span> &nbsp;&nbsp;
+                <span class="checkbox"></span> Unsure
+            </div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>Is the TSP your sole source of investing?</label>
+            <div>
+                <span class="checkbox"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox"></span> No &nbsp;&nbsp;
+                Explain: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 200px;">{{ tsp.sole_source_explain|default:"" }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="inline-fields">
+        <div class="inline-field">
+            <label>What do you plan to do with TSP when you retire?</label>
+            <div>
+                <span class="checkbox"></span> Leave in TSP &nbsp;&nbsp;
+                <span class="checkbox"></span> Rollover to IRA &nbsp;&nbsp;
+                <span class="checkbox"></span> Unsure
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin: 8px 0;">
+        <div style="font-size: 8.5pt; margin-bottom: 4px;">While working, have you taken an in-service withdrawal?</div>
+        <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">Note: this is different than a TSP loan.</div>
+        <div>
+            <span class="checkbox"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox"></span> Financial Hardship &nbsp;&nbsp;
+            <span class="checkbox"></span> Age-Based (59½ or later)
+        </div>
+    </div>
+
+    <!-- Two-column layout for New Contributions and Outstanding Loans -->
+    <div class="two-columns" style="margin-top: 12px;">
+        <div class="column">
+            <div class="column-header">NEW CONTRIBUTIONS</div>
+            <div style="font-size: 7.5pt; margin-bottom: 6px; line-height: 1.3;">
+                Regular contribution limit: $23,500/yr (average of $904/pp)<br>
+                Catch-up contribution limit (50+): $7,500/yr (average of $289/pp)<br>
+                Catch-up contribution limit (60-63): $11,250/yr (average of $433/pp)<br>
+                <em>The TSP considers anything over $23,000 a catch-up.</em><br>
+                <em>Employees can split their new contributions in any combination between the Traditional & Roth sides of their accounts.</em>
+            </div>
+            
+            <div style="margin: 6px 0; font-size: 8.5pt;">
+                Traditional contributions: $ <span style="border-bottom: 1px solid #000; padding: 0 5px; display: inline-block; min-width: 60px;">{{ tsp.traditional_contribution|default:"" }}</span> /pp
+            </div>
+            <div style="margin: 6px 0; font-size: 8.5pt;">
+                Roth contributions: $ <span style="border-bottom: 1px solid #000; padding: 0 5px; display: inline-block; min-width: 60px;">{{ tsp.roth_contribution|default:"" }}</span> /pp
+            </div>
+        </div>
+        
+        <div class="column">
+            <div class="column-header">OUTSTANDING TSP LOANS</div>
+            <table style="font-size: 7.5pt; margin-top: 6px;">
+                <thead>
+                    <tr>
+                        <th>Loan Type</th>
+                        <th>GENERAL PURPOSE</th>
+                        <th>RESIDENTIAL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-size: 7pt; font-style: italic;">Justification</td>
+                        <td style="font-size: 7pt; font-style: italic;">not required (repaid in 1-5 years)</td>
+                        <td style="font-size: 7pt; font-style: italic;">required (repaid in 1-15 years)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Date Loan Taken</strong></td>
+                        <td>{{ tsp.general_loan_date|default:"" }}</td>
+                        <td>{{ tsp.residential_loan_date|default:"" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Current Balance</strong></td>
+                        <td>$ {{ tsp.general_loan_balance|default:"0" }}</td>
+                        <td>$ {{ tsp.residential_loan_balance|default:"0" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Repayment amount</strong></td>
+                        <td>$ {{ tsp.general_loan_repayment|default:"" }} /pp</td>
+                        <td>$ {{ tsp.residential_loan_repayment|default:"" }} /pp</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Payoff Date (approx.)</strong></td>
+                        <td>{{ tsp.general_loan_payoff|default:"" }}</td>
+                        <td>{{ tsp.residential_loan_payoff|default:"" }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- TSP Fund Balances and Allocation -->
+    <div style="margin-top: 12px;">
+        <table style="font-size: 8pt;">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">FUNDS</th>
+                    <th style="width: 35%;">BALANCE of existing money</th>
+                    <th style="width: 20%;">ALLOCATION of new money</th>
+                    <th style="width: 30%;">RISK & END RESULTS</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>G Fund</strong></td>
+                    <td>$ {{ tsp.g_fund_balance|default:"0" }}</td>
+                    <td>{{ tsp.g_fund_allocation|default:"0" }}%</td>
+                    <td rowspan="13" style="vertical-align: top; padding: 8px; font-size: 7.5pt;">
+                        <div style="margin-bottom: 8px;">
+                            <strong>On a scale of 1-10, how would you rate your risk tolerance?</strong><br>
+                            <em>(1-very conservative & 10-very aggressive)</em><br>
+                            <strong>Why?</strong>
+                        </div>
+                        <div style="margin-bottom: 6px;">
+                            Employee: <span style="border-bottom: 1px solid #000; padding: 0 5px; display: inline-block; min-width: 120px;">{{ tsp.employee_risk_tolerance|default:"" }}</span>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            Spouse: <span style="border-bottom: 1px solid #000; padding: 0 5px; display: inline-block; min-width: 120px;">{{ tsp.spouse_risk_tolerance|default:"" }}</span>
+                        </div>
+                        <div style="margin-bottom: 6px;">
+                            <strong>Thinking about TSP, what is the BEST POSSIBLE END RESULT you could imagine in retirement?</strong><br>
+                            <em style="font-size: 6.5pt;">(Such as: never run out, leave to kids, have enough to do all I dreamed of doing, don't pay too many taxes)</em>
+                        </div>
+                        <div style="border-bottom: 1px solid #000; min-height: 30px; margin-bottom: 8px; padding: 2px;">{{ tsp.best_outcome|default:"" }}</div>
+                        <div style="margin-bottom: 6px;">
+                            <strong>Thinking about TSP, what is the WORST POSSIBLE END RESULT you could imagine in retirement?</strong><br>
+                            <em style="font-size: 6.5pt;">(Such as: run out too soon, nosedive in the market, my kids have to support me, I don't get to live the retirement I planned)</em>
+                        </div>
+                        <div style="border-bottom: 1px solid #000; min-height: 30px; padding: 2px;">{{ tsp.worst_outcome|default:"" }}</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>F Fund</strong></td>
+                    <td>$ {{ tsp.f_fund_balance|default:"0" }}</td>
+                    <td>{{ tsp.f_fund_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>C Fund</strong></td>
+                    <td>$ {{ tsp.c_fund_balance|default:"0" }}</td>
+                    <td>{{ tsp.c_fund_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>S Fund</strong></td>
+                    <td>$ {{ tsp.s_fund_balance|default:"0" }}</td>
+                    <td>{{ tsp.s_fund_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>I Fund</strong></td>
+                    <td>$ {{ tsp.i_fund_balance|default:"0" }}</td>
+                    <td>{{ tsp.i_fund_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L Income</strong></td>
+                    <td>$ {{ tsp.l_income_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_income_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2025</strong></td>
+                    <td>$ {{ tsp.l_2025_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2025_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2030</strong></td>
+                    <td>$ {{ tsp.l_2030_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2030_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2035</strong></td>
+                    <td>$ {{ tsp.l_2035_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2035_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2040</strong></td>
+                    <td>$ {{ tsp.l_2040_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2040_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2045</strong></td>
+                    <td>$ {{ tsp.l_2045_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2045_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2050</strong></td>
+                    <td>$ {{ tsp.l_2050_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2050_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2055</strong></td>
+                    <td>$ {{ tsp.l_2055_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2055_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2060</strong></td>
+                    <td>$ {{ tsp.l_2060_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2060_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>L 2065/70</strong></td>
+                    <td>$ {{ tsp.l_2065_balance|default:"0" }}</td>
+                    <td>{{ tsp.l_2065_allocation|default:"0" }}%</td>
+                </tr>
+                <tr>
+                    <td><strong>TOTAL</strong></td>
+                    <td><strong>$ {{ tsp.total_balance|default:"0" }}</strong></td>
+                    <td><strong>100%</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="margin-top: 8px;">
+        <strong style="font-size: 8.5pt;">COMMENTS / NOTES</strong>
+        <div class="notes-box" style="min-height: 40px;">{{ tsp.comments|default:"" }}</div>
+    </div>
+    {% endwith %}
+
+    <!-- PAGE 6 - ADDITIONAL NOTES -->
+    <div class="page-break"></div>
+    
+    <div class="page-header">
+        <div class="header-top">
+            <div>
+                Copyright © 2025 ProFeds LLC.<br>
+                Reproduction and use reserved for ProFeds members.
+            </div>
+            <div style="text-align: right;">
+                Federal Fact Finder (revised 01-2025)<br>
+                Page 6 of 6
+            </div>
+        </div>
+        <div class="header-warning">
+            NOT FOR DISTRIBUTION TO THE PUBLIC
+        </div>
+    </div>
+
+    <div class="section-header">ADDITIONAL NOTES</div>
+    <div style="font-size: 8.5pt; margin-bottom: 8px;">
+        Please use this page to provide any additional information necessary for us to prepare an accurate report for the employee. Of course, feel free to use this area to add any notes that are helpful to you based on other information the employee may share.
+    </div>
+    <div class="notes-box" style="min-height: 400px;">{{ data.additional_information.additional_notes|default:"" }}</div>
+
+    <!-- FOOTER on last page -->
+    <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #000; font-size: 8pt; text-align: center; color: #666;">
+        <p><em>This document was automatically generated from the Federal Fact Finder form submitted on {{ date_submitted|date:"F d, Y" }} at {{ date_submitted|date:"g:i A" }}.</em></p>
+        <p><em>For questions or corrections, please contact Reports@ProFeds.com or fax to 866-779-9921.</em></p>
+        <p style="margin-top: 8px;"><strong>Copyright © 2025 ProFeds LLC. Reproduction and use reserved for ProFeds members.</strong></p>
+    </div>
+
+</body>
+</html>

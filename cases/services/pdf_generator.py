@@ -52,10 +52,17 @@ def generate_fact_finder_pdf(case):
         case.fact_finder_pdf_status = 'generating'
         case.save(update_fields=['fact_finder_pdf_status'])
         
+        # Get FederalFactFinder data (new structured model)
+        try:
+            fact_finder = case.fact_finder
+        except:
+            # Fallback to old JSON structure if FederalFactFinder doesn't exist yet
+            fact_finder = None
+        
         # Prepare context data for template
         context = {
             'case': case,
-            'data': case.fact_finder_data,
+            'data': fact_finder,  # Now using FederalFactFinder model instance
             'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
             'workshop_code': case.workshop_code,
             'member_name': f"{case.member.first_name} {case.member.last_name}" if case.member else "Unknown",
@@ -63,7 +70,7 @@ def generate_fact_finder_pdf(case):
         }
         
         # Render HTML template
-        html_string = render_to_string('cases/fact_finder_pdf_template.html', context)
+        html_string = render_to_string('cases/fact_finder_pdf_template_v2.html', context)
         
         # Configure fonts for WeasyPrint
         font_config = FontConfiguration()

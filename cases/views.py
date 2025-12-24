@@ -470,7 +470,7 @@ def case_detail(request, pk):
     
     # Get related objects
     documents = CaseDocument.objects.filter(case=case).order_by('-uploaded_at')
-    reports = CaseReport.objects.filter(case=case).order_by('-uploaded_at')
+    reports = CaseReport.objects.filter(case=case).order_by('report_number')
     notes = CaseNote.objects.filter(case=case).select_related('author').order_by('-created_at')
     
     context = {
@@ -613,13 +613,22 @@ def view_fact_finder_pdf(request, case_id):
         )
         return redirect('case_detail', pk=case_id)
     
-    # Get the PDF document
-    from cases.services.pdf_generator import get_fact_finder_pdf
+    # Get the PDF document or generate it if it doesn't exist
+    from cases.services.pdf_generator import get_fact_finder_pdf, generate_fact_finder_pdf
     pdf_document = get_fact_finder_pdf(case)
     
     if not pdf_document:
-        messages.error(request, 'PDF has not been generated yet.')
-        return redirect('case_detail', pk=case_id)
+        # Try to generate the PDF now
+        try:
+            pdf_document = generate_fact_finder_pdf(case)
+            if not pdf_document:
+                messages.error(request, 'PDF generation failed. Please contact support.')
+                return redirect('case_detail', pk=case_id)
+            messages.success(request, 'PDF generated successfully!')
+        except Exception as e:
+            logger.exception(f"Failed to generate PDF for case {case_id}")
+            messages.error(request, f'PDF generation failed: {str(e)}')
+            return redirect('case_detail', pk=case_id)
     
     if not pdf_document.file:
         messages.error(request, 'PDF file not found.')
