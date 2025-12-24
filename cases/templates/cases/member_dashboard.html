@@ -4,6 +4,15 @@
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Success Banner for Recently Submitted Cases -->
+    {% if request.GET.submitted %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <h5 class="alert-heading"><i class="bi bi-check-circle-fill"></i> Case Submitted Successfully!</h5>
+        <p class="mb-0">Your Federal Fact Finder has been submitted and appears in your cases below.</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
     <div class="row mb-4">
         <div class="col">
             <h2>Member Dashboard</h2>

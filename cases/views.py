@@ -275,18 +275,35 @@ def case_submit(request):
             )
         
         # Generate PDF from submitted form data
+        pdf_generated = False
         try:
             from cases.services.pdf_generator import generate_fact_finder_pdf
             pdf_document = generate_fact_finder_pdf(case)
-            messages.success(request, 'Federal Fact Finder PDF generated successfully!')
+            pdf_generated = True
         except Exception as pdf_error:
             logger.exception(f"PDF generation failed for case {case.id}: {str(pdf_error)}")
+        
+        # Final success message with all details
+        if success and pdf_generated:
+            messages.success(
+                request,
+                f'✓ Case submitted successfully! Case ID: {benefits_case_id}. '
+                f'Your Federal Fact Finder PDF has been generated and saved.'
+            )
+        elif success:
+            messages.success(
+                request,
+                f'✓ Case submitted successfully! Case ID: {benefits_case_id}. '
+                f'PDF will be generated shortly.'
+            )
+        elif pdf_generated:
             messages.warning(
                 request,
-                'Case submitted but PDF generation failed. Our team will regenerate it automatically.'
+                f'Case saved locally (ID: {case.external_case_id}) with PDF generated. '
+                f'Syncing to benefits system will be retried automatically.'
             )
         
-        return redirect('member_dashboard')
+        return redirect('member_dashboard' + '?submitted=true')
     
     # GET request - display form
     context = {
