@@ -162,8 +162,13 @@
                             </td>
                             <td>
                                 <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
-                                    View
+                                    <i class="bi bi-eye"></i> View
                                 </a>
+                                {% if case.fact_finder_data %}
+                                <a href="{% url 'view_fact_finder_pdf' case.pk %}" class="btn btn-sm btn-outline-success" target="_blank">
+                                    <i class="bi bi-file-pdf"></i> PDF
+                                </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
