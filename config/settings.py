@@ -188,6 +188,10 @@ LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/admin/login/'
 
+# CSRF Settings
+csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='')
+CSRF_TRUSTED_ORIGINS = csrf_origins.split(',') if csrf_origins else []
+
 # benefits-software API Integration
 BENEFITS_SOFTWARE_API_URL = config('BENEFITS_SOFTWARE_API_URL', default='https://benefits-software.example.com/api')
 BENEFITS_SOFTWARE_API_KEY = config('BENEFITS_SOFTWARE_API_KEY', default='placeholder-api-key-change-in-production')
