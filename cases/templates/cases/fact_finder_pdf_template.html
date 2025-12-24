@@ -313,13 +313,632 @@
         </div>
     </div>
 
-    <!-- Continue with remaining sections... This is a simplified template -->
-    <!-- You would add all other sections following the same pattern -->
-    
-    <div class="section-header">GENERATED PDF</div>
+    <!-- RETIREMENT TYPE -->
+    <div class="section-header">RETIREMENT TYPE</div>
     <div class="section-content">
-        <p><em>This is an automatically generated PDF from the Federal Fact Finder form submitted on {{ date_submitted|date:"F d, Y" }}.</em></p>
-        <p><em>Complete form data has been saved to the system. Additional sections will be added to this template.</em></p>
+        {% with ret_type=data.retirement_type %}
+        <div class="field-row">
+            <span class="checkbox-display {% if ret_type.type == 'Regular' or ret_type.type == 'Full Immediate' %}checked{% endif %}"></span> Regular (fully-eligible or MRA+10 scenario)
+        </div>
+        <div class="field-row">
+            <span class="checkbox-display {% if ret_type.type == 'Optional' or ret_type.type == 'Early Optional' %}checked{% endif %}"></span> Optional (early out)
+            {% if ret_type.offer_date %} - Offer date: {{ ret_type.offer_date }}{% endif %}
+        </div>
+        <div class="field-row">
+            <span class="checkbox-display {% if ret_type.type == 'Deferred' %}checked{% endif %}"></span> Deferred (too young, but vested to get later)
+        </div>
+        <div class="field-row">
+            <span class="checkbox-display {% if ret_type.type == 'Disability' %}checked{% endif %}"></span> Disability (not already fully-eligible & must qualify)
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- RETIREMENT, PAY & LEAVE -->
+    <div class="section-header">RETIREMENT, PAY & LEAVE</div>
+    <div class="section-content">
+        {% with rpl=data.retirement_pay_leave %}
+        <div class="field-row">
+            <div class="field-label">Leave SCD:</div>
+            <div class="field-value">{{ rpl.leave_scd|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Retirement SCD:</div>
+            <div class="field-value">{{ rpl.retirement_scd|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Planning to Retire:</div>
+            <div class="field-value">{{ rpl.retirement_timing|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Desired Retirement Date:</div>
+            <div class="field-value">{{ rpl.desired_retirement_date|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Age at Retirement:</div>
+            <div class="field-value">{{ rpl.retirement_age|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Maximum Spouse Pension Protection:</div>
+            <div class="field-value">{{ rpl.spouse_protection|default:"Yes" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Court Order for Benefits:</div>
+            <div class="field-value">{{ rpl.court_order|default:"No" }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- EMPLOYMENT HISTORY -->
+    <div class="section-header">EMPLOYMENT HISTORY</div>
+    <div class="section-content">
+        {% if data.employment_history %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Agency</th>
+                    <th>Position</th>
+                    <th>Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for job in data.employment_history %}
+                <tr>
+                    <td>{{ job.start_date|default:"" }}</td>
+                    <td>{{ job.end_date|default:"" }}</td>
+                    <td>{{ job.agency|default:"" }}</td>
+                    <td>{{ job.position|default:"" }}</td>
+                    <td>{{ job.employment_type|default:"" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No employment history provided.</p>
+        {% endif %}
+    </div>
+
+    <!-- PAY INFORMATION -->
+    <div class="section-header">PAY INFORMATION</div>
+    <div class="section-content">
+        {% with pay=data.pay_information %}
+        <div class="field-row">
+            <div class="field-label">Current Salary:</div>
+            <div class="field-value">${{ pay.current_salary|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">High-3 Average:</div>
+            <div class="field-value">${{ pay.high_three|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Years of Service:</div>
+            <div class="field-value">{{ pay.years_of_service|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Months of Service:</div>
+            <div class="field-value">{{ pay.months_of_service|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Sick Leave Hours:</div>
+            <div class="field-value">{{ pay.sick_leave_hours|default:"" }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- LEAVE BALANCES -->
+    <div class="section-header">LEAVE BALANCES</div>
+    <div class="section-content">
+        {% with leave=data.leave_balances %}
+        <div class="field-row">
+            <div class="field-label">Annual Leave:</div>
+            <div class="field-value">{{ leave.annual_leave|default:"0" }} hours</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Sick Leave:</div>
+            <div class="field-value">{{ leave.sick_leave|default:"0" }} hours</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Use or Lose:</div>
+            <div class="field-value">{{ leave.use_or_lose|default:"0" }} hours</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- THRIFT SAVINGS PLAN (TSP) -->
+    <div class="section-header">THRIFT SAVINGS PLAN (TSP)</div>
+    <div class="section-content">
+        {% with tsp=data.tsp %}
+        <div class="field-row">
+            <div class="field-label">TSP Balance:</div>
+            <div class="field-value">${{ tsp.balance|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Monthly Contribution:</div>
+            <div class="field-value">${{ tsp.monthly_contribution|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Employer Match:</div>
+            <div class="field-value">${{ tsp.employer_match|default:"0"|floatformat:2 }}</div>
+        </div>
+        
+        <div style="margin-top: 10px;"><strong>Fund Allocation:</strong></div>
+        <div class="field-row">
+            <div class="field-label">G Fund:</div>
+            <div class="field-value">{{ tsp.g_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">F Fund:</div>
+            <div class="field-value">{{ tsp.f_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">C Fund:</div>
+            <div class="field-value">{{ tsp.c_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">S Fund:</div>
+            <div class="field-value">{{ tsp.s_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">I Fund:</div>
+            <div class="field-value">{{ tsp.i_fund|default:"0" }}%</div>
+        </div>
+        
+        <div style="margin-top: 10px;"><strong>Loans:</strong></div>
+        <div class="field-row">
+            <div class="field-label">Outstanding Loans:</div>
+            <div class="field-value">${{ tsp.outstanding_loans|default:"0"|floatformat:2 }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- SOCIAL SECURITY -->
+    <div class="section-header">SOCIAL SECURITY</div>
+    <div class="section-content">
+        {% with ss=data.social_security %}
+        <div class="field-row">
+            <div class="field-label">Estimated Monthly Benefit:</div>
+            <div class="field-value">${{ ss.estimated_benefit|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Start Date:</div>
+            <div class="field-value">{{ ss.start_date|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Quarters of Coverage:</div>
+            <div class="field-value">{{ ss.quarters_covered|default:"" }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- OTHER PENSION/RETIREMENT ACCOUNTS -->
+    <div class="section-header">OTHER RETIREMENT ACCOUNTS</div>
+    <div class="section-content">
+        {% with other=data.other_retirement_accounts %}
+        {% if other.accounts %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Account Type</th>
+                    <th>Institution</th>
+                    <th>Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for account in other.accounts %}
+                <tr>
+                    <td>{{ account.type|default:"" }}</td>
+                    <td>{{ account.institution|default:"" }}</td>
+                    <td>${{ account.balance|default:"0"|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">No other retirement accounts listed.</p>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- OTHER PENSION -->
+    <div class="section-header">OTHER PENSION INCOME</div>
+    <div class="section-content">
+        {% with pension=data.other_pension %}
+        <div class="field-row">
+            <div class="field-label">Monthly Amount:</div>
+            <div class="field-value">${{ pension.monthly_amount|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Source:</div>
+            <div class="field-value">{{ pension.source|default:"" }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- INCOME & EXPENSES -->
+    <div class="section-header">INCOME & EXPENSES</div>
+    <div class="section-content">
+        {% with inc_exp=data.income_expenses %}
+        <div style="margin-bottom: 10px;"><strong>Monthly Income:</strong></div>
+        <div class="field-row">
+            <div class="field-label">Total Monthly Income:</div>
+            <div class="field-value">${{ inc_exp.total_income|default:"0"|floatformat:2 }}</div>
+        </div>
+        
+        <div style="margin-top: 10px; margin-bottom: 10px;"><strong>Monthly Expenses:</strong></div>
+        <div class="field-row">
+            <div class="field-label">Housing:</div>
+            <div class="field-value">${{ inc_exp.housing|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Utilities:</div>
+            <div class="field-value">${{ inc_exp.utilities|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Food:</div>
+            <div class="field-value">${{ inc_exp.food|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Transportation:</div>
+            <div class="field-value">${{ inc_exp.transportation|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Healthcare:</div>
+            <div class="field-value">${{ inc_exp.healthcare|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Other Expenses:</div>
+            <div class="field-value">${{ inc_exp.other|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label"><strong>Total Expenses:</strong></div>
+            <div class="field-value"><strong>${{ inc_exp.total_expenses|default:"0"|floatformat:2 }}</strong></div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- INSURANCE & BENEFICIARIES -->
+    <div class="section-header">INSURANCE & BENEFICIARIES</div>
+    <div class="section-content">
+        {% with insurance=data.insurance_beneficiaries %}
+        <div class="field-row">
+            <div class="field-label">FEHB Plan:</div>
+            <div class="field-value">{{ insurance.fehb_plan|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">FEGLI Coverage:</div>
+            <div class="field-value">{{ insurance.fegli_coverage|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Primary Beneficiary:</div>
+            <div class="field-value">{{ insurance.primary_beneficiary|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Contingent Beneficiary:</div>
+            <div class="field-value">{{ insurance.contingent_beneficiary|default:"" }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- MILITARY SERVICE -->
+    <div class="section-header page-break">MILITARY SERVICE</div>
+    
+    <!-- Military Active Duty -->
+    <div class="section-content">
+        <div style="margin-bottom: 10px;"><strong>Military - Active Duty</strong></div>
+        {% with military_active=data.military_active_duty %}
+        <div class="field-row">
+            <div class="field-label">Active Duty Service:</div>
+            <div class="field-value">
+                <span class="checkbox-display {% if military_active.has_service %}checked{% endif %}"></span> Yes
+                <span class="checkbox-display {% if not military_active.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+        {% if military_active.has_service %}
+        <div class="field-row">
+            <div class="field-label">Dates of Service:</div>
+            <div class="field-value">{{ military_active.start_date|default:"" }} to {{ military_active.end_date|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Deposit Made:</div>
+            <div class="field-value">{{ military_active.deposit_made|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Amount Owed:</div>
+            <div class="field-value">${{ military_active.amount_owed|default:"0" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Retired from Active Duty:</div>
+            <div class="field-value">{{ military_active.retired|default:"No" }}</div>
+        </div>
+        {% if military_active.pension_amount %}
+        <div class="field-row">
+            <div class="field-label">Military Pension:</div>
+            <div class="field-value">${{ military_active.pension_amount|default:"0" }}/month</div>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Military Reserves -->
+    <div class="section-content">
+        <div style="margin-bottom: 10px; margin-top: 15px;"><strong>Military - Reserves</strong></div>
+        {% with military_reserves=data.military_reserves %}
+        <div class="field-row">
+            <div class="field-label">Reserve Service:</div>
+            <div class="field-value">
+                <span class="checkbox-display {% if military_reserves.has_service %}checked{% endif %}"></span> Yes
+                <span class="checkbox-display {% if not military_reserves.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+        {% if military_reserves.has_service %}
+        <div class="field-row">
+            <div class="field-label">Dates of Service:</div>
+            <div class="field-value">{{ military_reserves.start_date|default:"" }} to {{ military_reserves.end_date|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Creditable Time:</div>
+            <div class="field-value">{{ military_reserves.creditable_time|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Deposit Made:</div>
+            <div class="field-value">{{ military_reserves.deposit_made|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Retired from Reserves:</div>
+            <div class="field-value">{{ military_reserves.retired|default:"No" }}</div>
+        </div>
+        {% if military_reserves.pension_amount %}
+        <div class="field-row">
+            <div class="field-label">Reserve Pension:</div>
+            <div class="field-value">${{ military_reserves.pension_amount|default:"0" }}/month (starts at age {{ military_reserves.pension_start_age|default:"60" }})</div>
+        </div>
+        {% endif %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Military Academy -->
+    <div class="section-content">
+        <div style="margin-bottom: 10px; margin-top: 15px;"><strong>Military - Academy</strong></div>
+        {% with military_academy=data.military_academy %}
+        <div class="field-row">
+            <div class="field-label">Academy Service:</div>
+            <div class="field-value">
+                <span class="checkbox-display {% if military_academy.has_service %}checked{% endif %}"></span> Yes
+                <span class="checkbox-display {% if not military_academy.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+        {% if military_academy.has_service %}
+        <div class="field-row">
+            <div class="field-label">Dates of Service:</div>
+            <div class="field-value">{{ military_academy.start_date|default:"" }} to {{ military_academy.end_date|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Deposit Made:</div>
+            <div class="field-value">{{ military_academy.deposit_made|default:"Unsure" }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- SPECIAL TYPES OF FEDERAL SERVICE -->
+    <div class="section-header page-break">SPECIAL TYPES OF FEDERAL SERVICE</div>
+    
+    <!-- Non-Deduction Service -->
+    <div class="section-content">
+        <div style="margin-bottom: 10px;"><strong>Non-Deduction Service</strong></div>
+        {% with non_deduction=data.non_deduction_service %}
+        <div class="field-row">
+            <div class="field-label">Temporary/Intern Service:</div>
+            <div class="field-value">
+                <span class="checkbox-display {% if non_deduction.has_service %}checked{% endif %}"></span> Yes
+                <span class="checkbox-display {% if not non_deduction.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+        {% if non_deduction.has_service %}
+        <div class="field-row">
+            <div class="field-label">Dates of Service:</div>
+            <div class="field-value">{{ non_deduction.start_date|default:"" }} to {{ non_deduction.end_date|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Deposit Made:</div>
+            <div class="field-value">{{ non_deduction.deposit_made|default:"Unsure" }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Break in Service -->
+    <div class="section-content">
+        <div style="margin-bottom: 10px; margin-top: 15px;"><strong>Break-in-Service</strong></div>
+        {% with break_service=data.break_in_service %}
+        <div class="field-row">
+            <div class="field-label">Break in Service:</div>
+            <div class="field-value">
+                <span class="checkbox-display {% if break_service.has_break %}checked{% endif %}"></span> Yes
+                <span class="checkbox-display {% if not break_service.has_break %}checked{% endif %}"></span> No
+            </div>
+        </div>
+        {% if break_service.has_break %}
+        <div class="field-row">
+            <div class="field-label">Original Service:</div>
+            <div class="field-value">{{ break_service.original_start|default:"" }} to {{ break_service.original_end|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Break Period:</div>
+            <div class="field-value">{{ break_service.break_start|default:"" }} to {{ break_service.break_end|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Took Refund:</div>
+            <div class="field-value">{{ break_service.took_refund|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Redeposited:</div>
+            <div class="field-value">{{ break_service.redeposited|default:"Unsure" }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Part-Time Service -->
+    <div class="section-content">
+        <div style="margin-bottom: 10px; margin-top: 15px;"><strong>Part-Time Service</strong></div>
+        {% with part_time=data.part_time_service %}
+        <div class="field-row">
+            <div class="field-label">Part-Time Service:</div>
+            <div class="field-value">
+                <span class="checkbox-display {% if part_time.has_service %}checked{% endif %}"></span> Yes
+                <span class="checkbox-display {% if not part_time.has_service %}checked{% endif %}"></span> No
+            </div>
+        </div>
+        {% if part_time.has_service %}
+        <div class="field-row">
+            <div class="field-label">Dates of Service:</div>
+            <div class="field-value">{{ part_time.start_date|default:"" }} to {{ part_time.end_date|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Hours per Week:</div>
+            <div class="field-value">{{ part_time.hours_per_week|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Contributed to Retirement:</div>
+            <div class="field-value">{{ part_time.contributed|default:"Unsure" }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- FEGLI -->
+    <div class="section-header page-break">FEDERAL EMPLOYEES GROUP LIFE INSURANCE (FEGLI)</div>
+    <div class="section-content">
+        {% with fegli=data.fegli %}
+        <div class="field-row">
+            <div class="field-label">Current Premium (per pay period):</div>
+            <div class="field-value">${{ fegli.total_premium|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Coverage for 5+ years:</div>
+            <div class="field-value">{{ fegli.five_year_coverage|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Keep in Retirement:</div>
+            <div class="field-value">{{ fegli.keep_in_retirement|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Sole Source:</div>
+            <div class="field-value">{{ fegli.sole_source|default:"No" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Purpose:</div>
+            <div class="field-value">{{ fegli.purpose|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Dependent Children Ages:</div>
+            <div class="field-value">{{ fegli.children_ages|default:"None" }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- FEHB -->
+    <div class="section-header">FEDERAL EMPLOYEES HEALTH BENEFITS (FEHB)</div>
+    <div class="section-content">
+        {% with fehb=data.fehb %}
+        <div class="field-row">
+            <div class="field-label">Health Premium (per pay period):</div>
+            <div class="field-value">${{ fehb.health_premium|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Dental Premium (per pay period):</div>
+            <div class="field-value">${{ fehb.dental_premium|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Vision Premium (per pay period):</div>
+            <div class="field-value">${{ fehb.vision_premium|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Coverage Type:</div>
+            <div class="field-value">{{ fehb.coverage_type|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Coverage for 5+ years:</div>
+            <div class="field-value">{{ fehb.five_year_coverage|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Keep in Retirement:</div>
+            <div class="field-value">{{ fehb.keep_in_retirement|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Spouse Reliant:</div>
+            <div class="field-value">{{ fehb.spouse_reliant|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Other Coverage:</div>
+            <div class="field-value">{{ fehb.other_coverage|default:"None" }}</div>
+        </div>
+        {% endwith %}
+    </div>
+
+    <!-- FLTCIP -->
+    <div class="section-header">FEDERAL LONG TERM CARE INSURANCE PROGRAM (FLTCIP)</div>
+    <div class="section-content">
+        {% with fltcip=data.fltcip %}
+        <div class="field-row">
+            <div class="field-label">Employee Premium (per pay period):</div>
+            <div class="field-value">${{ fltcip.employee_premium|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Spouse Premium (per pay period):</div>
+            <div class="field-value">${{ fltcip.spouse_premium|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Daily Benefit:</div>
+            <div class="field-value">${{ fltcip.daily_benefit|default:"0" }}/day</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Benefit Period:</div>
+            <div class="field-value">{{ fltcip.benefit_period|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Inflation Protection:</div>
+            <div class="field-value">{{ fltcip.inflation_protection|default:"" }}</div>
+        </div>
+        {% endwith %}
+        <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; font-size: 10px;">
+            <strong>NOTE:</strong> OPM has suspended new FLTCIP applications until at least December 2026
+        </div>
+    </div>
+
+    <!-- ADDITIONAL INFORMATION -->
+    <div class="section-header page-break">ADDITIONAL INFORMATION</div>
+    <div class="section-content">
+        {% with additional=data.additional_information %}
+        <div class="field-row">
+            <div class="field-label">Special Circumstances:</div>
+            <div class="field-value">{{ additional.special_circumstances|default:"None" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Questions/Concerns:</div>
+            <div class="field-value">{{ additional.questions|default:"None" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Goals:</div>
+            <div class="field-value">{{ additional.goals|default:"" }}</div>
+        </div>
+        {% if additional.notes %}
+        <div style="margin-top: 10px;">
+            <strong>Additional Notes:</strong>
+            <div class="notes-box">{{ additional.notes }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #dee2e6; font-size: 9pt; text-align: center; color: #666;">
+        <p><em>This document was automatically generated from the Federal Fact Finder form submitted on {{ date_submitted|date:"F d, Y" }} at {{ date_submitted|date:"g:i A" }}.</em></p>
+        <p><em>For questions or corrections, please contact Reports@ProFeds.com or fax to 866-779-9921.</em></p>
     </div>
 
 </body>

@@ -144,10 +144,8 @@ def generate_fact_finder_pdf(case):
         
         # Generate PDF in memory
         pdf_file = io.BytesIO()
-        HTML(string=html_string).write_pdf(
-            pdf_file,
-            font_config=font_config
-        )
+        html = HTML(string=html_string)
+        html.write_pdf(pdf_file, font_config=font_config)
         pdf_file.seek(0)
         
         # Generate filename

@@ -81,6 +81,28 @@
                 </div>
             </div>
 
+            <!-- Federal Fact Finder PDF -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Federal Fact Finder PDF</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-file-pdf fs-3 text-danger"></i>
+                            <strong class="ms-2">Federal Fact Finder Form</strong>
+                            <br>
+                            <small class="text-muted ms-5">Auto-generated PDF from submitted form data</small>
+                        </div>
+                        <div>
+                            <a href="{% url 'view_fact_finder_pdf' case.pk %}" class="btn btn-success" target="_blank">
+                                <i class="bi bi-file-pdf"></i> View PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Documents -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
