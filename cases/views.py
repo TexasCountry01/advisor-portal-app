@@ -570,3 +570,40 @@ def add_note(request, case_id):
                     messages.error(request, f'{field}: {error}')
     
     return redirect('case_detail', pk=case_id)
+
+
+@login_required
+def view_fact_finder_pdf(request, case_id):
+    """View the generated Federal Fact Finder PDF for a case"""
+    case = get_object_or_404(Case, pk=case_id)
+    
+    # Permission check - members can only view their own, technicians/admins can view all
+    if request.user.role == 'member' and case.member != request.user:
+        return HttpResponseForbidden('You do not have permission to view this PDF.')
+    elif request.user.role == 'technician' and case.assigned_to != request.user:
+        return HttpResponseForbidden('You do not have permission to view this PDF.')
+    # admins and managers can view all
+    
+    # Get the PDF document
+    from cases.services.pdf_generator import get_fact_finder_pdf
+    pdf_document = get_fact_finder_pdf(case)
+    
+    if not pdf_document:
+        messages.error(request, 'PDF has not been generated yet.')
+        return redirect('case_detail', pk=case_id)
+    
+    if not pdf_document.file:
+        messages.error(request, 'PDF file not found.')
+        return redirect('case_detail', pk=case_id)
+    
+    # Return the PDF file
+    try:
+        return FileResponse(
+            pdf_document.file.open('rb'),
+            content_type='application/pdf',
+            filename=pdf_document.original_filename
+        )
+    except Exception as e:
+        logger.exception(f"Error serving PDF for case {case_id}: {str(e)}")
+        messages.error(request, 'Error loading PDF file.')
+        return redirect('case_detail', pk=case_id)

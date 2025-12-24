@@ -1,6 +1,10 @@
 """
 Services package for cases app.
 """
-from .pdf_generator import generate_fact_finder_pdf
+# Import API integration (no WeasyPrint dependencies)
+from .api_integration import benefits_api, submit_case_to_benefits_software
 
-__all__ = ['generate_fact_finder_pdf']
+# PDF generator imported dynamically when needed (requires WeasyPrint system libs)
+# from .pdf_generator import generate_fact_finder_pdf
+
+__all__ = ['benefits_api', 'submit_case_to_benefits_software']

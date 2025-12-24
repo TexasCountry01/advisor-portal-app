@@ -7,7 +7,7 @@ import logging
 from typing import Dict, Optional, Tuple
 from django.conf import settings
 from django.utils import timezone
-from .models import Case, APICallLog
+from cases.models import Case, APICallLog
 
 logger = logging.getLogger(__name__)
 

@@ -238,7 +238,7 @@
                     </div>
                     <div class="col-md-5">
                         <label class="form-label" style="font-size: 12px;">Date of birth:</label>
-                        <input type="date" name="employee_dob" id="employee_dob" class="form-control" required>
+                        <input type="date" name="employee_dob" id="employee_dob" class="form-control" min="1900-01-01" max="{% now 'Y-m-d' %}" required>
                     </div>
                 </div>
                 
@@ -257,7 +257,7 @@
                     </div>
                     <div class="col-md-5">
                         <label class="form-label" style="font-size: 12px;">Date of birth:</label>
-                        <input type="date" name="spouse_dob" class="form-control">
+                        <input type="date" name="spouse_dob" class="form-control" min="1900-01-01" max="{% now 'Y-m-d' %}">
                     </div>
                 </div>
                 
@@ -558,7 +558,7 @@
                                     </div>
                                 </div>
                                 <div class="col-9">
-                                    <input type="date" name="desired_retirement_date" id="desired_retirement_date" class="form-control form-control-sm">
+                                    <input type="date" name="desired_retirement_date" id="desired_retirement_date" class="form-control form-control-sm" min="{% now 'Y-m-d' %}" max="2099-12-31">
                                 </div>
                             </div>
                         </div>
@@ -2599,7 +2599,33 @@
                 if (dobInput.value && retirementDateInput.value) {
                     const dob = new Date(dobInput.value);
                     const retirementDate = new Date(retirementDateInput.value);
+                    
+                    // Validate that dates are reasonable (DOB in past, retirement in future)
+                    const today = new Date();
+                    if (dob > today) {
+                        alert('Date of birth cannot be in the future');
+                        dobInput.value = '';
+                        return;
+                    }
+                    
+                    if (retirementDate.getFullYear() < 1900 || retirementDate.getFullYear() > 2099) {
+                        alert('Please enter a valid retirement year (1900-2099)');
+                        retirementDateInput.value = '';
+                        return;
+                    }
+                    
+                    if (retirementDate < dob) {
+                        alert('Retirement date cannot be before date of birth');
+                        return;
+                    }
+                    
                     const age = Math.floor((retirementDate - dob) / (365.25 * 24 * 60 * 60 * 1000));
+                    
+                    // Validate reasonable age range
+                    if (age < 0 || age > 120) {
+                        alert('Calculated age seems incorrect. Please verify dates.');
+                        return;
+                    }
                     
                     const ageInput = document.querySelector('input[name="retirement_age"]');
                     if (ageInput) {
@@ -2613,8 +2639,26 @@
                 retirementDateInput.addEventListener('change', calculateRetirementAge);
             }
             
-            // Restore draft on page load
-            restoreDraft();
+            // Restore draft on page load (but not if we just submitted)
+            const justSubmitted = sessionStorage.getItem('form_just_submitted');
+            if (!justSubmitted) {
+                restoreDraft();
+            } else {
+                // Clear the flag
+                sessionStorage.removeItem('form_just_submitted');
+            }
+            
+            // Clear draft on successful form submission
+            const form = document.getElementById('factFinderForm');
+            if (form) {
+                form.addEventListener('submit', function() {
+                    // Mark that we're submitting
+                    sessionStorage.setItem('form_just_submitted', 'true');
+                    // Clear the draft since we're submitting
+                    localStorage.removeItem('federal_fact_finder_draft');
+                    localStorage.removeItem('federal_fact_finder_draft_timestamp');
+                });
+            }
         });
         
         // Clear form function
