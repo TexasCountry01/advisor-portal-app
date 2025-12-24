@@ -303,7 +303,8 @@ def case_submit(request):
                 f'Syncing to benefits system will be retried automatically.'
             )
         
-        return redirect('member_dashboard' + '?submitted=true')
+        from django.urls import reverse
+        return redirect(reverse('member_dashboard') + '?submitted=true')
     
     # GET request - display form
     context = {
