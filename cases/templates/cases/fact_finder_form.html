@@ -2694,12 +2694,15 @@
         function restoreDraft() {
             const draftData = localStorage.getItem('federal_fact_finder_draft');
             const timestamp = localStorage.getItem('federal_fact_finder_draft_timestamp');
+            const alreadyAsked = sessionStorage.getItem('draft_restore_asked');
             
-            if (draftData && timestamp) {
+            // Only ask once per session
+            if (draftData && timestamp && !alreadyAsked) {
                 const daysOld = (new Date().getTime() - parseInt(timestamp)) / (1000 * 60 * 60 * 24);
                 
                 // Only restore if draft is less than 30 days old
                 if (daysOld < 30) {
+                    sessionStorage.setItem('draft_restore_asked', 'true');
                     const shouldRestore = confirm('We found a saved draft from ' + new Date(parseInt(timestamp)).toLocaleDateString() + '. Would you like to restore it?');
                     
                     if (shouldRestore) {
@@ -2720,6 +2723,10 @@
                         }
                         
                         alert('Draft restored successfully!');
+                    } else {
+                        // User declined to restore - clear the draft
+                        localStorage.removeItem('federal_fact_finder_draft');
+                        localStorage.removeItem('federal_fact_finder_draft_timestamp');
                     }
                 } else {
                     // Remove expired draft
