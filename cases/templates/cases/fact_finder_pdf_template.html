@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Federal Fact Finder - {{ employee_name }}</title>
+    <style>
+        /* PDF-specific page settings */
+        @page {
+            size: letter;
+            margin: 0.5in;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #000;
+        }
+        
+        /* Header styles */
+        .pdf-header {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .pdf-header h1 {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #000;
+        }
+        
+        .pdf-header .subtitle {
+            font-size: 10pt;
+            margin-bottom: 5px;
+        }
+        
+        .pdf-header .warning {
+            color: #d00;
+            font-weight: bold;
+            font-size: 9pt;
+            margin-top: 10px;
+        }
+        
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border: 1px solid #dee2e6;
+        }
+        
+        .header-info .field {
+            font-size: 10pt;
+        }
+        
+        .header-info .field strong {
+            font-weight: bold;
+        }
+        
+        /* Section styles */
+        .section-header {
+            background-color: #d9d9d9;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 13px;
+            text-transform: uppercase;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            page-break-after: avoid;
+        }
+        
+        .section-content {
+            padding: 10px 0;
+        }
+        
+        /* Field display styles */
+        .field-row {
+            margin-bottom: 8px;
+            display: flex;
+            page-break-inside: avoid;
+        }
+        
+        .field-label {
+            font-weight: 600;
+            font-size: 12px;
+            min-width: 200px;
+            color: #333;
+        }
+        
+        .field-value {
+            font-size: 12px;
+            color: #000;
+            flex: 1;
+        }
+        
+        .field-value.empty {
+            color: #999;
+            font-style: italic;
+        }
+        
+        /* Checkbox display */
+        .checkbox-display {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            margin-right: 5px;
+            text-align: center;
+            line-height: 14px;
+            font-size: 10px;
+            vertical-align: middle;
+        }
+        
+        .checkbox-display.checked::after {
+            content: '✓';
+            font-weight: bold;
+        }
+        
+        /* Table styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            page-break-inside: avoid;
+            font-size: 10px;
+        }
+        
+        table th {
+            background: #d9d9d9;
+            padding: 6px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #000;
+        }
+        
+        table td {
+            padding: 6px;
+            border: 1px solid #000;
+        }
+        
+        /* Grid layout for side-by-side sections */
+        .grid-2col {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .grid-2col .col {
+            flex: 1;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+        }
+        
+        /* Page breaks */
+        .page-break {
+            page-break-after: always;
+        }
+        
+        .avoid-break {
+            page-break-inside: avoid;
+        }
+        
+        /* Notes section */
+        .notes-box {
+            border: 1px solid #000;
+            padding: 10px;
+            min-height: 100px;
+            background: #fafafa;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- PDF HEADER -->
+    <div class="pdf-header">
+        <h1>ProFeds Federal Fact Finder – 2025 v1</h1>
+        <p class="subtitle">Along with the FFF, include pay stub, TSP & SS statements</p>
+        <p class="subtitle">Email to <strong>Reports@ProFeds.com</strong> / Fax to <strong>866-779-9921</strong></p>
+        <p class="warning">MEMBER USE ONLY - NOT FOR DISTRIBUTION TO PUBLIC</p>
+        
+        <div class="header-info">
+            <div class="field"><strong>Member:</strong> {{ member_name }}</div>
+            <div class="field"><strong>Date:</strong> {{ date_submitted|date:"m/d/Y" }}</div>
+            <div class="field"><strong>Workshop Code:</strong> {{ workshop_code }}</div>
+        </div>
+    </div>
+
+    <!-- BASIC INFORMATION -->
+    <div class="section-header">BASIC INFORMATION</div>
+    <div class="section-content">
+        <div class="field-row">
+            <div class="field-label">Employee's name:</div>
+            <div class="field-value">{{ data.basic_information.employee_name|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Date of birth:</div>
+            <div class="field-value">{{ data.basic_information.employee_dob|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Spouse's name:</div>
+            <div class="field-value">{{ data.basic_information.spouse_name|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Fed Emp?</div>
+            <div class="field-value">
+                <span class="checkbox-display {% if data.basic_information.spouse_fed_emp %}checked{% endif %}"></span>
+                {{ data.basic_information.spouse_fed_emp|yesno:"Yes,No," }}
+            </div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Spouse DOB:</div>
+            <div class="field-value">{{ data.basic_information.spouse_dob|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Address:</div>
+            <div class="field-value">{{ data.basic_information.address|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">City, St, Zip:</div>
+            <div class="field-value">{{ data.basic_information.city|default:"" }}, {{ data.basic_information.state|default:"" }} {{ data.basic_information.zip|default:"" }}</div>
+        </div>
+    </div>
+
+    <!-- RETIREMENT SYSTEM & EMPLOYEE TYPE (SIDE BY SIDE) -->
+    <div class="grid-2col">
+        <div class="col">
+            <div class="section-header" style="margin-top: 0;">RETIREMENT SYSTEM</div>
+            <div class="section-content">
+                {% with system=data.retirement_system.system %}
+                <div class="field-row">
+                    <span class="checkbox-display {% if system == 'CSRS' %}checked{% endif %}"></span> CSRS
+                </div>
+                {% if system == 'CSRS_Offset' %}
+                <div class="field-row">
+                    <div class="field-label">Offset Date:</div>
+                    <div class="field-value">{{ data.retirement_system.csrs_offset_date }}</div>
+                </div>
+                {% endif %}
+                <div class="field-row">
+                    <span class="checkbox-display {% if system == 'CSRS_Offset' %}checked{% endif %}"></span> CSRS Offset
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if system == 'FERS' %}checked{% endif %}"></span> FERS
+                </div>
+                {% if system == 'FERS_Transfer' %}
+                <div class="field-row">
+                    <div class="field-label">Transfer Date:</div>
+                    <div class="field-value">{{ data.retirement_system.fers_transfer_date }}</div>
+                </div>
+                {% endif %}
+                <div class="field-row">
+                    <span class="checkbox-display {% if system == 'FERS_Transfer' %}checked{% endif %}"></span> FERS Transfer
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+        
+        <div class="col">
+            <div class="section-header" style="margin-top: 0;">EMPLOYEE TYPE</div>
+            <div class="section-content">
+                {% with emp_type=data.employee_type.type %}
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'Regular' %}checked{% endif %}"></span> Regular
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'Postal Worker' %}checked{% endif %}"></span> Postal Worker
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'Military Reserve Technician' %}checked{% endif %}"></span> Military Reserve Technician
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'Law Enforcement' %}checked{% endif %}"></span> Law Enforcement
+                    {% if emp_type == 'Law Enforcement' and data.employee_type.leo_start_date %}
+                        <span style="margin-left: 10px; font-size: 11px;">Start: {{ data.employee_type.leo_start_date }}</span>
+                    {% endif %}
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'CBPO' %}checked{% endif %}"></span> CBPO
+                    {% if emp_type == 'CBPO' and data.employee_type.cbpo_coverage %}
+                        <span style="margin-left: 10px; font-size: 11px;">{{ data.employee_type.cbpo_coverage }}</span>
+                    {% endif %}
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'Firefighter' %}checked{% endif %}"></span> Firefighter
+                    {% if emp_type == 'Firefighter' and data.employee_type.ff_start_date %}
+                        <span style="margin-left: 10px; font-size: 11px;">Start: {{ data.employee_type.ff_start_date }}</span>
+                    {% endif %}
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'Air Traffic Controller' %}checked{% endif %}"></span> Air Traffic Controller
+                    {% if emp_type == 'Air Traffic Controller' and data.employee_type.atc_start_date %}
+                        <span style="margin-left: 10px; font-size: 11px;">Start: {{ data.employee_type.atc_start_date }}</span>
+                    {% endif %}
+                </div>
+                <div class="field-row">
+                    <span class="checkbox-display {% if emp_type == 'Foreign Service' %}checked{% endif %}"></span> Foreign Service
+                    {% if emp_type == 'Foreign Service' and data.employee_type.fs_start_date %}
+                        <span style="margin-left: 10px; font-size: 11px;">Start: {{ data.employee_type.fs_start_date }}</span>
+                    {% endif %}
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Continue with remaining sections... This is a simplified template -->
+    <!-- You would add all other sections following the same pattern -->
+    
+    <div class="section-header">GENERATED PDF</div>
+    <div class="section-content">
+        <p><em>This is an automatically generated PDF from the Federal Fact Finder form submitted on {{ date_submitted|date:"F d, Y" }}.</em></p>
+        <p><em>Complete form data has been saved to the system. Additional sections will be added to this template.</em></p>
+    </div>
+
+</body>
+</html>

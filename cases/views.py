@@ -3,11 +3,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, HttpResponseForbidden
 from .models import Case, CaseDocument, CaseReport, CaseNote
 from .forms import CaseDocumentForm, CaseReportForm, CaseNoteForm
 from .services import submit_case_to_benefits_software
 from accounts.models import User
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # DEV ONLY - Form preview without authentication
@@ -269,6 +272,18 @@ def case_submit(request):
                 request,
                 f'Case saved locally (ID: {case.external_case_id}) but could not sync to benefits system. '
                 f'Our team will retry automatically. Error: {error}'
+            )
+        
+        # Generate PDF from submitted form data
+        try:
+            from cases.services.pdf_generator import generate_fact_finder_pdf
+            pdf_document = generate_fact_finder_pdf(case)
+            messages.success(request, 'Federal Fact Finder PDF generated successfully!')
+        except Exception as pdf_error:
+            logger.exception(f"PDF generation failed for case {case.id}: {str(pdf_error)}")
+            messages.warning(
+                request,
+                'Case submitted but PDF generation failed. Our team will regenerate it automatically.'
             )
         
         return redirect('member_dashboard')
