@@ -211,10 +211,21 @@
     </div>
 </div>
 
-<script>
+<script nonce="{{ request.csp_nonce }}">
+// v2 - Cache bust
 function confirmDelete(deleteUrl, caseId) {
-    document.getElementById('deleteForm').action = deleteUrl;
-    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    var deleteForm = document.getElementById('deleteForm');
+    if (!deleteForm) {
+        console.error('deleteForm not found');
+        return;
+    }
+    deleteForm.action = deleteUrl;
+    var modalElement = document.getElementById('deleteModal');
+    if (!modalElement) {
+        console.error('deleteModal not found');
+        return;
+    }
+    var deleteModal = new bootstrap.Modal(modalElement);
     deleteModal.show();
 }
 </script>
