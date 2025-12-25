@@ -481,8 +481,11 @@ def case_submit(request):
                 tsp_worst_outcome=request.POST.get('tsp_worst_outcome', ''),
                 tsp_comments=request.POST.get('tsp_comments', ''),
                 
-                # Additional notes
-                additional_notes=request.POST.get('additional_notes_final', ''),
+                # Additional notes - combine both text areas
+                additional_notes='\n\n'.join(filter(None, [
+                    request.POST.get('additional_notes_final', ''),
+                    request.POST.get('additional_notes', '')
+                ])),
             )
             logger.info(f"Created FederalFactFinder record for case {case.id}")
         except Exception as e:

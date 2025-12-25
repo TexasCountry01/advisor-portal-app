@@ -3203,6 +3203,38 @@ function calculateRetirementAge() {
 if (dobInput) dobInput.addEventListener('change', calculateRetirementAge);
 if (retireDateInput) retireDateInput.addEventListener('change', calculateRetirementAge);
 
+// "No to ALL military service" checkbox logic
+const noMilitaryCheckbox = document.getElementById('no_military_service');
+const activeDutyYes = document.getElementById('active_duty_yes');
+const activeDutyNo = document.getElementById('active_duty_no');
+const reserveYes = document.getElementById('reserve_yes');
+const reserveNo = document.getElementById('reserve_no');
+const academyYes = document.getElementById('academy_yes');
+const academyNo = document.getElementById('academy_no');
+
+// When "No to ALL" is checked, select "No" for all three military sections
+if (noMilitaryCheckbox) {
+    noMilitaryCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            if (activeDutyNo) activeDutyNo.checked = true;
+            if (reserveNo) reserveNo.checked = true;
+            if (academyNo) academyNo.checked = true;
+        }
+    });
+}
+
+// When any military service "Yes" is checked, uncheck "No to ALL"
+const militaryYesButtons = [activeDutyYes, reserveYes, academyYes];
+militaryYesButtons.forEach(button => {
+    if (button) {
+        button.addEventListener('change', function() {
+            if (this.checked && noMilitaryCheckbox) {
+                noMilitaryCheckbox.checked = false;
+            }
+        });
+    }
+});
+
 // TSP Allocation Validation
 const allocationInputs = [
     'tsp_g_allocation', 'tsp_f_allocation', 'tsp_c_allocation', 'tsp_s_allocation', 'tsp_i_allocation',

@@ -134,6 +134,18 @@ def generate_fact_finder_pdf(case):
             'workshop_code': case.workshop_code,
             'member_name': f"{case.member.first_name} {case.member.last_name}" if case.member else "Unknown",
             'date_submitted': case.created_at,
+            # Add FederalFactFinder object directly for notes access
+            'fact_finder': fff,
+            # Individual section context for notes fields
+            'military': {'notes': fff.active_duty_notes},
+            'reserves': {'notes': fff.reserves_notes},
+            'academy': {'notes': fff.academy_notes},
+            'non_deduction': {'notes': fff.non_deduction_notes},
+            'break_service': {'notes': fff.break_notes},
+            'part_time': {'notes': fff.part_time_notes},
+            'fegli': {'notes': fff.fegli_notes},
+            'fehb': {'notes': fff.fehb_notes},
+            'fltcip': {'notes': fff.fltcip_notes},
         }
         
         # Render HTML template
