@@ -1445,7 +1445,7 @@
     <div style="font-size: 8.5pt; margin-bottom: 8px;">
         Please use this page to provide any additional information necessary for us to prepare an accurate report for the employee. Of course, feel free to use this area to add any notes that are helpful to you based on other information the employee may share.
     </div>
-    <div class="notes-box" style="min-height: 400px;">{{ data.additional_information.additional_notes|default:"" }}</div>
+    <div class="notes-box" style="min-height: 200px; max-height: 600px; white-space: pre-wrap; word-wrap: break-word;">{{ fact_finder.additional_notes|default:"" }}</div>
 
     <!-- FOOTER on last page -->
     <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #000; font-size: 8pt; text-align: center; color: #666;">
