@@ -327,7 +327,7 @@ def case_submit(request):
                 ss_benefit_at_62=parse_decimal(request.POST.get('ss_benefit_62')),
                 ss_desired_start_age=parse_int(request.POST.get('ss_desired_age')),
                 ss_benefit_at_desired_age=parse_decimal(request.POST.get('ss_benefit_desired')),
-                page1_notes=request.POST.get('page1_notes', ''),
+                page1_notes=request.POST.get('retirement_pay_leave_notes', ''),
                 
                 # Military - Active Duty
                 has_active_duty=parse_bool(request.POST.get('military_service')),
@@ -343,7 +343,7 @@ def case_submit(request):
                 active_duty_pension_amount=parse_decimal(request.POST.get('military_pension_amount')),
                 active_duty_overseas_time_added=parse_bool(request.POST.get('military_overseas')),
                 active_duty_overseas_time_amount=request.POST.get('military_overseas_amount', ''),
-                active_duty_notes=request.POST.get('military_notes', ''),
+                active_duty_notes=request.POST.get('military_active_duty_notes', ''),
                 
                 # Military - Reserves
                 has_reserves=parse_bool(request.POST.get('reserve_service')),
@@ -361,7 +361,7 @@ def case_submit(request):
                 reserves_retired=parse_bool(request.POST.get('reserve_retired')),
                 reserves_pension_amount=parse_decimal(request.POST.get('reserve_pension_amount')),
                 reserves_pension_start_age=parse_int(request.POST.get('reserve_pension_start_age')),
-                reserves_notes=request.POST.get('reserve_notes', ''),
+                reserves_notes=request.POST.get('military_reserves_notes', ''),
                 
                 # Military - Academy
                 has_academy=parse_bool(request.POST.get('academy_service')),
@@ -370,7 +370,7 @@ def case_submit(request):
                 academy_deposit_made=parse_bool(request.POST.get('academy_deposit_made')),
                 academy_amount_owed=parse_decimal(request.POST.get('academy_owe_amount')),
                 academy_appears_on_sf50=parse_bool(request.POST.get('academy_on_sf50')),
-                academy_notes=request.POST.get('academy_notes', ''),
+                academy_notes=request.POST.get('military_academy_notes', ''),
                 
                 # Non-Deduction Service
                 has_non_deduction_service=parse_bool(request.POST.get('non_deduction_service')),
@@ -387,7 +387,7 @@ def case_submit(request):
                 break_new_start_date=parse_date(request.POST.get('break_new_start')),
                 break_deposit_made=parse_bool(request.POST.get('break_deposit_made')),
                 break_amount_owed=parse_decimal(request.POST.get('break_service_owe_amount')),
-                break_notes=request.POST.get('break_notes', ''),
+                break_notes=request.POST.get('break_in_service_notes', ''),
                 
                 # Part-Time Service
                 has_part_time_service=parse_bool(request.POST.get('part_time_service')),
@@ -482,7 +482,7 @@ def case_submit(request):
                 tsp_comments=request.POST.get('tsp_comments', ''),
                 
                 # Additional notes
-                additional_notes=request.POST.get('additional_notes', ''),
+                additional_notes=request.POST.get('additional_notes_final', ''),
             )
             logger.info(f"Created FederalFactFinder record for case {case.id}")
         except Exception as e:
