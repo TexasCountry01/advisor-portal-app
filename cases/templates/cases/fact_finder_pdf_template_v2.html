@@ -198,7 +198,11 @@
             padding: 4px;
             background: #fafafa;
             white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
             font-size: 7.5pt;
+            max-height: 300px;
+            overflow: hidden;
         }
         
         /* Page breaks */
@@ -517,7 +521,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 40px;">{{ fact_finder.page1_notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 40px; max-height: 200px;">{{ fact_finder.page1_notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -630,7 +634,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ military.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ military.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -692,13 +696,13 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ reserves.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ reserves.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
     <!-- Military Academy -->
     <div class="subsection-header" style="margin-top: 15px;">Military – Academy</div>
-    {% with academy=data.military_academy %}
+    {% with academy=data.academy %}
     <div class="inline-fields">
         <div class="inline-field">
             <label>Do you have any military academy service?</label>
@@ -729,7 +733,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ academy.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ academy.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -799,7 +803,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ non_deduction.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ non_deduction.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -864,7 +868,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ break_service.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ break_service.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -910,14 +914,14 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ part_time.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ part_time.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
     <!-- Other Pertinent Details -->
     <div class="subsection-header" style="margin-top: 15px;">Other Pertinent Details</div>
     <div style="font-size: 8.5pt; margin-bottom: 6px;">Is there anything else we should know about your service history as we prepare your report?</div>
-    <div class="notes-box" style="min-height: 60px;">{{ data.employment_history.other_agencies|default:"" }}</div>
+    <div class="notes-box" style="min-height: 60px; max-height: 200px;">{{ data.employment_history.other_agencies|default:"" }}</div>
     
     <div style="margin: 6px 0; text-align: center; font-style: italic; color: #666; padding: 10px; background: #f5f5f5; border: 1px solid #ccc;">
         <span class="checkbox"></span> No to ALL special service
@@ -999,7 +1003,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ fegli.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ fegli.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -1078,7 +1082,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ fehb.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ fehb.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -1144,7 +1148,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">Notes:</strong>
-        <div class="notes-box" style="min-height: 30px;">{{ fltcip.notes|default:"" }}</div>
+        <div class="notes-box" style="min-height: 30px; max-height: 150px;">{{ fltcip.notes|default:"" }}</div>
     </div>
     {% endwith %}
 
@@ -1418,7 +1422,7 @@
     
     <div style="margin-top: 8px;">
         <strong style="font-size: 8.5pt;">COMMENTS / NOTES</strong>
-        <div class="notes-box" style="min-height: 40px;">{{ tsp.comments|default:"" }}</div>
+        <div class="notes-box" style="min-height: 40px; max-height: 200px;">{{ tsp.comments|default:"" }}</div>
     </div>
     {% endwith %}
 

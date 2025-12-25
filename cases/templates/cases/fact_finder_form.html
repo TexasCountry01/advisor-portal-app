@@ -218,7 +218,7 @@
                                 <label class="form-label mb-0" style="font-weight: bold; font-size: 13px;">Member Name:</label>
                             </div>
                             <div class="col-md-5">
-                                <input type="text" name="member_name" class="form-control form-control-sm" value="{{ member_name }}">
+                                <input type="text" name="member_name" class="form-control form-control-sm" value="{{ member_name }}" readonly style="background-color: #f8f9fa;">
                             </div>
                             <div class="col-md-3">
                                 <div style="border: 1px solid #dee2e6; background: white; padding: 5px; text-align: center;">
@@ -236,7 +236,7 @@
                                 <input type="date" name="date_submitted" class="form-control form-control-sm" value="{% now 'Y-m-d' %}">
                             </div>
                             <div class="col-md-3">
-                                <input type="text" name="workshop_code" class="form-control form-control-sm text-center" value="{{ workshop_code }}" style="font-size: 11px;">
+                                <input type="text" name="workshop_code" class="form-control form-control-sm text-center" value="{{ workshop_code }}" readonly style="font-size: 11px; background-color: #f8f9fa;">
                             </div>
                         </div>
                         
@@ -497,7 +497,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label" style="font-size: 11px;">FF start date:</label>
-                                <input type="date" name="ff_start_date" class="form-control form-control-sm">
+                                <input type="date" name="ff_start_date" id="ff_start_date" class="form-control form-control-sm">
                             </div>
                         </div>
                         
@@ -512,7 +512,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label" style="font-size: 11px;">ATC start date:</label>
-                                <input type="date" name="atc_start_date" class="form-control form-control-sm">
+                                <input type="date" name="atc_start_date" id="atc_start_date" class="form-control form-control-sm">
                             </div>
                         </div>
                         
@@ -527,7 +527,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label" style="font-size: 11px;">FS start date:</label>
-                                <input type="date" name="fs_start_date" class="form-control form-control-sm">
+                                <input type="date" name="fs_start_date" id="fs_start_date" class="form-control form-control-sm">
                             </div>
                         </div>
                     </div>
@@ -785,7 +785,7 @@
                 <!-- Notes Section -->
                 <div class="mb-3">
                     <h4 style="font-weight: bold; font-size: 13px; margin-bottom: 5px;">Notes:</h4>
-                    <textarea name="retirement_pay_leave_notes" class="form-control" rows="4"></textarea>
+                    <textarea name="retirement_pay_leave_notes" id="retirement_pay_leave_notes" class="form-control" rows="4"></textarea>
                 </div>
             </div>
 
@@ -824,9 +824,9 @@
                                 <td colspan="2" style="padding: 10px;">
                                     <label style="font-weight: bold;">Dates of <u>ACTIVE DUTY</u> service?</label>
                                     <div class="d-flex align-items-center gap-2 mt-2">
-                                        <input type="date" name="active_duty_start" class="form-control form-control-sm" style="width: 45%;">
+                                        <input type="date" name="active_duty_start" id="active_duty_start" class="form-control form-control-sm" style="width: 45%;">
                                         <span>to</span>
-                                        <input type="date" name="active_duty_end" class="form-control form-control-sm" style="width: 45%;">
+                                        <input type="date" name="active_duty_end" id="active_duty_end" class="form-control form-control-sm" style="width: 45%;">
                                     </div>
                                 </td>
                             </tr>
@@ -976,9 +976,9 @@
                                 <td colspan="2" style="padding: 10px;">
                                     <label style="font-weight: bold;">Dates of <u>RESERVE</u> service?</label>
                                     <div class="d-flex align-items-center gap-2 mt-2">
-                                        <input type="date" name="reserve_start" class="form-control form-control-sm" style="width: 45%;">
+                                        <input type="date" name="reserve_start" id="reserve_start" class="form-control form-control-sm" style="width: 45%;">
                                         <span>to</span>
-                                        <input type="date" name="reserve_end" class="form-control form-control-sm" style="width: 45%;">
+                                        <input type="date" name="reserve_end" id="reserve_end" class="form-control form-control-sm" style="width: 45%;">
                                     </div>
                                 </td>
                             </tr>
@@ -1159,9 +1159,9 @@
                                 <td style="padding: 10px;">
                                     <label style="font-weight: bold;">Dates of <u>ACADEMY</u> service?</label>
                                     <div class="d-flex align-items-center gap-2 mt-2">
-                                        <input type="date" name="academy_start" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="academy_start" id="academy_start" class="form-control form-control-sm" style="width: 150px;">
                                         <span>to</span>
-                                        <input type="date" name="academy_end" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="academy_end" id="academy_end" class="form-control form-control-sm" style="width: 150px;">
                                     </div>
                                 </td>
                             </tr>
@@ -1274,9 +1274,9 @@
                                 <td style="padding: 10px;">
                                     <label style="font-weight: bold;">Dates of <u>NON-DEDUCTION</u> service?</label>
                                     <div class="d-flex align-items-center gap-2 mt-2">
-                                        <input type="date" name="non_deduction_start" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="non_deduction_start" id="non_deduction_start" class="form-control form-control-sm" style="width: 150px;">
                                         <span>to</span>
-                                        <input type="date" name="non_deduction_end" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="non_deduction_end" id="non_deduction_end" class="form-control form-control-sm" style="width: 150px;">
                                     </div>
                                 </td>
                             </tr>
@@ -1357,9 +1357,9 @@
                                 <td style="padding: 10px;">
                                     <label style="font-weight: bold;">Dates of your ORIGINAL service (before leaving)?</label>
                                     <div class="d-flex align-items-center gap-2 mt-2">
-                                        <input type="date" name="original_service_start" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="original_service_start" id="original_service_start" class="form-control form-control-sm" style="width: 150px;">
                                         <span>to</span>
-                                        <input type="date" name="original_service_end" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="original_service_end" id="original_service_end" class="form-control form-control-sm" style="width: 150px;">
                                     </div>
                                 </td>
                             </tr>
@@ -1367,9 +1367,9 @@
                                 <td style="padding: 10px;">
                                     <label style="font-weight: bold;">Dates of the <u>BREAK-IN-SERVICE</u>?</label>
                                     <div class="d-flex align-items-center gap-2 mt-2">
-                                        <input type="date" name="break_service_start" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="break_service_start" id="break_service_start" class="form-control form-control-sm" style="width: 150px;">
                                         <span>to</span>
-                                        <input type="date" name="break_service_end" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="break_service_end" id="break_service_end" class="form-control form-control-sm" style="width: 150px;">
                                     </div>
                                 </td>
                             </tr>
@@ -1469,9 +1469,9 @@
                                 <td style="padding: 10px;">
                                     <label style="font-weight: bold;">Dates of <u>PART-TIME</u> service?</label>
                                     <div class="d-flex align-items-center gap-2 mt-2">
-                                        <input type="date" name="part_time_start" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="part_time_start" id="part_time_start" class="form-control form-control-sm" style="width: 150px;">
                                         <span>to</span>
-                                        <input type="date" name="part_time_end" class="form-control form-control-sm" style="width: 150px;">
+                                        <input type="date" name="part_time_end" id="part_time_end" class="form-control form-control-sm" style="width: 150px;">
                                     </div>
                                 </td>
                             </tr>
@@ -3203,6 +3203,63 @@ function calculateRetirementAge() {
 if (dobInput) dobInput.addEventListener('change', calculateRetirementAge);
 if (retireDateInput) retireDateInput.addEventListener('change', calculateRetirementAge);
 
+// Employee type focus management
+const empFirefighter = document.getElementById('emp_firefighter');
+const empATC = document.getElementById('emp_atc');
+const empForeign = document.getElementById('emp_foreign');
+const ffStartDate = document.getElementById('ff_start_date');
+const atcStartDate = document.getElementById('atc_start_date');
+const fsStartDate = document.getElementById('fs_start_date');
+
+if (empFirefighter && ffStartDate) {
+    empFirefighter.addEventListener('change', function() {
+        if (this.checked) {
+            ffStartDate.focus();
+        }
+    });
+}
+
+if (empATC && atcStartDate) {
+    empATC.addEventListener('change', function() {
+        if (this.checked) {
+            atcStartDate.focus();
+        }
+    });
+}
+
+if (empForeign && fsStartDate) {
+    empForeign.addEventListener('change', function() {
+        if (this.checked) {
+            fsStartDate.focus();
+        }
+    });
+}
+
+// High-3 salary validation - require notes if "No" is selected
+const high3No = document.getElementById('high3_no');
+const retirementNotes = document.getElementById('retirement_pay_leave_notes');
+
+if (high3No && retirementNotes) {
+    high3No.addEventListener('change', function() {
+        if (this.checked) {
+            retirementNotes.setAttribute('required', 'required');
+            retirementNotes.style.borderColor = '#dc3545';
+            retirementNotes.placeholder = 'Please provide highest salary history (REQUIRED when "No" is selected)';
+        }
+    });
+}
+
+const high3Yes = document.getElementById('high3_yes');
+if (high3Yes && retirementNotes) {
+    high3Yes.addEventListener('change', function() {
+        if (this.checked) {
+            retirementNotes.removeAttribute('required');
+            retirementNotes.style.borderColor = '';
+            retirementNotes.placeholder = '';
+        }
+    });
+}
+
 // "No to ALL military service" checkbox logic
 const noMilitaryCheckbox = document.getElementById('no_military_service');
 const activeDutyYes = document.getElementById('active_duty_yes');
@@ -3211,6 +3268,93 @@ const reserveYes = document.getElementById('reserve_yes');
 const reserveNo = document.getElementById('reserve_no');
 const academyYes = document.getElementById('academy_yes');
 const academyNo = document.getElementById('academy_no');
+
+// Military service focus management - focus on first date field when "Yes" is selected
+const activeDutyStartDate = document.getElementById('active_duty_start');
+const reserveStartDate = document.getElementById('reserve_start');
+const academyStartDate = document.getElementById('academy_start');
+
+if (activeDutyYes && activeDutyStartDate) {
+    activeDutyYes.addEventListener('change', function() {
+        if (this.checked) {
+            activeDutyStartDate.focus();
+        }
+    });
+}
+
+if (reserveYes && reserveStartDate) {
+    reserveYes.addEventListener('change', function() {
+        if (this.checked) {
+            reserveStartDate.focus();
+        }
+    });
+}
+
+if (academyYes && academyStartDate) {
+    academyYes.addEventListener('change', function() {
+        if (this.checked) {
+            academyStartDate.focus();
+        }
+    });
+}
+
+// Break-in-service focus management
+const breakServiceYes = document.getElementById('break_service_yes');
+const originalServiceStart = document.getElementById('original_service_start');
+
+if (breakServiceYes && originalServiceStart) {
+    breakServiceYes.addEventListener('change', function() {
+        if (this.checked) {
+            originalServiceStart.focus();
+        }
+    });
+}
+
+// Part-time service focus management
+const partTimeYes = document.getElementById('part_time_yes');
+const partTimeStart = document.getElementById('part_time_start');
+
+if (partTimeYes && partTimeStart) {
+    partTimeYes.addEventListener('change', function() {
+        if (this.checked) {
+            partTimeStart.focus();
+        }
+    });
+}
+
+// Date range validation - ensure "to" dates are after "from" dates
+function validateDateRange(startId, endId, label) {
+    const startInput = document.getElementById(startId);
+    const endInput = document.getElementById(endId);
+    
+    if (startInput && endInput) {
+        const validateDates = function() {
+            const startDate = startInput.value;
+            const endDate = endInput.value;
+            
+            if (startDate && endDate && endDate < startDate) {
+                endInput.setCustomValidity(`End date must be after start date for ${label}`);
+                endInput.style.borderColor = '#dc3545';
+                endInput.reportValidity();
+            } else {
+                endInput.setCustomValidity('');
+                endInput.style.borderColor = '';
+            }
+        };
+        
+        startInput.addEventListener('change', validateDates);
+        endInput.addEventListener('change', validateDates);
+    }
+}
+
+// Apply date range validation to all date ranges
+validateDateRange('active_duty_start', 'active_duty_end', 'Active Duty service');
+validateDateRange('reserve_start', 'reserve_end', 'Reserve service');
+validateDateRange('academy_start', 'academy_end', 'Academy service');
+validateDateRange('non_deduction_start', 'non_deduction_end', 'Non-Deduction service');
+validateDateRange('original_service_start', 'original_service_end', 'Original service');
+validateDateRange('break_service_start', 'break_service_end', 'Break-in-Service');
+validateDateRange('part_time_start', 'part_time_end', 'Part-Time service');
 
 // When "No to ALL" is checked, select "No" for all three military sections
 if (noMilitaryCheckbox) {
