@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Member Dashboard{% endblock %}
+{% block title %}Welcome - Advisor Portal{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -169,12 +169,9 @@
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
                                 {% endif %}
-                                <form method="post" action="{% url 'delete_case' case.pk %}" style="display: inline;" onsubmit="return confirm('Are you sure to Delete?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{% url 'delete_case' case.pk %}', '{{ case.external_case_id }}')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -191,4 +188,36 @@
         </div>
     </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure to Delete case <strong id="deleteCaseId"></strong>?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">OK</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmDelete(deleteUrl, caseId) {
+    document.getElementById('deleteCaseId').textContent = caseId;
+    document.getElementById('deleteForm').action = deleteUrl;
+    var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    deleteModal.show();
+}
+</script>
+
 {% endblock %}
