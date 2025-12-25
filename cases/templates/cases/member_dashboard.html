@@ -169,9 +169,12 @@
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
                                 {% endif %}
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete('{% url 'delete_case' case.pk %}', '{{ case.external_case_id }}')">
-                                    <i class="bi bi-trash"></i> Delete
-                                </button>
+                                <form method="post" action="{% url 'delete_case' case.pk %}" style="display: inline;" onsubmit="return confirm('Are you sure?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}
@@ -188,46 +191,5 @@
         </div>
     </div>
 </div>
-
-<!-- Delete Confirmation Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                Are you sure?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteForm" method="post" style="display: inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger">OK</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script nonce="{{ request.csp_nonce }}">
-// v2 - Cache bust
-function confirmDelete(deleteUrl, caseId) {
-    var deleteForm = document.getElementById('deleteForm');
-    if (!deleteForm) {
-        console.error('deleteForm not found');
-        return;
-    }
-    deleteForm.action = deleteUrl;
-    var modalElement = document.getElementById('deleteModal');
-    if (!modalElement) {
-        console.error('deleteModal not found');
-        return;
-    }
-    var deleteModal = new bootstrap.Modal(modalElement);
-    deleteModal.show();
-}
-</script>
 
 {% endblock %}
