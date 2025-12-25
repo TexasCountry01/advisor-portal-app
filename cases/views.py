@@ -5,10 +5,12 @@ from django.db.models import Count, Q
 from django.utils import timezone
 from django.http import JsonResponse, FileResponse, HttpResponseForbidden
 from .models import Case, CaseDocument, CaseReport, CaseNote
+from .models_fact_finder import FederalFactFinder
 from .forms import CaseDocumentForm, CaseReportForm, CaseNoteForm
 from .services import submit_case_to_benefits_software
 from accounts.models import User
 import logging
+from decimal import Decimal, InvalidOperation
 
 logger = logging.getLogger(__name__)
 
@@ -239,6 +241,252 @@ def case_submit(request):
         )
         
         case.save()
+        
+        # Create FederalFactFinder record from POST data
+        try:
+            from datetime import datetime
+            
+            def parse_date(date_str):
+                """Helper to parse date string safely"""
+                if not date_str or date_str.strip() == '':
+                    return None
+                try:
+                    return datetime.strptime(date_str, '%Y-%m-%d').date()
+                except:
+                    return None
+            
+            def parse_decimal(value_str):
+                """Helper to parse decimal safely"""
+                if not value_str or value_str.strip() == '':
+                    return None
+                try:
+                    return Decimal(str(value_str).replace(',', ''))
+                except (InvalidOperation, ValueError):
+                    return None
+            
+            def parse_int(value_str):
+                """Helper to parse integer safely"""
+                if not value_str or value_str.strip() == '':
+                    return None
+                try:
+                    return int(value_str)
+                except (ValueError, TypeError):
+                    return None
+            
+            def parse_bool(value):
+                """Helper to parse boolean from checkbox"""
+                if value is None or value == '':
+                    return None
+                return value == 'on' or value == 'true' or value == True
+            
+            # Create FederalFactFinder with all form data
+            fff = FederalFactFinder.objects.create(
+                case=case,
+                # Basic Information
+                employee_name=request.POST.get('employee_name', ''),
+                employee_dob=parse_date(request.POST.get('employee_dob')),
+                spouse_name=request.POST.get('spouse_name', ''),
+                spouse_dob=parse_date(request.POST.get('spouse_dob')),
+                address=request.POST.get('address', ''),
+                city=request.POST.get('city', ''),
+                state=request.POST.get('state', ''),
+                zip_code=request.POST.get('zip', ''),
+                
+                # Retirement System
+                retirement_system=request.POST.get('retirement_system', ''),
+                csrs_offset_date=parse_date(request.POST.get('csrs_offset_date')),
+                fers_transfer_date=parse_date(request.POST.get('fers_transfer_date')),
+                
+                # Employee Type
+                employee_type=request.POST.get('employee_type', ''),
+                leo_start_date=parse_date(request.POST.get('leo_start_date')),
+                cbpo_on_date_7_6_2008=parse_bool(request.POST.get('cbpo_coverage')),
+                firefighter_start_date=parse_date(request.POST.get('ff_start_date')),
+                atc_start_date=parse_date(request.POST.get('atc_start_date')),
+                foreign_service_start_date=parse_date(request.POST.get('fs_start_date')),
+                
+                # Retirement Type
+                retirement_type=request.POST.get('retirement_type', ''),
+                optional_offer_date=parse_date(request.POST.get('optional_offer_date')),
+                
+                # Retirement, Pay & Leave
+                leave_scd=parse_date(request.POST.get('leave_scd')),
+                retirement_scd=parse_date(request.POST.get('retirement_scd')),
+                retirement_timing=request.POST.get('retirement_timing', ''),
+                retirement_age=parse_int(request.POST.get('retirement_age')),
+                retirement_date=parse_date(request.POST.get('desired_retirement_date')),
+                reduce_spousal_pension_protection=parse_bool(request.POST.get('reduce_spousal_pension')),
+                spousal_pension_reduction_reason=request.POST.get('spouse_protection_reason', ''),
+                has_court_order_dividing_benefits=parse_bool(request.POST.get('court_order_dividing_benefits')),
+                court_order_details=request.POST.get('court_order_details', ''),
+                current_annual_salary=parse_decimal(request.POST.get('current_annual_salary')),
+                expects_highest_three_at_end=parse_bool(request.POST.get('expects_highest_three')),
+                highest_salary_history=request.POST.get('highest_salary_history', ''),
+                sick_leave_hours=parse_decimal(request.POST.get('sick_leave_balance')),
+                annual_leave_hours=parse_decimal(request.POST.get('annual_leave_balance')),
+                ss_benefit_at_62=parse_decimal(request.POST.get('ss_benefit_62')),
+                ss_desired_start_age=parse_int(request.POST.get('ss_desired_age')),
+                ss_benefit_at_desired_age=parse_decimal(request.POST.get('ss_benefit_desired')),
+                page1_notes=request.POST.get('page1_notes', ''),
+                
+                # Military - Active Duty
+                has_active_duty=parse_bool(request.POST.get('military_service')),
+                active_duty_start_date=parse_date(request.POST.get('military_start_date')),
+                active_duty_end_date=parse_date(request.POST.get('military_end_date')),
+                active_duty_deposit_made=parse_bool(request.POST.get('military_deposit_made')),
+                active_duty_amount_owed=parse_decimal(request.POST.get('military_owe_amount')),
+                active_duty_interrupted_service=parse_bool(request.POST.get('military_interrupted')),
+                active_duty_lwop_start=parse_date(request.POST.get('military_lwop_start')),
+                active_duty_lwop_end=parse_date(request.POST.get('military_lwop_end')),
+                active_duty_lwop_deposit_made=parse_bool(request.POST.get('military_lwop_deposit')),
+                active_duty_retired=parse_bool(request.POST.get('military_retired')),
+                active_duty_pension_amount=parse_decimal(request.POST.get('military_pension_amount')),
+                active_duty_overseas_time_added=parse_bool(request.POST.get('military_overseas')),
+                active_duty_overseas_time_amount=request.POST.get('military_overseas_amount', ''),
+                active_duty_notes=request.POST.get('military_notes', ''),
+                
+                # Military - Reserves
+                has_reserves=parse_bool(request.POST.get('reserve_service')),
+                reserves_start_date=parse_date(request.POST.get('reserve_start_date')),
+                reserves_end_date=parse_date(request.POST.get('reserve_end_date')),
+                reserves_creditable_time_years=parse_int(request.POST.get('reserve_credit_years')),
+                reserves_creditable_time_months=parse_int(request.POST.get('reserve_credit_months')),
+                reserves_creditable_time_days=parse_int(request.POST.get('reserve_credit_days')),
+                reserves_deposit_made=parse_bool(request.POST.get('reserve_deposit_made')),
+                reserves_amount_owed=parse_decimal(request.POST.get('reserve_owe_amount')),
+                reserves_interrupted_service=parse_bool(request.POST.get('reserve_interrupted')),
+                reserves_lwop_start=parse_date(request.POST.get('reserve_lwop_start')),
+                reserves_lwop_end=parse_date(request.POST.get('reserve_lwop_end')),
+                reserves_lwop_deposit_made=parse_bool(request.POST.get('reserve_lwop_deposit')),
+                reserves_retired=parse_bool(request.POST.get('reserve_retired')),
+                reserves_pension_amount=parse_decimal(request.POST.get('reserve_pension_amount')),
+                reserves_pension_start_age=parse_int(request.POST.get('reserve_pension_start_age')),
+                reserves_notes=request.POST.get('reserve_notes', ''),
+                
+                # Military - Academy
+                has_academy=parse_bool(request.POST.get('academy_service')),
+                academy_start_date=parse_date(request.POST.get('academy_start_date')),
+                academy_end_date=parse_date(request.POST.get('academy_end_date')),
+                academy_deposit_made=parse_bool(request.POST.get('academy_deposit_made')),
+                academy_amount_owed=parse_decimal(request.POST.get('academy_owe_amount')),
+                academy_appears_on_sf50=parse_bool(request.POST.get('academy_on_sf50')),
+                academy_notes=request.POST.get('academy_notes', ''),
+                
+                # Non-Deduction Service
+                has_non_deduction_service=parse_bool(request.POST.get('non_deduction_service')),
+                non_deduction_start_date=parse_date(request.POST.get('non_deduction_start_date')),
+                non_deduction_end_date=parse_date(request.POST.get('non_deduction_end_date')),
+                non_deduction_deposit_made=parse_bool(request.POST.get('non_deduction_deposit_made')),
+                non_deduction_amount_owed=parse_decimal(request.POST.get('non_deduction_owe_amount')),
+                non_deduction_notes=request.POST.get('non_deduction_notes', ''),
+                
+                # Break-in-Service
+                has_break_in_service=parse_bool(request.POST.get('break_service')),
+                break_original_start_date=parse_date(request.POST.get('break_original_start')),
+                break_original_end_date=parse_date(request.POST.get('break_original_end')),
+                break_new_start_date=parse_date(request.POST.get('break_new_start')),
+                break_deposit_made=parse_bool(request.POST.get('break_deposit_made')),
+                break_amount_owed=parse_decimal(request.POST.get('break_service_owe_amount')),
+                break_notes=request.POST.get('break_notes', ''),
+                
+                # Part-Time Service
+                has_part_time_service=parse_bool(request.POST.get('part_time_service')),
+                part_time_start_date=parse_date(request.POST.get('part_time_start_date')),
+                part_time_end_date=parse_date(request.POST.get('part_time_end_date')),
+                part_time_hours_per_week=parse_decimal(request.POST.get('part_time_hours_per_week')),
+                part_time_appears_on_sf50=parse_bool(request.POST.get('part_time_on_sf50')),
+                part_time_notes=request.POST.get('part_time_notes', ''),
+                
+                # FEGLI
+                fegli_premium_line1=parse_decimal(request.POST.get('fegli_premium_1')),
+                fegli_premium_line2=parse_decimal(request.POST.get('fegli_premium_2')),
+                fegli_premium_line3=parse_decimal(request.POST.get('fegli_premium_3')),
+                fegli_premium_line4=parse_decimal(request.POST.get('fegli_premium_4')),
+                fegli_five_year_requirement_met=parse_bool(request.POST.get('fegli_five_year')),
+                fegli_keep_in_retirement=parse_bool(request.POST.get('fegli_keep_retirement')),
+                fegli_notes=request.POST.get('fegli_notes', ''),
+                
+                # FEHB
+                fehb_health_premium=parse_decimal(request.POST.get('fehb_health_premium')),
+                fehb_dental_premium=parse_decimal(request.POST.get('fehb_dental_premium')),
+                fehb_vision_premium=parse_decimal(request.POST.get('fehb_vision_premium')),
+                fehb_dental_vision_premium=parse_decimal(request.POST.get('fehb_dental_vision_premium')),
+                fehb_coverage_type=request.POST.get('fehb_coverage_type', ''),
+                fehb_five_year_requirement_met=parse_bool(request.POST.get('fehb_five_year')),
+                fehb_keep_in_retirement=parse_bool(request.POST.get('fehb_keep_retirement')),
+                fehb_notes=request.POST.get('fehb_notes', ''),
+                
+                # FLTCIP
+                fltcip_employee_premium=parse_decimal(request.POST.get('fltcip_employee_premium')),
+                fltcip_spouse_premium=parse_decimal(request.POST.get('fltcip_spouse_premium')),
+                fltcip_other_premium=parse_decimal(request.POST.get('fltcip_family_premium')),
+                fltcip_daily_benefit=parse_decimal(request.POST.get('fltcip_daily_benefit')),
+                fltcip_benefit_period=request.POST.get('fltcip_benefit_period', ''),
+                fltcip_inflation_protection=request.POST.get('fltcip_inflation', ''),
+                fltcip_notes=request.POST.get('fltcip_notes', ''),
+                
+                # TSP Goals & Planning
+                tsp_use_for_income=parse_bool(request.POST.get('tsp_use_income')),
+                tsp_use_for_fun_money=parse_bool(request.POST.get('tsp_use_fun')),
+                tsp_use_for_legacy=parse_bool(request.POST.get('tsp_use_legacy')),
+                tsp_use_for_other=parse_bool(request.POST.get('tsp_use_other')),
+                tsp_retirement_goal_amount=parse_decimal(request.POST.get('tsp_goal_amount')),
+                tsp_amount_needed=parse_decimal(request.POST.get('tsp_need_amount')),
+                tsp_need_asap=parse_bool(request.POST.get('tsp_need_asap')),
+                tsp_need_at_age=parse_int(request.POST.get('tsp_need_age')),
+                tsp_retirement_plan=request.POST.get('tsp_retirement_plan', ''),
+                
+                # TSP Loans
+                tsp_general_loan_balance=parse_decimal(request.POST.get('tsp_loan_general_balance')),
+                tsp_residential_loan_balance=parse_decimal(request.POST.get('tsp_loan_residential_balance')),
+                
+                # TSP Fund Balances
+                tsp_g_fund_balance=parse_decimal(request.POST.get('tsp_g_balance')),
+                tsp_f_fund_balance=parse_decimal(request.POST.get('tsp_f_balance')),
+                tsp_c_fund_balance=parse_decimal(request.POST.get('tsp_c_balance')),
+                tsp_s_fund_balance=parse_decimal(request.POST.get('tsp_s_balance')),
+                tsp_i_fund_balance=parse_decimal(request.POST.get('tsp_i_balance')),
+                tsp_l_income_balance=parse_decimal(request.POST.get('tsp_l_income_balance')),
+                tsp_l_2025_balance=parse_decimal(request.POST.get('tsp_l2025_balance')),
+                tsp_l_2030_balance=parse_decimal(request.POST.get('tsp_l2030_balance')),
+                tsp_l_2035_balance=parse_decimal(request.POST.get('tsp_l2035_balance')),
+                tsp_l_2040_balance=parse_decimal(request.POST.get('tsp_l2040_balance')),
+                tsp_l_2045_balance=parse_decimal(request.POST.get('tsp_l2045_balance')),
+                tsp_l_2050_balance=parse_decimal(request.POST.get('tsp_l2050_balance')),
+                tsp_l_2055_balance=parse_decimal(request.POST.get('tsp_l2055_balance')),
+                tsp_l_2060_balance=parse_decimal(request.POST.get('tsp_l2060_balance')),
+                tsp_l_2065_balance=parse_decimal(request.POST.get('tsp_l2065_70_balance')),
+                
+                # TSP Fund Allocations
+                tsp_g_fund_allocation=parse_decimal(request.POST.get('tsp_g_allocation')),
+                tsp_f_fund_allocation=parse_decimal(request.POST.get('tsp_f_allocation')),
+                tsp_c_fund_allocation=parse_decimal(request.POST.get('tsp_c_allocation')),
+                tsp_s_fund_allocation=parse_decimal(request.POST.get('tsp_s_allocation')),
+                tsp_i_fund_allocation=parse_decimal(request.POST.get('tsp_i_allocation')),
+                tsp_l_income_allocation=parse_decimal(request.POST.get('tsp_l_income_allocation')),
+                tsp_l_2025_allocation=parse_decimal(request.POST.get('tsp_l2025_allocation')),
+                tsp_l_2030_allocation=parse_decimal(request.POST.get('tsp_l2030_allocation')),
+                tsp_l_2035_allocation=parse_decimal(request.POST.get('tsp_l2035_allocation')),
+                tsp_l_2040_allocation=parse_decimal(request.POST.get('tsp_l2040_allocation')),
+                tsp_l_2045_allocation=parse_decimal(request.POST.get('tsp_l2045_allocation')),
+                tsp_l_2050_allocation=parse_decimal(request.POST.get('tsp_l2050_allocation')),
+                tsp_l_2055_allocation=parse_decimal(request.POST.get('tsp_l2055_allocation')),
+                tsp_l_2060_allocation=parse_decimal(request.POST.get('tsp_l2060_allocation')),
+                tsp_l_2065_allocation=parse_decimal(request.POST.get('tsp_l2065_70_allocation')),
+                
+                # TSP Risk & Comments
+                tsp_employee_risk_tolerance=parse_int(request.POST.get('tsp_risk_employee')),
+                tsp_spouse_risk_tolerance=parse_int(request.POST.get('tsp_risk_spouse')),
+                tsp_best_outcome=request.POST.get('tsp_best_outcome', ''),
+                tsp_worst_outcome=request.POST.get('tsp_worst_outcome', ''),
+                tsp_comments=request.POST.get('tsp_comments', ''),
+                
+                # Additional notes
+                additional_notes=request.POST.get('additional_notes', ''),
+            )
+            logger.info(f"Created FederalFactFinder record for case {case.id}")
+        except Exception as e:
+            logger.exception(f"Failed to create FederalFactFinder for case {case.id}: {str(e)}")
         
         # Handle document uploads
         if request.FILES.getlist('documents[]'):
