@@ -1,6 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+import os
 
 class Case(models.Model):
     """Main case model with all 18 dashboard fields"""
@@ -363,3 +366,20 @@ class APICallLog(models.Model):
 
 # Import FederalFactFinder from separate module (defined in models_fact_finder.py)
 from .models_fact_finder import FederalFactFinder
+
+
+# Signal handlers for file cleanup
+@receiver(post_delete, sender=CaseDocument)
+def delete_case_document_file(sender, instance, **kwargs):
+    """Delete physical file when CaseDocument is deleted"""
+    if instance.file:
+        if os.path.isfile(instance.file.path):
+            os.remove(instance.file.path)
+
+
+@receiver(post_delete, sender=CaseReport)
+def delete_case_report_file(sender, instance, **kwargs):
+    """Delete physical file when CaseReport is deleted"""
+    if instance.report_file:
+        if os.path.isfile(instance.report_file.path):
+            os.remove(instance.report_file.path)

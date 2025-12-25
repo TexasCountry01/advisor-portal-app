@@ -15,6 +15,7 @@ urlpatterns = [
     # Shared views
     path('list/', views.case_list, name='case_list'),
     path('<int:pk>/', views.case_detail, name='case_detail'),
+    path('<int:pk>/delete/', views.delete_case, name='delete_case'),
     
     # File upload views
     path('<int:case_id>/upload-document/', views.upload_document, name='upload_document'),

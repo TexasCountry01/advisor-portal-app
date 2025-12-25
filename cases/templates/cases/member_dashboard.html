@@ -169,6 +169,12 @@
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
                                 {% endif %}
+                                <form method="post" action="{% url 'delete_case' case.pk %}" style="display: inline;" onsubmit="return confirm('Are you sure to Delete?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                         {% endfor %}

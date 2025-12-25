@@ -733,6 +733,27 @@ def case_list(request):
 
 
 @login_required
+def delete_case(request, pk):
+    """Delete a case"""
+    case = get_object_or_404(Case, pk=pk)
+    
+    # Redirect back to the appropriate dashboard
+    if request.user.role == 'member':
+        redirect_url = 'member_dashboard'
+    elif request.user.role in ['tech_1', 'tech_2', 'tech_3']:
+        redirect_url = 'technician_workbench'
+    else:
+        redirect_url = 'case_list'
+    
+    if request.method == 'POST':
+        case.delete()
+        messages.success(request, f'Case {case.external_case_id} has been deleted successfully.')
+        return redirect(redirect_url)
+    
+    return redirect(redirect_url)
+
+
+@login_required
 def case_detail(request, pk):
     """Case detail view with documents, reports, and notes"""
     user = request.user
