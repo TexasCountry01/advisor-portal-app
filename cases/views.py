@@ -257,22 +257,8 @@ def case_submit(request):
                         notes=f'Uploaded with Federal Fact Finder submission'
                     )
         
-        # Submit to benefits-software API
-        success, benefits_case_id, error = submit_case_to_benefits_software(case)
-        
-        if success:
-            # API call succeeded - case now has real case ID from benefits-software
-            messages.success(
-                request, 
-                f'Case submitted successfully! Case ID: {benefits_case_id}'
-            )
-        else:
-            # API call failed - case saved locally but needs retry
-            messages.warning(
-                request,
-                f'Case saved locally (ID: {case.external_case_id}) but could not sync to benefits system. '
-                f'Our team will retry automatically. Error: {error}'
-            )
+        # Submit to benefits-software API (disabled - will be implemented later)
+        # success, benefits_case_id, error = submit_case_to_benefits_software(case)
         
         # Generate PDF from submitted form data
         pdf_generated = False
@@ -283,24 +269,18 @@ def case_submit(request):
         except Exception as pdf_error:
             logger.exception(f"PDF generation failed for case {case.id}: {str(pdf_error)}")
         
-        # Final success message with all details
-        if success and pdf_generated:
+        # Success message
+        if pdf_generated:
             messages.success(
                 request,
-                f'✓ Case submitted successfully! Case ID: {benefits_case_id}. '
+                f'✓ Case submitted successfully! Case ID: {case.external_case_id}. '
                 f'Your Federal Fact Finder PDF has been generated and saved.'
             )
-        elif success:
+        else:
             messages.success(
                 request,
-                f'✓ Case submitted successfully! Case ID: {benefits_case_id}. '
+                f'✓ Case submitted successfully! Case ID: {case.external_case_id}. '
                 f'PDF will be generated shortly.'
-            )
-        elif pdf_generated:
-            messages.warning(
-                request,
-                f'Case saved locally (ID: {case.external_case_id}) with PDF generated. '
-                f'Syncing to benefits system will be retried automatically.'
             )
         
         from django.urls import reverse
