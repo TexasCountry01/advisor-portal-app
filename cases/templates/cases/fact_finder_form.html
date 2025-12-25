@@ -2462,14 +2462,20 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="text" class="form-control" value="0" readonly style="background: #e9ecef;">
+                                                <input type="text" id="tsp_balance_total" class="form-control" value="0" readonly style="background: #e9ecef;">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="text" class="form-control" value="0" readonly style="background: #e9ecef;">
+                                                <input type="text" id="tsp_allocation_total" class="form-control" value="0" readonly style="background: #e9ecef;">
                                                 <span class="input-group-text">%</span>
                                             </div>
+                                        </td>
+                                    </tr>
+                                    <tr id="allocation_error_row" style="display: none;">
+                                        <td colspan="3" style="padding: 8px; background: #f8d7da; color: #721c24; border: 2px solid #f5c6cb;">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            <strong>Allocation Error:</strong> <span id="allocation_error_message"></span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -3196,6 +3202,216 @@ function calculateRetirementAge() {
 
 if (dobInput) dobInput.addEventListener('change', calculateRetirementAge);
 if (retireDateInput) retireDateInput.addEventListener('change', calculateRetirementAge);
+
+// TSP Allocation Validation
+const allocationInputs = [
+    'tsp_g_allocation', 'tsp_f_allocation', 'tsp_c_allocation', 'tsp_s_allocation', 'tsp_i_allocation',
+    'tsp_l_income_allocation', 'tsp_l2025_allocation', 'tsp_l2030_allocation', 'tsp_l2035_allocation',
+    'tsp_l2040_allocation', 'tsp_l2045_allocation', 'tsp_l2050_allocation', 'tsp_l2055_allocation',
+    'tsp_l2060_allocation', 'tsp_l2065_70_allocation'
+];
+
+const balanceInputs = [
+    'tsp_g_balance', 'tsp_f_balance', 'tsp_c_balance', 'tsp_s_balance', 'tsp_i_balance',
+    'tsp_l_income_balance', 'tsp_l2025_balance', 'tsp_l2030_balance', 'tsp_l2035_balance',
+    'tsp_l2040_balance', 'tsp_l2045_balance', 'tsp_l2050_balance', 'tsp_l2055_balance',
+    'tsp_l2060_balance', 'tsp_l2065_70_balance'
+];
+
+function calculateTSPTotals() {
+    // Calculate allocation total
+    let allocationTotal = 0;
+    allocationInputs.forEach(name => {
+        const input = document.querySelector(`input[name="${name}"]`);
+        if (input && input.value) {
+            allocationTotal += parseFloat(input.value) || 0;
+        }
+    });
+    
+    // Calculate balance total
+    let balanceTotal = 0;
+    balanceInputs.forEach(name => {
+        const input = document.querySelector(`input[name="${name}"]`);
+        if (input && input.value) {
+            balanceTotal += parseFloat(input.value) || 0;
+        }
+    });
+    
+    // Update totals display
+    const allocationTotalInput = document.getElementById('tsp_allocation_total');
+    const balanceTotalInput = document.getElementById('tsp_balance_total');
+    const errorRow = document.getElementById('allocation_error_row');
+    const errorMessage = document.getElementById('allocation_error_message');
+    
+    if (allocationTotalInput) {
+        allocationTotalInput.value = allocationTotal.toFixed(0);
+        
+        // Show error if total exceeds 100%
+        if (allocationTotal > 100) {
+            allocationTotalInput.style.background = '#f8d7da';
+            allocationTotalInput.style.color = '#721c24';
+            allocationTotalInput.style.fontWeight = 'bold';
+            errorRow.style.display = 'table-row';
+            errorMessage.textContent = `Total allocation is ${allocationTotal}%. The combined allocation across all TSP funds cannot exceed 100%.`;
+        } else if (allocationTotal > 0 && allocationTotal < 100) {
+            allocationTotalInput.style.background = '#fff3cd';
+            allocationTotalInput.style.color = '#856404';
+            allocationTotalInput.style.fontWeight = 'bold';
+            errorRow.style.display = 'table-row';
+            errorMessage.textContent = `Total allocation is ${allocationTotal}%. Consider allocating the remaining ${(100 - allocationTotal).toFixed(0)}% to reach 100%.`;
+            errorRow.style.background = '#fff3cd';
+            errorRow.querySelector('td').style.background = '#fff3cd';
+            errorRow.querySelector('td').style.color = '#856404';
+            errorRow.querySelector('td').style.borderColor = '#ffeaa7';
+        } else {
+            allocationTotalInput.style.background = '#e9ecef';
+            allocationTotalInput.style.color = '#000';
+            allocationTotalInput.style.fontWeight = 'normal';
+            errorRow.style.display = 'none';
+        }
+    }
+    
+    if (balanceTotalInput) {
+        balanceTotalInput.value = balanceTotal.toFixed(2);
+    }
+}
+
+// Add event listeners to all allocation and balance inputs
+allocationInputs.forEach(name => {
+    const input = document.querySelector(`input[name="${name}"]`);
+    if (input) {
+        input.addEventListener('input', calculateTSPTotals);
+        input.addEventListener('change', calculateTSPTotals);
+    }
+});
+
+balanceInputs.forEach(name => {
+    const input = document.querySelector(`input[name="${name}"]`);
+    if (input) {
+        input.addEventListener('input', calculateTSPTotals);
+        input.addEventListener('change', calculateTSPTotals);
+    }
+});
+
+// Comprehensive Form Validation
+function validateForm() {
+    let errors = [];
+    
+    // 1. Employee Name is required
+    const employeeName = document.querySelector('input[name="employee_name"]');
+    if (employeeName && !employeeName.value.trim()) {
+        errors.push({
+            field: 'Employee Name',
+            message: 'Employee name is required and cannot be blank.',
+            element: employeeName
+        });
+    }
+    
+    // 2. Validate all number inputs - must be valid numbers (no characters)
+    const numberInputs = document.querySelectorAll('input[type="number"]');
+    numberInputs.forEach(input => {
+        if (input.value && input.value.trim() !== '') {
+            const value = parseFloat(input.value);
+            if (isNaN(value)) {
+                const label = input.closest('.row, .form-group')?.querySelector('label')?.textContent || 
+                             input.getAttribute('name')?.replace(/_/g, ' ') || 'Unknown field';
+                errors.push({
+                    field: label.trim(),
+                    message: `"${label.trim()}" must be a valid number (no characters allowed).`,
+                    element: input
+                });
+            }
+            // Check if value is negative for fields with min="0"
+            else if (input.hasAttribute('min') && value < parseFloat(input.getAttribute('min'))) {
+                const label = input.closest('.row, .form-group')?.querySelector('label')?.textContent || 
+                             input.getAttribute('name')?.replace(/_/g, ' ') || 'Unknown field';
+                errors.push({
+                    field: label.trim(),
+                    message: `"${label.trim()}" cannot be negative.`,
+                    element: input
+                });
+            }
+        }
+    });
+    
+    // 3. Validate text inputs that should contain numbers (sick leave, annual leave, etc.)
+    const textNumberFields = [
+        'sick_leave_balance',
+        'annual_leave_balance'
+    ];
+    
+    textNumberFields.forEach(fieldName => {
+        const input = document.querySelector(`input[name="${fieldName}"]`);
+        if (input && input.value && input.value.trim() !== '') {
+            const value = parseFloat(input.value);
+            if (isNaN(value)) {
+                const label = input.closest('.row, .form-group')?.querySelector('label')?.textContent || 
+                             fieldName.replace(/_/g, ' ');
+                errors.push({
+                    field: label.trim(),
+                    message: `"${label.trim()}" must be a valid number (no characters allowed).`,
+                    element: input
+                });
+            }
+        }
+    });
+    
+    // 4. TSP Allocation Total validation (already exists)
+    let allocationTotal = 0;
+    allocationInputs.forEach(name => {
+        const input = document.querySelector(`input[name="${name}"]`);
+        if (input && input.value) {
+            allocationTotal += parseFloat(input.value) || 0;
+        }
+    });
+    
+    if (allocationTotal > 100) {
+        errors.push({
+            field: 'TSP Allocation Total',
+            message: `TSP allocation total is ${allocationTotal}%. The combined allocation across all TSP funds cannot exceed 100%.`,
+            element: document.querySelector('input[name="tsp_g_allocation"]')
+        });
+    }
+    
+    return errors;
+}
+
+// Validate on form submission
+const factFinderForm = document.getElementById('factFinderForm');
+if (factFinderForm) {
+    factFinderForm.addEventListener('submit', function(event) {
+        const errors = validateForm();
+        
+        if (errors.length > 0) {
+            event.preventDefault();
+            
+            // Build error message
+            let errorMessage = 'Please correct the following errors before submitting:\n\n';
+            errors.forEach((error, index) => {
+                errorMessage += `${index + 1}. ${error.message}\n`;
+            });
+            
+            alert(errorMessage);
+            
+            // Scroll to first error field and highlight it
+            if (errors[0].element) {
+                errors[0].element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                errors[0].element.focus();
+                errors[0].element.style.border = '2px solid #dc3545';
+                
+                // Remove highlight after 3 seconds
+                setTimeout(() => {
+                    errors[0].element.style.border = '';
+                }, 3000);
+            }
+            
+            return false;
+        }
+    });
+}
+
+// Calculate totals on page load
+calculateTSPTotals();
 
 // Initialize documents list
 renderDocuments();
