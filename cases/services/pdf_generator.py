@@ -75,6 +75,7 @@ def generate_fact_finder_pdf(case):
                     'employee_name': fff.employee_name,
                     'employee_dob': fff.employee_dob,
                     'spouse_name': fff.spouse_name,
+                    'spouse_fed_emp': fff.spouse_fed_emp,
                     'spouse_dob': fff.spouse_dob,
                     'address': fff.address,
                     'city': fff.city,

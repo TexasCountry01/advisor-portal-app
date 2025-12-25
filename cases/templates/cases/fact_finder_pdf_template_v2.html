@@ -287,22 +287,27 @@
     <div class="inline-fields">
         <div class="inline-field">
             <label>Employee's name:</label>
-            <div class="inline-field-value">{{ data.employee_name|default:"" }}</div>
+            <div class="inline-field-value">{{ data.basic_information.employee_name|default:"" }}</div>
         </div>
         <div class="inline-field">
             <label>Date of birth:</label>
-            <div class="inline-field-value">{{ data.employee_dob|date:"m/d/Y"|default:"" }}</div>
+            <div class="inline-field-value">{{ data.basic_information.employee_dob|date:"m/d/Y"|default:"" }}</div>
         </div>
     </div>
     
     <div class="inline-fields">
         <div class="inline-field">
             <label>Spouse's name:</label>
-            <div class="inline-field-value">{{ data.spouse_name|default:"" }}</div>
+            <div class="inline-field-value">{{ data.basic_information.spouse_name|default:"" }}</div>
         </div>
+        {% if data.basic_information.spouse_name %}
+        <div class="inline-field" style="width: 80px;">
+            <span class="checkbox {% if data.basic_information.spouse_fed_emp %}checked{% endif %}"></span> Fed Emp?
+        </div>
+        {% endif %}
         <div class="inline-field">
             <label>Date of birth:</label>
-            <div class="inline-field-value">{{ data.spouse_dob|date:"m/d/Y"|default:"" }}</div>
+            <div class="inline-field-value">{{ data.basic_information.spouse_dob|date:"m/d/Y"|default:"" }}</div>
         </div>
     </div>
     

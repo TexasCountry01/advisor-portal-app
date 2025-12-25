@@ -286,6 +286,7 @@ def case_submit(request):
                 employee_name=request.POST.get('employee_name', ''),
                 employee_dob=parse_date(request.POST.get('employee_dob')),
                 spouse_name=request.POST.get('spouse_name', ''),
+                spouse_fed_emp=parse_bool(request.POST.get('spouse_fed_emp')),
                 spouse_dob=parse_date(request.POST.get('spouse_dob')),
                 address=request.POST.get('address', ''),
                 city=request.POST.get('city', ''),

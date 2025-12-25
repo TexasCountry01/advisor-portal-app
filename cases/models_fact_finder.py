@@ -34,6 +34,7 @@ class FederalFactFinder(models.Model):
     
     # Spouse Information
     spouse_name = models.CharField(max_length=200, blank=True)
+    spouse_fed_emp = models.BooleanField(null=True, blank=True, verbose_name="Spouse is Federal Employee")
     spouse_dob = models.DateField(null=True, blank=True, verbose_name="Spouse Date of Birth")
     
     # Address
