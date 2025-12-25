@@ -69,3 +69,14 @@ celerybeat.pid
 # OS
 Thumbs.db
 .DS_Store
+
+# Temporary test files
+test_*.py
+check_*.py
+*_test.py
+*.pdf
+!requirements.txt
+
+# Server credentials (sensitive)
+SERVER_CREDENTIALS.md
+*_credentials.md
