@@ -1189,10 +1189,10 @@
         <div class="inline-field">
             <label>What are the ways you plan to use your TSP in retirement?</label>
             <div>
-                <span class="checkbox"></span> Income &nbsp;&nbsp;
-                <span class="checkbox"></span> Fun money &nbsp;&nbsp;
-                <span class="checkbox"></span> Legacy &nbsp;&nbsp;
-                <span class="checkbox"></span> Other
+                <span class="checkbox{% if tsp.use_income %} checked{% endif %}"></span> Income &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.use_fun_money %} checked{% endif %}"></span> Fun money &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.use_legacy %} checked{% endif %}"></span> Legacy &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.use_other %} checked{% endif %}"></span> Other
             </div>
         </div>
     </div>
@@ -1211,9 +1211,9 @@
         </div>
         <div class="inline-field" style="flex: 1;">
             <div>
-                <span class="checkbox"></span> ASAP! &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.need_asap %} checked{% endif %}"></span> ASAP! &nbsp;&nbsp;
                 At age: <span style="border-bottom: 1px solid #000; padding: 0 5px; display: inline-block; min-width: 40px;">{{ tsp.need_age|default:"" }}</span> &nbsp;&nbsp;
-                <span class="checkbox"></span> Unsure
+                <span class="checkbox{% if tsp.need_unsure %} checked{% endif %}"></span> Unsure
             </div>
         </div>
     </div>
@@ -1222,8 +1222,8 @@
         <div class="inline-field">
             <label>Is the TSP your sole source of investing?</label>
             <div>
-                <span class="checkbox"></span> Yes &nbsp;&nbsp;
-                <span class="checkbox"></span> No &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.sole_source == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.sole_source == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
                 Explain: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 200px;">{{ tsp.sole_source_explain|default:"" }}</span>
             </div>
         </div>
@@ -1233,9 +1233,9 @@
         <div class="inline-field">
             <label>What do you plan to do with TSP when you retire?</label>
             <div>
-                <span class="checkbox"></span> Leave in TSP &nbsp;&nbsp;
-                <span class="checkbox"></span> Rollover to IRA &nbsp;&nbsp;
-                <span class="checkbox"></span> Unsure
+                <span class="checkbox{% if tsp.plan_leave %} checked{% endif %}"></span> Leave in TSP &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.plan_rollover %} checked{% endif %}"></span> Rollover to IRA &nbsp;&nbsp;
+                <span class="checkbox{% if tsp.plan_unsure %} checked{% endif %}"></span> Unsure
             </div>
         </div>
     </div>
@@ -1244,10 +1244,10 @@
         <div style="font-size: 8.5pt; margin-bottom: 4px;">While working, have you taken an in-service withdrawal?</div>
         <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">Note: this is different than a TSP loan.</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Financial Hardship &nbsp;&nbsp;
-            <span class="checkbox"></span> Age-Based (59½ or later)
+            <span class="checkbox{% if tsp.in_service_withdrawal == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if tsp.in_service_withdrawal == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if tsp.withdrawal_hardship %} checked{% endif %}"></span> Financial Hardship &nbsp;&nbsp;
+            <span class="checkbox{% if tsp.withdrawal_age_based %} checked{% endif %}"></span> Age-Based (59½ or later)
         </div>
     </div>
 
