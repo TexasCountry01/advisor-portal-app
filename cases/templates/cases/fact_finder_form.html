@@ -2633,7 +2633,6 @@
                     <i class="bi bi-info-circle"></i> Your draft will be saved locally for 30 days. Click "SUBMIT CASE" when ready to send to the benefits team.
                 </p>
             </div>
-        </form>
     </div>
 
     <script>
@@ -3335,7 +3334,6 @@ function validateDateRange(startId, endId, label) {
             if (startDate && endDate && endDate < startDate) {
                 endInput.setCustomValidity(`End date must be after start date for ${label}`);
                 endInput.style.borderColor = '#dc3545';
-                endInput.reportValidity();
             } else {
                 endInput.setCustomValidity('');
                 endInput.style.borderColor = '';

@@ -151,12 +151,18 @@
             font-weight: bold;
             vertical-align: middle;
         }
-            vertical-align: middle;
+        
+        .checkbox.checked {
+            position: relative;
         }
         
-        .checkbox.checked::after {
+        .checkbox.checked::before {
             content: '✓';
+            position: absolute;
+            top: -2px;
+            left: 1px;
             font-weight: bold;
+            font-size: 9pt;
         }
         
         /* Form layout elements */
@@ -575,9 +581,9 @@
     <div style="margin: 6px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Have you already made a deposit into CSRS/FERS to get credit for this time?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if military.deposit_made == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if military.deposit_made == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if military.deposit_made == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
@@ -585,9 +591,9 @@
         <div class="inline-field">
             <label>How much do you currently still owe?</label>
             <div>
-                <span class="checkbox"></span> $ 0 &nbsp;&nbsp;
+                <span class="checkbox{% if military.amount_owed == '0' or military.amount_owed == '' %} checked{% endif %}"></span> $ 0 &nbsp;&nbsp;
                 $ <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 80px;">{{ military.amount_owed|default:"" }}</span> &nbsp;&nbsp;
-                <span class="checkbox"></span> Unsure
+                <span class="checkbox{% if military.amount_owed and military.amount_owed != '0' and military.amount_owed == 'Unsure' %} checked{% endif %}"></span> Unsure
             </div>
         </div>
     </div>
@@ -602,9 +608,9 @@
     <div style="margin: 6px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">If so, did you make a deposit for that time?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if military.lwop_deposit_made == 'on' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if military.lwop_deposit_made == '' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if military.lwop_deposit_made == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
@@ -729,9 +735,9 @@
     <div style="margin: 6px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Does it appear that your academy time is included in your Leave SCD?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if academy.in_leave_scd == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if academy.in_leave_scd == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if academy.in_leave_scd == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     {% endif %}
@@ -789,9 +795,9 @@
     <div style="margin: 6px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Have you already made a deposit into CSRS/FERS to get credit for this time?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if non_deduction.deposit_made == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if non_deduction.deposit_made == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if non_deduction.deposit_made == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
@@ -799,8 +805,8 @@
         <div class="inline-field">
             <label>How much do you currently still owe?</label>
             <div>
-                <span class="checkbox"></span> $ 0 &nbsp;&nbsp;
-                <span class="checkbox"></span> Unsure
+                <span class="checkbox{% if non_deduction.amount_owed == '0' or non_deduction.amount_owed == '' %} checked{% endif %}"></span> $ 0 &nbsp;&nbsp;
+                <span class="checkbox{% if non_deduction.amount_owed and non_deduction.amount_owed != '0' and non_deduction.amount_owed == 'Unsure' %} checked{% endif %}"></span> Unsure
             </div>
         </div>
     </div>
@@ -845,18 +851,18 @@
     <div style="margin: 6px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Did you take a refund of your CSRS/FERS funds when you left?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if break_service.took_refund == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if break_service.took_refund == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if break_service.took_refund == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
     <div style="margin: 6px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">If so, did you repay ("redeposit") it when you returned to federal service?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if break_service.redeposit_made == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if break_service.redeposit_made == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if break_service.redeposit_made == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
@@ -864,8 +870,8 @@
         <div class="inline-field">
             <label>How much do you currently still owe?</label>
             <div>
-                <span class="checkbox"></span> $ 0 &nbsp;&nbsp;
-                <span class="checkbox"></span> Unsure
+                <span class="checkbox{% if break_service.amount_owed == '0' or break_service.amount_owed == '' %} checked{% endif %}"></span> $ 0 &nbsp;&nbsp;
+                <span class="checkbox{% if break_service.amount_owed and break_service.amount_owed != '0' and break_service.amount_owed == 'Unsure' %} checked{% endif %}"></span> Unsure
             </div>
         </div>
     </div>
@@ -971,18 +977,18 @@
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Will you have ALL of this coverage in place for at least 5 years immediately before you retire?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if fegli.five_year_requirement == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if fegli.five_year_requirement == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if fegli.five_year_requirement == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you wish to keep this coverage in retirement?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if fegli.keep_in_retirement == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if fegli.keep_in_retirement == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if fegli.keep_in_retirement == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
@@ -990,8 +996,8 @@
         <div class="inline-field">
             <label>Is FEGLI your sole source of life insurance and what is your purpose for having it?</label>
             <div>
-                <span class="checkbox"></span> Yes &nbsp;&nbsp;
-                <span class="checkbox"></span> No &nbsp;&nbsp;
+                <span class="checkbox{% if fegli.sole_source == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+                <span class="checkbox{% if fegli.sole_source == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
                 <span style="font-size: 8.5pt;">Purpose: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 200px;">{{ fegli.purpose|default:"" }}</span></span>
             </div>
         </div>
@@ -1040,10 +1046,10 @@
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">For the health insurance plan, who is covered?</div>
         <div>
-            <span class="checkbox"></span> Self-Only &nbsp;&nbsp;
-            <span class="checkbox"></span> Self+One &nbsp;&nbsp;
-            <span class="checkbox"></span> Self+Family &nbsp;&nbsp;
-            <span class="checkbox"></span> None
+            <span class="checkbox{% if fehb.coverage_self_only %} checked{% endif %}"></span> Self-Only &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.coverage_self_one %} checked{% endif %}"></span> Self+One &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.coverage_self_family %} checked{% endif %}"></span> Self+Family &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.coverage_none %} checked{% endif %}"></span> None
         </div>
     </div>
     
@@ -1051,37 +1057,37 @@
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Will you have the health coverage in place for at least 5 years immediately before you retire?</div>
         <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">Family members do NOT have a 5-year requirement.</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if fehb.five_year_requirement == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.five_year_requirement == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.five_year_requirement == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you wish to keep this coverage in retirement?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if fehb.keep_in_retirement == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.keep_in_retirement == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.keep_in_retirement == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">In retirement, will your spouse be reliant on federal health benefits through your plan?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if fehb.spouse_reliant == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.spouse_reliant == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.spouse_reliant == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you have other health coverage?</div>
         <div>
-            <span class="checkbox"></span> TRICARE &nbsp;&nbsp;
-            <span class="checkbox"></span> VA &nbsp;&nbsp;
-            <span class="checkbox"></span> Spouse's plan &nbsp;&nbsp;
-            <span class="checkbox"></span> Private health plan
+            <span class="checkbox{% if fehb.other_tricare %} checked{% endif %}"></span> TRICARE &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.other_va %} checked{% endif %}"></span> VA &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.other_spouse_plan %} checked{% endif %}"></span> Spouse's plan &nbsp;&nbsp;
+            <span class="checkbox{% if fehb.other_private %} checked{% endif %}"></span> Private health plan
         </div>
     </div>
     
@@ -1123,17 +1129,17 @@
         <div style="margin: 6px 0;">
             <div style="font-size: 8.5pt;">Benefit Period:</div>
             <div>
-                <span class="checkbox"></span> 2 yrs &nbsp;&nbsp;
-                <span class="checkbox"></span> 3 yrs &nbsp;&nbsp;
-                <span class="checkbox"></span> 5 yrs
+                <span class="checkbox{% if fltcip.period_2yrs %} checked{% endif %}"></span> 2 yrs &nbsp;&nbsp;
+                <span class="checkbox{% if fltcip.period_3yrs %} checked{% endif %}"></span> 3 yrs &nbsp;&nbsp;
+                <span class="checkbox{% if fltcip.period_5yrs %} checked{% endif %}"></span> 5 yrs
             </div>
         </div>
         
         <div style="margin: 6px 0;">
             <div style="font-size: 8.5pt;">Inflation Protection:</div>
             <div>
-                <span class="checkbox"></span> ACIO 3% &nbsp;&nbsp;
-                <span class="checkbox"></span> FPO
+                <span class="checkbox{% if fltcip.inflation_acio %} checked{% endif %}"></span> ACIO 3% &nbsp;&nbsp;
+                <span class="checkbox{% if fltcip.inflation_fpo %} checked{% endif %}"></span> FPO
             </div>
         </div>
     </div>
@@ -1141,9 +1147,9 @@
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">If you do not currently have this coverage, would you like to discuss various options available?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if fltcip.discuss_options == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if fltcip.discuss_options == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if fltcip.discuss_options == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     
