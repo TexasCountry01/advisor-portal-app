@@ -559,7 +559,7 @@
     
     <!-- Military Active Duty -->
     <div class="subsection-header">Military – Active Duty</div>
-    {% with military=data.military_active_duty %}
+    {% with military=data.mad %}
     <div class="inline-fields">
         <div class="inline-field">
             <label>Do you have any military service on active duty?</label>
@@ -651,7 +651,7 @@
 
     <!-- Military Reserves -->
     <div class="subsection-header" style="margin-top: 15px;">Military – Reserves</div>
-    {% with reserves=data.military_reserves %}
+    {% with reserves=data.reserves %}
     <div class="inline-fields">
         <div class="inline-field">
             <label>Do you have any military service in the reserves?</label>
@@ -773,7 +773,7 @@
     <div class="subsection-header">Non-Deduction Service</div>
     <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">An employee was not contributing to the CSRS/FERS system. If they are later hired into a permanent position, some employees are allowed to make a deposit to get credit for this service.</div>
     
-    {% with non_deduction=data.non_deduction_service %}
+    {% with non_deduction=data.non_deduction %}
     <div class="inline-fields">
         <div class="inline-field">
             <label>Do you have any federal temporary, interim, casual, seasonal, or intern service?</label>
@@ -822,7 +822,7 @@
     <div class="subsection-header" style="margin-top: 15px;">Break-in-Service</div>
     <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">An employee was in a position where they were contributing to CSRS/FERS, but then left federal service. If they took a refund of those contributions, they can repay those funds to regain credit for original service.</div>
     
-    {% with break_service=data.break_in_service %}
+    {% with break_service=data.break_service %}
     <div class="inline-fields">
         <div class="inline-field">
             <label>Have you ever left federal service (had a "break-in-service")?</label>
@@ -887,7 +887,7 @@
     <div class="subsection-header" style="margin-top: 15px;">Part-Time Service</div>
     <div style="font-size: 8pt; font-style: italic; margin-bottom: 6px;">An employee is scheduled to work less than 40 hours per week. The pension will be prorated based on the percentage of time worked. Part-time service can also be "non-deduction" service (see above).</div>
     
-    {% with part_time=data.part_time_service %}
+    {% with part_time=data.part_time %}
     <div class="inline-fields">
         <div class="inline-field">
             <label>Have you had any federal part-time service?</label>
@@ -932,7 +932,7 @@
     <!-- Other Pertinent Details -->
     <div class="subsection-header" style="margin-top: 15px;">Other Pertinent Details</div>
     <div style="font-size: 8.5pt; margin-bottom: 6px;">Is there anything else we should know about your service history as we prepare your report?</div>
-    <div class="notes-box" style="min-height: 60px; max-height: 200px;">{{ data.employment_history.other_agencies|default:"" }}</div>
+    <div class="notes-box" style="min-height: 60px; max-height: 200px;">{{ add_info.other_pertinent_details|default:"" }}</div>
     
     <div style="margin: 6px 0; text-align: center; font-style: italic; color: #666; padding: 10px; background: #f5f5f5; border: 1px solid #ccc;">
         <span class="checkbox{% if mad.no_special_service %} checked{% endif %}"></span> No to ALL special service
@@ -1460,7 +1460,7 @@
     <div style="font-size: 8.5pt; margin-bottom: 8px;">
         Please use this page to provide any additional information necessary for us to prepare an accurate report for the employee. Of course, feel free to use this area to add any notes that are helpful to you based on other information the employee may share.
     </div>
-    <div class="notes-box" style="min-height: 200px; max-height: 600px; white-space: pre-wrap; word-wrap: break-word;">{{ fact_finder.additional_notes|default:"" }}</div>
+    <div class="notes-box" style="min-height: 200px; max-height: 600px; white-space: pre-wrap; word-wrap: break-word;">{{ fact_finder.additional_notes_final|default:"" }}</div>
 
     <!-- FOOTER on last page -->
     <div style="margin-top: 30px; padding-top: 15px; border-top: 2px solid #000; font-size: 8pt; text-align: center; color: #666;">

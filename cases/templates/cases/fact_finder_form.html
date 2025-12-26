@@ -303,6 +303,17 @@
                 </div>
                 
                 <div class="row form-row">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 12px;">Spouse Annual Income:</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" name="spouse_income" class="form-control" min="0" step="1" placeholder="0">
+                            <span class="input-group-text">/yr</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row form-row">
                     <div class="col-md-4">
                         <label class="form-label" style="font-size: 12px;">Address:</label>
                         <input type="text" name="address" class="form-control">
@@ -555,6 +566,40 @@
                     </div>
                 </div>
                 
+                <!-- Employment Information -->
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 13px;">Current Employment Information</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Current Agency:</label>
+                            <input type="text" name="agency" class="form-control form-control-sm" placeholder="e.g., Department of Defense">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Position Title:</label>
+                            <input type="text" name="position_title" class="form-control form-control-sm" placeholder="e.g., Program Analyst">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Grade & Step:</label>
+                            <input type="text" name="grade_step" class="form-control form-control-sm" placeholder="e.g., GS-12 Step 5">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Years of Service:</label>
+                            <input type="number" name="years_of_service" class="form-control form-control-sm" min="0" step="0.01" placeholder="e.g., 27.5">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="checkbox" name="has_other_agencies" id="has_other_agencies">
+                                <label class="form-check-label" for="has_other_agencies" style="font-size: 11px;">
+                                    Worked at other federal agencies
+                                </label>
+                            </div>
+                            <textarea name="other_agencies" class="form-control form-control-sm" rows="2" placeholder="List other agencies and dates (e.g., Dept of Education 2005-2010)"></textarea>
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- Retirement Timing -->
                 <div class="mb-4">
                     <h4 style="font-weight: bold; font-size: 13px;">When are you planning to retire? <span style="font-weight: normal;">(Please check <u>ONE</u>)</span></h4>
@@ -602,6 +647,12 @@
                                     <input type="date" name="desired_retirement_date" id="desired_retirement_date" class="form-control form-control-sm" min="{% now 'Y-m-d' %}" max="2099-12-31">
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <label class="form-label" style="font-size: 11px; margin-bottom: 5px;">Retirement Timing (e.g., "MRA with 30 years", "Age 62 with 20 years"):</label>
+                            <input type="text" name="retirement_timing" class="form-control form-control-sm" placeholder="e.g., MRA with 30 years">
                         </div>
                     </div>
                 </div>
@@ -683,6 +734,34 @@
                     </div>
                 </div>
 
+                <!-- Salary Breakdown -->
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 12px; margin-bottom: 10px;">Salary Breakdown:</h4>
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px; margin-bottom: 5px;">Annual Base Salary:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="annual_base_salary" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px; margin-bottom: 5px;">Locality Pay Amount:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="locality_pay_amount" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px; margin-bottom: 5px;">High-3 Average Salary:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="high_three_average" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- High-3 Years -->
                 <div class="mb-4">
                     <div class="row">
@@ -726,6 +805,74 @@
                             <input type="text" name="annual_leave_balance" class="form-control form-control-sm" placeholder="hours">
                         </div>
                     </div>
+                    <div class="row mt-2">
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Sick Leave (hours):</label>
+                            <input type="number" name="sick_leave_hours" class="form-control form-control-sm" min="0" step="1" placeholder="hours">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Annual Leave (hours):</label>
+                            <input type="number" name="annual_leave_hours" class="form-control form-control-sm" min="0" step="1" placeholder="hours">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Other Leave:</label>
+                            <input type="number" name="other_leave" class="form-control form-control-sm" min="0" step="1" placeholder="hours">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Service Computation Date:</label>
+                            <input type="date" name="service_computation_date" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service History & Break in Service -->
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 12px; margin-bottom: 10px;">Service History:</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">Highest Salary in History:</label>
+                            <input type="text" name="highest_salary_history" class="form-control form-control-sm" placeholder="If different from High-3">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">New Start Date After Break:</label>
+                            <input type="date" name="break_new_start" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">Break in Service - Deposit Made?</label>
+                            <div class="d-flex gap-3 mt-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="break_deposit_made" value="Yes" id="break_deposit_yes">
+                                    <label class="form-check-label" for="break_deposit_yes">Yes</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="break_deposit_made" value="No" id="break_deposit_no">
+                                    <label class="form-check-label" for="break_deposit_no">No</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="break_deposit_made" value="Unsure" id="break_deposit_unsure">
+                                    <label class="form-check-label" for="break_deposit_unsure">Unsure</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" name="has_non_deduction_service" id="has_non_deduction">
+                                <label class="form-check-label" for="has_non_deduction" style="font-size: 11px;">
+                                    Has Non-Deduction Service
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-12">
+                            <label class="form-label" style="font-size: 11px;">Non-Deduction Service Details:</label>
+                            <textarea name="non_deduction_service_details" class="form-control form-control-sm" rows="2" placeholder="Details about non-deduction service"></textarea>
+                        </div>
+                    </div>
+                    <!-- Hidden duplicate field for date_of_birth -->
+                    <input type="hidden" name="date_of_birth">
                 </div>
 
                 <!-- Social Security -->
@@ -777,6 +924,225 @@
                                         <span style="font-size: 11px;">/mo</span>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px; margin-bottom: 5px;">Estimated SS Benefit (if different from above):</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="ss_estimated_benefit" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input class="form-check-input" type="checkbox" name="ss_covered_employment" id="ss_covered">
+                                <label class="form-check-label" for="ss_covered" style="font-size: 11px;">
+                                    Have SS-covered employment (outside federal service)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">SS Collection Age (employee):</label>
+                            <input type="number" name="ss_collection_age" class="form-control form-control-sm" min="62" max="70" step="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">SS Benefit at Age 62:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="ss_estimated_benefit_age_62" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">SS Benefit at FRA (Full Retirement Age):</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="ss_estimated_benefit_fra" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">Spouse SS Collection Age:</label>
+                            <input type="number" name="spouse_ss_age" class="form-control form-control-sm" min="62" max="70" step="1">
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">Spouse SS Benefit Amount:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="spouse_ss_benefit" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">Survivor Benefit Election:</label>
+                            <select name="survivor_benefit_election" class="form-select form-select-sm">
+                                <option value="">Select option</option>
+                                <option value="Full">Full</option>
+                                <option value="50%">50%</option>
+                                <option value="25%">25%</option>
+                                <option value="None">None</option>
+                                <option value="Unsure">Unsure</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="non_covered_employment" id="non_covered_emp">
+                                <label class="form-check-label" for="non_covered_emp" style="font-size: 11px;">
+                                    Has non-covered employment (affects SS benefit)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Retirement Accounts -->
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 13px; margin-bottom: 10px;">Other Retirement Accounts:</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">IRA Balance:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="ira_balance" class="form-control" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Other Retirement Balance:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="other_retirement_balance" class="form-control" min="0" step="0.01">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Other Investments:</label>
+                            <input type="text" name="other_investments" class="form-control form-control-sm" placeholder="e.g., stocks, real estate">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Income & Expenses -->
+                <div class="mb-4">
+                    <h4 style="font-weight: bold; font-size: 13px; margin-bottom: 10px;">Income & Expenses:</h4>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <h5 style="font-weight: bold; font-size: 12px; margin-bottom: 10px;">Annual Income:</h5>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Current Annual Income:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="current_annual_income" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Spouse Annual Income:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="spouse_annual_income" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Pension Income:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="pension_income" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Rental Income:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="rental_income" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">Other Current Income:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="other_current_income" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" style="font-size: 11px;">Other Regular Pay:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="other_regular_pay" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h5 style="font-weight: bold; font-size: 12px; margin-bottom: 10px;">Monthly Expenses:</h5>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Housing:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_housing" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Food:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_food" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Transportation:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_transportation" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" style="font-size: 11px;">Utilities:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_utilities" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Healthcare:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_healthcare" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Entertainment:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="expense_entertainment" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" style="font-size: 11px;">Other Expenses:</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">$</span>
+                                <input type="number" name="other_expenses" class="form-control" min="0" step="1">
+                                <span class="input-group-text">/mo</span>
                             </div>
                         </div>
                     </div>
@@ -871,6 +1237,36 @@
                                             <label class="form-check-label" for="mil_owe_unsure">Unsure</label>
                                         </div>
                                     </div>
+                                    <!-- Hidden duplicate fields -->
+                                    <input type="hidden" name="active_duty_owe_amount">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 10px;">
+                                    <label style="font-weight: bold;">Total years of military service:</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <input type="number" name="military_service" class="form-control form-control-sm" min="0" max="50" step="0.1" placeholder="Years" style="width: 100px;">
+                                        <span>years</span>
+                                    </div>
+                                    <!-- Hidden duplicate -->
+                                    <input type="hidden" name="military_years">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 10px;">
+                                    <label style="font-weight: bold;">Military deposit paid in full?</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="d-flex gap-3 justify-content-center">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="military_deposit_paid" id="mil_deposit_paid">
+                                            <label class="form-check-label" for="mil_deposit_paid">Deposit paid in full</label>
+                                        </div>
+                                    </div>
+                                    <!-- Hidden duplicate -->
+                                    <input type="hidden" name="active_duty_deposit">
                                 </td>
                             </tr>
                             <tr>
@@ -956,6 +1352,16 @@
                 <!-- Military – Reserves -->
                 <div class="mb-4" style="background: #e9ecef; padding: 15px; margin-bottom: 15px;">
                     <h4 style="font-weight: bold; font-size: 13px; margin-bottom: 15px;">Military – Reserves</h4>
+                    
+                    <!-- Reservist/Guard Indicator -->
+                    <div class="mb-3" style="background: white; padding: 10px;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="reservist_guard" id="reservist_guard">
+                            <label class="form-check-label" for="reservist_guard" style="font-weight: bold;">
+                                Reservist or National Guard Member
+                            </label>
+                        </div>
+                    </div>
                     
                     <table class="table table-bordered" style="background: white; font-size: 12px;">
                         <tbody>
@@ -1507,6 +1913,17 @@
                             </tr>
                             <tr>
                                 <td style="padding: 10px;">
+                                    <label style="font-weight: bold;">Does this part-time service appear on your SF-50?</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="part_time_on_sf50" id="pt_on_sf50">
+                                        <label class="form-check-label" for="pt_on_sf50">Yes, appears on SF-50</label>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" style="padding: 10px;">
                                     <label style="font-weight: bold;">Notes:</label>
                                     <textarea name="part_time_notes" class="form-control form-control-sm" rows="2"></textarea>
                                 </td>
@@ -1528,6 +1945,28 @@
                 <!-- FEDERAL EMPLOYEES GROUP LIFE INSURANCE (FEGLI) -->
                 <div class="mb-4" style="background: #e9ecef; padding: 15px; margin-bottom: 15px;">
                     <h4 style="font-weight: bold; font-size: 13px; text-align: center; background: #d9d9d9; padding: 10px; margin: -15px -15px 15px -15px;">FEDERAL EMPLOYEES GROUP LIFE INSURANCE (FEGLI)</h4>
+                    
+                    <!-- Has FEGLI Coverage -->
+                    <div class="mb-3" style="background: white; padding: 15px;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="has_fegli" id="has_fegli">
+                                    <label class="form-check-label" for="has_fegli" style="font-weight: bold;">
+                                        Has FEGLI Coverage
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="fegli_basic" id="fegli_basic">
+                                    <label class="form-check-label" for="fegli_basic" style="font-weight: bold;">
+                                        Has Basic Coverage
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <table class="table table-bordered" style="background: white; font-size: 12px;">
                         <tbody>
@@ -1568,21 +2007,83 @@
                             </tr>
                             <tr>
                                 <td style="padding: 10px; width: 60%;">
+                                    <label style="font-weight: bold;">FEGLI Beneficiary Name:</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <input type="text" name="fegli_beneficiary" class="form-control form-control-sm" placeholder="Beneficiary name">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px;">
+                                    <label style="font-weight: bold;">Option A Amount:</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="fegli_option_a" class="form-control" min="0" step="1000">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px;">
+                                    <label style="font-weight: bold;">Option B Amount:</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="fegli_option_b" class="form-control" min="0" step="1000">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px;">
+                                    <label style="font-weight: bold;">Option C Amount:</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="fegli_option_c" class="form-control" min="0" step="1000">
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; width: 60%;">
                                     <label style="font-weight: bold;">Will you have ALL of this coverage in place for <u>at least 5 years</u> immediately before you retire?</label>
                                 </td>
                                 <td style="padding: 10px;">
                                     <div class="d-flex gap-3">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fegli_5_years_coverage" value="Yes" id="fegli_5yr_yes">
+                                            <input class="form-check-input" type="radio" name="fegli_five_year_requirement" value="Yes" id="fegli_5yr_yes">
                                             <label class="form-check-label" for="fegli_5yr_yes">Yes</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fegli_5_years_coverage" value="No" id="fegli_5yr_no">
+                                            <input class="form-check-input" type="radio" name="fegli_five_year_requirement" value="No" id="fegli_5yr_no">
                                             <label class="form-check-label" for="fegli_5yr_no">No</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fegli_5_years_coverage" value="Unsure" id="fegli_5yr_unsure">
+                                            <input class="form-check-input" type="radio" name="fegli_five_year_requirement" value="Unsure" id="fegli_5yr_unsure">
                                             <label class="form-check-label" for="fegli_5yr_unsure">Unsure</label>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px;">
+                                    <label style="font-weight: bold;">Met 5-year requirement? (fegli_five_year)</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="fegli_five_year" value="Yes" id="fegli_5yr_met_yes">
+                                            <label class="form-check-label" for="fegli_5yr_met_yes">Yes</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="fegli_five_year" value="No" id="fegli_5yr_met_no">
+                                            <label class="form-check-label" for="fegli_5yr_met_no">No</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="fegli_five_year" value="Unsure" id="fegli_5yr_met_unsure">
+                                            <label class="form-check-label" for="fegli_5yr_met_unsure">Unsure</label>
                                         </div>
                                     </div>
                                 </td>
@@ -1594,18 +2095,20 @@
                                 <td style="padding: 10px;">
                                     <div class="d-flex gap-3">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fegli_keep_in_retirement" value="Yes" id="fegli_keep_yes">
+                                            <input class="form-check-input" type="radio" name="fegli_keep_in_retirement" value="Yes" id="fegli_keep_yes" onchange="document.querySelector('input[name=fegli_keep_retirement]').value=this.value">
                                             <label class="form-check-label" for="fegli_keep_yes">Yes</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fegli_keep_in_retirement" value="No" id="fegli_keep_no">
+                                            <input class="form-check-input" type="radio" name="fegli_keep_in_retirement" value="No" id="fegli_keep_no" onchange="document.querySelector('input[name=fegli_keep_retirement]').value=this.value">
                                             <label class="form-check-label" for="fegli_keep_no">No</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fegli_keep_in_retirement" value="Unsure" id="fegli_keep_unsure">
+                                            <input class="form-check-input" type="radio" name="fegli_keep_in_retirement" value="Unsure" id="fegli_keep_unsure" onchange="document.querySelector('input[name=fegli_keep_retirement]').value=this.value">
                                             <label class="form-check-label" for="fegli_keep_unsure">Unsure</label>
                                         </div>
                                     </div>
+                                    <!-- Hidden duplicate field -->
+                                    <input type="hidden" name="fegli_keep_retirement">
                                 </td>
                             </tr>
                             <tr>
@@ -1640,6 +2143,11 @@
                                     </div>
                                 </td>
                             </tr>
+                            <tr style="display: none;">
+                                <td style="padding: 10px;">
+                                    <input type="text" name="fegli_children_ages" class="form-control form-control-sm">
+                                </td>
+                            </tr>
                             <tr>
                                 <td colspan="2" style="padding: 10px;">
                                     <label style="font-weight: bold;">Notes:</label>
@@ -1653,6 +2161,49 @@
                 <!-- FEDERAL EMPLOYEES HEALTH BENEFITS (FEHB) -->
                 <div class="mb-4" style="background: #e9ecef; padding: 15px; margin-bottom: 15px;">
                     <h4 style="font-weight: bold; font-size: 13px; text-align: center; background: #d9d9d9; padding: 10px; margin: -15px -15px 15px -15px;">FEDERAL EMPLOYEES HEALTH BENEFITS (FEHB)</h4>
+                    
+                    <!-- FEHB Plan Information -->
+                    <div class="mb-3" style="background: white; padding: 15px;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-weight: bold; font-size: 11px;">Coverage Type:</label>
+                                <select name="fehb_coverage_type" class="form-select form-select-sm">
+                                    <option value="">Select coverage type</option>
+                                    <option value="Self Only">Self Only</option>
+                                    <option value="Self+One">Self+One</option>
+                                    <option value="Self+Family">Self+Family</option>
+                                    <option value="None">None</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-weight: bold; font-size: 11px;">FEHB Plan Name:</label>
+                                <input type="text" name="fehb_plan" class="form-control form-control-sm" placeholder="e.g., Blue Cross Basic">
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-12">
+                                <label style="font-weight: bold; font-size: 11px;">Coverage Tier (check all that apply):</label>
+                                <div class="d-flex gap-3 mt-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="fehb_health_self_only" id="fehb_self_only">
+                                        <label class="form-check-label" for="fehb_self_only">Self Only</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="fehb_health_self_one" id="fehb_self_one">
+                                        <label class="form-check-label" for="fehb_self_one">Self+One</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="fehb_health_self_family" id="fehb_self_family">
+                                        <label class="form-check-label" for="fehb_self_family">Self+Family</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="fehb_health_none" id="fehb_none">
+                                        <label class="form-check-label" for="fehb_none">None</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     
                     <table class="table table-bordered" style="background: white; font-size: 12px;">
                         <tbody>
@@ -1751,17 +2302,30 @@
                                 <td style="padding: 10px;">
                                     <div class="d-flex gap-3 justify-content-center">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fehb_keep_in_retirement" value="Yes" id="fehb_ret_yes">
+                                            <input class="form-check-input" type="radio" name="fehb_keep_in_retirement" value="Yes" id="fehb_ret_yes" onchange="document.querySelector('input[name=fehb_keep_retirement]').value=this.value">
                                             <label class="form-check-label" for="fehb_ret_yes">Yes</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fehb_keep_in_retirement" value="No" id="fehb_ret_no">
+                                            <input class="form-check-input" type="radio" name="fehb_keep_in_retirement" value="No" id="fehb_ret_no" onchange="document.querySelector('input[name=fehb_keep_retirement]').value=this.value">
                                             <label class="form-check-label" for="fehb_ret_no">No</label>
                                         </div>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fehb_keep_in_retirement" value="Unsure" id="fehb_ret_unsure">
+                                            <input class="form-check-input" type="radio" name="fehb_keep_in_retirement" value="Unsure" id="fehb_ret_unsure" onchange="document.querySelector('input[name=fehb_keep_retirement]').value=this.value">
                                             <label class="form-check-label" for="fehb_ret_unsure">Unsure</label>
                                         </div>
+                                    </div>
+                                    <!-- Hidden duplicate field -->
+                                    <input type="hidden" name="fehb_keep_retirement">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" style="padding: 10px;">
+                                    <label style="font-weight: bold;">Plan to continue FEHB in retirement?</label>
+                                </td>
+                                <td style="padding: 10px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="continue_fehb" id="continue_fehb">
+                                        <label class="form-check-label" for="continue_fehb">Yes, plan to continue</label>
                                     </div>
                                 </td>
                             </tr>
@@ -1772,16 +2336,8 @@
                                 <td style="padding: 10px;">
                                     <div class="d-flex gap-3 justify-content-center">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fehb_spouse_reliant" value="Yes" id="fehb_spouse_yes">
-                                            <label class="form-check-label" for="fehb_spouse_yes">Yes</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fehb_spouse_reliant" value="No" id="fehb_spouse_no">
-                                            <label class="form-check-label" for="fehb_spouse_no">No</label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="fehb_spouse_reliant" value="Unsure" id="fehb_spouse_unsure">
-                                            <label class="form-check-label" for="fehb_spouse_unsure">Unsure</label>
+                                            <input class="form-check-input" type="checkbox" name="fehb_spouse_reliant" id="fehb_spouse_reliant_check">
+                                            <label class="form-check-label" for="fehb_spouse_reliant_check">Yes, spouse reliant</label>
                                         </div>
                                     </div>
                                 </td>
@@ -1880,18 +2436,20 @@
                                             <label style="font-weight: normal; margin-right: 10px;">Benefit Period:</label>
                                             <div class="d-inline-flex gap-3">
                                                 <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="fltcip_period_2yrs" id="fltcip_2yrs">
+                                                    <input class="form-check-input" type="checkbox" name="fltcip_period_2yrs" id="fltcip_2yrs" onchange="updateFLTCIPAggregates()">
                                                     <label class="form-check-label" for="fltcip_2yrs">2 yrs</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="fltcip_period_3yrs" id="fltcip_3yrs">
+                                                    <input class="form-check-input" type="checkbox" name="fltcip_period_3yrs" id="fltcip_3yrs" onchange="updateFLTCIPAggregates()">
                                                     <label class="form-check-label" for="fltcip_3yrs">3 yrs</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="fltcip_period_5yrs" id="fltcip_5yrs">
+                                                    <input class="form-check-input" type="checkbox" name="fltcip_period_5yrs" id="fltcip_5yrs" onchange="updateFLTCIPAggregates()">
                                                     <label class="form-check-label" for="fltcip_5yrs">5 yrs</label>
                                                 </div>
                                             </div>
+                                            <!-- Hidden aggregate field -->
+                                            <input type="hidden" name="fltcip_benefit_period" id="fltcip_benefit_period_aggregate">
                                         </div>
                                     </div>
                                     <div class="row">
@@ -1899,14 +2457,16 @@
                                             <label style="font-weight: normal; margin-right: 10px;">Inflation Protection:</label>
                                             <div class="d-inline-flex gap-3">
                                                 <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="fltcip_inflation_acio" id="fltcip_acio">
+                                                    <input class="form-check-input" type="checkbox" name="fltcip_inflation_acio" id="fltcip_acio" onchange="updateFLTCIPAggregates()">
                                                     <label class="form-check-label" for="fltcip_acio">ACIO 3%</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
-                                                    <input class="form-check-input" type="checkbox" name="fltcip_inflation_fpo" id="fltcip_fpo">
+                                                    <input class="form-check-input" type="checkbox" name="fltcip_inflation_fpo" id="fltcip_fpo" onchange="updateFLTCIPAggregates()">
                                                     <label class="form-check-label" for="fltcip_fpo">FPO</label>
                                                 </div>
                                             </div>
+                                            <!-- Hidden aggregate field -->
+                                            <input type="hidden" name="fltcip_inflation" id="fltcip_inflation_aggregate">
                                         </div>
                                     </div>
                                 </td>
@@ -1951,6 +2511,93 @@
                 <div class="mb-4" style="background: #e9ecef; padding: 15px; margin-bottom: 15px;">
                     <h4 style="font-weight: bold; font-size: 13px; text-align: center; background: #d9d9d9; padding: 10px; margin: -15px -15px 15px -15px;">THRIFT SAVINGS PLAN (TSP)</h4>
                     
+                    <!-- TSP Balance Overview -->
+                    <div class="mb-3" style="background: white; padding: 15px;">
+                        <h5 style="font-weight: bold; font-size: 12px; margin-bottom: 10px;">TSP Balance Overview:</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size: 11px;">Total TSP Balance:</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="tsp_current_balance" class="form-control" min="0" step="0.01" onchange="document.querySelector('input[name=tsp_balance]').value=this.value">
+                                </div>
+                                <!-- Hidden duplicate field -->
+                                <input type="hidden" name="tsp_balance">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size: 11px;">Traditional TSP Balance:</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="tsp_traditional_balance" class="form-control" min="0" step="0.01">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label" style="font-size: 11px;">Roth TSP Balance:</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" name="tsp_roth_balance" class="form-control" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label" style="font-size: 11px;">TSP Beneficiary:</label>
+                                <input type="text" name="tsp_beneficiary" class="form-control form-control-sm" placeholder="Beneficiary name">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" name="tsp_loans" id="tsp_loans">
+                                    <label class="form-check-label" for="tsp_loans" style="font-size: 11px;">
+                                        Has TSP Loans
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-12">
+                                <label class="form-label" style="font-size: 11px;">TSP Loan Details:</label>
+                                <textarea name="tsp_loan_details" class="form-control form-control-sm" rows="2" placeholder="Details about TSP loans"></textarea>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-12">
+                                <label class="form-label" style="font-size: 11px;">TSP Retirement Plan:</label>
+                                <textarea name="tsp_retirement_plan" class="form-control form-control-sm" rows="2" placeholder="Plans for TSP in retirement"></textarea>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size: 11px;">Contribution %:</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" name="tsp_contribution_pct" class="form-control" min="0" max="100" step="1">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size: 11px;">Employee %:</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" name="tsp_employee_contribution_pct" class="form-control" min="0" max="100" step="1">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label" style="font-size: 11px;">Agency Match %:</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="number" name="tsp_agency_match_pct" class="form-control" min="0" max="100" step="1">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check mt-4">
+                                    <input class="form-check-input" type="checkbox" name="tsp_catchup" id="tsp_catchup">
+                                    <label class="form-check-label" for="tsp_catchup" style="font-size: 11px;">
+                                        Catch-up Contributions
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <table class="table table-bordered" style="background: white; font-size: 12px;">
                         <tbody>
                             <tr>
@@ -1985,7 +2632,7 @@
                                 <td style="padding: 10px;">
                                     <div class="input-group input-group-sm" style="max-width: 200px;">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="tsp_goal_amount" class="form-control" min="0" step="1000">
+                                        <input type="number" name="tsp_retirement_goal" class="form-control" min="0" step="1000">
                                     </div>
                                 </td>
                             </tr>
@@ -1997,7 +2644,7 @@
                                     <div class="d-flex align-items-center gap-2 flex-wrap">
                                         <div class="input-group input-group-sm" style="max-width: 150px;">
                                             <span class="input-group-text">$</span>
-                                            <input type="number" name="tsp_need_amount" class="form-control" min="0" step="1000">
+                                            <input type="number" name="tsp_amount_needed" class="form-control" min="0" step="1000">
                                         </div>
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" name="tsp_need_asap" id="tsp_asap">
@@ -2030,7 +2677,7 @@
                                             <label class="form-check-label" for="tsp_sole_no">No</label>
                                         </div>
                                         <span style="margin-left: 10px;">Explain:</span>
-                                        <input type="text" name="tsp_sole_explain" class="form-control form-control-sm" style="flex: 1;">
+                                        <input type="text" name="tsp_sole_source_explain" class="form-control form-control-sm" style="flex: 1;">
                                     </div>
                                 </td>
                             </tr>
@@ -2124,7 +2771,7 @@
                                     <label style="font-weight: bold;">Traditional contributions</label>
                                     <div class="input-group input-group-sm mt-2" style="max-width: 200px;">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="tsp_traditional_contributions" class="form-control" min="0" step="1">
+                                        <input type="number" name="tsp_traditional_contribution" class="form-control" min="0" step="1">
                                         <span class="input-group-text">/pp</span>
                                     </div>
                                 </td>
@@ -2134,7 +2781,7 @@
                                     <label style="font-weight: bold;">Roth contributions</label>
                                     <div class="input-group input-group-sm mt-2" style="max-width: 200px;">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="tsp_roth_contributions" class="form-control" min="0" step="1">
+                                        <input type="number" name="tsp_roth_contribution" class="form-control" min="0" step="1">
                                         <span class="input-group-text">/pp</span>
                                     </div>
                                 </td>
@@ -2168,10 +2815,10 @@
                             <tr>
                                 <td style="padding: 10px; font-weight: bold;">Date Loan Taken</td>
                                 <td style="padding: 10px;">
-                                    <input type="date" name="tsp_loan_general_date" class="form-control form-control-sm">
+                                    <input type="date" name="tsp_general_loan_date" class="form-control form-control-sm">
                                 </td>
                                 <td style="padding: 10px;">
-                                    <input type="date" name="tsp_loan_residential_date" class="form-control form-control-sm">
+                                    <input type="date" name="tsp_residential_loan_date" class="form-control form-control-sm">
                                 </td>
                             </tr>
                             <tr>
@@ -2179,13 +2826,13 @@
                                 <td style="padding: 10px;">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="tsp_loan_general_balance" class="form-control" min="0" step="0.01">
+                                        <input type="number" name="tsp_general_loan_balance" class="form-control" min="0" step="0.01">
                                     </div>
                                 </td>
                                 <td style="padding: 10px;">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="tsp_loan_residential_balance" class="form-control" min="0" step="0.01">
+                                        <input type="number" name="tsp_residential_loan_balance" class="form-control" min="0" step="0.01">
                                     </div>
                                 </td>
                             </tr>
@@ -2194,14 +2841,14 @@
                                 <td style="padding: 10px;">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="tsp_loan_general_repayment" class="form-control" min="0" step="0.01">
+                                        <input type="number" name="tsp_general_loan_repayment" class="form-control" min="0" step="0.01">
                                         <span class="input-group-text">/pp</span>
                                     </div>
                                 </td>
                                 <td style="padding: 10px;">
                                     <div class="input-group input-group-sm">
                                         <span class="input-group-text">$</span>
-                                        <input type="number" name="tsp_loan_residential_repayment" class="form-control" min="0" step="0.01">
+                                        <input type="number" name="tsp_residential_loan_repayment" class="form-control" min="0" step="0.01">
                                         <span class="input-group-text">/pp</span>
                                     </div>
                                 </td>
@@ -2209,10 +2856,10 @@
                             <tr>
                                 <td style="padding: 10px; font-weight: bold;">Payoff Date (approx.)</td>
                                 <td style="padding: 10px;">
-                                    <input type="date" name="tsp_loan_general_payoff_date" class="form-control form-control-sm">
+                                    <input type="date" name="tsp_general_loan_payoff" class="form-control form-control-sm">
                                 </td>
                                 <td style="padding: 10px;">
-                                    <input type="date" name="tsp_loan_residential_payoff_date" class="form-control form-control-sm">
+                                    <input type="date" name="tsp_residential_loan_payoff" class="form-control form-control-sm">
                                 </td>
                             </tr>
                         </tbody>
@@ -2233,82 +2880,112 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td style="padding: 8px; font-weight: bold;">G Fund</td>
-                                        <td style="padding: 8px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_g_balance" class="form-control" min="0" step="0.01">
+                                        <td style="padding: 8px; font-weight: bold;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="tsp_g_fund" id="tsp_g_fund">
+                                                <label class="form-check-label" for="tsp_g_fund">G Fund</label>
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_g_allocation" class="form-control" min="0" max="100" step="1">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="tsp_g_fund_balance" class="form-control" min="0" step="0.01">
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px;">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="tsp_g_fund_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px; font-weight: bold;">F Fund</td>
-                                        <td style="padding: 8px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_f_balance" class="form-control" min="0" step="0.01">
+                                        <td style="padding: 8px; font-weight: bold;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="tsp_f_fund" id="tsp_f_fund">
+                                                <label class="form-check-label" for="tsp_f_fund">F Fund</label>
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_f_allocation" class="form-control" min="0" max="100" step="1">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="tsp_f_fund_balance" class="form-control" min="0" step="0.01">
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px;">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="tsp_f_fund_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px; font-weight: bold;">C Fund</td>
-                                        <td style="padding: 8px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_c_balance" class="form-control" min="0" step="0.01">
+                                        <td style="padding: 8px; font-weight: bold;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="tsp_c_fund" id="tsp_c_fund">
+                                                <label class="form-check-label" for="tsp_c_fund">C Fund</label>
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_c_allocation" class="form-control" min="0" max="100" step="1">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="tsp_c_fund_balance" class="form-control" min="0" step="0.01">
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px;">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="tsp_c_fund_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px; font-weight: bold;">S Fund</td>
-                                        <td style="padding: 8px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_s_balance" class="form-control" min="0" step="0.01">
+                                        <td style="padding: 8px; font-weight: bold;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="tsp_s_fund" id="tsp_s_fund">
+                                                <label class="form-check-label" for="tsp_s_fund">S Fund</label>
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_s_allocation" class="form-control" min="0" max="100" step="1">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="tsp_s_fund_balance" class="form-control" min="0" step="0.01">
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px;">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="tsp_s_fund_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px; font-weight: bold;">I Fund</td>
-                                        <td style="padding: 8px;">
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_i_balance" class="form-control" min="0" step="0.01">
+                                        <td style="padding: 8px; font-weight: bold;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="tsp_i_fund" id="tsp_i_fund">
+                                                <label class="form-check-label" for="tsp_i_fund">I Fund</label>
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_i_allocation" class="form-control" min="0" max="100" step="1">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" name="tsp_i_fund_balance" class="form-control" min="0" step="0.01">
+                                            </div>
+                                        </td>
+                                        <td style="padding: 8px;">
+                                            <div class="input-group input-group-sm">
+                                                <input type="number" name="tsp_i_fund_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px; font-weight: bold;">L Income</td>
+                                        <td style="padding: 8px; font-weight: bold;">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="tsp_l_fund" id="tsp_l_fund">
+                                                <label class="form-check-label" for="tsp_l_fund">L Income</label>
+                                            </div>
+                                        </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
@@ -2327,12 +3004,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2025_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2025_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2025_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2025_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2342,12 +3019,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2030_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2030_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2030_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2030_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2357,12 +3034,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2035_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2035_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2035_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2035_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2372,12 +3049,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2040_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2040_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2040_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2040_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2387,12 +3064,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2045_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2045_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2045_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2045_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2402,12 +3079,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2050_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2050_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2050_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2050_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2417,12 +3094,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2055_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2055_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2055_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2055_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2432,12 +3109,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2060_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2060_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2060_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2060_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2447,12 +3124,12 @@
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
                                                 <span class="input-group-text">$</span>
-                                                <input type="number" name="tsp_l2065_70_balance" class="form-control" min="0" step="0.01">
+                                                <input type="number" name="tsp_l_2065_balance" class="form-control" min="0" step="0.01">
                                             </div>
                                         </td>
                                         <td style="padding: 8px;">
                                             <div class="input-group input-group-sm">
-                                                <input type="number" name="tsp_l2065_70_allocation" class="form-control" min="0" max="100" step="1">
+                                                <input type="number" name="tsp_l_2065_allocation" class="form-control" min="0" max="100" step="1">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </td>
@@ -2501,16 +3178,16 @@
                                     <tr>
                                         <td style="padding: 10px;">
                                             <label style="font-size: 11px;">Employee:</label>
-                                            <input type="number" name="risk_tolerance_employee" class="form-control form-control-sm mt-1" min="1" max="10" step="1">
+                                            <input type="number" name="tsp_employee_risk_tolerance" class="form-control form-control-sm mt-1" min="1" max="10" step="1">
                                         </td>
                                         <td style="padding: 10px;" rowspan="2">
-                                            <textarea name="risk_tolerance_why" class="form-control form-control-sm" rows="3" style="height: 100%;"></textarea>
+                                            <textarea name="tsp_risk_tolerance_why" class="form-control form-control-sm" rows="3" style="height: 100%;"></textarea>
                                         </td>
                                     </tr>
                                     <tr>
                                         <td style="padding: 10px;">
                                             <label style="font-size: 11px;">Spouse:</label>
-                                            <input type="number" name="risk_tolerance_spouse" class="form-control form-control-sm mt-1" min="1" max="10" step="1">
+                                            <input type="number" name="tsp_spouse_risk_tolerance" class="form-control form-control-sm mt-1" min="1" max="10" step="1">
                                         </td>
                                     </tr>
                                 </tbody>
@@ -2522,7 +3199,7 @@
                                         <td style="padding: 10px;">
                                             <label style="font-weight: bold;">Thinking about TSP, what is the BEST POSSIBLE END RESULT you could imagine in retirement?</label><br>
                                             <span style="font-size: 10px; font-style: italic;">(Such as: never run out, leave to kids, have enough to do all I dreamed of doing, don't pay too many taxes)</span>
-                                            <textarea name="tsp_best_result" class="form-control form-control-sm mt-2" rows="3"></textarea>
+                                            <textarea name="tsp_best_outcome" class="form-control form-control-sm mt-2" rows="3"></textarea>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -2534,7 +3211,7 @@
                                         <td style="padding: 10px;">
                                             <label style="font-weight: bold;">Thinking about TSP, what is the WORST POSSIBLE END RESULT you could imagine in retirement?</label><br>
                                             <span style="font-size: 10px; font-style: italic;">(Such as: run out too soon, nosedive in the market, my kids have to support me, I don't get to do the retirement I planned)</span>
-                                            <textarea name="tsp_worst_result" class="form-control form-control-sm mt-2" rows="3"></textarea>
+                                            <textarea name="tsp_worst_outcome" class="form-control form-control-sm mt-2" rows="3"></textarea>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -2555,6 +3232,22 @@
                 </div>
             </div>
 
+            <!-- Retirement Goals & Concerns -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">RETIREMENT GOALS & CONCERNS</h2>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-weight: bold; font-size: 12px;">What are your retirement goals?</label>
+                        <textarea name="retirement_goals" class="form-control" rows="6" placeholder="What do you want to accomplish in retirement?"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-weight: bold; font-size: 12px;">What are your retirement concerns?</label>
+                        <textarea name="retirement_concerns" class="form-control" rows="6" placeholder="What worries you most about retirement?"></textarea>
+                    </div>
+                </div>
+            </div>
+
             <!-- ADDITIONAL NOTES -->
             <div class="form-section">
                 <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">ADDITIONAL NOTES</h2>
@@ -2564,7 +3257,109 @@
                 </p>
                 
                 <div class="mb-3">
-                    <textarea name="additional_notes_final" class="form-control" rows="20" placeholder="Enter any additional notes or information here..." style="font-size: 13px;"></textarea>
+                    <label class="form-label" style="font-weight: bold;">Additional Notes (Page 1):</label>
+                    <textarea name="additional_notes" class="form-control" rows="6" placeholder="Enter additional notes here..." style="font-size: 13px;"></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label" style="font-weight: bold;">Additional Notes (Final):</label>
+                    <textarea name="additional_notes_final" class="form-control" rows="14" placeholder="Enter any additional final notes here..." style="font-size: 13px;"></textarea>
+                </div>
+            </div>
+
+            <!-- PERSONAL & LEGAL INFORMATION -->
+            <div class="form-section">
+                <h2 class="section-title" style="background: #d9d9d9; padding: 10px; margin: -25px -25px 20px -25px;">PERSONAL & LEGAL INFORMATION</h2>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h4 style="font-weight: bold; font-size: 13px; margin-bottom: 10px;">Estate Planning & Legal Documents:</h4>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_will" id="has_will">
+                            <label class="form-check-label" for="has_will">
+                                Has a Will
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_poa" id="has_poa">
+                            <label class="form-check-label" for="has_poa">
+                                Has Power of Attorney
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_court_orders" id="has_court_orders">
+                            <label class="form-check-label" for="has_court_orders">
+                                Has Court Orders
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <label class="form-label" style="font-size: 11px;">Court Order Details:</label>
+                        <textarea name="court_order_details" class="form-control form-control-sm" rows="2" placeholder="Details about court orders (e.g., divorce decrees, child support)"></textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h4 style="font-weight: bold; font-size: 13px; margin-bottom: 10px;">Other Benefits & Pensions:</h4>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_other_pension" id="has_other_pension">
+                            <label class="form-check-label" for="has_other_pension">
+                                Has Other Pension (non-federal)
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="has_special_needs_dependents" id="has_special_needs">
+                            <label class="form-check-label" for="has_special_needs">
+                                Has Special Needs Dependents
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 11px;">Other Pension Details:</label>
+                        <textarea name="other_pension_details" class="form-control form-control-sm" rows="2" placeholder="Details about non-federal pensions"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 11px;">Special Needs Details:</label>
+                        <textarea name="special_needs_details" class="form-control form-control-sm" rows="2" placeholder="Details about special needs dependents"></textarea>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label" style="font-size: 11px;">Other Insurance Details:</label>
+                        <textarea name="other_insurance" class="form-control form-control-sm" rows="2" placeholder="Other insurance coverage (life, disability, etc.)"></textarea>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size: 11px;">Number of Reports Requested:</label>
+                        <input type="number" name="num_reports_requested" class="form-control form-control-sm" min="1" max="10" step="1" value="1">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label" style="font-size: 11px;">Urgency Level:</label>
+                        <select name="urgency" class="form-select form-select-sm">
+                            <option value="">Select urgency</option>
+                            <option value="Normal">Normal</option>
+                            <option value="High">High</option>
+                            <option value="Rush">Rush</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -3379,17 +4174,17 @@ militaryYesButtons.forEach(button => {
 
 // TSP Allocation Validation
 const allocationInputs = [
-    'tsp_g_allocation', 'tsp_f_allocation', 'tsp_c_allocation', 'tsp_s_allocation', 'tsp_i_allocation',
-    'tsp_l_income_allocation', 'tsp_l2025_allocation', 'tsp_l2030_allocation', 'tsp_l2035_allocation',
-    'tsp_l2040_allocation', 'tsp_l2045_allocation', 'tsp_l2050_allocation', 'tsp_l2055_allocation',
-    'tsp_l2060_allocation', 'tsp_l2065_70_allocation'
+    'tsp_g_fund_allocation', 'tsp_f_fund_allocation', 'tsp_c_fund_allocation', 'tsp_s_fund_allocation', 'tsp_i_fund_allocation',
+    'tsp_l_income_allocation', 'tsp_l_2025_allocation', 'tsp_l_2030_allocation', 'tsp_l_2035_allocation',
+    'tsp_l_2040_allocation', 'tsp_l_2045_allocation', 'tsp_l_2050_allocation', 'tsp_l_2055_allocation',
+    'tsp_l_2060_allocation', 'tsp_l_2065_allocation'
 ];
 
 const balanceInputs = [
-    'tsp_g_balance', 'tsp_f_balance', 'tsp_c_balance', 'tsp_s_balance', 'tsp_i_balance',
-    'tsp_l_income_balance', 'tsp_l2025_balance', 'tsp_l2030_balance', 'tsp_l2035_balance',
-    'tsp_l2040_balance', 'tsp_l2045_balance', 'tsp_l2050_balance', 'tsp_l2055_balance',
-    'tsp_l2060_balance', 'tsp_l2065_70_balance'
+    'tsp_g_fund_balance', 'tsp_f_fund_balance', 'tsp_c_fund_balance', 'tsp_s_fund_balance', 'tsp_i_fund_balance',
+    'tsp_l_income_balance', 'tsp_l_2025_balance', 'tsp_l_2030_balance', 'tsp_l_2035_balance',
+    'tsp_l_2040_balance', 'tsp_l_2045_balance', 'tsp_l_2050_balance', 'tsp_l_2055_balance',
+    'tsp_l_2060_balance', 'tsp_l_2065_balance'
 ];
 
 function calculateTSPTotals() {
@@ -3543,7 +4338,7 @@ function validateForm() {
         errors.push({
             field: 'TSP Allocation Total',
             message: `TSP allocation total is ${allocationTotal}%. The combined allocation across all TSP funds cannot exceed 100%.`,
-            element: document.querySelector('input[name="tsp_g_allocation"]')
+            element: document.querySelector('input[name="tsp_g_fund_allocation"]')
         });
     }
     
@@ -3554,6 +4349,13 @@ function validateForm() {
 const factFinderForm = document.getElementById('factFinderForm');
 if (factFinderForm) {
     factFinderForm.addEventListener('submit', function(event) {
+        // Sync children_ages to fegli_children_ages before validation
+        const childrenAges = document.querySelector('input[name="children_ages"]');
+        const fegliChildrenAges = document.querySelector('input[name="fegli_children_ages"]');
+        if (childrenAges && fegliChildrenAges) {
+            fegliChildrenAges.value = childrenAges.value;
+        }
+        
         const errors = validateForm();
         
         if (errors.length > 0) {
@@ -3589,5 +4391,82 @@ calculateTSPTotals();
 
 // Initialize documents list
 renderDocuments();
+
+// Function to update FLTCIP aggregate fields
+function updateFLTCIPAggregates() {
+    // Aggregate benefit period checkboxes
+    const periods = [];
+    if (document.getElementById('fltcip_2yrs')?.checked) periods.push('2 years');
+    if (document.getElementById('fltcip_3yrs')?.checked) periods.push('3 years');
+    if (document.getElementById('fltcip_5yrs')?.checked) periods.push('5 years');
+    const periodAggregate = document.getElementById('fltcip_benefit_period_aggregate');
+    if (periodAggregate) {
+        periodAggregate.value = periods.join(', ');
+    }
+    
+    // Aggregate inflation checkboxes
+    const inflations = [];
+    if (document.getElementById('fltcip_acio')?.checked) inflations.push('ACIO 3%');
+    if (document.getElementById('fltcip_fpo')?.checked) inflations.push('FPO');
+    const inflationAggregate = document.getElementById('fltcip_inflation_aggregate');
+    if (inflationAggregate) {
+        inflationAggregate.value = inflations.join(', ');
+    }
+}
+
+// Sync duplicate fields on form load
+document.addEventListener('DOMContentLoaded', function() {
+    // Sync employee_dob to date_of_birth on change
+    const dobInput = document.getElementById('employee_dob');
+    const dateOfBirthHidden = document.querySelector('input[name="date_of_birth"]');
+    if (dobInput && dateOfBirthHidden) {
+        dobInput.addEventListener('change', function() {
+            dateOfBirthHidden.value = this.value;
+        });
+    }
+    
+    // Sync tsp_current_balance to tsp_balance
+    const tspCurrentBalance = document.querySelector('input[name="tsp_current_balance"]');
+    const tspBalance = document.querySelector('input[name="tsp_balance"]');
+    if (tspCurrentBalance && tspBalance) {
+        tspCurrentBalance.addEventListener('change', function() {
+            tspBalance.value = this.value;
+        });
+    }
+    
+    // Sync military_service to military_years
+    const militaryService = document.querySelector('input[name="military_service"]');
+    const militaryYears = document.querySelector('input[name="military_years"]');
+    if (militaryService && militaryYears) {
+        militaryService.addEventListener('change', function() {
+            militaryYears.value = this.value;
+        });
+    }
+    
+    // Sync military_deposit to active_duty_deposit
+    const militaryDeposit = document.querySelectorAll('input[name="military_deposit"]');
+    const activeDutyDeposit = document.querySelector('input[name="active_duty_deposit"]');
+    if (militaryDeposit.length && activeDutyDeposit) {
+        militaryDeposit.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    activeDutyDeposit.value = this.value;
+                }
+            });
+        });
+    }
+    
+    // Sync military_owe_amount to active_duty_owe_amount
+    const militaryOweAmount = document.querySelector('input[name="military_owe_amount"]');
+    const activeDutyOweAmount = document.querySelector('input[name="active_duty_owe_amount"]');
+    if (militaryOweAmount && activeDutyOweAmount) {
+        militaryOweAmount.addEventListener('change', function() {
+            activeDutyOweAmount.value = this.value;
+        });
+    }
+    
+    // Initialize FLTCIP aggregates on page load
+    updateFLTCIPAggregates();
+});
 </script>
 {% endblock %}
