@@ -447,7 +447,7 @@
     
     <div class="inline-fields">
         <div class="inline-field">
-            <div><span class="checkbox"></span> Fully-eligible (no penalty)</div>
+            <div><span class="checkbox{% if rpl.retirement_fully_eligible %} checked{% endif %}"></span> Fully-eligible (no penalty)</div>
         </div>
         <div class="inline-field">
             <label>Age:</label>
@@ -457,7 +457,7 @@
     
     <div class="inline-fields">
         <div class="inline-field">
-            <div><span class="checkbox"></span> MRA+10</div>
+            <div><span class="checkbox{% if rpl.retirement_mra_10 %} checked{% endif %}"></span> MRA+10</div>
         </div>
         <div class="inline-field">
             <label>Date:</label>
@@ -469,17 +469,17 @@
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Is there any reason we should plan on providing less than the maximum pension protection to your current spouse?</div>
         <div style="font-size: 8pt; font-style: italic; margin-bottom: 4px;">Your spouse is entitled to a maximum benefit, unless otherwise agreed.</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span style="font-size: 8.5pt;">Reason: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 200px;">{{ rpl.spouse_protection_reason|default:"" }}</span></span>
+            <span class="checkbox{% if add_info.reduce_spousal_pension == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if add_info.reduce_spousal_pension == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span style="font-size: 8.5pt;">Reason: <span style="border-bottom: 1px solid #000; padding: 0 10px; display: inline-block; min-width: 200px;">{{ add_info.spouse_protection_reason|default:"" }}</span></span>
         </div>
     </div>
     
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Is there a court order that grants any of your federal benefits (pension, SBP, TSP) to a former spouse?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if add_info.court_order_dividing_benefits == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if add_info.court_order_dividing_benefits == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
             <span style="font-size: 8pt; font-style: italic;">(If yes, describe below or provide a copy for review)</span>
         </div>
     </div>
@@ -494,8 +494,8 @@
     <div style="margin: 8px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">Do you expect to earn your highest 3 years of pay at the end of your career? If not, provide highest salary history below.</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if pay.expects_highest_three == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if pay.expects_highest_three == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
             <span style="font-size: 8pt; font-style: italic;">(If no, describe below)</span>
         </div>
     </div>
@@ -676,7 +676,7 @@
             <div class="inline-field-value">YY {{ reserves.years|default:"" }} MM {{ reserves.months|default:"" }} DD {{ reserves.days|default:"" }}</div>
         </div>
         <div class="inline-field">
-            <div><span class="checkbox"></span> Unsure</div>
+            <div><span class="checkbox{% if ss.covered_employment == 'Unsure' %} checked{% endif %}"></span> Unsure</div>
         </div>
     </div>
     
@@ -916,9 +916,9 @@
     <div style="margin: 6px 0;">
         <div style="font-size: 8.5pt; margin-bottom: 4px;">During this time, did you contribute to the retirement system (CSRS/FERS)?</div>
         <div>
-            <span class="checkbox"></span> Yes &nbsp;&nbsp;
-            <span class="checkbox"></span> No &nbsp;&nbsp;
-            <span class="checkbox"></span> Unsure
+            <span class="checkbox{% if mad.no_special_service == 'Yes' %} checked{% endif %}"></span> Yes &nbsp;&nbsp;
+            <span class="checkbox{% if mad.no_special_service == 'No' %} checked{% endif %}"></span> No &nbsp;&nbsp;
+            <span class="checkbox{% if mad.no_special_service == 'Unsure' %} checked{% endif %}"></span> Unsure
         </div>
     </div>
     {% endif %}
@@ -935,7 +935,7 @@
     <div class="notes-box" style="min-height: 60px; max-height: 200px;">{{ data.employment_history.other_agencies|default:"" }}</div>
     
     <div style="margin: 6px 0; text-align: center; font-style: italic; color: #666; padding: 10px; background: #f5f5f5; border: 1px solid #ccc;">
-        <span class="checkbox"></span> No to ALL special service
+        <span class="checkbox{% if mad.no_special_service %} checked{% endif %}"></span> No to ALL special service
     </div>
 
     <!-- PAGE 4 - INSURANCE & BENEFITS -->
