@@ -132,6 +132,92 @@ def technician_workbench(request):
 
 
 @login_required
+def technician_dashboard(request):
+    """Dashboard view for Benefits Technician - shows all cases (not just assigned)"""
+    user = request.user
+    
+    # Ensure user is a technician, manager, or admin
+    if user.role not in ['technician', 'manager', 'administrator']:
+        messages.error(request, 'Access denied. Technicians and Admins only.')
+        return redirect('home')
+    
+    # Get all cases (technicians see all, not just assigned)
+    cases = Case.objects.all().prefetch_related(
+        'documents'
+    ).select_related(
+        'member', 'assigned_to', 'reviewed_by'
+    ).order_by('-date_submitted')
+    
+    # Apply filters
+    status_filter = request.GET.get('status')
+    urgency_filter = request.GET.get('urgency')
+    tier_filter = request.GET.get('tier')
+    search_query = request.GET.get('search')
+    sort_by = request.GET.get('sort', '-date_submitted')
+    
+    if status_filter:
+        cases = cases.filter(status=status_filter)
+    
+    if urgency_filter:
+        cases = cases.filter(urgency=urgency_filter)
+    
+    if tier_filter:
+        cases = cases.filter(tier=tier_filter)
+    
+    if search_query:
+        cases = cases.filter(
+            Q(external_case_id__icontains=search_query) |
+            Q(employee_first_name__icontains=search_query) |
+            Q(employee_last_name__icontains=search_query) |
+            Q(workshop_code__icontains=search_query) |
+            Q(member__first_name__icontains=search_query) |
+            Q(member__last_name__icontains=search_query)
+        )
+    
+    # Handle sorting
+    allowed_sorts = [
+        'external_case_id', '-external_case_id',
+        'workshop_code', '-workshop_code',
+        'employee_first_name', '-employee_first_name',
+        'employee_last_name', '-employee_last_name',
+        'date_submitted', '-date_submitted',
+        'date_due', '-date_due',
+        'date_scheduled', '-date_scheduled',
+        'status', '-status',
+        'urgency', '-urgency',
+        'tier', '-tier'
+    ]
+    if sort_by in allowed_sorts:
+        cases = cases.order_by(sort_by)
+    else:
+        cases = cases.order_by('-date_submitted')
+    
+    # Calculate statistics
+    all_cases = Case.objects.all()
+    stats = {
+        'total': all_cases.count(),
+        'submitted': all_cases.filter(status='submitted').count(),
+        'accepted': all_cases.filter(status='accepted').count(),
+        'pending_review': all_cases.filter(status='pending_review').count(),
+        'completed': all_cases.filter(status='completed').count(),
+        'urgent': all_cases.filter(urgency='urgent').count(),
+    }
+    
+    context = {
+        'cases': cases,
+        'stats': stats,
+        'status_filter': status_filter,
+        'urgency_filter': urgency_filter,
+        'tier_filter': tier_filter,
+        'search_query': search_query,
+        'sort_by': sort_by,
+        'dashboard_type': 'technician',
+    }
+    
+    return render(request, 'cases/technician_dashboard.html', context)
+
+
+@login_required
 def case_list(request):
     """List all cases - Admin and Manager only"""
     user = request.user

@@ -13,6 +13,7 @@ urlpatterns = [
     
     # Technician views
     path('technician/workbench/', views.technician_workbench, name='technician_workbench'),
+    path('technician/dashboard/', views.technician_dashboard, name='technician_dashboard'),
     
     # Shared views
     path('list/', views.case_list, name='case_list'),
