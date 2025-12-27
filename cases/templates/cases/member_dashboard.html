@@ -66,25 +66,34 @@
     <div class="card mb-4">
         <div class="card-body">
             <form method="get" class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="status" class="form-label">Status</label>
                     <select name="status" id="status" class="form-select">
                         <option value="">All Statuses</option>
+                        <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Draft</option>
                         <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
                         <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
                         <option value="hold" {% if status_filter == 'hold' %}selected{% endif %}>On Hold</option>
-                        <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Pending Review</option>
                         <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-3">
+                    <label for="urgency" class="form-label">Urgency</label>
+                    <select name="urgency" id="urgency" class="form-select">
+                        <option value="">All Urgencies</option>
+                        <option value="normal" {% if request.GET.urgency == 'normal' %}selected{% endif %}>Standard</option>
+                        <option value="urgent" {% if request.GET.urgency == 'urgent' %}selected{% endif %}>Rush</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
                     <label for="search" class="form-label">Search</label>
                     <input type="text" name="search" id="search" class="form-control" 
-                           placeholder="Search by Case ID, Employee Name..." 
+                           placeholder="Case ID, Employee, Workshop..." 
                            value="{{ search_query|default:'' }}">
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                    <a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
                 </div>
             </form>
         </div>
@@ -101,15 +110,15 @@
                 <table class="table table-hover table-sm">
                     <thead>
                         <tr>
-                            <th>Case ID</th>
+                            <th><a href="?sort={% if request.GET.sort == 'external_case_id' %}-{% endif %}external_case_id{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Case ID {% if request.GET.sort == 'external_case_id' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-external_case_id' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
                             <th>Workshop</th>
                             <th>Employee Name</th>
                             <th>Reports</th>
-                            <th>Due Date</th>
-                            <th>Status</th>
-                            <th>Urgency</th>
+                            <th><a href="?sort={% if request.GET.sort == 'date_due' %}-{% endif %}date_due{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Due Date {% if request.GET.sort == 'date_due' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-date_due' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
+                            <th><a href="?sort={% if request.GET.sort == 'status' %}-{% endif %}status{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Status {% if request.GET.sort == 'status' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-status' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
+                            <th><a href="?sort={% if request.GET.sort == 'urgency' %}-{% endif %}urgency{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Urgency {% if request.GET.sort == 'urgency' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-urgency' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
                             <th>Credit</th>
-                            <th>Submitted</th>
+                            <th><a href="?sort={% if request.GET.sort == 'date_submitted' %}-{% endif %}date_submitted{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Submitted {% if request.GET.sort == 'date_submitted' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-date_submitted' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
                             <th>Completed</th>
                             <th>Documents</th>
                             <th>Actions</th>
@@ -168,7 +177,10 @@
                             </td>
                             <td>
                                 {% if case.documents.count > 0 %}
-                                    <span class="badge bg-info">{{ case.documents.count }}</span>
+                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" 
+                                            data-bs-target="#docsModal{{ case.pk }}" title="View Documents">
+                                        <i class="bi bi-folder"></i> {{ case.documents.count }}
+                                    </button>
                                 {% else %}
                                     <span class="text-muted">—</span>
                                 {% endif %}
@@ -198,5 +210,40 @@
         </div>
     </div>
 </div>
+
+<!-- Documents Modals -->
+{% for case in cases %}
+    {% if case.documents.count > 0 %}
+    <div class="modal fade" id="docsModal{{ case.pk }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Documents for Case {{ case.external_case_id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="list-group">
+                        {% for doc in case.documents.all %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">
+                                    <i class="bi bi-file-earmark"></i> {{ doc.document.name|slice:":50" }}
+                                </h6>
+                                <small class="text-muted">{{ doc.date_uploaded|date:"m/d/Y" }}</small>
+                            </div>
+                            <div class="mt-2">
+                                <a href="{{ doc.document.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endfor %}
 
 {% endblock %}

@@ -32,23 +32,36 @@ def member_dashboard(request):
         return redirect('home')
     
     # Get all cases for this member
-    cases = Case.objects.filter(member=user).select_related(
+    cases = Case.objects.filter(member=user).prefetch_related(
+        'documents'
+    ).select_related(
         'assigned_to'
-    ).order_by('-created_at')
+    ).order_by('-date_submitted')
     
     # Apply filters
     status_filter = request.GET.get('status')
+    urgency_filter = request.GET.get('urgency')
     search_query = request.GET.get('search')
+    sort_by = request.GET.get('sort', '-date_submitted')
     
     if status_filter:
         cases = cases.filter(status=status_filter)
+    
+    if urgency_filter:
+        cases = cases.filter(urgency=urgency_filter)
     
     if search_query:
         cases = cases.filter(
             Q(external_case_id__icontains=search_query) |
             Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query)
+            Q(employee_last_name__icontains=search_query) |
+            Q(workshop_code__icontains=search_query)
         )
+    
+    # Handle sorting
+    if sort_by in ['external_case_id', '-external_case_id', 'date_submitted', '-date_submitted', 
+                   'date_due', '-date_due', 'status', '-status', 'urgency', '-urgency']:
+        cases = cases.order_by(sort_by)
     
     # Calculate statistics
     stats = {
