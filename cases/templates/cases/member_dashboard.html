@@ -38,6 +38,12 @@
         </div>
         <div class="col-md-2">
             <div class="stat-card">
+                <div class="stat-value">{{ stats.draft }}</div>
+                <div class="stat-label">Draft</div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
                 <div class="stat-value">{{ stats.submitted }}</div>
                 <div class="stat-label">Submitted</div>
             </div>
@@ -46,12 +52,6 @@
             <div class="stat-card">
                 <div class="stat-value">{{ stats.accepted }}</div>
                 <div class="stat-label">Accepted</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.on_hold }}</div>
-                <div class="stat-label">On Hold</div>
             </div>
         </div>
         <div class="col-md-2">
@@ -98,20 +98,20 @@
         <div class="card-body">
             {% if cases %}
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover table-sm">
                     <thead>
                         <tr>
                             <th>Case ID</th>
+                            <th>Workshop</th>
                             <th>Employee Name</th>
-                            <th>Email</th>
                             <th>Reports</th>
-                            <th>Urgency</th>
+                            <th>Due Date</th>
                             <th>Status</th>
-                            <th>Assigned To</th>
-                            <th>Reviewed By</th>
+                            <th>Urgency</th>
+                            <th>Credit</th>
                             <th>Submitted</th>
-                            <th>Accepted</th>
                             <th>Completed</th>
+                            <th>Documents</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -119,43 +119,46 @@
                         {% for case in cases %}
                         <tr>
                             <td><strong>{{ case.external_case_id }}</strong></td>
+                            <td>{{ case.workshop_code }}</td>
                             <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td>{{ case.client_email|truncatechars:30 }}</td>
-                            <td>{{ case.num_reports_requested }}</td>
+                            <td style="text-align: center;">{{ case.num_reports_requested }}</td>
+                            <td>
+                                {% if case.date_due %}
+                                    {{ case.date_due|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if case.status == 'pending_review' %}
+                                    <span class="badge bg-info">Processing</span>
+                                {% elif case.status == 'submitted' %}
+                                    <span class="badge bg-primary">Submitted</span>
+                                {% elif case.status == 'accepted' %}
+                                    <span class="badge bg-success">Accepted</span>
+                                {% elif case.status == 'hold' %}
+                                    <span class="badge bg-warning">On Hold</span>
+                                {% elif case.status == 'draft' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                {% elif case.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 {% if case.urgency == 'urgent' %}
-                                    <span class="badge bg-warning">Urgent</span>
+                                    <span class="badge bg-danger">Rush</span>
                                 {% else %}
-                                    <span class="badge bg-secondary">Normal</span>
+                                    <span class="badge bg-secondary">Standard</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <span class="badge badge-{{ case.status }}">
-                                    {{ case.get_status_display }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if case.assigned_to %}
-                                    {{ case.assigned_to.username }}
-                                {% else %}
-                                    <span class="text-muted">Unassigned</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if case.reviewed_by %}
-                                    {{ case.reviewed_by.username }}
+                                {% if case.credit_value %}
+                                    <strong>{{ case.credit_value }}</strong>
                                 {% else %}
                                     <span class="text-muted">—</span>
                                 {% endif %}
                             </td>
                             <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
-                            <td>
-                                {% if case.date_accepted %}
-                                    {{ case.accepted_at|date:"m/d/Y" }}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
                             <td>
                                 {% if case.date_completed %}
                                     {{ case.date_completed|date:"m/d/Y" }}
@@ -164,18 +167,21 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-eye"></i> View
+                                {% if case.documents.count > 0 %}
+                                    <span class="badge bg-info">{{ case.documents.count }}</span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" title="View Case Details">
+                                    <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{% url 'case_fact_finder' case.pk %}" class="btn btn-sm btn-outline-success">
-                                    <i class="bi bi-file-pdf"></i> PDF
-                                </a>
-                                <form method="post" action="{% url 'delete_case' case.pk %}" style="display: inline;" onsubmit="return confirm('Are you sure?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </button>
-                                </form>
+                                {% if case.status == 'draft' or case.status == 'submitted' %}
+                                    <a href="{% url 'case_fact_finder' case.pk %}" class="btn btn-sm btn-outline-success" title="Continue with Federal Fact Finder">
+                                        <i class="bi bi-file-pdf"></i>
+                                    </a>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}

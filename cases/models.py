@@ -181,6 +181,23 @@ class Case(models.Model):
         help_text='When the case was successfully synced to benefits-software'
     )
     
+    # Credit value assigned by technician (0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
+    credit_value = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        choices=[
+            (0.5, '0.5'),
+            (1.0, '1.0'),
+            (1.5, '1.5'),
+            (2.0, '2.0'),
+            (2.5, '2.5'),
+            (3.0, '3.0'),
+        ],
+        help_text='Credit value assigned by technician based on complexity and number of reports. Members can view but not change.'
+    )
+    
     # Additional fields for internal tracking
     notes = models.TextField(blank=True, help_text='Internal notes not visible to member')
     created_at = models.DateTimeField(auto_now_add=True)

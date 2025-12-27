@@ -6,6 +6,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
+from datetime import timedelta
 import uuid
 from cases.models import Case
 
@@ -42,6 +43,13 @@ def quick_case_submit(request):
             },
         }
         
+        # Default due date: 7 days from now
+        due_date = timezone.now().date() + timedelta(days=7)
+        
+        # Auto-set urgency based on due date
+        # For now, members can override in the template view
+        urgency = request.POST.get('urgency', 'normal')
+        
         # Create case
         case = Case(
             member=user,
@@ -50,15 +58,16 @@ def quick_case_submit(request):
             employee_first_name=first_name,
             employee_last_name=last_name,
             client_email=employee_email,
-            urgency=request.POST.get('urgency', 'normal'),
+            urgency=urgency,
             num_reports_requested=1,
-            status='submitted',
+            date_due=due_date,
+            status='draft',
             fact_finder_data=fact_finder_data,
             api_sync_status='pending',
         )
         case.save()
         
-        messages.success(request, f'Case {external_case_id} created! Now upload your Federal Fact Finder.')
+        messages.success(request, f'Case {external_case_id} created! Now complete your Federal Fact Finder.')
         # Redirect directly to template view
         return redirect('case_fact_finder', case_id=case.id)
     
