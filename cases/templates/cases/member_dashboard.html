@@ -81,8 +81,8 @@
                     <label for="urgency" class="form-label">Urgency</label>
                     <select name="urgency" id="urgency" class="form-select">
                         <option value="">All Urgencies</option>
-                        <option value="normal" {% if request.GET.urgency == 'normal' %}selected{% endif %}>Standard</option>
-                        <option value="urgent" {% if request.GET.urgency == 'urgent' %}selected{% endif %}>Rush</option>
+                        <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Standard</option>
+                        <option value="urgent" {% if urgency_filter == 'urgent' %}selected{% endif %}>Rush</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -110,17 +110,18 @@
                 <table class="table table-hover table-sm">
                     <thead>
                         <tr>
-                            <th><a href="?sort={% if request.GET.sort == 'external_case_id' %}-{% endif %}external_case_id{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Case ID {% if request.GET.sort == 'external_case_id' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-external_case_id' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
+                            <th>Case ID</th>
                             <th>Workshop</th>
                             <th>Employee Name</th>
+                            <th>Email</th>
                             <th>Reports</th>
-                            <th><a href="?sort={% if request.GET.sort == 'date_due' %}-{% endif %}date_due{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Due Date {% if request.GET.sort == 'date_due' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-date_due' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
-                            <th><a href="?sort={% if request.GET.sort == 'status' %}-{% endif %}status{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Status {% if request.GET.sort == 'status' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-status' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
-                            <th><a href="?sort={% if request.GET.sort == 'urgency' %}-{% endif %}urgency{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Urgency {% if request.GET.sort == 'urgency' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-urgency' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
+                            <th>Due Date</th>
+                            <th>Urgency</th>
+                            <th>Status</th>
                             <th>Credit</th>
-                            <th><a href="?sort={% if request.GET.sort == 'date_submitted' %}-{% endif %}date_submitted{% for k, v in request.GET.items %}{% if k != 'sort' %}&{{ k }}={{ v }}{% endif %}{% endfor %}" style="text-decoration: none; color: inherit;">Submitted {% if request.GET.sort == 'date_submitted' %}<i class="bi bi-arrow-down"></i>{% elif request.GET.sort == '-date_submitted' %}<i class="bi bi-arrow-up"></i>{% endif %}</a></th>
+                            <th>Submitted</th>
+                            <th>Accepted</th>
                             <th>Completed</th>
-                            <th>Documents</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -130,17 +131,25 @@
                             <td><strong>{{ case.external_case_id }}</strong></td>
                             <td>{{ case.workshop_code }}</td>
                             <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td>{{ case.client_email }}</td>
                             <td style="text-align: center;">{{ case.num_reports_requested }}</td>
                             <td>
                                 {% if case.date_due %}
                                     {{ case.date_due|date:"m/d/Y" }}
                                 {% else %}
-                                    <span class="text-muted">—</span>
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if case.urgency == 'urgent' %}
+                                    <span class="badge bg-danger">Urgent</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Normal</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if case.status == 'pending_review' %}
-                                    <span class="badge bg-info">Processing</span>
+                                    <span class="badge bg-info">Pending Review</span>
                                 {% elif case.status == 'submitted' %}
                                     <span class="badge bg-primary">Submitted</span>
                                 {% elif case.status == 'accepted' %}
@@ -154,46 +163,37 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if case.urgency == 'urgent' %}
-                                    <span class="badge bg-danger">Rush</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Standard</span>
-                                {% endif %}
-                            </td>
-                            <td>
                                 {% if case.credit_value %}
                                     <strong>{{ case.credit_value }}</strong>
                                 {% else %}
-                                    <span class="text-muted">—</span>
+                                    —
                                 {% endif %}
                             </td>
                             <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
                             <td>
+                                {% if case.date_accepted %}
+                                    {{ case.date_accepted|date:"m/d/Y" }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
                                 {% if case.date_completed %}
                                     {{ case.date_completed|date:"m/d/Y" }}
                                 {% else %}
-                                    <span class="text-muted">—</span>
+                                    —
                                 {% endif %}
                             </td>
                             <td>
-                                {% if case.documents.count > 0 %}
-                                    <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" 
-                                            data-bs-target="#docsModal{{ case.pk }}" title="View Documents">
-                                        <i class="bi bi-folder"></i> {{ case.documents.count }}
-                                    </button>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" title="View Case Details">
-                                    <i class="bi bi-eye"></i>
+                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" title="View">
+                                    <i class="bi bi-eye"></i> View
                                 </a>
-                                {% if case.status == 'draft' or case.status == 'submitted' %}
-                                    <a href="{% url 'case_fact_finder' case.pk %}" class="btn btn-sm btn-outline-success" title="Continue with Federal Fact Finder">
-                                        <i class="bi bi-file-pdf"></i>
-                                    </a>
-                                {% endif %}
+                                <a href="{% url 'case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" title="PDF">
+                                    <i class="bi bi-file-pdf"></i> PDF
+                                </a>
+                                <a href="{% url 'delete_case' case.pk %}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure?')">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
@@ -210,40 +210,5 @@
         </div>
     </div>
 </div>
-
-<!-- Documents Modals -->
-{% for case in cases %}
-    {% if case.documents.count > 0 %}
-    <div class="modal fade" id="docsModal{{ case.pk }}" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Documents for Case {{ case.external_case_id }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="list-group">
-                        {% for doc in case.documents.all %}
-                        <div class="list-group-item">
-                            <div class="d-flex w-100 justify-content-between">
-                                <h6 class="mb-1">
-                                    <i class="bi bi-file-earmark"></i> {{ doc.document.name|slice:":50" }}
-                                </h6>
-                                <small class="text-muted">{{ doc.date_uploaded|date:"m/d/Y" }}</small>
-                            </div>
-                            <div class="mt-2">
-                                <a href="{{ doc.document.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
-                                    <i class="bi bi-download"></i> Download
-                                </a>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-{% endfor %}
 
 {% endblock %}

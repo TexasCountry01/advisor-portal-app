@@ -76,7 +76,9 @@ def member_dashboard(request):
         'cases': cases,
         'stats': stats,
         'status_filter': status_filter,
+        'urgency_filter': urgency_filter,
         'search_query': search_query,
+        'sort_by': sort_by,
     }
     
     return render(request, 'cases/member_dashboard.html', context)
