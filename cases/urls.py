@@ -33,4 +33,5 @@ urlpatterns = [
     path('template/download/', views_pdf_template.download_template, name='download_template'),
     path('<int:case_id>/submit/', views_pdf_template.submit_case, name='submit_case'),
     path('<int:case_id>/save-draft/', views_pdf_template.save_case_draft, name='save_case_draft'),
+    path('<int:case_id>/extract-pdf-fields/', views_pdf_template.extract_pdf_fields, name='extract_pdf_fields'),
 ]

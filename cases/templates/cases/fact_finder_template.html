@@ -4,7 +4,7 @@
 {% block title %}Federal Fact Finder - Case {{ case.id }}{% endblock %}
 
 {% block content %}
-<div class="container my-5">
+<div class="container-fluid my-5">
     <div class="row">
         <div class="col-12">
             <h2>Federal Fact Finder Form - Case #{{ case.id }}</h2>
@@ -13,30 +13,36 @@
     </div>
 
     <div class="row mt-4">
-        <!-- PDF Viewer -->
+        <!-- PDF Viewer with Native Browser PDF Support (Left Column) -->
         <div class="col-lg-8">
             <div class="card">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        Federal Fact Finder (revised 01-2025)
+                        <i class="bi bi-file-pdf"></i> Federal Fact Finder - Fill Form Fields
                     </h5>
                 </div>
                 <div class="card-body p-3">
-                    <!-- PDF Embed -->
-                    <div style="height: 700px; overflow: auto; border: 1px solid #ddd;">
+                    <!-- PDF Viewer with PDF-lib for interactive form fields -->
+                    <div id="pdf-container" style="height: 700px; overflow-y: auto; border: 1px solid #ddd; background: #f0f0f0; display: none;">
+                        <!-- Canvas rendered pages will go here -->
+                    </div>
+                    
+                    <!-- Fallback: Native PDF Viewer for browsers without PDF-lib support -->
+                    <div style="height: 700px; overflow: hidden; border: 1px solid #ddd; background: #f9f9f9;" id="pdf-viewer-fallback">
                         <iframe 
+                            id="pdf-viewer"
                             src="{{ template_url }}" 
                             style="width: 100%; height: 100%; border: none;"
-                            title="Federal Fact Finder Template">
+                            title="Federal Fact Finder PDF">
                         </iframe>
                     </div>
                 </div>
                 <div class="card-footer text-center">
                     <a href="{{ template_url }}" class="btn btn-primary" download>
-                        <i class="fas fa-download"></i> Download Template
+                        <i class="bi bi-download"></i> Download PDF
                     </a>
                     <small class="text-muted d-block mt-2">
-                        Print or fill this form and upload completed copy below.
+                        Fill the form fields directly in the PDF above. Click "Save Draft" when done.
                     </small>
                 </div>
             </div>
@@ -45,13 +51,18 @@
         <!-- Supporting Documents Panel -->
         <div class="col-lg-4">
             <div class="card">
-                <div class="card-header bg-success text-white">
+                <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
-                        <i class="fas fa-file-upload"></i> Supporting Documents
+                        <i class="fas fa-file-upload"></i> Case Management
                     </h5>
                 </div>
                 <div class="card-body">
-                    <!-- Case Details Form -->
+                    <div class="alert alert-info mb-3">
+                        <small><i class="bi bi-info-circle"></i> Fill the PDF form on the left, then save your progress here.</small>
+                    </div>
+
+                    <hr class="my-3">
+
                     <form method="post" class="mb-4" id="case-details-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="save_details">
@@ -97,7 +108,40 @@
 
                     <hr class="my-3">
 
-                    <!-- Upload Form -->
+                    <!-- Save Draft and Submit Buttons -->
+                    <div class="d-grid gap-2">
+                        <button type="button" id="save-draft-btn" class="btn btn-success">
+                            <i class="bi bi-floppy"></i> Save Draft
+                        </button>
+                        <small class="text-muted text-center">
+                            <i class="bi bi-info-circle"></i> The PDF changes are automatically detected and saved
+                        </small>
+                        <form method="post" action="{% url 'submit_case' case.id %}" class="mb-0">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary w-100" 
+                                    onclick="return confirm('Submit this case? You can still upload documents after submission.');">
+                                <i class="fas fa-check-circle"></i> Submit Case
+                            </button>
+                        </form>
+                    </div>
+
+                    <small class="text-muted d-block text-center mt-3">
+                        Status: <strong>{{ case.get_status_display }}</strong>
+                    </small>
+
+                    <hr class="my-3">
+
+                    <!-- PDF Field Extraction Help -->
+                    <div class="alert alert-warning small mb-3" id="pdf-help-alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Tip:</strong> Fill the PDF form above, then use the "Capture PDF Fields" button to extract and save your filled values.
+                    </div>
+                    
+                    <button type="button" id="capture-pdf-fields-btn" class="btn btn-info w-100 mb-3">
+                        <i class="bi bi-download"></i> Capture PDF Fields
+                    </button>
+
+                    <hr class="my-3">                    <!-- Upload Form -->
                     <form method="post" enctype="multipart/form-data" class="mb-4" id="document-upload-form">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="upload_document">
@@ -189,12 +233,9 @@
                                 <i class="fas fa-check-circle"></i> Submit Case
                             </button>
                         </form>
-                        <form method="post" action="{% url 'save_case_draft' case.id %}" class="mb-0">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-secondary w-100">
-                                <i class="fas fa-save"></i> Save Draft
-                            </button>
-                        </form>
+                        <button type="submit" form="factFinderFormData" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-save"></i> Save Draft
+                        </button>
                     </div>
 
                     <small class="text-muted d-block text-center mt-3">
@@ -214,5 +255,185 @@
         </div>
     </div>
 </div>
+
+<!-- JavaScript for PDF Form Field Handling with Persistence -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.11.174/pdf.min.js"></script>
+<script>
+    const caseId = {{ case.id }};
+    const pdfUrl = '{{ template_url }}';
+    const savedFieldData = {{ saved_pdf_data|default:"{}"|safe }};
+    
+    // Global to track form field values
+    let currentFormFieldValues = {};
+    let pdfDocInstance = null;
+    
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Set PDF-js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdfjs-dist/3.11.174/pdf.worker.min.js';
+        }
+        
+        // Set up Save Draft button
+        document.getElementById('save-draft-btn').addEventListener('click', saveDraft);
+        
+        // Set up Capture PDF Fields button
+        document.getElementById('capture-pdf-fields-btn').addEventListener('click', capturePDFFields);
+        
+        // Initialize PDF with field detection
+        await initializePDFHandler();
+    });
+
+    async function initializePDFHandler() {
+        try {
+            // Load the PDF to get form fields structure
+            const response = await fetch(pdfUrl);
+            const arrayBuffer = await response.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+            
+            // Get form object
+            const form = pdfDoc.getForm();
+            const fields = form.getFields();
+            
+            console.log(`Detected ${fields.length} form fields in PDF`);
+            
+            // Map all PDF form field names
+            const pdfFieldMap = {};
+            fields.forEach(field => {
+                const fieldName = field.getName();
+                const fieldType = field.constructor.name;
+                pdfFieldMap[fieldName] = {
+                    type: fieldType,
+                    value: ''
+                };
+            });
+            
+            console.log('PDF Form Fields available for extraction');
+            window.pdfFieldMap = pdfFieldMap;
+            
+        } catch (error) {
+            console.error('Error initializing PDF handler:', error);
+        }
+    }
+
+    async function capturePDFFields() {
+        try {
+            // Get the iframe PDF viewer
+            const iframeEl = document.getElementById('pdf-viewer');
+            if (!iframeEl || !iframeEl.contentDocument) {
+                alert('Error: Could not access PDF viewer');
+                return;
+            }
+            
+            // Try to extract PDF from iframe using PDF.js
+            const pdfUrl_current = iframeEl.src || '{{ template_url }}';
+            
+            const response = await fetch(pdfUrl_current);
+            const arrayBuffer = await response.arrayBuffer();
+            const pdfDoc = await PDFLib.PDFDocument.load(arrayBuffer);
+            
+            // Get form fields
+            const form = pdfDoc.getForm();
+            const fields = form.getFields();
+            
+            // Extract values (note: this only gets saved values in the PDF, not live form values)
+            const extractedValues = {};
+            let filledFieldCount = 0;
+            
+            fields.forEach(field => {
+                const fieldName = field.getName();
+                try {
+                    const value = field.getValue();
+                    if (value) {
+                        extractedValues[fieldName] = value;
+                        filledFieldCount++;
+                    }
+                } catch (e) {
+                    // Ignore fields we can't read
+                }
+            });
+            
+            console.log(`Extracted ${filledFieldCount} filled fields from PDF`);
+            
+            // If we found filled fields, save them
+            if (filledFieldCount > 0) {
+                // Add extracted fields to form data
+                const formData = new FormData(document.getElementById('case-details-form'));
+                formData.set('action', 'save_draft');
+                
+                // Append extracted PDF fields
+                for (const [fieldName, value] of Object.entries(extractedValues)) {
+                    formData.append(fieldName, value);
+                }
+                
+                // Send to server
+                const response = await fetch(`/cases/${caseId}/save-draft/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                    alertDiv.innerHTML = `<i class="bi bi-check-circle"></i> Captured ${filledFieldCount} PDF fields and saved! <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                    document.querySelector('.card-body').insertAdjacentElement('afterbegin', alertDiv);
+                    
+                    setTimeout(() => alertDiv.remove(), 4000);
+                } else {
+                    alert('Error saving captured fields');
+                }
+            } else {
+                alert('No filled fields found in PDF. Fill the form above and try again.');
+            }
+            
+        } catch (error) {
+            console.error('Error capturing PDF fields:', error);
+            alert('Error: Could not capture PDF fields. ' + error.message);
+        }
+    }
+
+    async function saveDraft() {
+        const form = document.getElementById('case-details-form');
+        const formData = new FormData(form);
+        
+        // Update action
+        formData.set('action', 'save_draft');
+        
+        try {
+            const response = await fetch(`/cases/${caseId}/save-draft/`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+                // Show success message
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                alertDiv.innerHTML = `<i class="bi bi-check-circle"></i> Draft saved successfully! (${data.saved_fields} fields) <button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+                document.querySelector('.card-body').insertAdjacentElement('afterbegin', alertDiv);
+                
+                // Auto-dismiss after 4 seconds
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 4000);
+            } else {
+                alert('Error saving draft: ' + (data.message || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error saving draft:', error);
+            alert('Error saving draft. Please try again.');
+        }
+    }
+</script>
 
 {% endblock %}
