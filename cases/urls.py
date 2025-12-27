@@ -18,6 +18,9 @@ urlpatterns = [
     # Admin views
     path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
     
+    # Manager views
+    path('manager/dashboard/', views.manager_dashboard, name='manager_dashboard'),
+    
     # Shared views
     path('list/', views.case_list, name='case_list'),
     path('<int:pk>/', views.case_detail, name='case_detail'),
