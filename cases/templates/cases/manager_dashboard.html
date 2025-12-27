@@ -65,22 +65,22 @@
                 </div>
                 <div class="card-body">
                     <div class="progress mb-3">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {% if stats.total > 0 %}{{ stats.submitted|add:stats.accepted|mul:100|div:stats.total }}{% else %}0{% endif %}%"></div>
+                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.submitted_pct }}%"></div>
                     </div>
                     <small class="text-muted">In Progress: {{ stats.submitted }} submitted + {{ stats.accepted }} accepted</small>
                     
                     <div class="progress mb-3">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: {% if stats.total > 0 %}{{ stats.pending_review|mul:100|div:stats.total }}{% else %}0{% endif %}%"></div>
+                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ stats.pending_review_pct }}%"></div>
                     </div>
                     <small class="text-muted">Pending Review: {{ stats.pending_review }}</small>
                     
                     <div class="progress mb-3">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {% if stats.total > 0 %}{{ stats.completed|mul:100|div:stats.total }}{% else %}0{% endif %}%"></div>
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.completed_pct }}%"></div>
                     </div>
                     <small class="text-muted">Completed: {{ stats.completed }} ({{ stats.completion_rate }}%)</small>
                     
                     <div class="progress">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: {% if stats.total > 0 %}{{ stats.hold|mul:100|div:stats.total }}{% else %}0{% endif %}%"></div>
+                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.hold_pct }}%"></div>
                     </div>
                     <small class="text-muted">On Hold: {{ stats.hold }}</small>
                 </div>
@@ -99,7 +99,7 @@
                                 <span class="badge bg-danger">Urgent: {{ stats.urgent }}</span>
                             </p>
                             <p>
-                                <span class="badge bg-secondary">Normal: {{ stats.total|add:stats.urgent|add:"-1"|mul:"-1" }}</span>
+                                <span class="badge bg-secondary">Normal: {{ stats.normal }}</span>
                             </p>
                         </div>
                         <div class="col-md-6">

@@ -435,18 +435,40 @@ def manager_dashboard(request):
     all_cases = Case.objects.all()
     completed_cases = all_cases.filter(status='completed')
     
+    submitted_count = all_cases.filter(status='submitted').count()
+    accepted_count = all_cases.filter(status='accepted').count()
+    hold_count = all_cases.filter(status='hold').count()
+    pending_review_count = all_cases.filter(status='pending_review').count()
+    completed_count = completed_cases.count()
+    urgent_count = all_cases.filter(urgency='urgent').count()
+    total_count = all_cases.count()
+    
+    # Calculate percentages for progress bars
+    if total_count > 0:
+        submitted_pct = round((submitted_count + accepted_count) * 100 / total_count, 1)
+        pending_review_pct = round(pending_review_count * 100 / total_count, 1)
+        completed_pct = round(completed_count * 100 / total_count, 1)
+        hold_pct = round(hold_count * 100 / total_count, 1)
+    else:
+        submitted_pct = pending_review_pct = completed_pct = hold_pct = 0
+    
     stats = {
-        'total': all_cases.count(),
-        'submitted': all_cases.filter(status='submitted').count(),
-        'accepted': all_cases.filter(status='accepted').count(),
-        'hold': all_cases.filter(status='hold').count(),
-        'pending_review': all_cases.filter(status='pending_review').count(),
-        'completed': completed_cases.count(),
-        'completion_rate': round((completed_cases.count() / all_cases.count() * 100) if all_cases.count() > 0 else 0, 1),
-        'urgent': all_cases.filter(urgency='urgent').count(),
+        'total': total_count,
+        'submitted': submitted_count,
+        'accepted': accepted_count,
+        'hold': hold_count,
+        'pending_review': pending_review_count,
+        'completed': completed_count,
+        'completion_rate': round((completed_count / total_count * 100) if total_count > 0 else 0, 1),
+        'urgent': urgent_count,
+        'normal': max(0, total_count - urgent_count),
         'total_members': User.objects.filter(role='member', is_active=True).count(),
         'total_technicians': User.objects.filter(role='technician', is_active=True).count(),
         'avg_processing_time': 'N/A',  # Would require more complex calculation
+        'submitted_pct': submitted_pct,
+        'pending_review_pct': pending_review_pct,
+        'completed_pct': completed_pct,
+        'hold_pct': hold_pct,
     }
     
     context = {

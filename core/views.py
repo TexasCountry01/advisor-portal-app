@@ -13,8 +13,10 @@ def home(request):
             return redirect('member_dashboard')
         elif request.user.role == 'technician':
             return redirect('technician_workbench')
-        elif request.user.role in ['administrator', 'manager']:
-            return redirect('case_list')
+        elif request.user.role == 'manager':
+            return redirect('manager_dashboard')
+        elif request.user.role == 'administrator':
+            return redirect('admin_dashboard')
     
     return render(request, 'core/home.html')
 
@@ -44,8 +46,10 @@ def login_view(request):
                 return redirect('member_dashboard')
             elif user.role == 'technician':
                 return redirect('technician_workbench')
-            elif user.role in ['administrator', 'manager']:
-                return redirect('case_list')
+            elif user.role == 'manager':
+                return redirect('manager_dashboard')
+            elif user.role == 'administrator':
+                return redirect('admin_dashboard')
             
             return redirect('home')
         else:
