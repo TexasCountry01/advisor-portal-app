@@ -15,6 +15,9 @@ urlpatterns = [
     path('technician/workbench/', views.technician_workbench, name='technician_workbench'),
     path('technician/dashboard/', views.technician_dashboard, name='technician_dashboard'),
     
+    # Admin views
+    path('admin/dashboard/', views.admin_dashboard, name='admin_dashboard'),
+    
     # Shared views
     path('list/', views.case_list, name='case_list'),
     path('<int:pk>/', views.case_detail, name='case_detail'),

@@ -218,6 +218,130 @@ def technician_dashboard(request):
 
 
 @login_required
+def admin_dashboard(request):
+    """Dashboard view for Administrators - full system visibility and control"""
+    user = request.user
+    
+    # Ensure user is an administrator
+    if user.role != 'administrator':
+        messages.error(request, 'Access denied. Administrators only.')
+        return redirect('home')
+    
+    # Get all cases with all related data
+    cases = Case.objects.all().prefetch_related(
+        'documents'
+    ).select_related(
+        'member', 'assigned_to', 'reviewed_by'
+    ).order_by('-date_submitted')
+    
+    # Apply filters
+    status_filter = request.GET.get('status')
+    urgency_filter = request.GET.get('urgency')
+    tier_filter = request.GET.get('tier')
+    member_filter = request.GET.get('member')
+    technician_filter = request.GET.get('technician')
+    date_range = request.GET.get('date_range')
+    search_query = request.GET.get('search')
+    sort_by = request.GET.get('sort', '-date_submitted')
+    
+    if status_filter:
+        cases = cases.filter(status=status_filter)
+    
+    if urgency_filter:
+        cases = cases.filter(urgency=urgency_filter)
+    
+    if tier_filter:
+        cases = cases.filter(tier=tier_filter)
+    
+    if member_filter:
+        cases = cases.filter(member_id=member_filter)
+    
+    if technician_filter:
+        cases = cases.filter(assigned_to_id=technician_filter)
+    
+    # Date range filter
+    if date_range:
+        from datetime import timedelta
+        today = timezone.now().date()
+        if date_range == 'today':
+            cases = cases.filter(date_submitted__date=today)
+        elif date_range == 'week':
+            week_ago = today - timedelta(days=7)
+            cases = cases.filter(date_submitted__date__gte=week_ago)
+        elif date_range == 'month':
+            month_ago = today - timedelta(days=30)
+            cases = cases.filter(date_submitted__date__gte=month_ago)
+    
+    if search_query:
+        cases = cases.filter(
+            Q(external_case_id__icontains=search_query) |
+            Q(employee_first_name__icontains=search_query) |
+            Q(employee_last_name__icontains=search_query) |
+            Q(workshop_code__icontains=search_query) |
+            Q(member__first_name__icontains=search_query) |
+            Q(member__last_name__icontains=search_query) |
+            Q(client_email__icontains=search_query)
+        )
+    
+    # Handle sorting
+    allowed_sorts = [
+        'external_case_id', '-external_case_id',
+        'workshop_code', '-workshop_code',
+        'employee_first_name', '-employee_first_name',
+        'employee_last_name', '-employee_last_name',
+        'date_submitted', '-date_submitted',
+        'date_due', '-date_due',
+        'date_scheduled', '-date_scheduled',
+        'status', '-status',
+        'urgency', '-urgency',
+        'tier', '-tier'
+    ]
+    if sort_by in allowed_sorts:
+        cases = cases.order_by(sort_by)
+    else:
+        cases = cases.order_by('-date_submitted')
+    
+    # Get related data for filters
+    from accounts.models import User
+    members = User.objects.filter(role='member', is_active=True).order_by('username')
+    technicians = User.objects.filter(role='technician', is_active=True).order_by('username')
+    
+    # Calculate comprehensive statistics
+    all_cases = Case.objects.all()
+    stats = {
+        'total': all_cases.count(),
+        'submitted': all_cases.filter(status='submitted').count(),
+        'accepted': all_cases.filter(status='accepted').count(),
+        'hold': all_cases.filter(status='hold').count(),
+        'pending_review': all_cases.filter(status='pending_review').count(),
+        'completed': all_cases.filter(status='completed').count(),
+        'urgent': all_cases.filter(urgency='urgent').count(),
+        'total_members': User.objects.filter(role='member', is_active=True).count(),
+        'total_technicians': User.objects.filter(role='technician', is_active=True).count(),
+        'unassigned': all_cases.filter(assigned_to__isnull=True).count(),
+        'requiring_review': all_cases.filter(status='pending_review').count(),
+    }
+    
+    context = {
+        'cases': cases,
+        'stats': stats,
+        'members': members,
+        'technicians': technicians,
+        'status_filter': status_filter,
+        'urgency_filter': urgency_filter,
+        'tier_filter': tier_filter,
+        'member_filter': member_filter,
+        'technician_filter': technician_filter,
+        'date_range': date_range,
+        'search_query': search_query,
+        'sort_by': sort_by,
+        'dashboard_type': 'admin',
+    }
+    
+    return render(request, 'cases/admin_dashboard.html', context)
+
+
+@login_required
 def case_list(request):
     """List all cases - Admin and Manager only"""
     user = request.user
