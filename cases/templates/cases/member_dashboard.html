@@ -184,16 +184,18 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td style="white-space: nowrap; min-width: 150px;">
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" title="View">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                                <a href="{% url 'case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" title="PDF">
-                                    <i class="bi bi-file-pdf"></i>
-                                </a>
-                                <a href="{% url 'delete_case' case.pk %}" class="btn btn-sm btn-outline-danger" title="Delete" onclick="return confirm('Are you sure?')">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                            <td style="white-space: nowrap;">
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{% url 'case_detail' case.pk %}" class="btn btn-outline-primary" title="View Case">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                    <a href="{% url 'case_fact_finder' case.id %}" class="btn btn-outline-success" title="Download PDF">
+                                        <i class="bi bi-file-pdf"></i> PDF
+                                    </a>
+                                    <a href="{% url 'delete_case' case.pk %}" class="btn btn-outline-danger" title="Delete Case" onclick="return confirm('Are you sure?')">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
