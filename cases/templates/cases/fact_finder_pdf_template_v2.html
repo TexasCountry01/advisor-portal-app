@@ -332,49 +332,46 @@
     <div class="two-columns">
         <div class="column">
             <div class="column-header">RETIREMENT SYSTEM</div>
-            {% with system=data.retirement_system.system %}
             <div class="form-group">
-                <div><span class="checkbox {% if system == 'CSRS' %}checked{% endif %}"></span> CSRS</div>
+                <div><span class="checkbox {% if retirement_system == 'CSRS' %}checked{% endif %}"></span> CSRS</div>
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if system == 'CSRS_Offset' %}checked{% endif %}"></span> CSRS Offset</div>
-                {% if system == 'CSRS_Offset' %}
+                <div><span class="checkbox {% if retirement_system == 'CSRS Offset' %}checked{% endif %}"></span> CSRS Offset</div>
+                {% if retirement_system == 'CSRS Offset' %}
                 <div style="margin-left: 20px; font-size: 8.5pt;">Offset date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.retirement_system.csrs_offset_date|default:"" }}</span></div>
                 {% endif %}
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if system == 'FERS' %}checked{% endif %}"></span> FERS</div>
+                <div><span class="checkbox {% if retirement_system == 'FERS' %}checked{% endif %}"></span> FERS</div>
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if system == 'FERS_Transfer' %}checked{% endif %}"></span> FERS Transfer</div>
-                {% if system == 'FERS_Transfer' %}
+                <div><span class="checkbox {% if retirement_system == 'FERS Transfer' %}checked{% endif %}"></span> FERS Transfer</div>
+                {% if retirement_system == 'FERS Transfer' %}
                 <div style="margin-left: 20px; font-size: 8.5pt;">Transfer date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.retirement_system.fers_transfer_date|default:"" }}</span></div>
                 {% endif %}
             </div>
-            {% endwith %}
         </div>
         
         <div class="column">
             <div class="column-header">EMPLOYEE TYPE</div>
-            {% with emp_type=data.employee_type.type %}
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Regular' %}checked{% endif %}"></span> Regular</div>
+                <div><span class="checkbox {% if employee_type == 'Regular' %}checked{% endif %}"></span> Regular</div>
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Regular - Postal Worker' %}checked{% endif %}"></span> Regular – Postal Worker</div>
+                <div><span class="checkbox {% if employee_type == 'Regular - Postal Worker' %}checked{% endif %}"></span> Regular – Postal Worker</div>
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Regular - Military Reserve Technician' %}checked{% endif %}"></span> Regular – Military Reserve Technician</div>
+                <div><span class="checkbox {% if employee_type == 'Regular - Military Reserve Technician' %}checked{% endif %}"></span> Regular – Military Reserve Technician</div>
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Law Enforcement' %}checked{% endif %}"></span> Law Enforcement</div>
-                {% if emp_type == 'Law Enforcement' and data.employee_type.leo_start_date %}
+                <div><span class="checkbox {% if employee_type == 'Law Enforcement' %}checked{% endif %}"></span> Law Enforcement</div>
+                {% if employee_type == 'Law Enforcement' and data.employee_type.leo_start_date %}
                 <div style="margin-left: 20px; font-size: 8.5pt;">LEO start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.leo_start_date }}</span></div>
                 {% endif %}
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Customs & Border Protection Officer' %}checked{% endif %}"></span> Customs & Border Protection Officer</div>
-                {% if emp_type == 'Customs & Border Protection Officer' %}
+                <div><span class="checkbox {% if employee_type == 'Customs & Border Protection Officer' %}checked{% endif %}"></span> Customs & Border Protection Officer</div>
+                {% if employee_type == 'Customs & Border Protection Officer' %}
                 <div style="margin-left: 20px; font-size: 8pt;">Were you a CBPO on 7/6/2008 when the position became law enforcement?</div>
                 <div style="margin-left: 20px; font-size: 8pt;">
                     <span class="checkbox {% if data.employee_type.cbpo_on_date_7_6_2008 %}checked{% endif %}"></span> Yes &nbsp;&nbsp;
@@ -384,24 +381,23 @@
                 {% endif %}
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Firefighter' %}checked{% endif %}"></span> Firefighter</div>
-                {% if emp_type == 'Firefighter' and data.employee_type.ff_start_date %}
+                <div><span class="checkbox {% if employee_type == 'Firefighter' %}checked{% endif %}"></span> Firefighter</div>
+                {% if employee_type == 'Firefighter' and data.employee_type.ff_start_date %}
                 <div style="margin-left: 20px; font-size: 8.5pt;">FF start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.ff_start_date }}</span></div>
                 {% endif %}
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Air Traffic Controller' %}checked{% endif %}"></span> Air Traffic Controller</div>
-                {% if emp_type == 'Air Traffic Controller' and data.employee_type.atc_start_date %}
+                <div><span class="checkbox {% if employee_type == 'Air Traffic Controller' %}checked{% endif %}"></span> Air Traffic Controller</div>
+                {% if employee_type == 'Air Traffic Controller' and data.employee_type.atc_start_date %}
                 <div style="margin-left: 20px; font-size: 8.5pt;">ATC start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.atc_start_date }}</span></div>
                 {% endif %}
             </div>
             <div class="form-group">
-                <div><span class="checkbox {% if emp_type == 'Foreign Service' %}checked{% endif %}"></span> Foreign Service</div>
-                {% if emp_type == 'Foreign Service' and data.employee_type.fs_start_date %}
+                <div><span class="checkbox {% if employee_type == 'Foreign Service' %}checked{% endif %}"></span> Foreign Service</div>
+                {% if employee_type == 'Foreign Service' and data.employee_type.fs_start_date %}
                 <div style="margin-left: 20px; font-size: 8.5pt;">FS start date: <span style="border-bottom: 1px solid #000; padding: 0 10px;">{{ data.employee_type.fs_start_date }}</span></div>
                 {% endif %}
             </div>
-            {% endwith %}
         </div>
     </div>
 

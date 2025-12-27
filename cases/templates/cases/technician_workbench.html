@@ -9,6 +9,11 @@
             <h2>Technician Workbench</h2>
             <p class="text-muted">User Level: <strong>{{ user_level }}</strong></p>
         </div>
+        <div class="col-auto">
+            <a href="{% url 'logout' %}" class="btn btn-outline-danger">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
     </div>
 
     <!-- Statistics Cards -->

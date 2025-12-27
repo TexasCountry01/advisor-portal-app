@@ -910,6 +910,141 @@
         </div>
     </div>
 
+    <!-- TSP (THRIFT SAVINGS PLAN) -->
+    <div class="section-header">THRIFT SAVINGS PLAN (TSP)</div>
+    <div class="section-content">
+        {% with tsp=data.tsp %}
+        <div class="field-row">
+            <div class="field-label">Current Balance:</div>
+            <div class="field-value">${{ tsp.current_balance|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Annual Contributions:</div>
+            <div class="field-value">${{ tsp.annual_contributions|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Employer Match:</div>
+            <div class="field-value">{{ tsp.employer_match|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Sole Source of Retirement:</div>
+            <div class="field-value">{{ tsp.sole_source|default:"No" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Fund Allocation - G Fund:</div>
+            <div class="field-value">{{ tsp.g_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Fund Allocation - F Fund:</div>
+            <div class="field-value">{{ tsp.f_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Fund Allocation - C Fund:</div>
+            <div class="field-value">{{ tsp.c_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Fund Allocation - S Fund:</div>
+            <div class="field-value">{{ tsp.s_fund|default:"0" }}%</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Fund Allocation - I Fund:</div>
+            <div class="field-value">{{ tsp.i_fund|default:"0" }}%</div>
+        </div>
+        {% if tsp.comments %}
+        <div style="margin-top: 10px;">
+            <strong>Comments:</strong>
+            <div style="border: 1px solid #ccc; padding: 8px; background: #f9f9f9; font-size: 10pt; white-space: pre-wrap;">{{ tsp.comments }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- SOCIAL SECURITY -->
+    <div class="section-header">SOCIAL SECURITY</div>
+    <div class="section-content">
+        {% with ss=data.social_security %}
+        <div class="field-row">
+            <div class="field-label">Primary Insurance Amount (PIA):</div>
+            <div class="field-value">${{ ss.pia|default:"0"|floatformat:2 }}/month</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Full Retirement Age (FRA):</div>
+            <div class="field-value">{{ ss.fra|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Earliest Benefit Age:</div>
+            <div class="field-value">{{ ss.earliest_age|default:"62" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Planned Claiming Age:</div>
+            <div class="field-value">{{ ss.planned_claiming_age|default:"" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Government Pension Offset (GPO) Status:</div>
+            <div class="field-value">{{ ss.gpo_status|default:"Not Applicable" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Spousal Benefit Eligible:</div>
+            <div class="field-value">{{ ss.spousal_eligible|default:"Unsure" }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Survivor Benefit Coverage:</div>
+            <div class="field-value">{{ ss.survivor_coverage|default:"Unsure" }}</div>
+        </div>
+        {% if ss.notes %}
+        <div style="margin-top: 10px;">
+            <strong>Notes:</strong>
+            <div style="border: 1px solid #ccc; padding: 8px; background: #f9f9f9; font-size: 10pt; white-space: pre-wrap;">{{ ss.notes }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- OTHER RETIREMENT ACCOUNTS -->
+    <div class="section-header">OTHER RETIREMENT ACCOUNTS (IRA, 401(k), PENSIONS)</div>
+    <div class="section-content">
+        {% with other=data.other_retirement_accounts %}
+        <div class="field-row">
+            <div class="field-label">IRA - Traditional:</div>
+            <div class="field-value">${{ other.ira_traditional|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">IRA - Roth:</div>
+            <div class="field-value">${{ other.ira_roth|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">IRA - SEP:</div>
+            <div class="field-value">${{ other.ira_sep|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">401(k) - Current Employer:</div>
+            <div class="field-value">${{ other.k401_current|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">401(k) - Previous Employers:</div>
+            <div class="field-value">${{ other.k401_previous|default:"0"|floatformat:2 }}</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Pension - Military:</div>
+            <div class="field-value">${{ other.pension_military|default:"0"|floatformat:2 }}/month</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Pension - Other Public:</div>
+            <div class="field-value">${{ other.pension_other_public|default:"0"|floatformat:2 }}/month</div>
+        </div>
+        <div class="field-row">
+            <div class="field-label">Pension - Private Employer:</div>
+            <div class="field-value">${{ other.pension_private|default:"0"|floatformat:2 }}/month</div>
+        </div>
+        {% if other.notes %}
+        <div style="margin-top: 10px;">
+            <strong>Notes:</strong>
+            <div style="border: 1px solid #ccc; padding: 8px; background: #f9f9f9; font-size: 10pt; white-space: pre-wrap;">{{ other.notes }}</div>
+        </div>
+        {% endif %}
+        {% endwith %}
+    </div>
+
     <!-- ADDITIONAL INFORMATION -->
     <div class="section-header page-break">ADDITIONAL INFORMATION</div>
     <div class="section-content">

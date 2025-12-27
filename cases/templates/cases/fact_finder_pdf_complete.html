@@ -1,0 +1,423 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Federal Fact Finder Form</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #000;
+            background: white;
+        }
+        
+        .page {
+            width: 8.5in;
+            height: 11in;
+            padding: 0.5in;
+            margin: 0.5in auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            page-break-after: always;
+        }
+        
+        .header {
+            border-bottom: 3px solid #000;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .header-title {
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: center;
+            color: #c41e3a;
+        }
+        
+        .header-subtitle {
+            font-size: 8pt;
+            text-align: center;
+            margin-top: 3px;
+        }
+        
+        .section-header {
+            background-color: #cccccc;
+            font-weight: bold;
+            padding: 5px 8px;
+            margin: 10px 0 8px 0;
+            font-size: 10pt;
+        }
+        
+        .form-group {
+            margin-bottom: 8px;
+            padding-left: 10px;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 8px;
+        }
+        
+        .form-col {
+            flex: 1;
+        }
+        
+        .checkbox {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #000;
+            margin-right: 5px;
+        }
+        
+        .checkbox.checked {
+            background: #000;
+        }
+        
+        .notes-box {
+            border: 1px solid #000;
+            padding: 5px;
+            min-height: 30px;
+            font-size: 9pt;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .value {
+            border-bottom: 1px solid #000;
+            padding: 2px 5px;
+            display: inline-block;
+            min-width: 150px;
+        }
+        
+        .indent {
+            padding-left: 20px;
+        }
+        
+        .two-columns {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 15px;
+        }
+        
+        .column {
+            flex: 1;
+        }
+        
+        .page-number {
+            text-align: right;
+            font-size: 8pt;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div class="header-title">Federal Fact Finder (revised 01/2025)</div>
+            <div class="header-subtitle">MEMBER ONLY - NOT FOR DISTRIBUTION TO THE PUBLIC</div>
+        </div>
+        
+        <!-- BASIC INFORMATION -->
+        <div class="section-header">BASIC INFORMATION</div>
+        
+        <div class="form-row">
+            <div class="form-col">
+                <div class="label">Member Name:</div>
+                <div class="value">{{ data.basic_information.employee_name|default:"" }}</div>
+            </div>
+            <div class="form-col">
+                <div class="label">Date submitted:</div>
+                <div class="value">{% now "m/d/Y" %}</div>
+            </div>
+            <div class="form-col">
+                <div class="label">Workshop Code:</div>
+                <div class="value">{{ data.workshop_code|default:"" }}</div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-col">
+                <div class="label">Spouse's name:</div>
+                <div class="value">{{ data.basic_information.spouse_name|default:"" }}</div>
+            </div>
+            <div class="form-col">
+                <div class="label">Date of birth:</div>
+                <div class="value">{{ data.basic_information.employee_dob|date:"m/d/Y"|default:"" }}</div>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-col">
+                <div class="label">Address:</div>
+                <div class="value">{{ data.basic_information.address|default:"" }}</div>
+            </div>
+            <div class="form-col">
+                <div class="label">City, State Zip:</div>
+                <div class="value">{{ data.basic_information.city|default:"" }}, {{ data.basic_information.state|default:"" }} {{ data.basic_information.zip|default:"" }}</div>
+            </div>
+        </div>
+        
+        <!-- RETIREMENT SYSTEM & EMPLOYEE TYPE -->
+        <div class="two-columns">
+            <div class="column">
+                <strong>RETIREMENT SYSTEM</strong>
+                <div class="form-group">
+                    <span class="checkbox {% if retirement_system == 'CSRS' %}checked{% endif %}"></span> CSRS
+                </div>
+                <div class="form-group">
+                    <span class="checkbox {% if retirement_system == 'CSRS Offset' %}checked{% endif %}"></span> CSRS Offset
+                </div>
+                <div class="form-group">
+                    <span class="checkbox {% if retirement_system == 'FERS' %}checked{% endif %}"></span> FERS
+                </div>
+                <div class="form-group">
+                    <span class="checkbox {% if retirement_system == 'FERS Transfer' %}checked{% endif %}"></span> FERS Transfer
+                </div>
+            </div>
+            
+            <div class="column">
+                <strong>EMPLOYEE TYPE</strong>
+                <div class="form-group">
+                    <span class="checkbox {% if employee_type == 'Regular' %}checked{% endif %}"></span> Regular
+                </div>
+                <div class="form-group">
+                    <span class="checkbox {% if employee_type == 'Regular - Postal Worker' %}checked{% endif %}"></span> Regular - Postal Worker
+                </div>
+                <div class="form-group">
+                    <span class="checkbox {% if employee_type == 'Law Enforcement' %}checked{% endif %}"></span> Law Enforcement
+                </div>
+                <div class="form-group">
+                    <span class="checkbox {% if employee_type == 'Firefighter' %}checked{% endif %}"></span> Firefighter
+                </div>
+                <div class="form-group">
+                    <span class="checkbox {% if employee_type == 'Air Traffic Controller' %}checked{% endif %}"></span> Air Traffic Controller
+                </div>
+            </div>
+        </div>
+        
+        <!-- RETIREMENT TYPE -->
+        <div class="section-header">RETIREMENT TYPE</div>
+        <div class="form-group">
+            <span class="checkbox {% if retirement_type == 'Regular' or retirement_type == 'Full Immediate' %}checked{% endif %}"></span> Regular (fully-eligible or MRA+10 scenario)
+        </div>
+        <div class="form-group">
+            <span class="checkbox {% if retirement_type == 'Optional' %}checked{% endif %}"></span> Optional (early out)
+            {% if retirement_type == 'Optional' %}<div class="indent">Planned date: <span class="value">{{ desired_retirement_date|default:"" }}</span></div>{% endif %}
+        </div>
+        <div class="form-group">
+            <span class="checkbox {% if retirement_type == 'Deferred' %}checked{% endif %}"></span> Deferred (too young, but vested to get later)
+            {% if retirement_type == 'Deferred' %}<div class="indent">Planned date: <span class="value">{{ desired_retirement_date|default:"" }}</span></div>{% endif %}
+        </div>
+        <div class="form-group">
+            <span class="checkbox {% if retirement_type == 'Disability' %}checked{% endif %}"></span> Disability (not already fully-eligible & must qualify)
+        </div>
+        
+        <!-- SERVICE COMPUTATION DATES -->
+        <div class="section-header">SERVICE COMPUTATION DATES</div>
+        <div class="form-row">
+            <div class="form-col">
+                <div class="label">Leave SCD (required):</div>
+                <div class="value">{{ add_info.leave_scd|default:"" }}</div>
+            </div>
+            <div class="form-col">
+                <div class="label">Retirement SCD (if known):</div>
+                <div class="value">{{ add_info.retirement_scd|default:"" }}</div>
+            </div>
+        </div>
+        
+        <!-- PAY & LEAVE -->
+        <div class="section-header">RETIREMENT, PAY & LEAVE</div>
+        <div class="form-row">
+            <div class="form-col">
+                <div class="label">Current annual salary (including locality pay):</div>
+                <div class="value">${{ add_info.current_annual_salary|default:"0"|floatformat:0 }} /yr</div>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <span class="checkbox {% if expects_highest_three %}checked{% endif %}"></span> Do you expect to earn your highest 3 years of pay at the end of your career?
+        </div>
+        
+        <div class="form-row">
+            <div class="form-col">
+                <div class="label">Sick leave balance:</div>
+                <div class="value">{{ add_info.sick_leave_hours|default:"" }} hrs</div>
+            </div>
+            <div class="form-col">
+                <div class="label">Annual leave balance:</div>
+                <div class="value">{{ add_info.annual_leave_hours|default:"" }} hrs</div>
+            </div>
+        </div>
+        
+        <div class="page-number">Page 1 of 6</div>
+    </div>
+    
+    <!-- PAGE 2: MILITARY SERVICE -->
+    <div class="page">
+        <div class="section-header">MILITARY SERVICE</div>
+        
+        <!-- ACTIVE DUTY -->
+        <div class="form-group">
+            <strong>Military - Active Duty</strong>
+            {% if mad.start_date %}<div class="indent form-group">Service dates: <span class="value">{{ mad.start_date|default:"" }}</span> to <span class="value">{{ mad.end_date|default:"" }}</span></div>{% endif %}
+            {% if mad.deposit_made %}<div class="indent form-group"><span class="checkbox checked"></span> Deposit made toward retirement<div class="indent">Amount owed: <span class="value">${{ mad.amount_owed|default:"0" }}</span></div></div>{% endif %}
+            {% if mad.credit_for_service %}<div class="indent form-group"><span class="checkbox checked"></span> Want credit for this service</div>{% endif %}
+            {% if mad.lwop_start %}<div class="indent form-group">LWOP dates: <span class="value">{{ mad.lwop_start|default:"" }}</span> to <span class="value">{{ mad.lwop_end|default:"" }}</span></div>{% endif %}
+            {% if mad.pension_amount %}<div class="indent form-group"><span class="checkbox checked"></span> Receiving military pension<div class="indent">Pension amount: <span class="value">${{ mad.pension_amount|default:"0"|floatformat:0 }} /mo</span></div></div>{% endif %}
+            {% if mad.overseas_time_amount %}<div class="indent form-group">Overseas time: <span class="value">{{ mad.overseas_time_amount|default:"" }}</span></div>{% endif %}
+            {% if mad.notes %}<div class="indent form-group"><strong>Notes:</strong><div class="notes-box">{{ mad.notes }}</div></div>{% endif %}
+        </div>
+        
+        <!-- RESERVES -->
+        <div class="form-group">
+            <strong>Military - Reserves</strong>
+            {% if reserves.start_date %}<div class="indent form-group">Service dates: <span class="value">{{ reserves.start_date|default:"" }}</span> to <span class="value">{{ reserves.end_date|default:"" }}</span></div>{% endif %}
+            {% if reserves.deposit_made %}<div class="indent form-group"><span class="checkbox checked"></span> Deposit made<div class="indent">Amount owed: <span class="value">${{ reserves.amount_owed|default:"0" }}</span></div></div>{% endif %}
+            {% if reserves.notes %}<div class="indent form-group"><strong>Notes:</strong><div class="notes-box">{{ reserves.notes }}</div></div>{% endif %}
+        </div>
+        
+        <!-- ACADEMY -->
+        <div class="form-group">
+            <strong>Military - Academy</strong>
+            {% if academy.start_date %}<div class="indent form-group">Service dates: <span class="value">{{ academy.start_date|default:"" }}</span> to <span class="value">{{ academy.end_date|default:"" }}</span></div>{% endif %}
+            {% if academy.deposit_made %}<div class="indent form-group"><span class="checkbox checked"></span> Deposit made<div class="indent">Amount owed: <span class="value">${{ academy.amount_owed|default:"0" }}</span></div></div>{% endif %}
+            {% if academy.notes %}<div class="indent form-group"><strong>Notes:</strong><div class="notes-box">{{ academy.notes }}</div></div>{% endif %}
+        </div>
+        
+        <div class="page-number">Page 2 of 6</div>
+    </div>
+    
+    <!-- PAGE 3: SPECIAL SERVICE -->
+    <div class="page">
+        <div class="section-header">SPECIAL TYPES OF FEDERAL SERVICE</div>
+        
+        <!-- NON-DEDUCTION SERVICE -->
+        <div class="form-group">
+            <strong>Non-Deduction Service</strong>
+            {% if non_deduction.start_date %}<div class="indent form-group">Service dates: <span class="value">{{ non_deduction.start_date|default:"" }}</span> to <span class="value">{{ non_deduction.end_date|default:"" }}</span></div>{% endif %}
+            {% if non_deduction.deposit_made %}<div class="indent form-group"><span class="checkbox checked"></span> Deposit made<div class="indent">Amount owed: <span class="value">${{ non_deduction.amount_owed|default:"0" }}</span></div></div>{% endif %}
+            {% if non_deduction.notes %}<div class="indent form-group"><strong>Notes:</strong><div class="notes-box">{{ non_deduction.notes }}</div></div>{% endif %}
+        </div>
+        
+        <!-- BREAK IN SERVICE -->
+        <div class="form-group">
+            <strong>Break-in-Service</strong>
+            {% if break_service.original_start_date %}<div class="indent form-group">Original period: <span class="value">{{ break_service.original_start_date|default:"" }}</span> to <span class="value">{{ break_service.original_end_date|default:"" }}</span></div>{% endif %}
+            {% if break_service.break_start_date %}<div class="indent form-group">Break period: <span class="value">{{ break_service.break_start_date|default:"" }}</span> to <span class="value">{{ break_service.break_end_date|default:"" }}</span></div>{% endif %}
+            {% if break_service.deposit_made %}<div class="indent form-group"><span class="checkbox checked"></span> Deposit made<div class="indent">Amount owed: <span class="value">${{ break_service.amount_owed|default:"0" }}</span></div></div>{% endif %}
+            {% if break_service.notes %}<div class="indent form-group"><strong>Notes:</strong><div class="notes-box">{{ break_service.notes }}</div></div>{% endif %}
+        </div>
+        
+        <!-- PART-TIME SERVICE -->
+        <div class="form-group">
+            <strong>Part-Time Service</strong>
+            {% if part_time.start_date %}<div class="indent form-group">Service dates: <span class="value">{{ part_time.start_date|default:"" }}</span> to <span class="value">{{ part_time.end_date|default:"" }}</span></div>{% endif %}
+            {% if part_time.hours_per_week %}<div class="indent form-group">Hours per week: <span class="value">{{ part_time.hours_per_week|default:"" }}</span></div>{% endif %}
+            {% if part_time.notes %}<div class="indent form-group"><strong>Notes:</strong><div class="notes-box">{{ part_time.notes }}</div></div>{% endif %}
+        </div>
+        
+        <div class="page-number">Page 3 of 6</div>
+    </div>
+    
+    <!-- PAGE 4: INSURANCE & BENEFITS -->
+    <div class="page">
+        <div class="section-header">FEDERAL EMPLOYEES GROUP LIFE INSURANCE (FEGLI)</div>
+        <div class="form-group">
+            <span class="checkbox {% if fegli.keep_in_retirement %}checked{% endif %}"></span> Keep in retirement
+            <br><span class="checkbox {% if fegli.five_year_requirement == 'Yes' %}checked{% endif %}"></span> Only if five-year requirement met
+            <br><span class="checkbox {% if fegli.sole_source == 'Yes' %}checked{% endif %}"></span> This is sole source of life insurance
+        </div>
+        {% if fegli.premium_1 or fegli.premium_2 or fegli.premium_3 or fegli.premium_4 %}<div class="form-group">
+            <strong>Current premiums:</strong><br>
+            Basic: ${{ fegli.premium_1|default:"0"|floatformat:2 }} | Option A: ${{ fegli.premium_2|default:"0"|floatformat:2 }} | Option B: ${{ fegli.premium_3|default:"0"|floatformat:2 }} | Option C: ${{ fegli.premium_4|default:"0"|floatformat:2 }}
+        </div>{% endif %}
+        {% if fegli.notes %}<div class="form-group"><strong>Notes:</strong><div class="notes-box">{{ fegli.notes }}</div></div>{% endif %}
+        
+        <div class="section-header">FEDERAL EMPLOYEES HEALTH BENEFITS (FEHB)</div>
+        <div class="form-group">
+            <span class="checkbox {% if fehb.keep_in_retirement %}checked{% endif %}"></span> Keep in retirement
+            <br><span class="checkbox {% if fehb.spouse_reliant %}checked{% endif %}"></span> Spouse reliant on this coverage
+            <br><span class="checkbox {% if fehb.five_year_requirement == 'Yes' %}checked{% endif %}"></span> Only if five-year requirement met
+        </div>
+        {% if fehb.health_premium %}<div class="form-group"><strong>Current premium:</strong> ${{ fehb.health_premium|default:"0"|floatformat:2 }}/mo</div>{% endif %}
+        {% if fehb.notes %}<div class="form-group"><strong>Notes:</strong><div class="notes-box">{{ fehb.notes }}</div></div>{% endif %}
+        
+        <div class="section-header">FEDERAL LONG TERM CARE INSURANCE PROGRAM (FLTCIP)</div>
+        <div class="form-group">
+            <span class="checkbox {% if fltcip.employee_premium %}checked{% endif %}"></span> Have coverage
+            <br><span class="checkbox {% if fltcip.discuss_options %}checked{% endif %}"></span> Want to discuss options
+        </div>
+        {% if fltcip.employee_premium %}<div class="form-group"><strong>Current premium:</strong> ${{ fltcip.employee_premium|default:"0"|floatformat:2 }}/mo</div>{% endif %}
+        {% if fltcip.notes %}<div class="form-group"><strong>Notes:</strong><div class="notes-box">{{ fltcip.notes }}</div></div>{% endif %}
+        
+        <div class="page-number">Page 4 of 6</div>
+    </div>
+    
+    <!-- PAGE 5: TSP -->
+    <div class="page">
+        <div class="section-header">THRIFT SAVINGS PLAN (TSP)</div>
+        
+        <div class="form-group">
+            <span class="checkbox {% if tsp.sole_source == 'Yes' %}checked{% endif %}"></span> This is sole source of retirement savings
+            <br><span class="checkbox {% if tsp.in_service_withdrawal == 'Yes' %}checked{% endif %}"></span> Planning in-service withdrawal
+        </div>
+        
+        {% if tsp.traditional_balance or tsp.roth_balance %}<div class="form-group">
+            <strong>Current Balance:</strong><br>
+            Traditional: ${{ tsp.traditional_balance|default:"0"|floatformat:0 }} | Roth: ${{ tsp.roth_balance|default:"0"|floatformat:0 }}
+        </div>{% endif %}
+        
+        {% if tsp.comments %}<div class="form-group"><strong>Comments:</strong><div class="notes-box">{{ tsp.comments }}</div></div>{% endif %}
+        
+        {% if tsp.c_fund or tsp.i_fund or tsp.s_fund or tsp.f_fund or tsp.g_fund %}<div class="form-group">
+            <strong>Fund Allocation:</strong><br>
+            {% if tsp.c_fund %}C Fund: {{ tsp.c_fund }}% &nbsp; {% endif %}
+            {% if tsp.i_fund %}I Fund: {{ tsp.i_fund }}% &nbsp; {% endif %}
+            {% if tsp.s_fund %}S Fund: {{ tsp.s_fund }}% &nbsp; {% endif %}
+            {% if tsp.f_fund %}F Fund: {{ tsp.f_fund }}% &nbsp; {% endif %}
+            {% if tsp.g_fund %}G Fund: {{ tsp.g_fund }}% &nbsp; {% endif %}
+        </div>{% endif %}
+        
+        <div class="page-number">Page 5 of 6</div>
+    </div>
+    
+    <!-- PAGE 6: SOCIAL SECURITY & NOTES -->
+    <div class="page">
+        <div class="section-header">SOCIAL SECURITY</div>
+        <div class="form-group">
+            Age 62 benefit: ${{ social_security.ss_benefit_at_62|default:"0"|floatformat:0 }}/mo<br>
+            Desired start age: {{ social_security.ss_desired_start_age|default:"" }} &nbsp; Benefit: ${{ social_security.ss_benefit_at_desired_age|default:"0"|floatformat:0 }}/mo
+        </div>
+        
+        <div class="section-header">OTHER RETIREMENT ACCOUNTS</div>
+        {% if other_retirement_accounts.ira_401k_balance or other_retirement_accounts.pension_plan_balance %}<div class="form-group">
+            IRA/401(k): ${{ other_retirement_accounts.ira_401k_balance|default:"0"|floatformat:0 }}<br>
+            Pension Plan: ${{ other_retirement_accounts.pension_plan_balance|default:"0"|floatformat:0 }}
+        </div>{% endif %}
+        
+        <div class="section-header">ADDITIONAL NOTES</div>
+        {% if add_info.page1_notes %}<div class="form-group"><strong>Page 1 Notes:</strong><div class="notes-box">{{ add_info.page1_notes }}</div></div>{% endif %}
+        {% if add_info.other_pertinent_details %}<div class="form-group"><strong>Other Pertinent Details:</strong><div class="notes-box">{{ add_info.other_pertinent_details }}</div></div>{% endif %}
+        {% if add_info.additional_notes %}<div class="form-group"><strong>Additional Notes:</strong><div class="notes-box">{{ add_info.additional_notes }}</div></div>{% endif %}
+        
+        <div class="page-number">Page 6 of 6</div>
+    </div>
+</body>
+</html>

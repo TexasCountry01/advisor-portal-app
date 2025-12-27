@@ -1,10 +1,12 @@
 from django.urls import path
 from . import views
+from . import views_pdf_template
+from . import views_quick_submit
 
 urlpatterns = [
     # Member views
     path('member/dashboard/', views.member_dashboard, name='member_dashboard'),
-    path('member/submit/', views.case_submit, name='case_submit'),
+    path('member/submit/', views_quick_submit.quick_case_submit, name='case_submit'),  # Simplified submission
     
     # DEV ONLY - Form preview without authentication
     path('dev/form-preview/', views.form_preview, name='form_preview'),
@@ -24,4 +26,12 @@ urlpatterns = [
     
     # PDF viewing
     path('<int:case_id>/fact-finder-pdf/', views.view_fact_finder_pdf, name='view_fact_finder_pdf'),
+    
+    # Reference PDF template with document upload
+    path('<int:case_id>/fact-finder-template/', views_pdf_template.fact_finder_template, name='case_fact_finder'),
+    path('document/<int:doc_id>/download/', views_pdf_template.download_document, name='download_document'),
+    path('document/<int:doc_id>/delete/', views_pdf_template.delete_document, name='delete_document'),
+    path('template/download/', views_pdf_template.download_template, name='download_template'),
+    path('<int:case_id>/submit/', views_pdf_template.submit_case, name='submit_case'),
+    path('<int:case_id>/save-draft/', views_pdf_template.save_case_draft, name='save_case_draft'),
 ]

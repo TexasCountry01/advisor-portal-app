@@ -1,0 +1,1212 @@
+{
+  "form_name": "Federal Fact Finder Form",
+  "form_file": "cases/templates/cases/fact_finder_form.html",
+  "views_file": "cases/views.py",
+  "database_model": "cases.models.Case (fact_finder_data JSON field)",
+  "total_fields": 320,
+  "sections": {
+    "employee_info": {
+      "section_name": "Employee Information",
+      "db_section": "base level (not nested)",
+      "fields": {
+        "employee_name": {
+          "form_name": "employee_name",
+          "type": "text",
+          "required": true,
+          "db_path": "employee_name",
+          "description": "Full name of the employee"
+        },
+        "employee_dob": {
+          "form_name": "employee_dob",
+          "type": "date",
+          "required": true,
+          "db_path": "employee_dob",
+          "description": "Date of birth"
+        },
+        "spouse_name": {
+          "form_name": "spouse_name",
+          "type": "text",
+          "required": false,
+          "db_path": "spouse_name",
+          "description": "Spouse's full name"
+        },
+        "spouse_fed_emp": {
+          "form_name": "spouse_fed_emp",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "spouse_fed_emp",
+          "description": "Is spouse a federal employee?"
+        },
+        "spouse_dob": {
+          "form_name": "spouse_dob",
+          "type": "date",
+          "required": false,
+          "db_path": "spouse_dob",
+          "description": "Spouse's date of birth"
+        },
+        "address": {
+          "form_name": "address",
+          "type": "text",
+          "required": false,
+          "db_path": "address",
+          "description": "Street address"
+        },
+        "city": {
+          "form_name": "city",
+          "type": "text",
+          "required": false,
+          "db_path": "city",
+          "description": "City"
+        },
+        "state": {
+          "form_name": "state",
+          "type": "text",
+          "required": false,
+          "db_path": "state",
+          "description": "State (2-letter code)"
+        },
+        "zip": {
+          "form_name": "zip",
+          "type": "text",
+          "required": false,
+          "db_path": "zip",
+          "description": "ZIP code"
+        }
+      }
+    },
+    "retirement_system": {
+      "section_name": "Retirement System & Type",
+      "db_section": "base level",
+      "fields": {
+        "retirement_system": {
+          "form_name": "retirement_system",
+          "type": "radio",
+          "required": true,
+          "db_path": "retirement_system",
+          "values": ["CSRS", "CSRS Offset", "FERS", "FERS Transfer"],
+          "description": "Which retirement system?"
+        },
+        "csrs_offset_date": {
+          "form_name": "csrs_offset_date",
+          "type": "date",
+          "required": false,
+          "db_path": "csrs_offset_date",
+          "condition": "Show if retirement_system == 'CSRS Offset'",
+          "description": "Date of CSRS Offset"
+        },
+        "fers_transfer_date": {
+          "form_name": "fers_transfer_date",
+          "type": "date",
+          "required": false,
+          "db_path": "fers_transfer_date",
+          "condition": "Show if retirement_system == 'FERS Transfer'",
+          "description": "Date of FERS Transfer"
+        },
+        "retirement_type": {
+          "form_name": "retirement_type",
+          "type": "radio",
+          "required": true,
+          "db_path": "retirement_type",
+          "values": ["Regular", "Optional", "Deferred", "Disability"],
+          "description": "Type of retirement"
+        },
+        "optional_offer_date": {
+          "form_name": "optional_offer_date",
+          "type": "date",
+          "required": false,
+          "db_path": "optional_offer_date",
+          "condition": "Show if retirement_type == 'Optional'",
+          "description": "Date of optional retirement offer"
+        }
+      }
+    },
+    "employee_type": {
+      "section_name": "Employee Type",
+      "db_section": "base level",
+      "fields": {
+        "employee_type": {
+          "form_name": "employee_type",
+          "type": "radio",
+          "required": true,
+          "db_path": "employee_type",
+          "values": ["Regular", "Regular - Postal Worker", "Regular - Military Reserve Technician", "Law Enforcement", "Customs & Border Protection Officer", "Firefighter", "Air Traffic Controller", "Foreign Service"],
+          "description": "Type of federal employee"
+        },
+        "leo_start_date": {
+          "form_name": "leo_start_date",
+          "type": "date",
+          "required": false,
+          "db_path": "leo_start_date",
+          "condition": "Show if employee_type == 'Law Enforcement'",
+          "description": "Law enforcement service start date"
+        },
+        "ff_start_date": {
+          "form_name": "ff_start_date",
+          "type": "date",
+          "required": false,
+          "db_path": "ff_start_date",
+          "condition": "Show if employee_type == 'Firefighter'",
+          "description": "Firefighter service start date"
+        },
+        "atc_start_date": {
+          "form_name": "atc_start_date",
+          "type": "date",
+          "required": false,
+          "db_path": "atc_start_date",
+          "condition": "Show if employee_type == 'Air Traffic Controller'",
+          "description": "Air Traffic Controller service start date"
+        },
+        "fs_start_date": {
+          "form_name": "fs_start_date",
+          "type": "date",
+          "required": false,
+          "db_path": "fs_start_date",
+          "condition": "Show if employee_type == 'Foreign Service'",
+          "description": "Foreign Service start date"
+        },
+        "cbpo_coverage": {
+          "form_name": "cbpo_coverage",
+          "type": "radio",
+          "required": false,
+          "db_path": "cbpo_coverage",
+          "values": ["Yes", "No", "Unsure"],
+          "condition": "Show if employee_type == 'Customs & Border Protection Officer'",
+          "description": "Coverage type for CBPO"
+        }
+      }
+    },
+    "service_dates": {
+      "section_name": "Service Dates & Eligibility",
+      "db_section": "base level",
+      "fields": {
+        "leave_scd": {
+          "form_name": "leave_scd",
+          "type": "date",
+          "required": true,
+          "db_path": "leave_scd",
+          "description": "Service Computation Date (Leave SCD)"
+        },
+        "retirement_scd": {
+          "form_name": "retirement_scd",
+          "type": "date",
+          "required": false,
+          "db_path": "retirement_scd",
+          "description": "Retirement Service Computation Date"
+        },
+        "retirement_fully_eligible": {
+          "form_name": "retirement_fully_eligible",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "retirement_fully_eligible",
+          "description": "Is employee fully eligible?"
+        },
+        "retirement_mra_10": {
+          "form_name": "retirement_mra_10",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "retirement_mra_10",
+          "description": "MRA + 10 years of service?"
+        },
+        "retirement_by_age": {
+          "form_name": "retirement_by_age",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "retirement_by_age",
+          "description": "Will retire by specific age?"
+        },
+        "retirement_age": {
+          "form_name": "retirement_age",
+          "type": "number",
+          "required": false,
+          "db_path": "retirement_age",
+          "condition": "Show if retirement_by_age is checked",
+          "description": "Desired retirement age"
+        },
+        "retirement_by_date": {
+          "form_name": "retirement_by_date",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "retirement_by_date",
+          "description": "Will retire by specific date?"
+        },
+        "desired_retirement_date": {
+          "form_name": "desired_retirement_date",
+          "type": "date",
+          "required": false,
+          "db_path": "desired_retirement_date",
+          "condition": "Show if retirement_by_date is checked",
+          "description": "Desired retirement date"
+        }
+      }
+    },
+    "pay_and_leave": {
+      "section_name": "Pay & Leave",
+      "db_section": "base level",
+      "fields": {
+        "current_annual_salary": {
+          "form_name": "current_annual_salary",
+          "type": "currency",
+          "required": false,
+          "db_path": "current_annual_salary",
+          "description": "Current annual salary"
+        },
+        "expects_highest_three": {
+          "form_name": "expects_highest_three",
+          "type": "radio",
+          "required": false,
+          "db_path": "expects_highest_three",
+          "values": ["Yes", "No"],
+          "description": "Does current salary match highest three years?"
+        },
+        "sick_leave_balance": {
+          "form_name": "sick_leave_balance",
+          "type": "number",
+          "required": false,
+          "db_path": "sick_leave_balance",
+          "description": "Sick leave balance (hours)"
+        },
+        "annual_leave_balance": {
+          "form_name": "annual_leave_balance",
+          "type": "number",
+          "required": false,
+          "db_path": "annual_leave_balance",
+          "description": "Annual leave balance (hours)"
+        },
+        "retirement_pay_leave_notes": {
+          "form_name": "retirement_pay_leave_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "add_info.page1_notes",
+          "description": "Notes about retirement pay and leave"
+        }
+      }
+    },
+    "spousal_protection": {
+      "section_name": "Spousal Protection",
+      "db_section": "base level",
+      "fields": {
+        "reduce_spousal_pension": {
+          "form_name": "reduce_spousal_pension",
+          "type": "radio",
+          "required": false,
+          "db_path": "reduce_spousal_pension",
+          "values": ["Yes", "No"],
+          "description": "Reduce pension to provide spousal protection?"
+        },
+        "spouse_protection_reason": {
+          "form_name": "spouse_protection_reason",
+          "type": "text",
+          "required": false,
+          "db_path": "spouse_protection_reason",
+          "condition": "Show if reduce_spousal_pension == 'Yes'",
+          "description": "Reason for spousal protection choice"
+        },
+        "court_order_dividing_benefits": {
+          "form_name": "court_order_dividing_benefits",
+          "type": "radio",
+          "required": false,
+          "db_path": "court_order_dividing_benefits",
+          "values": ["Yes", "No"],
+          "description": "Is there a court order dividing benefits?"
+        }
+      }
+    },
+    "military_service": {
+      "section_name": "Military Service",
+      "db_section": "mad (Military Active Duty)",
+      "parent_checkbox": "no_military_service",
+      "fields": {
+        "has_service": {
+          "form_name": "active_duty_yes / active_duty_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "mad.has_service",
+          "description": "Has active duty military service?"
+        },
+        "start_date": {
+          "form_name": "active_duty_start",
+          "type": "date",
+          "required": false,
+          "db_path": "mad.start_date",
+          "description": "Military service start date"
+        },
+        "end_date": {
+          "form_name": "active_duty_end",
+          "type": "date",
+          "required": false,
+          "db_path": "mad.end_date",
+          "description": "Military service end date"
+        },
+        "deposit_made": {
+          "form_name": "active_duty_deposit_yes / active_duty_deposit_no / active_duty_deposit_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "mad.deposit_made",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Was military service deposit made?"
+        },
+        "amount_owed": {
+          "form_name": "active_duty_owe_amount",
+          "type": "currency",
+          "required": false,
+          "db_path": "mad.amount_owed",
+          "description": "Amount owed for military deposit"
+        },
+        "retired": {
+          "form_name": "retired_active_duty_yes / retired_active_duty_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "mad.retired",
+          "description": "Retired from military service?"
+        },
+        "pension_amount": {
+          "form_name": "military_pension_amount",
+          "type": "currency",
+          "required": false,
+          "db_path": "mad.pension_amount",
+          "description": "Military pension amount"
+        },
+        "extra_time": {
+          "form_name": "scd_overseas_time",
+          "type": "text",
+          "required": false,
+          "db_path": "mad.extra_time",
+          "description": "Extra service time (e.g., overseas)"
+        },
+        "notes": {
+          "form_name": "military_active_duty_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "mad.notes",
+          "description": "Notes about military service"
+        }
+      }
+    },
+    "reserves_guard": {
+      "section_name": "Reserves & Guard",
+      "db_section": "reserves",
+      "fields": {
+        "has_service": {
+          "form_name": "reserve_yes / reserve_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "reserves.has_service",
+          "description": "Has military reserve service?"
+        },
+        "start_date": {
+          "form_name": "reserve_start",
+          "type": "date",
+          "required": false,
+          "db_path": "reserves.start_date",
+          "description": "Reserve service start date"
+        },
+        "end_date": {
+          "form_name": "reserve_end",
+          "type": "date",
+          "required": false,
+          "db_path": "reserves.end_date",
+          "description": "Reserve service end date"
+        },
+        "years": {
+          "form_name": "reserve_credit_years",
+          "type": "number",
+          "required": false,
+          "db_path": "reserves.years",
+          "description": "Years of reserve service credit"
+        },
+        "months": {
+          "form_name": "reserve_credit_months",
+          "type": "number",
+          "required": false,
+          "db_path": "reserves.months",
+          "description": "Months of reserve service credit"
+        },
+        "days": {
+          "form_name": "reserve_credit_days",
+          "type": "number",
+          "required": false,
+          "db_path": "reserves.days",
+          "description": "Days of reserve service credit"
+        },
+        "deposit_made": {
+          "form_name": "reserve_deposit_yes / reserve_deposit_no / reserve_deposit_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "reserves.deposit_made",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Was reserve service deposit made?"
+        },
+        "amount_owed": {
+          "form_name": "reserve_owe_amount",
+          "type": "currency",
+          "required": false,
+          "db_path": "reserves.amount_owed",
+          "description": "Amount owed for reserve deposit"
+        },
+        "retired": {
+          "form_name": "retired_reserves_yes / retired_reserves_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "reserves.retired",
+          "description": "Retired from reserves?"
+        },
+        "pension_amount": {
+          "form_name": "reserve_pension_amount",
+          "type": "currency",
+          "required": false,
+          "db_path": "reserves.pension_amount",
+          "description": "Reserve pension amount"
+        },
+        "pension_start_age": {
+          "form_name": "reserve_pension_start_age",
+          "type": "number",
+          "required": false,
+          "db_path": "reserves.pension_start_age",
+          "description": "Age when reserve pension starts"
+        },
+        "notes": {
+          "form_name": "military_reserves_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "reserves.notes",
+          "description": "Notes about reserves/guard service"
+        }
+      }
+    },
+    "academy_service": {
+      "section_name": "Academy Service",
+      "db_section": "academy",
+      "fields": {
+        "has_service": {
+          "form_name": "academy_yes / academy_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "academy.has_service",
+          "description": "Attended federal academy?"
+        },
+        "start_date": {
+          "form_name": "academy_start",
+          "type": "date",
+          "required": false,
+          "db_path": "academy.start_date",
+          "description": "Academy start date"
+        },
+        "end_date": {
+          "form_name": "academy_end",
+          "type": "date",
+          "required": false,
+          "db_path": "academy.end_date",
+          "description": "Academy end date"
+        },
+        "deposit_made": {
+          "form_name": "academy_deposit_yes / academy_deposit_no / academy_deposit_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "academy.deposit_made",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Was academy deposit made?"
+        },
+        "owe_type": {
+          "form_name": "academy_owe_type",
+          "type": "select",
+          "required": false,
+          "db_path": "academy.owe_type",
+          "description": "Type of academy obligation"
+        },
+        "amount_owed": {
+          "form_name": "academy_owe_amount",
+          "type": "currency",
+          "required": false,
+          "db_path": "academy.amount_owed",
+          "description": "Amount owed for academy"
+        },
+        "in_leave_scd": {
+          "form_name": "academy_in_leave_scd",
+          "type": "select",
+          "required": false,
+          "db_path": "academy.in_leave_scd",
+          "description": "Academy service in Leave SCD?"
+        },
+        "notes": {
+          "form_name": "military_academy_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "academy.notes",
+          "description": "Notes about academy service"
+        }
+      }
+    },
+    "non_deduction_service": {
+      "section_name": "Non-Deduction Service",
+      "db_section": "non_deduction",
+      "fields": {
+        "has_service": {
+          "form_name": "non_deduction_yes / non_deduction_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "non_deduction.has_service",
+          "description": "Has non-deduction service?"
+        },
+        "start_date": {
+          "form_name": "non_deduction_start",
+          "type": "date",
+          "required": false,
+          "db_path": "non_deduction.start_date",
+          "description": "Non-deduction service start date"
+        },
+        "end_date": {
+          "form_name": "non_deduction_end",
+          "type": "date",
+          "required": false,
+          "db_path": "non_deduction.end_date",
+          "description": "Non-deduction service end date"
+        },
+        "deposit_made": {
+          "form_name": "non_deduction_deposit_yes / non_deduction_deposit_no / non_deduction_deposit_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "non_deduction.deposit_made",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Was non-deduction deposit made?"
+        },
+        "owe_type": {
+          "form_name": "non_deduction_owe_type",
+          "type": "select",
+          "required": false,
+          "db_path": "non_deduction.owe_type",
+          "description": "Type of non-deduction obligation"
+        },
+        "amount_owed": {
+          "form_name": "non_deduction_owe_amount",
+          "type": "currency",
+          "required": false,
+          "db_path": "non_deduction.amount_owed",
+          "description": "Amount owed for non-deduction"
+        },
+        "notes": {
+          "form_name": "non_deduction_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "non_deduction.notes",
+          "description": "Notes about non-deduction service"
+        }
+      }
+    },
+    "break_in_service": {
+      "section_name": "Break in Service",
+      "db_section": "break_service",
+      "fields": {
+        "has_break": {
+          "form_name": "break_service_yes / break_service_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "break_service.has_break",
+          "description": "Has break in service?"
+        },
+        "original_start": {
+          "form_name": "original_service_start",
+          "type": "date",
+          "required": false,
+          "db_path": "break_service.original_start",
+          "description": "Original service start date"
+        },
+        "original_end": {
+          "form_name": "original_service_end",
+          "type": "date",
+          "required": false,
+          "db_path": "break_service.original_end",
+          "description": "Original service end date"
+        },
+        "break_start": {
+          "form_name": "break_service_start",
+          "type": "date",
+          "required": false,
+          "db_path": "break_service.break_start",
+          "description": "Break start date"
+        },
+        "break_end": {
+          "form_name": "break_service_end",
+          "type": "date",
+          "required": false,
+          "db_path": "break_service.break_end",
+          "description": "Break end date"
+        },
+        "took_refund": {
+          "form_name": "refund_yes / refund_no / refund_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "break_service.took_refund",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Did employee take refund?"
+        },
+        "redeposit_made": {
+          "form_name": "redeposit_yes / redeposit_no / redeposit_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "break_service.redeposit_made",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Was redeposit made?"
+        },
+        "new_start_date": {
+          "form_name": "break_new_start",
+          "type": "date",
+          "required": false,
+          "db_path": "break_service.new_start_date",
+          "description": "New service start date after break"
+        },
+        "deposit_made": {
+          "form_name": "break_deposit_made",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "break_service.deposit_made",
+          "description": "Deposit made for break period?"
+        },
+        "amount_owed": {
+          "form_name": "break_service_owe_amount",
+          "type": "currency",
+          "required": false,
+          "db_path": "break_service.amount_owed",
+          "description": "Amount owed for break in service"
+        },
+        "notes": {
+          "form_name": "break_in_service_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "break_service.notes",
+          "description": "Notes about break in service"
+        }
+      }
+    },
+    "part_time_service": {
+      "section_name": "Part-Time Service",
+      "db_section": "part_time",
+      "fields": {
+        "has_service": {
+          "form_name": "part_time_yes / part_time_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "part_time.has_service",
+          "description": "Has part-time service?"
+        },
+        "start_date": {
+          "form_name": "part_time_start",
+          "type": "date",
+          "required": false,
+          "db_path": "part_time.start_date",
+          "description": "Part-time service start date"
+        },
+        "end_date": {
+          "form_name": "part_time_end",
+          "type": "date",
+          "required": false,
+          "db_path": "part_time.end_date",
+          "description": "Part-time service end date"
+        },
+        "hours_per_week": {
+          "form_name": "part_time_hours_per_week",
+          "type": "number",
+          "required": false,
+          "db_path": "part_time.hours_per_week",
+          "description": "Average hours per week"
+        },
+        "contributed": {
+          "form_name": "part_time_contributed_yes / part_time_contributed_no / part_time_contributed_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "part_time.contributed",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Employee contributed to FERS?"
+        },
+        "appears_on_sf50": {
+          "form_name": "part_time_on_sf50",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "part_time.appears_on_sf50",
+          "description": "Does service appear on SF-50?"
+        },
+        "notes": {
+          "form_name": "part_time_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "part_time.notes",
+          "description": "Notes about part-time service"
+        }
+      }
+    },
+    "fegli": {
+      "section_name": "FEGLI (Federal Employees Group Life Insurance)",
+      "db_section": "fegli",
+      "fields": {
+        "premium_1": {
+          "form_name": "fegli_premium_1",
+          "type": "currency",
+          "required": false,
+          "db_path": "fegli.premium_1",
+          "description": "FEGLI Basic premium"
+        },
+        "premium_2": {
+          "form_name": "fegli_premium_2",
+          "type": "currency",
+          "required": false,
+          "db_path": "fegli.premium_2",
+          "description": "FEGLI Option A premium"
+        },
+        "premium_3": {
+          "form_name": "fegli_premium_3",
+          "type": "currency",
+          "required": false,
+          "db_path": "fegli.premium_3",
+          "description": "FEGLI Option B premium"
+        },
+        "premium_4": {
+          "form_name": "fegli_premium_4",
+          "type": "currency",
+          "required": false,
+          "db_path": "fegli.premium_4",
+          "description": "FEGLI Option C premium"
+        },
+        "five_year_requirement": {
+          "form_name": "fegli_5yr_yes / fegli_5yr_no / fegli_5yr_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "fegli.five_year_requirement",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Meet 5-year requirement for FEGLI coverage?"
+        },
+        "keep_in_retirement": {
+          "form_name": "fegli_keep_yes / fegli_keep_no / fegli_keep_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "fegli.keep_in_retirement",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Plan to keep FEGLI coverage in retirement?"
+        },
+        "sole_source": {
+          "form_name": "fegli_sole_yes / fegli_sole_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "fegli.sole_source",
+          "values": ["Yes", "No"],
+          "description": "Is FEGLI sole source of life insurance?"
+        },
+        "purpose": {
+          "form_name": "fegli_purpose",
+          "type": "text",
+          "required": false,
+          "db_path": "fegli.purpose",
+          "description": "Purpose of FEGLI coverage"
+        },
+        "children_ages": {
+          "form_name": "children_ages",
+          "type": "text",
+          "required": false,
+          "db_path": "fegli.children_ages",
+          "description": "Ages of dependent children"
+        },
+        "notes": {
+          "form_name": "fegli_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "fegli.notes",
+          "description": "Notes about FEGLI coverage"
+        }
+      }
+    },
+    "fehb": {
+      "section_name": "FEHB (Federal Employee Health Benefits)",
+      "db_section": "fehb",
+      "fields": {
+        "health_premium": {
+          "form_name": "fehb_health_premium",
+          "type": "currency",
+          "required": false,
+          "db_path": "fehb.health_premium",
+          "description": "FEHB health plan premium"
+        },
+        "dental_premium": {
+          "form_name": "fehb_dental_premium",
+          "type": "currency",
+          "required": false,
+          "db_path": "fehb.dental_premium",
+          "description": "Separate dental premium"
+        },
+        "vision_premium": {
+          "form_name": "fehb_vision_premium",
+          "type": "currency",
+          "required": false,
+          "db_path": "fehb.vision_premium",
+          "description": "Separate vision premium"
+        },
+        "dental_vision_premium": {
+          "form_name": "fehb_dental_vision_premium",
+          "type": "currency",
+          "required": false,
+          "db_path": "fehb.dental_vision_premium",
+          "description": "Combined dental + vision premium"
+        },
+        "coverage_self_only": {
+          "form_name": "fehb_health_self_only",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.coverage_self_only",
+          "description": "Self-only coverage?"
+        },
+        "coverage_self_one": {
+          "form_name": "fehb_health_self_one",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.coverage_self_one",
+          "description": "Self + one dependent coverage?"
+        },
+        "coverage_self_family": {
+          "form_name": "fehb_health_self_family",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.coverage_self_family",
+          "description": "Self + family coverage?"
+        },
+        "coverage_none": {
+          "form_name": "fehb_health_none",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.coverage_none",
+          "description": "No FEHB coverage?"
+        },
+        "five_year_requirement": {
+          "form_name": "fehb_health_5yr_yes / fehb_health_5yr_no / fehb_health_5yr_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "fehb.five_year_requirement",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Meet 5-year requirement for FEHB continuation?"
+        },
+        "keep_in_retirement": {
+          "form_name": "fehb_keep_yes / fehb_keep_no / fehb_keep_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "fehb.keep_in_retirement",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Plan to keep FEHB coverage in retirement?"
+        },
+        "spouse_reliant": {
+          "form_name": "fehb_spouse_yes / fehb_spouse_no / fehb_spouse_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "fehb.spouse_reliant",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Is spouse reliant on FEHB?"
+        },
+        "other_tricare": {
+          "form_name": "other_health_tricare",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.other_tricare",
+          "description": "Has TRICARE coverage?"
+        },
+        "other_va": {
+          "form_name": "other_health_va",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.other_va",
+          "description": "Has VA coverage?"
+        },
+        "other_spouse_plan": {
+          "form_name": "other_health_spouse_plan",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.other_spouse_plan",
+          "description": "Spouse has health plan coverage?"
+        },
+        "other_private": {
+          "form_name": "other_health_private",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fehb.other_private",
+          "description": "Has private health insurance?"
+        },
+        "notes": {
+          "form_name": "fehb_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "fehb.notes",
+          "description": "Notes about FEHB coverage"
+        }
+      }
+    },
+    "fltcip": {
+      "section_name": "FLTCIP (Federal Long-Term Care Insurance Program)",
+      "db_section": "fltcip",
+      "fields": {
+        "employee_premium": {
+          "form_name": "fltcip_employee_premium",
+          "type": "currency",
+          "required": false,
+          "db_path": "fltcip.employee_premium",
+          "description": "Employee premium"
+        },
+        "spouse_premium": {
+          "form_name": "fltcip_spouse_premium",
+          "type": "currency",
+          "required": false,
+          "db_path": "fltcip.spouse_premium",
+          "description": "Spouse premium"
+        },
+        "other_premium": {
+          "form_name": "fltcip_family_premium",
+          "type": "currency",
+          "required": false,
+          "db_path": "fltcip.other_premium",
+          "description": "Other family members premium"
+        },
+        "daily_benefit": {
+          "form_name": "fltcip_daily_benefit",
+          "type": "currency",
+          "required": false,
+          "db_path": "fltcip.daily_benefit",
+          "description": "Daily benefit amount"
+        },
+        "period_2yrs": {
+          "form_name": "fltcip_period_2yrs",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fltcip.period_2yrs",
+          "description": "2-year benefit period?"
+        },
+        "period_3yrs": {
+          "form_name": "fltcip_period_3yrs",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fltcip.period_3yrs",
+          "description": "3-year benefit period?"
+        },
+        "period_5yrs": {
+          "form_name": "fltcip_period_5yrs",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fltcip.period_5yrs",
+          "description": "5-year benefit period?"
+        },
+        "inflation_acio": {
+          "form_name": "fltcip_inflation_acio",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fltcip.inflation_acio",
+          "description": "Annual Compound inflation option?"
+        },
+        "inflation_fpo": {
+          "form_name": "fltcip_inflation_fpo",
+          "type": "checkbox",
+          "required": false,
+          "db_path": "fltcip.inflation_fpo",
+          "description": "Future Purchase Option inflation?"
+        },
+        "discuss_options": {
+          "form_name": "fltcip_discuss_yes / fltcip_discuss_no / fltcip_discuss_unsure",
+          "type": "checkbox_trio",
+          "required": false,
+          "db_path": "fltcip.discuss_options",
+          "values": ["Yes", "No", "Unsure"],
+          "description": "Have discussed FLTCIP options?"
+        },
+        "notes": {
+          "form_name": "fltcip_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "fltcip.notes",
+          "description": "Notes about FLTCIP coverage"
+        }
+      }
+    },
+    "tsp": {
+      "section_name": "TSP (Thrift Savings Plan)",
+      "db_section": "tsp",
+      "fields_note": "TSP has 50+ fields including fund allocations, loan details, risk tolerance. See views.py lines 199-283 for complete mapping.",
+      "key_fields": {
+        "sole_source": {
+          "form_name": "tsp_sole_yes / tsp_sole_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "tsp.sole_source",
+          "values": ["Yes", "No"],
+          "description": "Is TSP sole source of retirement savings?"
+        },
+        "in_service_withdrawal": {
+          "form_name": "tsp_withdrawal_yes / tsp_withdrawal_no",
+          "type": "checkbox_pair",
+          "required": false,
+          "db_path": "tsp.in_service_withdrawal",
+          "values": ["Yes", "No"],
+          "description": "Plan in-service withdrawals?"
+        },
+        "comments": {
+          "form_name": "tsp_comments",
+          "type": "textarea",
+          "required": false,
+          "db_path": "tsp.comments",
+          "description": "Comments about TSP strategy"
+        }
+      }
+    },
+    "additional_info": {
+      "section_name": "Additional Information",
+      "db_section": "add_info",
+      "fields": {
+        "has_will": {
+          "form_name": "has_will",
+          "type": "select",
+          "required": false,
+          "db_path": "add_info.has_will",
+          "description": "Has a will?"
+        },
+        "has_poa": {
+          "form_name": "has_poa",
+          "type": "select",
+          "required": false,
+          "db_path": "add_info.has_poa",
+          "description": "Has power of attorney?"
+        },
+        "has_court_orders": {
+          "form_name": "has_court_orders",
+          "type": "select",
+          "required": false,
+          "db_path": "add_info.has_court_orders",
+          "description": "Any court orders affecting benefits?"
+        },
+        "court_order_details": {
+          "form_name": "court_order_details",
+          "type": "textarea",
+          "required": false,
+          "db_path": "add_info.court_order_details",
+          "description": "Details of court orders"
+        },
+        "has_special_needs_dependents": {
+          "form_name": "has_special_needs_dependents",
+          "type": "select",
+          "required": false,
+          "db_path": "add_info.has_special_needs_dependents",
+          "description": "Special needs dependents?"
+        },
+        "special_needs_details": {
+          "form_name": "special_needs_details",
+          "type": "textarea",
+          "required": false,
+          "db_path": "add_info.special_needs_details",
+          "description": "Details about special needs"
+        },
+        "other_pertinent_details": {
+          "form_name": "other_pertinent_details",
+          "type": "textarea",
+          "required": false,
+          "db_path": "add_info.other_pertinent_details",
+          "description": "Other pertinent details"
+        },
+        "page1_notes": {
+          "form_name": "retirement_pay_leave_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "add_info.page1_notes",
+          "description": "Page 1 notes from retirement/pay/leave section"
+        },
+        "additional_notes": {
+          "form_name": "additional_notes",
+          "type": "textarea",
+          "required": false,
+          "db_path": "add_info.additional_notes",
+          "description": "Final additional notes"
+        }
+      }
+    },
+    "social_security": {
+      "section_name": "Social Security",
+      "db_section": "social_security",
+      "fields_note": "See views.py lines 284-303 for complete mapping. Contains estimated benefits, desired age, collection age."
+    }
+  },
+  "field_type_patterns": {
+    "checkbox_trio": {
+      "pattern": "field_yes / field_no / field_unsure",
+      "database_values": ["Yes", "No", "Unsure"],
+      "conversion_logic": "'Yes' if request.POST.get('field_yes') else ('No' if request.POST.get('field_no') else ('Unsure' if request.POST.get('field_unsure') else ''))",
+      "examples": [
+        "fegli_5yr_yes/no/unsure → fegli.five_year_requirement",
+        "fehb_health_5yr_yes/no/unsure → fehb.five_year_requirement",
+        "fltcip_discuss_yes/no/unsure → fltcip.discuss_options"
+      ]
+    },
+    "checkbox_pair": {
+      "pattern": "field_yes / field_no",
+      "database_values": ["Yes", "No"],
+      "conversion_logic": "'Yes' if request.POST.get('field_yes') else ('No' if request.POST.get('field_no') else '')",
+      "examples": [
+        "tsp_sole_yes/no → tsp.sole_source",
+        "fegli_sole_yes/no → fegli.sole_source"
+      ]
+    },
+    "checkbox": {
+      "pattern": "field",
+      "database_values": "true / false",
+      "conversion_logic": "request.POST.get('field') == 'on'",
+      "examples": [
+        "spouse_fed_emp → spouse_fed_emp",
+        "retirement_fully_eligible → retirement_fully_eligible"
+      ]
+    },
+    "radio": {
+      "pattern": "field with multiple values",
+      "database_values": "selected value",
+      "conversion_logic": "request.POST.get('field')",
+      "examples": [
+        "retirement_system → retirement_system (CSRS/FERS/etc)",
+        "employee_type → employee_type"
+      ]
+    },
+    "text": {
+      "pattern": "simple text input",
+      "database_values": "string",
+      "conversion_logic": "request.POST.get('field', '')",
+      "examples": [
+        "employee_name → employee_name",
+        "spouse_name → spouse_name"
+      ]
+    },
+    "currency": {
+      "pattern": "number with currency",
+      "database_values": "float",
+      "conversion_logic": "float(request.POST.get('field', 0) or 0)",
+      "examples": [
+        "fegli_premium_1 → fegli.premium_1",
+        "fehb_health_premium → fehb.health_premium"
+      ]
+    },
+    "date": {
+      "pattern": "date input YYYY-MM-DD",
+      "database_values": "date string",
+      "conversion_logic": "request.POST.get('field', '')",
+      "examples": [
+        "employee_dob → employee_dob",
+        "active_duty_start → mad.start_date"
+      ]
+    },
+    "textarea": {
+      "pattern": "multi-line text",
+      "database_values": "string with newlines",
+      "conversion_logic": "request.POST.get('field', '')",
+      "examples": [
+        "fegli_notes → fegli.notes",
+        "retirement_pay_leave_notes → add_info.page1_notes"
+      ]
+    }
+  },
+  "known_issues": [
+    "TSP uses 'comments' field instead of 'notes' (inconsistency with other sections)",
+    "Additional notes from 'retirement_pay_leave_notes' form field is stored in 'add_info.page1_notes', not 'add_info.additional_notes'",
+    "FederalFactFinder model has schema mismatches (fields in views.py don't exist in model) - non-critical as JSON is authoritative"
+  ],
+  "testing_recommendations": [
+    "Use this schema as single source of truth for form field mapping",
+    "For each section, verify checkbox conversions (trio vs pair vs simple)",
+    "For each notes field, trace form_name → db_path through views.py",
+    "Create automated tests that iterate through schema instead of hardcoding field names",
+    "Use schema to generate test data scripts"
+  ]
+}

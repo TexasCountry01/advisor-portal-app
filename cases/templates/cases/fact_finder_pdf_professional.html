@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Federal Fact Finder - {{ data.basic_information.employee_name }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.5in 0.5in;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.3;
+            color: #000;
+        }
+        
+        .page-header {
+            text-align: right;
+            font-size: 9pt;
+            margin-bottom: 3px;
+            border-bottom: 1px solid #000;
+            padding-bottom: 2px;
+        }
+        
+        .page-header-left {
+            float: left;
+            text-align: left;
+        }
+        
+        .title {
+            text-align: center;
+            font-weight: bold;
+            font-size: 11pt;
+            margin: 8px 0 3px 0;
+            clear: both;
+        }
+        
+        .subtitle {
+            text-align: center;
+            font-size: 9pt;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #d00;
+        }
+        
+        .section-header {
+            background-color: #ddd;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 10pt;
+            margin-top: 10px;
+            margin-bottom: 6px;
+            page-break-after: avoid;
+            border: 1px solid #000;
+        }
+        
+        .field-row {
+            margin-bottom: 5px;
+            page-break-inside: avoid;
+            display: flex;
+            align-items: center;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            font-size: 9pt;
+            flex: 0 0 auto;
+            margin-right: 8px;
+        }
+        
+        .field-value {
+            font-size: 9pt;
+            border-bottom: 1px solid #000;
+            flex: 1;
+            padding: 0 3px;
+            min-height: 16px;
+        }
+        
+        .field-value.empty {
+            color: #999;
+        }
+        
+        .checkbox-inline {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #000;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        
+        .checkbox-inline.checked {
+            background: #000;
+        }
+        
+        /* Two-column layout */
+        .two-col {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 8px;
+        }
+        
+        .two-col .col {
+            flex: 1;
+        }
+        
+        /* Checkbox trio layout */
+        .checkbox-group {
+            display: inline-flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .checkbox-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9pt;
+        }
+        
+        .notes-section {
+            margin-top: 8px;
+            font-weight: bold;
+        }
+        
+        .notes-box {
+            border: 1px solid #000;
+            padding: 4px;
+            font-size: 8pt;
+            min-height: 40px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-weight: normal;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+        
+        .page-number {
+            text-align: center;
+            font-size: 8pt;
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #000;
+        }
+        
+        .footer {
+            font-size: 7pt;
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+            page-break-after: always;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0;
+            font-size: 9pt;
+        }
+        
+        table th, table td {
+            border: 1px solid #000;
+            padding: 3px 4px;
+            text-align: left;
+        }
+        
+        table th {
+            background: #ddd;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<!-- PAGE 1: BASIC INFORMATION -->
+<div class="page-header">
+    <span class="page-header-left">Copyright © 2025 ProFeds LLC. Reproduction and use reserved for ProFeds members.</span>
+    Federal Fact Finder (revised 01-2025) | Page 1 of 6
+</div>
+
+<div class="title">Federal Fact Finder (revised 01-2025)</div>
+<div class="subtitle">NOT FOR DISTRIBUTION TO THE PUBLIC</div>
+
+<!-- BASIC INFORMATION -->
+<div class="section-header">BASIC INFORMATION</div>
+
+<div class="field-row">
+    <div class="field-label">Employee's name:</div>
+    <div class="field-value">{{ data.basic_information.employee_name|default:"" }}</div>
+</div>
+
+<div class="field-row">
+    <div class="field-label">Spouse's name:</div>
+    <div class="field-value">{{ data.basic_information.spouse_name|default:"" }}</div>
+</div>
+
+<div class="field-row">
+    <div class="field-label">Address:</div>
+    <div class="field-value">{{ data.basic_information.address|default:"" }}</div>
+</div>
+
+<div class="two-col">
+    <div class="col">
+        <div class="field-row">
+            <div class="field-label">City:</div>
+            <div class="field-value">{{ data.basic_information.city|default:"" }}</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="field-row">
+            <div class="field-label">State:</div>
+            <div class="field-value" style="max-width: 40px;">{{ data.basic_information.state|default:"" }}</div>
+        </div>
+    </div>
+    <div class="col">
+        <div class="field-row">
+            <div class="field-label">ZIP:</div>
+            <div class="field-value" style="max-width: 80px;">{{ data.basic_information.zip|default:"" }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="field-row">
+    <div class="field-label">Date of birth:</div>
+    <div class="field-value">{{ data.basic_information.dob|default:"" }}</div>
+</div>
+
+<!-- RETIREMENT SYSTEM & EMPLOYEE TYPE -->
+<div class="section-header">RETIREMENT SYSTEM  &nbsp;&nbsp;&nbsp;  EMPLOYEE TYPE</div>
+
+<div class="two-col">
+    <div class="col">
+        <div class="field-row">
+            <div class="checkbox-inline {% if retirement_system == 'CSRS' %}checked{% endif %}"></div>
+            <span>CSRS</span>
+        </div>
+        <div class="field-row">
+            <div class="checkbox-inline {% if retirement_system == 'CSRS Offset' %}checked{% endif %}"></div>
+            <span>CSRS Offset</span>
+        </div>
+        <div class="field-row">
+            <div class="checkbox-inline {% if retirement_system == 'FERS' %}checked{% endif %}"></div>
+            <span>FERS</span>
+        </div>
+        <div class="field-row">
+            <div class="checkbox-inline {% if retirement_system == 'FERS Transfer' %}checked{% endif %}"></div>
+            <span>FERS Transfer</span>
+        </div>
+    </div>
+    <div class="col">
+        <div class="field-row">
+            <div class="checkbox-inline {% if employee_type == 'Regular' %}checked{% endif %}"></div>
+            <span>Regular</span>
+        </div>
+        <div class="field-row">
+            <div class="checkbox-inline {% if employee_type == 'Postal Worker' %}checked{% endif %}"></div>
+            <span>Postal Worker</span>
+        </div>
+        <div class="field-row">
+            <div class="checkbox-inline {% if employee_type == 'Offset' %}checked{% endif %}"></div>
+            <span>Offset</span>
+        </div>
+        <div class="field-row">
+            <div class="checkbox-inline {% if employee_type == 'Unsure' %}checked{% endif %}"></div>
+            <span>Unsure</span>
+        </div>
+    </div>
+</div>
+
+<div class="page-number">Page 1 of 6</div>
+<div class="page-break"></div>
+
+<!-- PAGE 2: MILITARY SERVICE -->
+<div class="page-header">
+    <span class="page-header-left">NOT FOR DISTRIBUTION TO THE PUBLIC</span>
+    MILITARY SERVICE | Page 2 of 6
+</div>
+
+<div class="section-header">MILITARY SERVICE</div>
+
+<!-- Active Duty -->
+<div style="margin-top: 8px; font-weight: bold; font-size: 9pt;">ACTIVE DUTY (Periods of active military service):</div>
+<table>
+    <tr>
+        <th>From</th>
+        <th>To</th>
+        <th>Branch</th>
+        <th>Officer/Enlisted</th>
+        <th>With Pay?</th>
+    </tr>
+    {% for service in data.mad.services %}
+    <tr>
+        <td>{{ service.from_date|default:"" }}</td>
+        <td>{{ service.to_date|default:"" }}</td>
+        <td>{{ service.branch|default:"" }}</td>
+        <td>{{ service.officer_enlisted|default:"" }}</td>
+        <td>{{ service.with_pay|default:"" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% if data.mad.notes %}
+<div class="notes-section">Active Duty Notes:</div>
+<div class="notes-box">{{ data.mad.notes }}</div>
+{% endif %}
+
+<!-- Reserves/National Guard -->
+<div style="margin-top: 12px; font-weight: bold; font-size: 9pt;">RESERVES / NATIONAL GUARD (Creditable service periods):</div>
+<table>
+    <tr>
+        <th>From</th>
+        <th>To</th>
+        <th>Branch</th>
+        <th>Status</th>
+        <th>Status Code</th>
+    </tr>
+    {% for service in data.reserves.services %}
+    <tr>
+        <td>{{ service.from_date|default:"" }}</td>
+        <td>{{ service.to_date|default:"" }}</td>
+        <td>{{ service.branch|default:"" }}</td>
+        <td>{{ service.status|default:"" }}</td>
+        <td>{{ service.status_code|default:"" }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% if data.reserves.notes %}
+<div class="notes-section">Reserves Notes:</div>
+<div class="notes-box">{{ data.reserves.notes }}</div>
+{% endif %}
+
+<!-- Military Academy -->
+<div style="margin-top: 12px; font-weight: bold; font-size: 9pt;">MILITARY ACADEMY (USMA, USNA, USAFA, USCGA):</div>
+<div class="field-row">
+    <div class="field-label">Academy:</div>
+    <div class="field-value">{{ data.academy.academy_name|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Entry Year:</div>
+    <div class="field-value">{{ data.academy.entry_year|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Graduation Year:</div>
+    <div class="field-value">{{ data.academy.graduation_year|default:"" }}</div>
+</div>
+{% if data.academy.notes %}
+<div class="notes-section">Academy Notes:</div>
+<div class="notes-box">{{ data.academy.notes }}</div>
+{% endif %}
+
+<div class="page-number">Page 2 of 6</div>
+<div class="page-break"></div>
+
+<!-- PAGE 3: SPECIAL SERVICE -->
+<div class="page-header">
+    <span class="page-header-left">NOT FOR DISTRIBUTION TO THE PUBLIC</span>
+    SPECIAL TYPES OF FEDERAL SERVICE | Page 3 of 6
+</div>
+
+<div class="section-header">SPECIAL TYPES OF FEDERAL SERVICE</div>
+
+<!-- Non-Deduction Service -->
+<div style="margin-top: 8px; font-weight: bold; font-size: 9pt;">NON-DEDUCTION SERVICE (With Redeposit/Deposit):</div>
+<div class="field-row">
+    <div class="field-label">Period From:</div>
+    <div class="field-value">{{ data.non_deduction.period_from|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Period To:</div>
+    <div class="field-value">{{ data.non_deduction.period_to|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Agency:</div>
+    <div class="field-value">{{ data.non_deduction.agency|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Deposit Amount:</div>
+    <div class="field-value">${{ data.non_deduction.deposit_amount|default:""|floatformat:2 }}</div>
+</div>
+{% if data.non_deduction.notes %}
+<div class="notes-section">Non-Deduction Notes:</div>
+<div class="notes-box">{{ data.non_deduction.notes }}</div>
+{% endif %}
+
+<!-- Break in Service -->
+<div style="margin-top: 12px; font-weight: bold; font-size: 9pt;">BREAK-IN-SERVICE (Qualifying breaks > 3 months):</div>
+<div class="field-row">
+    <div class="field-label">Break From:</div>
+    <div class="field-value">{{ data.break_service.break_from|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Break To:</div>
+    <div class="field-value">{{ data.break_service.break_to|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Reason:</div>
+    <div class="field-value">{{ data.break_service.reason|default:"" }}</div>
+</div>
+{% if data.break_service.notes %}
+<div class="notes-section">Break-in-Service Notes:</div>
+<div class="notes-box">{{ data.break_service.notes }}</div>
+{% endif %}
+
+<!-- Part-Time Service -->
+<div style="margin-top: 12px; font-weight: bold; font-size: 9pt;">PART-TIME SERVICE (If applicable):</div>
+<div class="field-row">
+    <div class="field-label">Period From:</div>
+    <div class="field-value">{{ data.part_time.period_from|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Period To:</div>
+    <div class="field-value">{{ data.part_time.period_to|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">% of Full-Time:</div>
+    <div class="field-value">{{ data.part_time.percent|default:"" }}%</div>
+</div>
+{% if data.part_time.notes %}
+<div class="notes-section">Part-Time Notes:</div>
+<div class="notes-box">{{ data.part_time.notes }}</div>
+{% endif %}
+
+<div class="page-number">Page 3 of 6</div>
+<div class="page-break"></div>
+
+<!-- PAGE 4: INSURANCE PROGRAMS -->
+<div class="page-header">
+    <span class="page-header-left">NOT FOR DISTRIBUTION TO THE PUBLIC</span>
+    FEDERAL EMPLOYEE INSURANCE PROGRAMS | Page 4 of 6
+</div>
+
+<!-- FEGLI -->
+<div class="section-header">FEDERAL EMPLOYEES GROUP LIFE INSURANCE (FEGLI)</div>
+<div class="field-row">
+    <div class="field-label">Basic:</div>
+    <div class="field-value">${{ data.fegli.basic|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Option A:</div>
+    <div class="field-value">${{ data.fegli.option_a|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Option B:</div>
+    <div class="field-value">${{ data.fegli.option_b|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Option C:</div>
+    <div class="field-value">${{ data.fegli.option_c|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Keep in Retirement:</div>
+    <div class="field-value">{{ data.fegli.keep_in_retirement|default:"Unsure" }}</div>
+</div>
+{% if data.fegli.notes %}
+<div class="notes-section">FEGLI Notes:</div>
+<div class="notes-box">{{ data.fegli.notes }}</div>
+{% endif %}
+
+<!-- FEHB -->
+<div class="section-header">FEDERAL EMPLOYEES HEALTH BENEFITS (FEHB)</div>
+<div class="field-row">
+    <div class="field-label">Plan Name:</div>
+    <div class="field-value">{{ data.fehb.plan_name|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Coverage Type:</div>
+    <div class="field-value">{{ data.fehb.coverage_type|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Keep in Retirement:</div>
+    <div class="field-value">{{ data.fehb.keep_in_retirement|default:"Unsure" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Spouse Reliant:</div>
+    <div class="field-value">{{ data.fehb.spouse_reliant|default:"Unsure" }}</div>
+</div>
+{% if data.fehb.notes %}
+<div class="notes-section">FEHB Notes:</div>
+<div class="notes-box">{{ data.fehb.notes }}</div>
+{% endif %}
+
+<!-- FLTCIP -->
+<div class="section-header">FEDERAL LONG TERM CARE INSURANCE (FLTCIP)</div>
+<div class="field-row">
+    <div class="field-label">Coverage:</div>
+    <div class="field-value">{{ data.fltcip.coverage|default:"None" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Daily Benefit:</div>
+    <div class="field-value">${{ data.fltcip.daily_benefit|default:"0" }}/day</div>
+</div>
+<div style="font-size: 8pt; margin-top: 8px; padding: 4px; background: #fff3cd; border: 1px solid #ffc107;">
+    <strong>NOTE:</strong> OPM has suspended new FLTCIP applications until at least December 2026
+</div>
+{% if data.fltcip.notes %}
+<div class="notes-section">FLTCIP Notes:</div>
+<div class="notes-box">{{ data.fltcip.notes }}</div>
+{% endif %}
+
+<div class="page-number">Page 4 of 6</div>
+<div class="page-break"></div>
+
+<!-- PAGE 5: TSP & SOCIAL SECURITY -->
+<div class="page-header">
+    <span class="page-header-left">NOT FOR DISTRIBUTION TO THE PUBLIC</span>
+    THRIFT SAVINGS PLAN & SOCIAL SECURITY | Page 5 of 6
+</div>
+
+<!-- TSP -->
+<div class="section-header">THRIFT SAVINGS PLAN (TSP)</div>
+<div class="field-row">
+    <div class="field-label">Current Balance:</div>
+    <div class="field-value">${{ data.tsp.current_balance|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Annual Contributions:</div>
+    <div class="field-value">${{ data.tsp.annual_contributions|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Employer Match:</div>
+    <div class="field-value">{{ data.tsp.employer_match|default:"Unsure" }}</div>
+</div>
+<div style="font-weight: bold; font-size: 9pt; margin-top: 6px;">Fund Allocations:</div>
+<table>
+    <tr>
+        <th>Fund</th>
+        <th>Allocation %</th>
+    </tr>
+    <tr>
+        <td>G Fund (Government Securities)</td>
+        <td>{{ data.tsp.g_fund|default:"0" }}%</td>
+    </tr>
+    <tr>
+        <td>F Fund (Fixed Income)</td>
+        <td>{{ data.tsp.f_fund|default:"0" }}%</td>
+    </tr>
+    <tr>
+        <td>C Fund (Large Cap Stock)</td>
+        <td>{{ data.tsp.c_fund|default:"0" }}%</td>
+    </tr>
+    <tr>
+        <td>S Fund (Small Cap Stock)</td>
+        <td>{{ data.tsp.s_fund|default:"0" }}%</td>
+    </tr>
+    <tr>
+        <td>I Fund (International Stock)</td>
+        <td>{{ data.tsp.i_fund|default:"0" }}%</td>
+    </tr>
+</table>
+{% if data.tsp.comments %}
+<div class="notes-section">TSP Comments:</div>
+<div class="notes-box">{{ data.tsp.comments }}</div>
+{% endif %}
+
+<!-- SOCIAL SECURITY -->
+<div class="section-header">SOCIAL SECURITY</div>
+<div class="field-row">
+    <div class="field-label">Primary Insurance Amount:</div>
+    <div class="field-value">${{ data.social_security.pia|default:"0"|floatformat:2 }}/month</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Planned Claiming Age:</div>
+    <div class="field-value">{{ data.social_security.planned_claiming_age|default:"" }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">GPO Affected:</div>
+    <div class="field-value">{{ data.social_security.gpo_status|default:"Unknown" }}</div>
+</div>
+{% if data.social_security.notes %}
+<div class="notes-section">Social Security Notes:</div>
+<div class="notes-box">{{ data.social_security.notes }}</div>
+{% endif %}
+
+<div class="page-number">Page 5 of 6</div>
+<div class="page-break"></div>
+
+<!-- PAGE 6: OTHER RETIREMENT & NOTES -->
+<div class="page-header">
+    <span class="page-header-left">NOT FOR DISTRIBUTION TO THE PUBLIC</span>
+    OTHER RETIREMENT ACCOUNTS & ADDITIONAL NOTES | Page 6 of 6
+</div>
+
+<!-- OTHER RETIREMENT ACCOUNTS -->
+<div class="section-header">OTHER RETIREMENT ACCOUNTS (IRA, 401k, PENSIONS)</div>
+<div class="field-row">
+    <div class="field-label">IRA - Traditional:</div>
+    <div class="field-value">${{ data.other_retirement_accounts.ira_traditional|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">IRA - Roth:</div>
+    <div class="field-value">${{ data.other_retirement_accounts.ira_roth|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">401(k) - Current Employer:</div>
+    <div class="field-value">${{ data.other_retirement_accounts.k401_current|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">401(k) - Previous Employers:</div>
+    <div class="field-value">${{ data.other_retirement_accounts.k401_previous|default:"0"|floatformat:2 }}</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Pension - Military:</div>
+    <div class="field-value">${{ data.other_retirement_accounts.pension_military|default:"0"|floatformat:2 }}/month</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Pension - Other Public:</div>
+    <div class="field-value">${{ data.other_retirement_accounts.pension_other_public|default:"0"|floatformat:2 }}/month</div>
+</div>
+<div class="field-row">
+    <div class="field-label">Pension - Private Employer:</div>
+    <div class="field-value">${{ data.other_retirement_accounts.pension_private|default:"0"|floatformat:2 }}/month</div>
+</div>
+{% if data.other_retirement_accounts.notes %}
+<div class="notes-section">Other Retirement Notes:</div>
+<div class="notes-box">{{ data.other_retirement_accounts.notes }}</div>
+{% endif %}
+
+<!-- ADDITIONAL NOTES -->
+<div class="section-header">ADDITIONAL NOTES</div>
+{% if data.add_info.page1_notes %}
+<div class="notes-section">Additional Information:</div>
+<div class="notes-box">{{ data.add_info.page1_notes }}</div>
+{% endif %}
+
+{% if data.add_info.other_pertinent_details %}
+<div class="notes-section" style="margin-top: 10px;">Other Pertinent Details:</div>
+<div class="notes-box">{{ data.add_info.other_pertinent_details }}</div>
+{% endif %}
+
+{% if data.add_info.additional_notes %}
+<div class="notes-section" style="margin-top: 10px;">Additional Comments:</div>
+<div class="notes-box">{{ data.add_info.additional_notes }}</div>
+{% endif %}
+
+<div class="page-number">Page 6 of 6</div>
+
+<div class="footer">
+    <p>This document was automatically generated from the Federal Fact Finder form.</p>
+    <p>For questions, email Reports@ProFeds.com or fax 866-779-9921</p>
+</div>
+
+</body>
+</html>

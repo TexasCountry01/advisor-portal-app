@@ -84,20 +84,42 @@
             <!-- Federal Fact Finder PDF -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Federal Fact Finder PDF</h5>
+                    <h5 class="mb-0">Federal Fact Finder Form</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="bi bi-file-pdf fs-3 text-danger"></i>
-                            <strong class="ms-2">Federal Fact Finder Form</strong>
-                            <br>
-                            <small class="text-muted ms-5">Auto-generated PDF from submitted form data</small>
+                    <p class="text-muted">Download the official Federal Fact Finder template and upload supporting documents.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-2">
+                                <div>
+                                    <i class="bi bi-file-pdf fs-3 text-danger"></i>
+                                    <strong class="ms-2">Official Template</strong>
+                                    <br>
+                                    <small class="text-muted ms-5">Download & upload documents</small>
+                                </div>
+                                <a href="{% url 'case_fact_finder' case.pk %}" class="btn btn-primary">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
                         </div>
-                        <div>
-                            <a href="{% url 'view_fact_finder_pdf' case.pk %}" class="btn btn-success" target="_blank">
-                                <i class="bi bi-file-pdf"></i> View PDF
-                            </a>
+                        {% if case.status == 'draft' %}
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-2">
+                                <div>
+                                    <i class="bi bi-file-pdf fs-3 text-success"></i>
+                                    <strong class="ms-2">Generated PDF</strong>
+                                    <br>
+                                    <small class="text-muted ms-5">Auto-generated from form data</small>
+                                </div>
+                                <a href="{% url 'view_fact_finder_pdf' case.pk %}" class="btn btn-success" target="_blank">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
                         </div>
                     </div>
                 </div>

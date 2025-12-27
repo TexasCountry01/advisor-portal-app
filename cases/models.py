@@ -148,6 +148,19 @@ class Case(models.Model):
         help_text='When the PDF was successfully generated'
     )
     
+    # Special notes or requests from the member
+    special_notes = models.TextField(
+        blank=True,
+        help_text='Special notes, requests, or additional information from the member'
+    )
+    
+    # Preferred retirement date
+    retirement_date_preference = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Preferred retirement date for analysis'
+    )
+    
     # API Sync Status
     API_SYNC_CHOICES = [
         ('pending', 'Pending'),

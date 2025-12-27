@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Submit New Case{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <h2 class="mb-4">Submit New Case</h2>
+            
+            <div class="card">
+                <div class="card-body">
+                    <p class="text-muted mb-4">
+                        Enter basic information to create a new case. 
+                        You'll then download the Federal Fact Finder template, fill it out, and upload it along with supporting documents.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="employee_name" class="form-label">Employee Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="employee_name" name="employee_name" required>
+                            <small class="text-muted">Full name of the federal employee</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="employee_email" class="form-label">Employee Email</label>
+                            <input type="email" class="form-control" id="employee_email" name="employee_email" 
+                                   value="{{ user.email }}" placeholder="Leave blank to use your email">
+                            <small class="text-muted">Email for case communications</small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="urgency" class="form-label">Urgency</label>
+                            <select class="form-select" id="urgency" name="urgency">
+                                <option value="normal">Normal</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Create Case & Continue
+                            </button>
+                            <a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">How It Works</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Enter employee name and email above</li>
+                        <li>Click "Create Case & Continue"</li>
+                        <li>Download the Federal Fact Finder template PDF</li>
+                        <li>Fill it out completely (print and scan if needed)</li>
+                        <li>Upload the completed form</li>
+                        <li>Upload supporting documents (pay stub, TSP statement, Social Security statement)</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

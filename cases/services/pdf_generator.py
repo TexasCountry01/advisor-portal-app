@@ -77,7 +77,7 @@ def generate_fact_finder_pdf(case):
         }
         
         # Render HTML template
-        html_string = render_to_string('cases/fact_finder_pdf_template_v2.html', context)
+        html_string = render_to_string('cases/fact_finder_pdf_professional.html', context)
         
         # Configure fonts for WeasyPrint
         font_config = FontConfiguration()
