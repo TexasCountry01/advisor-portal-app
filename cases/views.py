@@ -184,14 +184,16 @@ def delete_case(request, pk):
     """Delete a case"""
     case = get_object_or_404(Case, pk=pk)
     
-    # Permission check - only members can delete their own drafts
-    if request.user.role == 'member' and case.member == request.user and case.status == 'draft':
+    # Permission check - only members can delete their own cases (any status)
+    if request.user.role == 'member' and case.member == request.user:
+        case_id = case.external_case_id
         case.delete()
-        messages.success(request, f'Case {case.external_case_id} has been deleted.')
+        messages.success(request, f'Case {case_id} has been deleted.')
         return redirect('member_dashboard')
     
     # Redirect based on user role
     if request.user.role == 'member':
+        messages.error(request, 'You do not have permission to delete this case.')
         return redirect('member_dashboard')
     elif request.user.role == 'technician':
         return redirect('technician_workbench')

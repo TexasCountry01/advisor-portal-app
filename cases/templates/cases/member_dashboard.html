@@ -185,13 +185,13 @@
                                 {% endif %}
                             </td>
                             <td style="min-width: 200px;">
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="white-space: normal; display: inline-block;">
+                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="white-space: nowrap; display: inline-block;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                <a href="{% url 'case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" style="white-space: normal; display: inline-block;">
+                                <a href="{% url 'case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" style="white-space: nowrap; display: inline-block;">
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
-                                <a href="{% url 'delete_case' case.pk %}" class="btn btn-sm btn-outline-danger" style="white-space: normal; display: inline-block;" onclick="return confirm('Are you sure?')">
+                                <a href="{% url 'delete_case' case.pk %}" class="btn btn-sm btn-outline-danger" style="white-space: nowrap; display: inline-block;" onclick="return confirm('Are you sure?')">
                                     <i class="bi bi-trash"></i> Delete
                                 </a>
                             </td>
