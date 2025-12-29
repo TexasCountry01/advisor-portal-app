@@ -43,6 +43,39 @@ class User(AbstractUser):
         verbose_name_plural = 'Users'
 
 
+class AdvisorDelegate(models.Model):
+    """
+    Allow delegates (staff members) to submit and manage cases on behalf of advisors.
+    This enables team members to help with case submissions.
+    """
+    
+    delegate = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='delegate_for_advisors',
+        help_text='Staff member who can submit cases'
+    )
+    advisor = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='advisor_delegates',
+        help_text='Advisor whose cases this delegate can submit'
+    )
+    can_submit = models.BooleanField(default=True, help_text='Delegate can submit new cases')
+    can_edit = models.BooleanField(default=True, help_text='Delegate can edit submitted cases')
+    can_view = models.BooleanField(default=True, help_text='Delegate can view cases')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('delegate', 'advisor')
+        verbose_name = 'Advisor Delegate'
+        verbose_name_plural = 'Advisor Delegates'
+    
+    def __str__(self):
+        return f"{self.delegate.get_full_name()} can submit for {self.advisor.get_full_name()}"
+
+
 class UserPreference(models.Model):
     """Store user dashboard preferences (column visibility, order, etc.)"""
     

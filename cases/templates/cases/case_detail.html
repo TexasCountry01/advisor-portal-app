@@ -81,6 +81,138 @@
                 </div>
             </div>
 
+            <!-- Case Submission Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Submission Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Advisor Name:</strong><br>
+                            {{ case.member.first_name }} {{ case.member.last_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Due Date:</strong><br>
+                            {% if case.date_due %}
+                                {{ case.date_due|date:"m/d/Y" }}
+                                {% if case.urgency == 'urgent' %}
+                                    <span class="badge bg-warning ms-2">RUSHED</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Not set</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Federal Employee:</strong><br>
+                            {{ case.employee_first_name }} {{ case.employee_last_name }}
+                            {% if case.client_email %}
+                                <br><small class="text-muted">{{ case.client_email }}</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Number of Reports:</strong><br>
+                            {{ case.num_reports_requested }} Report{{ case.num_reports_requested|pluralize }}
+                        </div>
+                    </div>
+                    {% if case.special_notes %}
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Notes/Comments:</strong><br>
+                            <div class="p-3 bg-light rounded">
+                                {{ case.special_notes|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Supporting Documents -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        Submitted Documents
+                        <span class="badge bg-info">{{ documents|length }} Total</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                        <!-- Federal Fact Finder Section -->
+                        {% regroup documents by document_type as docs_by_type %}
+                        {% for doc_type_group in docs_by_type %}
+                            {% if doc_type_group.grouper == 'Federal Fact Finder' %}
+                            <div class="mb-4">
+                                <h6 class="mb-3">
+                                    <i class="bi bi-file-pdf" style="color: #dc3545;"></i> 
+                                    Federal Fact Finder
+                                    <span class="badge bg-primary">{{ doc_type_group.list|length }}</span>
+                                </h6>
+                                <div class="list-group">
+                                    {% for doc in doc_type_group.list %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="bi bi-file-earmark-pdf"></i>
+                                                {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
+                                                    <strong>{{ doc.original_filename }}</strong>
+                                                {% if doc.file %}</a>{% endif %}
+                                            </div>
+                                            <div class="text-end">
+                                                {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                                    <i class="bi bi-download"></i>
+                                                </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
+                                                <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Supporting Documents Section -->
+                        {% for doc_type_group in docs_by_type %}
+                            {% if doc_type_group.grouper == 'Supporting Document' %}
+                            <div class="mb-4">
+                                <h6 class="mb-3">
+                                    <i class="bi bi-file-earmark" style="color: #6c757d;"></i> 
+                                    Supporting Documents
+                                    <span class="badge bg-secondary">{{ doc_type_group.list|length }}</span>
+                                </h6>
+                                <div class="list-group">
+                                    {% for doc in doc_type_group.list %}
+                                    <div class="list-group-item">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <i class="bi bi-file-earmark"></i>
+                                                {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
+                                                    <strong>{{ doc.original_filename }}</strong>
+                                                {% if doc.file %}</a>{% endif %}
+                                            </div>
+                                            <div class="text-end">
+                                                {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                                    <i class="bi bi-download"></i>
+                                                </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
+                                                <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                        
+                    {% else %}
+                    <p class="text-muted">No supporting documents uploaded yet. Download the Federal Fact Finder template below and upload it with your supporting documents.</p>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Federal Fact Finder PDF -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -122,47 +254,6 @@
             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Documents -->
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Documents</h5>
-                    {% if can_edit %}
-                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadDocumentModal">
-                        <i class="bi bi-upload"></i> Upload Document
-                    </button>
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    {% if documents %}
-                    <div class="list-group">
-                        {% for doc in documents %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi bi-file-earmark-text"></i>
-                                    {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
-                                        <strong>{{ doc.document_type }}</strong>
-                                    {% if doc.file %}</a>{% endif %}
-                                    {% if doc.notes %}
-                                        <br><small class="text-muted">{{ doc.notes }}</small>
-                                    {% endif %}
-                                </div>
-                                <div class="text-end">
-                                    {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
-                                        <i class="bi bi-download"></i>
-                                    </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
-                                    <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No documents uploaded yet.</p>
-                    {% endif %}
                 </div>
             </div>
 

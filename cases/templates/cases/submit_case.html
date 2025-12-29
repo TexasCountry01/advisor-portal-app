@@ -1,0 +1,799 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Submit New Case - ProFeds{% endblock %}
+
+{% block extra_css %}
+<style>
+    .submit-case-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 40px 20px;
+    }
+
+    .form-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 40px;
+        margin-bottom: 30px;
+    }
+
+    .form-header {
+        border-bottom: 3px solid #0066cc;
+        padding-bottom: 20px;
+        margin-bottom: 30px;
+    }
+
+    .form-header h1 {
+        color: #0066cc;
+        font-size: 32px;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .form-header p {
+        font-size: 16px;
+        color: #666;
+        margin: 0;
+    }
+
+    .form-section {
+        margin-bottom: 40px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #003366;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .form-label .required {
+        color: #dc3545;
+    }
+
+    .form-control {
+        display: block;
+        width: 100%;
+        padding: 12px 15px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        transition: border-color 0.15s ease-in-out;
+    }
+
+    .form-control:focus {
+        color: #495057;
+        background-color: #fff;
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+    }
+
+    .invalid-feedback {
+        display: block;
+        color: #dc3545;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
+    .help-text {
+        display: block;
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+        font-style: italic;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .form-row.full {
+        grid-template-columns: 1fr;
+    }
+
+    .alert {
+        padding: 15px;
+        margin-bottom: 20px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .alert-info {
+        color: #0c5460;
+        background-color: #d1ecf1;
+        border-color: #bee5eb;
+    }
+
+    .alert-warning {
+        color: #856404;
+        background-color: #fff3cd;
+        border-color: #ffeaa7;
+        display: none;
+        margin-top: -10px;
+        margin-bottom: 20px;
+    }
+
+    .alert-warning.show {
+        display: block;
+    }
+
+    .alert-warning .fee-amount {
+        font-weight: bold;
+        color: #dc3545;
+    }
+
+    .date-info {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+
+    /* Multi-file upload styling */
+    .file-upload-section {
+        background: #f8f9fa;
+        border: 2px dashed #0066cc;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .file-upload-section:hover {
+        background: #e7f1ff;
+        border-color: #003366;
+    }
+
+    .file-upload-section.dragover {
+        background: #e7f1ff;
+        border-color: #003366;
+    }
+
+    .file-upload-icon {
+        font-size: 32px;
+        color: #0066cc;
+        margin-bottom: 10px;
+    }
+
+    .file-upload-text {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .file-upload-subtext {
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    #fileInput {
+        display: none;
+    }
+
+    .file-list {
+        list-style: none;
+        padding: 0;
+        margin-top: 15px;
+    }
+
+    .file-list-item {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+    }
+
+    .file-list-item .file-name {
+        flex: 1;
+        color: #333;
+        font-weight: 500;
+    }
+
+    .file-list-item .file-size {
+        color: #999;
+        font-size: 12px;
+        margin: 0 10px;
+    }
+
+    .file-list-item .remove-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .file-list-item .remove-btn:hover {
+        background: #c82333;
+    }
+
+    .document-type-select {
+        margin-bottom: 15px;
+    }
+
+    .document-type-select select {
+        width: 100%;
+    }
+
+    /* Form buttons */
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 2px solid #dee2e6;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: #0066cc;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: #003399;
+    }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background: #5a6268;
+    }
+
+    .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* Download PDF section */
+    .download-section {
+        background: #e7f5ff;
+        border-left: 4px solid #0066cc;
+        padding: 20px;
+        margin-top: 30px;
+        border-radius: 4px;
+    }
+
+    .download-section h4 {
+        color: #003366;
+        margin-bottom: 10px;
+        font-weight: bold;
+    }
+
+    .download-section p {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .btn-download {
+        display: inline-block;
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        text-decoration: none;
+        margin-top: 10px;
+        transition: background 0.2s;
+    }
+
+    .btn-download:hover {
+        background: #218838;
+    }
+
+    .advisor-selector {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+
+    .advisor-option {
+        padding: 12px 15px;
+        border: 2px solid #dee2e6;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: white;
+        text-align: center;
+        min-width: 150px;
+    }
+
+    .advisor-option:hover {
+        border-color: #0066cc;
+    }
+
+    .advisor-option.selected {
+        background: #0066cc;
+        color: white;
+        border-color: #0066cc;
+    }
+
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-card {
+            padding: 20px;
+        }
+
+        .form-header h1 {
+            font-size: 24px;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="submit-case-container">
+    <!-- Header -->
+    <div class="form-card">
+        <div class="form-header">
+            <h1>Submit New Case</h1>
+            <p>Create a new federal retirement planning case and upload supporting documents.</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Main Form -->
+        <form method="post" id="submitCaseForm" enctype="multipart/form-data">
+            {% csrf_token %}
+
+            <!-- Section 1: Advisor Information -->
+            <div class="form-section">
+                <h2 class="section-title">Advisor Information</h2>
+
+                {% if current_user.role == 'member' and current_user not in advisors %}
+                    <!-- User is a delegate - show advisor selection -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Select Advisor <span class="required">*</span>
+                        </label>
+                        <div class="advisor-selector">
+                            {% for advisor in advisors %}
+                                <label class="advisor-option" onclick="selectAdvisor(this, '{{ advisor.id }}', '{{ advisor.workshop_code }}')">
+                                    <input type="radio" name="advisor_id" value="{{ advisor.id }}" style="display: none;" required>
+                                    <span>{{ advisor.first_name }} {{ advisor.last_name }}</span>
+                                </label>
+                            {% endfor %}
+                        </div>
+                        <small class="help-text">Select which advisor this case is for</small>
+                    </div>
+                {% else %}
+                    <!-- User is an advisor - auto-select themselves -->
+                    <!-- TODO: Future Enhancement - Pull advisor info from signon/session data -->
+                    <!-- TODO: Add org hierarchy, team structure, and full advisor profile integration -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            Advisor <span class="required">*</span>
+                        </label>
+                        <input type="text" name="advisor_name" class="form-control" 
+                               value="{{ current_user.first_name }} {{ current_user.last_name }}" required
+                               placeholder="Advisor name">
+                        <input type="hidden" name="advisor_id" value="{{ current_user.id }}">
+                        <small class="help-text">Your cases will be submitted under your name</small>
+                    </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label class="form-label">
+                        Workshop Code <span class="required">*</span>
+                    </label>
+                    <input type="text" name="workshop_code" id="workshopCode" class="form-control" 
+                           placeholder="e.g., ABCD or XYZ" maxlength="5" 
+                           value="{{ current_user.workshop_code }}" required
+                           onchange="this.value = this.value.toUpperCase()">
+                    <small class="help-text">2-5 character code (e.g., ABCD, XYZ). Most advisors have one primary code.</small>
+                </div>
+            </div>
+
+            <!-- Section 2: Federal Employee Information -->
+            <div class="form-section">
+                <h2 class="section-title">Federal Employee Information</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            First Name <span class="required">*</span>
+                        </label>
+                        <input type="text" name="fed_first_name" class="form-control" placeholder="John" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            Last Name <span class="required">*</span>
+                        </label>
+                        <input type="text" name="fed_last_name" class="form-control" placeholder="Smith" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Email Address (Optional)</label>
+                    <input type="email" name="fed_email" class="form-control" placeholder="john.smith@agency.gov">
+                    <small class="help-text">Employee's email address for case notifications</small>
+                </div>
+            </div>
+
+            <!-- Section 3: Case Details -->
+            <div class="form-section">
+                <h2 class="section-title">Case Details</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Due Date <span class="required">*</span>
+                        </label>
+                        <input type="date" name="due_date" id="dueDateInput" class="form-control" 
+                               value="{{ default_due_date }}" min="{{ today }}" required
+                               onchange="checkRushedStatus()">
+                        <div class="date-info">
+                            Default: 7 days from today. Dates less than 7 days are marked as <strong>RUSHED</strong>.
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Number of Reports <span class="required">*</span>
+                        </label>
+                        <select name="num_reports_requested" class="form-control">
+                            <option value="1">1 Report</option>
+                            <option value="2">2 Reports</option>
+                            <option value="3">3 Reports</option>
+                            <option value="4">4 Reports</option>
+                            <option value="5">5 Reports</option>
+                        </select>
+                        <small class="help-text">Number of retirement benefit scenarios to model</small>
+                    </div>
+                </div>
+
+                <!-- Rushed Status Alert -->
+                <div class="alert alert-warning" id="rushAlert" style="display: none;">
+                    <strong>⚠️ Rushed Report Detected!</strong>
+                    <p>This case is due in less than 7 days. A rush fee of <span class="fee-amount" id="rushFeeAmount">$0</span> will apply.</p>
+                </div>
+            </div>
+
+            <!-- Section 4: Notes/Comments -->
+            <div class="form-section">
+                <h2 class="section-title">Additional Information</h2>
+
+                <div class="form-group">
+                    <label class="form-label">Notes/Comments (Optional)</label>
+                    <textarea name="notes" class="form-control" rows="5" 
+                              placeholder="Enter any special instructions, account numbers, or additional information that will help with the analysis..."></textarea>
+                    <small class="help-text">Include any relevant details about the employee's situation</small>
+                </div>
+            </div>
+
+            <!-- Section 5: Document Upload -->
+            <div class="form-section">
+                <h2 class="section-title">Supporting Documents</h2>
+
+                <div class="alert alert-info">
+                    <strong>📄 Documents to Submit:</strong><br>
+                    Please upload the following:
+                    <ul style="margin-bottom: 0; margin-top: 10px; padding-left: 20px;">
+                        <li><strong>Federal Fact Finder Form:</strong> The completed form (PDF or scan)</li>
+                        <li><strong>Supporting Documents:</strong> Pay stub, TSP statement, Social Security statement, etc.</li>
+                    </ul>
+                </div>
+
+                <!-- Federal Fact Finder Upload -->
+                <div class="mb-4 p-4 border rounded" style="background: #f0f8ff;">
+                    <h5 style="color: #003366; margin-bottom: 15px;">
+                        <i class="bi bi-file-pdf"></i> Federal Fact Finder Form
+                    </h5>
+                    <p style="color: #666; margin-bottom: 15px;">
+                        Upload the completed Federal Fact Finder PDF form. You can fill it out digitally or print, fill by hand, and scan.
+                    </p>
+                    
+                    <div class="file-upload-section" id="ffUploadArea" onclick="document.getElementById('ffFileInput').click();" style="margin-bottom: 15px;">
+                        <div class="file-upload-icon">📁</div>
+                        <div class="file-upload-text">Click to upload Federal Fact Finder</div>
+                        <div class="file-upload-subtext">PDF, DOC, DOCX, JPG, PNG (Max 10MB)</div>
+                    </div>
+                    <input type="file" id="ffFileInput" name="fact_finder_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleFFFileSelect()">
+                    <ul class="file-list" id="ffFileList"></ul>
+                </div>
+
+                <!-- Supporting Documents Upload -->
+                <div class="mb-4 p-4 border rounded" style="background: #f5f5f5;">
+                    <h5 style="color: #333; margin-bottom: 15px;">
+                        <i class="bi bi-file-earmark"></i> Supporting Documents
+                    </h5>
+                    <p style="color: #666; margin-bottom: 15px;">
+                        Upload pay stubs, TSP statements, Social Security statements, and any other supporting documents.
+                    </p>
+                    
+                    <div class="file-upload-section" id="supportUploadArea" onclick="document.getElementById('supportFileInput').click();" style="margin-bottom: 15px;">
+                        <div class="file-upload-icon">📁</div>
+                        <div class="file-upload-text">Click to upload supporting documents</div>
+                        <div class="file-upload-subtext">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB per file)</div>
+                    </div>
+                    <input type="file" id="supportFileInput" name="support_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleSupportFileSelect()">
+                    <ul class="file-list" id="supportFileList"></ul>
+                </div>
+
+                <div class="alert alert-secondary">
+                    <strong>📊 Document Summary:</strong><br>
+                    Federal Fact Finder: <span id="ffCount" style="font-weight: bold;">0</span> file(s)<br>
+                    Supporting Documents: <span id="supportCount" style="font-weight: bold;">0</span> file(s)<br>
+                    <strong>Total: <span id="totalCount" style="font-weight: bold;">0</span> document(s)</strong>
+                </div>
+
+                <small class="help-text">
+                    You can upload multiple documents in each section. They will all be associated with this case and tracked separately.
+                </small>
+            </div>
+
+            <!-- Section 6: Download Template -->
+            <div class="download-section">
+                <h4>📥 Federal Fact Finder Template</h4>
+                <p>You can download the blank Federal Fact Finder PDF template now to preview it, or after creating your case.</p>
+                <p>Fill it out (you can print and scan if you prefer) and upload it with your supporting documents.</p>
+                <a href="{% url 'download_template' %}" class="btn-download" target="_blank">
+                    <i class="bi bi-download"></i> Download Blank Template PDF
+                </a>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="{% url 'member_dashboard' %}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    <i class="bi bi-check-circle"></i> Create Case & Continue
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Handle file uploads
+    let selectedFiles = [];
+
+    // File tracking for both document types
+    let ffFiles = [];
+    let supportFiles = [];
+
+    // Federal Fact Finder file handling
+    function handleFFFileSelect(event) {
+        const files = event.target.files || event.dataTransfer.files;
+        ffFiles = Array.from(files);
+        updateFFFileList();
+        updateDocumentCount();
+    }
+
+    function updateFFFileList() {
+        const fileList = document.getElementById('ffFileList');
+        fileList.innerHTML = '';
+
+        ffFiles.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'file-list-item';
+            li.innerHTML = `
+                <span class="file-name">📄 ${file.name}</span>
+                <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                <button type="button" class="remove-btn" onclick="removeFFFile(${index})">Remove</button>
+            `;
+            fileList.appendChild(li);
+        });
+    }
+
+    function removeFFFile(index) {
+        ffFiles.splice(index, 1);
+        updateFFFileList();
+        updateDocumentCount();
+        
+        // Update the file input
+        const dataTransfer = new DataTransfer();
+        ffFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+        document.getElementById('ffFileInput').files = dataTransfer.files;
+    }
+
+    // Supporting Documents file handling
+    function handleSupportFileSelect(event) {
+        const files = event.target.files || event.dataTransfer.files;
+        supportFiles = Array.from(files);
+        updateSupportFileList();
+        updateDocumentCount();
+    }
+
+    function updateSupportFileList() {
+        const fileList = document.getElementById('supportFileList');
+        fileList.innerHTML = '';
+
+        supportFiles.forEach((file, index) => {
+            const li = document.createElement('li');
+            li.className = 'file-list-item';
+            li.innerHTML = `
+                <span class="file-name">📄 ${file.name}</span>
+                <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                <button type="button" class="remove-btn" onclick="removeSupportFile(${index})">Remove</button>
+            `;
+            fileList.appendChild(li);
+        });
+    }
+
+    function removeSupportFile(index) {
+        supportFiles.splice(index, 1);
+        updateSupportFileList();
+        updateDocumentCount();
+        
+        // Update the file input
+        const dataTransfer = new DataTransfer();
+        supportFiles.forEach(file => {
+            dataTransfer.items.add(file);
+        });
+        document.getElementById('supportFileInput').files = dataTransfer.files;
+    }
+
+    // Update document count display
+    function updateDocumentCount() {
+        const ffCount = ffFiles.length;
+        const supportCount = supportFiles.length;
+        const totalCount = ffCount + supportCount;
+        
+        document.getElementById('ffCount').textContent = ffCount;
+        document.getElementById('supportCount').textContent = supportCount;
+        document.getElementById('totalCount').textContent = totalCount;
+    }
+
+    // Drag and drop for Federal Fact Finder
+    const ffUploadArea = document.getElementById('ffUploadArea');
+    ffUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        ffUploadArea.classList.add('dragover');
+    });
+
+    ffUploadArea.addEventListener('dragleave', () => {
+        ffUploadArea.classList.remove('dragover');
+    });
+
+    ffUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        ffUploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        document.getElementById('ffFileInput').files = files;
+        handleFFFileSelect({ target: { files: files } });
+    });
+
+    // Drag and drop for Supporting Documents
+    const supportUploadArea = document.getElementById('supportUploadArea');
+    supportUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        supportUploadArea.classList.add('dragover');
+    });
+
+    supportUploadArea.addEventListener('dragleave', () => {
+        supportUploadArea.classList.remove('dragover');
+    });
+
+    supportUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        supportUploadArea.classList.remove('dragover');
+        const files = e.dataTransfer.files;
+        document.getElementById('supportFileInput').files = files;
+        handleSupportFileSelect({ target: { files: files } });
+    });
+
+    // Check for rushed status when due date changes
+    function checkRushedStatus() {
+        const dueDateInput = document.getElementById('dueDateInput').value;
+        if (!dueDateInput) {
+            document.getElementById('rushAlert').classList.remove('show');
+            return;
+        }
+
+        fetch(`{% url 'api_calculate_rushed_fee' %}?due_date=${dueDateInput}`)
+            .then(response => response.json())
+            .then(data => {
+                const rushAlert = document.getElementById('rushAlert');
+                if (data.is_rushed) {
+                    document.getElementById('rushFeeAmount').textContent = `$${data.fee}`;
+                    rushAlert.classList.add('show');
+                } else {
+                    rushAlert.classList.remove('show');
+                }
+            })
+            .catch(error => console.error('Error checking rushed status:', error));
+    }
+
+    // Select advisor (for delegates)
+    function selectAdvisor(element, advisorId, workshopCode) {
+        // Remove selection from all advisors
+        document.querySelectorAll('.advisor-option').forEach(el => {
+            el.classList.remove('selected');
+        });
+        // Select this one
+        element.classList.add('selected');
+        // Set hidden input value
+        element.querySelector('input[type="radio"]').checked = true;
+        
+        // Update workshop code field with advisor's code
+        if (workshopCode) {
+            document.getElementById('workshopCode').value = workshopCode;
+        }
+    }
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // If user is delegate, select first advisor by default
+        const advisorOptions = document.querySelectorAll('.advisor-option');
+        if (advisorOptions.length > 0) {
+            const firstOption = advisorOptions[0];
+            firstOption.click();
+        }
+        
+        // Check due date on load
+        checkRushedStatus();
+    });
+</script>
+{% endblock %}

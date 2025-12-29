@@ -26,9 +26,8 @@ def fact_finder_template(request, case_id):
     """
     Display the official Federal Fact Finder template PDF.
     Users can:
-    - View/download the blank template
-    - Update case details (due date, reports, notes, retirement date)
-    - Upload supporting documents
+    - Upload Federal Fact Finder PDF
+    - View the uploaded PDF
     """
     case = get_object_or_404(Case, id=case_id)
     
@@ -36,120 +35,120 @@ def fact_finder_template(request, case_id):
     if request.user.role == 'member' and case.member != request.user:
         return HttpResponse('Access denied', status=403)
     
-    # Handle form submissions
+    # Check if Federal Fact Finder document has been uploaded
+    ff_document = CaseDocument.objects.filter(
+        case=case, 
+        document_type='Federal Fact Finder'
+    ).first()
+    
+    # Handle file uploads
     if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'save_details':
-            # Handle case details form submission
-            try:
-                if request.POST.get('due_date'):
-                    case.date_due = datetime.strptime(request.POST.get('due_date'), '%Y-%m-%d').date()
-                else:
-                    case.date_due = None
-                    
-                if request.POST.get('num_reports_requested'):
-                    case.num_reports_requested = int(request.POST.get('num_reports_requested'))
-                    
-                if request.POST.get('retirement_date_preference'):
-                    case.retirement_date_preference = datetime.strptime(request.POST.get('retirement_date_preference'), '%Y-%m-%d').date()
-                else:
-                    case.retirement_date_preference = None
-                    
-                case.special_notes = request.POST.get('special_notes', '')
-                case.save()
-                
-                messages.success(request, 'Case details saved successfully.')
-            except Exception as e:
-                messages.error(request, f'Error saving case details: {str(e)}')
+        if 'fact_finder_file' in request.FILES:
+            file = request.FILES['fact_finder_file']
             
+            # Delete old Federal Fact Finder if it exists
+            if ff_document:
+                ff_document.file.delete()
+                ff_document.delete()
+            
+            # Create new document
+            ff_document = CaseDocument.objects.create(
+                case=case,
+                document_type='Federal Fact Finder',
+                original_filename=file.name,
+                file_size=file.size,
+                uploaded_by=request.user,
+                file=file,
+            )
+            
+            messages.success(request, f'Federal Fact Finder PDF uploaded successfully!')
             return redirect('case_fact_finder', case_id=case.id)
         
-        elif action == 'upload_document':
-            # Handle document upload
-            form = CaseDocumentForm(request.POST, request.FILES)
-            if form.is_valid():
-                doc = form.save(commit=False)
-                doc.case = case
-                doc.uploaded_by = request.user
-                doc.save()
-                messages.success(request, 'Document uploaded successfully.')
-                return redirect('case_fact_finder', case_id=case.id)
+        # If no Federal Fact Finder but tried to access view, redirect
+        if not ff_document and request.POST.get('action') != 'upload':
+            messages.error(request, 'Please upload the Federal Fact Finder form first.')
+            if request.user.role == 'member':
+                return redirect('member_dashboard')
             else:
-                for errors in form.errors.values():
-                    for error in errors:
-                        messages.error(request, error)
-    else:
-        form = CaseDocumentForm()
+                return redirect('case_list')
     
-    # Get existing documents
-    documents = case.documents.all().order_by('-uploaded_at')
+    # If no Federal Fact Finder document exists, show upload form
+    if not ff_document:
+        context = {
+            'case': case,
+            'show_upload_form': True,
+        }
+        return render(request, 'cases/fact_finder_template.html', context)
     
-    # Get saved PDF field data if it exists
-    saved_pdf_data = case.fact_finder_data or {}
-    
-    # Try to create a pre-filled PDF if we have saved data
-    template_url = '/static/documents/Federal-Fact-Finder-Template.pdf'
-    if saved_pdf_data:
-        try:
-            from cases.services.pdf_form_handler import fill_pdf_form, get_pdf_form_fields
-            pdf_path = os.path.join(os.path.dirname(__file__), TEMPLATE_PDF_PATH)
-            
-            # Get the list of valid PDF field names
-            if os.path.exists(pdf_path):
-                valid_pdf_fields = get_pdf_form_fields(pdf_path)
-                
-                # Filter saved_pdf_data to only include actual PDF fields (not case details)
-                # and only fields that exist in the PDF and have values
-                case_detail_keys = {'due_date', 'num_reports_requested', 'retirement_date_preference', 'special_notes'}
-                filtered_data = {
-                    k: v for k, v in saved_pdf_data.items() 
-                    if k in valid_pdf_fields and v and k not in case_detail_keys
-                }
-                
-                if filtered_data:
-                    filled_pdf = fill_pdf_form(pdf_path, filtered_data)
-                    if filled_pdf:
-                        # Save the filled PDF temporarily and serve it
-                        import uuid
-                        temp_filename = f"filled_ff_{case_id}_{uuid.uuid4().hex[:8]}.pdf"
-                        temp_path = os.path.join(
-                            os.path.dirname(__file__), 
-                            'static', 'documents', 'temp',
-                            temp_filename
-                        )
-                        
-                        # Create temp directory if it doesn't exist
-                        os.makedirs(os.path.dirname(temp_path), exist_ok=True)
-                        
-                        with open(temp_path, 'wb') as f:
-                            f.write(filled_pdf.getvalue())
-                        
-                        # Use the filled PDF
-                        template_url = f'/static/documents/temp/{temp_filename}'
-                        logger.info(f"Created pre-filled PDF for case {case_id} with {len(filtered_data)} fields")
-        except Exception as e:
-            logger.warning(f"Could not create pre-filled PDF for case {case_id}: {str(e)}")
-            # Fall back to regular template
-            pass
+    # Federal Fact Finder exists - use direct media URL for iframe display
+    # Use absolute URL to ensure iframe can load it correctly
+    request_host = request.get_host()  # Gets hostname:port
+    ff_url = f"http://{request_host}{ff_document.file.url}"
     
     context = {
         'case': case,
-        'documents': documents,
-        'form': form,
-        'template_url': template_url,
-        'saved_pdf_data': json.dumps(saved_pdf_data),
+        'ff_document': ff_document,
+        'ff_document_url': ff_url,
+        'show_upload_form': False,
     }
     
     return render(request, 'cases/fact_finder_template.html', context)
 
 @login_required
+def view_fact_finder_pdf(request, case_id):
+    """Serve the uploaded Federal Fact Finder PDF for inline viewing in iframe"""
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Check permissions
+    if request.user.role == 'member' and case.member != request.user:
+        return HttpResponse('Access denied', status=403)
+    
+    # Get the Federal Fact Finder document
+    ff_document = CaseDocument.objects.filter(
+        case=case,
+        document_type='Federal Fact Finder'
+    ).first()
+    
+    if not ff_document or not ff_document.file:
+        return HttpResponse('Federal Fact Finder not found', status=404)
+    
+    # Get the file path
+    file_path = ff_document.file.path
+    
+    if not os.path.exists(file_path):
+        return HttpResponse('File not found on disk', status=404)
+    
+    # Open and serve the file with inline disposition
+    try:
+        file_obj = open(file_path, 'rb')
+        file_size = os.path.getsize(file_path)
+        
+        response = FileResponse(
+            file_obj,
+            content_type='application/pdf'
+        )
+        response['Content-Disposition'] = f'inline; filename="{ff_document.original_filename}"'
+        response['Content-Length'] = file_size
+        response['Cache-Control'] = 'public, max-age=3600'
+        
+        return response
+    except Exception as e:
+        logger.error(f"Error serving PDF for case {case_id}: {str(e)}")
+        return HttpResponse(f'Error serving PDF: {str(e)}', status=500)
+
+@login_required
 def download_template(request):
     """Download the blank Federal Fact Finder template"""
-    pdf_path = os.path.join(os.path.dirname(__file__), TEMPLATE_PDF_PATH)
+    # Get the correct path to the PDF file
+    pdf_path = os.path.join(
+        os.path.dirname(__file__),
+        'static',
+        'documents',
+        'Federal-Fact-Finder-Template.pdf'
+    )
     
     if not os.path.exists(pdf_path):
-        return HttpResponse('Template PDF not found', status=404)
+        return HttpResponse(f'Template PDF not found at {pdf_path}', status=404)
     
     return FileResponse(
         open(pdf_path, 'rb'),

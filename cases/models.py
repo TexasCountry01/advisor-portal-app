@@ -45,6 +45,16 @@ class Case(models.Model):
         limit_choices_to={'role': 'member'}
     )
     
+    # Created By (who actually submitted the case - could be delegate or advisor)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_cases',
+        help_text='User who created this case (could be delegate submitting for advisor)'
+    )
+    
     # Field 4: Employee First Name
     employee_first_name = models.CharField(max_length=100)
     
