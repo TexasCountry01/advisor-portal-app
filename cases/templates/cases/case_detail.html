@@ -226,7 +226,16 @@
                             {{ case.num_reports_requested }} Report{{ case.num_reports_requested|pluralize }}
                         </div>
                     </div>
-
+                    {% if case.special_notes %}
+                    <div class="row">
+                        <div class="col-12">
+                            <strong>Member Notes:</strong><br>
+                            <div class="p-3 bg-light rounded">
+                                {{ case.special_notes|linebreaks }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 
@@ -234,21 +243,17 @@
             <div class="alert alert-light border mb-4">
                 <h6 class="mb-2"><i class="bi bi-file-earmark"></i> Document Summary:</h6>
                 <div>
-                    {% with ff_docs=documents|dictsort:"document_type"|first %}
-                    {% if ff_docs %}
-                        Federal Fact Finder: {{ ff_docs|length }} file(s)<br>
-                    {% else %}
+                    {% regroup documents by document_type as docs_by_type %}
+                    {% for doc_type_group in docs_by_type %}
+                        {% if doc_type_group.grouper == 'Federal Fact Finder' %}
+                            Federal Fact Finder: {{ doc_type_group.list|length }} file(s)<br>
+                        {% elif doc_type_group.grouper == 'Supporting Document' %}
+                            Supporting Documents: {{ doc_type_group.list|length }} file(s)<br>
+                        {% endif %}
+                    {% empty %}
                         Federal Fact Finder: 0 file(s)<br>
-                    {% endif %}
-                    {% endwith %}
-                    
-                    {% with support_docs=documents|dictsort:"document_type"|last %}
-                    {% if support_docs %}
-                        Supporting Documents: {{ support_docs|length }} file(s)<br>
-                    {% else %}
                         Supporting Documents: 0 file(s)<br>
-                    {% endif %}
-                    {% endwith %}
+                    {% endfor %}
                     
                     <strong>Total: {{ documents|length }} document(s)</strong>
                 </div>
@@ -333,22 +338,6 @@
                         
                     {% else %}
                     <p class="text-muted">No supporting documents uploaded yet. Download the Federal Fact Finder template below and upload it with your supporting documents.</p>
-                    {% endif %}
-                </div>
-            </div>
-
-            <!-- Notes Section -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Member Intake Notes</h5>
-                </div>
-                <div class="card-body">
-                    {% if case.special_notes %}
-                    <div class="p-3 bg-light rounded">
-                        {{ case.special_notes|linebreaks }}
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No notes from member intake.</p>
                     {% endif %}
                 </div>
             </div>
