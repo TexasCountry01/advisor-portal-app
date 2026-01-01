@@ -559,14 +559,18 @@ def case_detail(request, pk):
     documents = CaseDocument.objects.filter(case=case).order_by('-uploaded_at')
     
     # Get case notes (technician/internal notes)
-    from cases.models import CaseNote
+    from cases.models import CaseNote, CaseReport
     case_notes = CaseNote.objects.filter(case=case).order_by('-created_at')
+    
+    # Get case reports
+    reports = case.reports.all().order_by('report_number')
     
     context = {
         'case': case,
         'can_edit': can_edit,
         'documents': documents,
         'case_notes': case_notes,
+        'reports': reports,
     }
     
     return render(request, 'cases/case_detail.html', context)
@@ -715,5 +719,73 @@ def add_case_note(request, case_id):
             messages.success(request, 'Note added successfully.')
         else:
             messages.warning(request, 'Note cannot be empty.')
+    
+    return redirect('case_detail', pk=case_id)
+
+
+@login_required
+def upload_case_report(request, case_id):
+    """Upload a completed report for a case (technician/admin only)"""
+    from cases.models import CaseReport
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only techs and admins can upload reports
+    if user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'You do not have permission to upload reports to this case.')
+        return redirect('case_detail', pk=case_id)
+    
+    # Check if technician owns the case
+    if user.role == 'technician' and case.assigned_to != user:
+        messages.error(request, 'You can only upload reports to cases you are assigned to.')
+        return redirect('case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        report_file = request.FILES.get('report_file')
+        report_notes = request.POST.get('report_notes', '').strip()
+        report_number = request.POST.get('report_number')
+        
+        if not report_file:
+            messages.error(request, 'Please select a file to upload.')
+            return redirect('case_detail', pk=case_id)
+        
+        if not report_number:
+            messages.error(request, 'Report number is required.')
+            return redirect('case_detail', pk=case_id)
+        
+        try:
+            report_number = int(report_number)
+            if report_number < 1 or report_number > 10:
+                messages.error(request, 'Report number must be between 1 and 10.')
+                return redirect('case_detail', pk=case_id)
+        except (ValueError, TypeError):
+            messages.error(request, 'Invalid report number.')
+            return redirect('case_detail', pk=case_id)
+        
+        # Check if report already exists
+        existing_report = CaseReport.objects.filter(
+            case=case,
+            report_number=report_number
+        ).first()
+        
+        if existing_report:
+            # Update existing report
+            existing_report.report_file = report_file
+            existing_report.notes = report_notes
+            existing_report.updated_at = timezone.now()
+            existing_report.save()
+            messages.success(request, f'Report #{report_number} updated successfully.')
+        else:
+            # Create new report
+            CaseReport.objects.create(
+                case=case,
+                report_number=report_number,
+                report_file=report_file,
+                notes=report_notes,
+                assigned_to=user,
+                status='completed'
+            )
+            messages.success(request, f'Report #{report_number} uploaded successfully.')
     
     return redirect('case_detail', pk=case_id)

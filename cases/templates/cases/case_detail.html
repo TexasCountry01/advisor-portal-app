@@ -390,7 +390,12 @@
             <!-- Reports -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Reports</h5>
+                    <h5 class="mb-0">
+                        Reports
+                        {% if case.reports.count > 0 %}
+                        <span class="badge bg-info">{{ case.reports.count }}</span>
+                        {% endif %}
+                    </h5>
                     {% if can_edit %}
                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReportModal">
                         <i class="bi bi-upload"></i> Upload Report
@@ -398,30 +403,40 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    {% if reports %}
+                    {% if case.reports.all %}
                     <div class="list-group">
-                        {% for report in reports %}
+                        {% for report in case.reports.all %}
                         <div class="list-group-item">
                             <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi bi-file-earmark-pdf"></i>
+                                <div class="flex-grow-1">
+                                    {% if report.report_file %}
+                                    <i class="bi bi-file-earmark"></i>
                                     <a href="{{ report.report_file.url }}" target="_blank" class="text-decoration-none">
                                         <strong>Report #{{ report.report_number }}</strong>
                                     </a>
-                                    <br><small class="text-muted">Assigned to {{ report.assigned_to.username }}</small>
+                                    {% else %}
+                                    <i class="bi bi-file-earmark"></i>
+                                    <strong>Report #{{ report.report_number }}</strong>
+                                    {% endif %}
+                                    <br><small class="text-muted">
+                                        Status: <span class="badge bg-secondary">{{ report.get_status_display }}</span>
+                                        {% if report.notes %}| Notes: {{ report.notes|truncatewords:10 }}{% endif %}
+                                    </small>
                                 </div>
                                 <div class="text-end">
+                                    {% if report.report_file %}
                                     <a href="{{ report.report_file.url }}" class="btn btn-sm btn-outline-primary" download>
                                         <i class="bi bi-download"></i>
                                     </a>
-                                    <br><small class="text-muted">{{ report.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                    {% endif %}
+                                    <br><small class="text-muted">{{ report.updated_at|date:"m/d/Y H:i" }}</small>
                                 </div>
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No reports uploaded yet.</p>
+                    <p class="text-muted">No reports uploaded yet. Click "Upload Report" to add one.</p>
                     {% endif %}
                 </div>
             </div>
@@ -429,7 +444,7 @@
             <!-- Notes -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Notes</h5>
+                    <h5 class="mb-0">Internal Notes/Comments</h5>
                     {% if can_edit %}
                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
                         <i class="bi bi-plus"></i> Add Note
@@ -437,27 +452,22 @@
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    {% if case.notes %}
-                    <div class="alert alert-info">
-                        <strong>Submission Notes:</strong><br>
-                        {{ case.notes|linebreaks }}
-                    </div>
-                    {% endif %}
-                    
-                    {% if notes %}
+                    {% if case_notes %}
                     <div class="list-group">
-                        {% for note in notes %}
+                        {% for note in case_notes %}
                         <div class="list-group-item">
                             <div class="d-flex justify-content-between">
-                                <strong>{{ note.created_by.username }}</strong>
-                                <small class="text-muted">{{ note.created_at|date:"m/d/Y H:i" }}</small>
+                                <div>
+                                    <strong>{{ note.author.get_full_name|default:note.author.username }}</strong>
+                                    <small class="text-muted d-block">{{ note.created_at|date:"m/d/Y H:i" }}</small>
+                                </div>
                             </div>
-                            <p class="mb-0 mt-2">{{ note.note|linebreaks }}</p>
+                            <p class="mt-2 mb-0">{{ note.note|linebreaks }}</p>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No notes added yet.</p>
+                    <p class="text-muted">No internal notes added yet.</p>
                     {% endif %}
                 </div>
             </div>
@@ -544,6 +554,71 @@
                 </div>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Upload Report Modal -->
+<div class="modal fade" id="uploadReportModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'upload_case_report' case.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reportNumber" class="form-label">Report Number <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="reportNumber" name="report_number" min="1" max="10" required>
+                        <small class="text-muted">Which report is this? (1-{{ case.num_reports_requested }})</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportFile" class="form-label">Select File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="reportFile" name="report_file" required>
+                        <small class="text-muted">Accepts PDF, DOC, DOCX, XLS, XLSX, and other common formats</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reportNotes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="reportNotes" name="report_notes" rows="3" placeholder="Add any notes about this report..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Upload Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Note Modal -->
+<div class="modal fade" id="addNoteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Internal Note</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'add_case_note' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="noteText" class="form-label">Note <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="noteText" name="notes" rows="4" placeholder="Add an internal note..." required></textarea>
+                        <small class="text-muted">This note will be visible to other technicians and administrators.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Note
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
