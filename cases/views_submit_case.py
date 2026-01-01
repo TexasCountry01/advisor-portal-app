@@ -154,10 +154,16 @@ def submit_case(request):
                 files = request.FILES.getlist('fact_finder_documents')
                 for file in files:
                     from cases.models import CaseDocument
+                    import os
+                    
+                    # Append employee last name to filename
+                    name, ext = os.path.splitext(file.name)
+                    filename_with_employee = f"{fed_last_name}_{file.name}"
+                    
                     CaseDocument.objects.create(
                         case=case,
                         document_type='Federal Fact Finder',
-                        original_filename=file.name,
+                        original_filename=filename_with_employee,
                         file_size=file.size,
                         uploaded_by=user,
                         file=file,
@@ -168,10 +174,16 @@ def submit_case(request):
                 files = request.FILES.getlist('support_documents')
                 for file in files:
                     from cases.models import CaseDocument
+                    import os
+                    
+                    # Append employee last name to filename
+                    name, ext = os.path.splitext(file.name)
+                    filename_with_employee = f"{fed_last_name}_{file.name}"
+                    
                     CaseDocument.objects.create(
                         case=case,
                         document_type='Supporting Document',
-                        original_filename=file.name,
+                        original_filename=filename_with_employee,
                         file_size=file.size,
                         uploaded_by=user,
                         file=file,
