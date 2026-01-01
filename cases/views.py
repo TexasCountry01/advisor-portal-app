@@ -562,6 +562,9 @@ def case_detail(request, pk):
     from cases.models import CaseNote, CaseReport
     case_notes = CaseNote.objects.filter(case=case).order_by('-created_at')
     
+    # Get technician documents only
+    tech_documents = documents.filter(document_type='Technician Document').order_by('-uploaded_at')
+    
     # Get case reports
     reports = case.reports.all().order_by('report_number')
     
@@ -569,6 +572,7 @@ def case_detail(request, pk):
         'case': case,
         'can_edit': can_edit,
         'documents': documents,
+        'tech_documents': tech_documents,
         'case_notes': case_notes,
         'reports': reports,
     }
@@ -787,5 +791,52 @@ def upload_case_report(request, case_id):
                 status='completed'
             )
             messages.success(request, f'Report #{report_number} uploaded successfully.')
+    
+    return redirect('case_detail', pk=case_id)
+
+
+@login_required
+def upload_technician_document(request, case_id):
+    """Upload an additional document for a case (technician/admin only)"""
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only techs and admins can upload documents
+    if user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'You do not have permission to upload documents to this case.')
+        return redirect('case_detail', pk=case_id)
+    
+    # Check if technician owns the case
+    if user.role == 'technician' and case.assigned_to != user:
+        messages.error(request, 'You can only upload documents to cases you are assigned to.')
+        return redirect('case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        document_file = request.FILES.get('document_file')
+        document_notes = request.POST.get('document_notes', '').strip()
+        
+        if not document_file:
+            messages.error(request, 'Please select a file to upload.')
+            return redirect('case_detail', pk=case_id)
+        
+        from cases.models import CaseDocument
+        
+        # Append employee last name to filename
+        import os
+        fed_last_name = case.employee_last_name
+        filename_with_employee = f"{fed_last_name}_{document_file.name}"
+        
+        CaseDocument.objects.create(
+            case=case,
+            document_type='Technician Document',
+            original_filename=filename_with_employee,
+            file_size=document_file.size,
+            uploaded_by=user,
+            file=document_file,
+            notes=document_notes,
+        )
+        
+        messages.success(request, 'Document uploaded successfully.')
     
     return redirect('case_detail', pk=case_id)

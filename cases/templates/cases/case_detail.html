@@ -441,33 +441,43 @@
                 </div>
             </div>
 
-            <!-- Notes -->
+            <!-- Technician Documents -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Internal Notes/Comments</h5>
+                    <h5 class="mb-0">Technician Documents</h5>
                     {% if can_edit %}
-                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
-                        <i class="bi bi-plus"></i> Add Note
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
+                        <i class="bi bi-upload"></i> Upload Document
                     </button>
                     {% endif %}
                 </div>
                 <div class="card-body">
-                    {% if case_notes %}
+                    {% if tech_documents %}
                     <div class="list-group">
-                        {% for note in case_notes %}
+                        {% for doc in tech_documents %}
                         <div class="list-group-item">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <strong>{{ note.author.get_full_name|default:note.author.username }}</strong>
-                                    <small class="text-muted d-block">{{ note.created_at|date:"m/d/Y H:i" }}</small>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1">
+                                    <i class="bi bi-file-earmark"></i>
+                                    <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                        <strong>{{ doc.original_filename }}</strong>
+                                    </a>
+                                    <br><small class="text-muted">
+                                        {% if doc.notes %}{{ doc.notes|truncatewords:15 }}<br>{% endif %}
+                                        Uploaded by {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }} on {{ doc.uploaded_at|date:"m/d/Y H:i" }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
                                 </div>
                             </div>
-                            <p class="mt-2 mb-0">{{ note.note|linebreaks }}</p>
                         </div>
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No internal notes added yet.</p>
+                    <p class="text-muted">No technician documents uploaded yet. Click "Upload Document" to add supporting files.</p>
                     {% endif %}
                 </div>
             </div>
@@ -588,6 +598,38 @@
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-upload"></i> Upload Report
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Technician Document Modal -->
+<div class="modal fade" id="uploadTechDocModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload Technician Document</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'upload_technician_document' case.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="techDocFile" class="form-label">Select File <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="techDocFile" name="document_file" required>
+                        <small class="text-muted">Accepts PDF, DOC, DOCX, XLS, XLSX, images, and other common formats</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="techDocNotes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="techDocNotes" name="document_notes" rows="3" placeholder="Add any notes about this document..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> Upload Document
                     </button>
                 </div>
             </form>
