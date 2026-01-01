@@ -24,14 +24,14 @@
                    id="view-all-btn"
                    class="btn btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
                    data-view-type="all"
-                   onclick="saveViewPreference(event, 'all')">
+                   onclick="saveViewPreference('all'); return true;">
                     <i class="bi bi-list-ul"></i> All Cases
                 </a>
                 <a href="{% url 'technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
                    id="view-mine-btn"
                    class="btn btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
                    data-view-type="mine"
-                   onclick="saveViewPreference(event, 'mine')">
+                   onclick="saveViewPreference('mine'); return true;">
                     <i class="bi bi-person-check"></i> My Cases
                 </a>
             </div>
@@ -412,13 +412,12 @@
         return cookieValue;
     }
     
-    // Save view preference and redirect
-    function saveViewPreference(event, viewType) {
-        event.preventDefault();
+    // Save view preference asynchronously (don't block navigation)
+    function saveViewPreference(viewType) {
         const csrftoken = getCookie('csrftoken');
         
-        // Save preference via AJAX
-        fetch(`{% url 'save_view_preference' view_type='__PLACEHOLDER__' %}`.replace('__PLACEHOLDER__', viewType), {
+        // Save preference via AJAX without blocking page navigation
+        fetch(`/cases/api/view-preference/save/${viewType}/`, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': csrftoken,
@@ -428,20 +427,14 @@
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
-                // Preference saved, redirect to the new view
-                window.location.href = event.currentTarget.href;
-            } else {
-                console.error('Failed to save preference:', data.error);
-                // Still redirect even if preference save fails
-                window.location.href = event.currentTarget.href;
-            }
+            console.log('View preference saved:', viewType);
         })
         .catch(error => {
-            console.error('Error saving preference:', error);
-            // Still redirect even on error
-            window.location.href = event.currentTarget.href;
+            console.error('Error saving view preference:', error);
         });
+        
+        // Return true to allow normal link navigation
+        return true;
     }
 </script>
 
