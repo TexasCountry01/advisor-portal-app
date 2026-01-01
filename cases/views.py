@@ -110,7 +110,12 @@ def technician_dashboard(request):
         default_view = saved_preference.preference_value.get('view', 'all')
     
     # Get all cases (technicians see all, not just assigned)
-    cases = Case.objects.all().prefetch_related(
+    # BUT exclude draft cases unless assigned to them
+    from django.db.models import Q
+    cases = Case.objects.filter(
+        Q(status__in=['submitted', 'accepted', 'hold', 'pending_review', 'completed']) |  # Non-draft cases
+        Q(assigned_to=user)  # OR cases assigned to this technician (even if draft)
+    ).prefetch_related(
         'documents'
     ).select_related(
         'member', 'assigned_to', 'reviewed_by'
@@ -165,15 +170,14 @@ def technician_dashboard(request):
     else:
         cases = cases.order_by('-date_submitted')
     
-    # Calculate statistics
-    all_cases = Case.objects.all()
+    # Calculate statistics - based on accessible cases
     stats = {
-        'total': all_cases.count(),
-        'submitted': all_cases.filter(status='submitted').count(),
-        'accepted': all_cases.filter(status='accepted').count(),
-        'pending_review': all_cases.filter(status='pending_review').count(),
-        'completed': all_cases.filter(status='completed').count(),
-        'urgent': all_cases.filter(urgency='urgent').count(),
+        'total': cases.count(),
+        'submitted': cases.filter(status='submitted').count(),
+        'accepted': cases.filter(status='accepted').count(),
+        'pending_review': cases.filter(status='pending_review').count(),
+        'completed': cases.filter(status='completed').count(),
+        'urgent': cases.filter(urgency='urgent').count(),
     }
     
     # Get available technicians and administrators for assignment dropdown
