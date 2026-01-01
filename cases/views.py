@@ -840,3 +840,46 @@ def upload_technician_document(request, case_id):
         messages.success(request, 'Document uploaded successfully.')
     
     return redirect('case_detail', pk=case_id)
+
+
+@login_required
+def mark_case_completed(request, case_id):
+    """Mark a case as completed (technician/admin only)"""
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only techs and admins can mark as completed
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to mark this case as completed.'}, status=403)
+    
+    # Check if technician owns the case
+    if user.role == 'technician' and case.assigned_to != user:
+        return JsonResponse({'success': False, 'error': 'You can only mark cases you are assigned to as completed.'}, status=403)
+    
+    # Check if at least one report has been uploaded
+    from cases.models import CaseReport
+    report_count = CaseReport.objects.filter(case=case).count()
+    
+    if report_count == 0:
+        return JsonResponse({
+            'success': False, 
+            'error': 'At least one report must be uploaded before marking the case as completed.'
+        }, status=400)
+    
+    if request.method == 'POST':
+        try:
+            case.status = 'completed'
+            case.date_completed = timezone.now()
+            case.save()
+            
+            messages.success(request, 'Case marked as completed.')
+            return JsonResponse({
+                'success': True, 
+                'message': 'Case marked as completed successfully.',
+                'redirect_url': str(reverse('case_detail', kwargs={'pk': case_id}))
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)

@@ -32,6 +32,7 @@ urlpatterns = [
     path('<int:case_id>/add-note/', views.add_case_note, name='add_case_note'),
     path('<int:case_id>/upload-report/', views.upload_case_report, name='upload_case_report'),
     path('<int:case_id>/upload-tech-document/', views.upload_technician_document, name='upload_technician_document'),
+    path('<int:case_id>/mark-completed/', views.mark_case_completed, name='mark_case_completed'),
     
     # Reference PDF template with document upload
     path('<int:case_id>/fact-finder-template/', views_pdf_template.fact_finder_template, name='case_fact_finder'),
