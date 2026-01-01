@@ -552,6 +552,7 @@ def case_detail(request, pk):
     
     if user.role == 'member' and case.member == user:
         can_view = True
+        can_edit = True  # Members can edit their own cases (add/remove documents)
     elif user.role == 'technician':
         # Technicians can view all submitted cases (before and after taking ownership)
         if case.status in ['submitted', 'accepted', 'hold', 'pending_review', 'completed']:
@@ -567,8 +568,8 @@ def case_detail(request, pk):
         messages.error(request, 'You do not have permission to view this case.')
         return redirect('home')
     
-    # Get related documents
-    documents = CaseDocument.objects.filter(case=case).order_by('-uploaded_at')
+    # Get related documents - ordered by type for proper grouping in template
+    documents = CaseDocument.objects.filter(case=case).order_by('document_type', '-uploaded_at')
     
     # Get case notes (technician/internal notes)
     from cases.models import CaseNote, CaseReport
@@ -590,6 +591,58 @@ def case_detail(request, pk):
     }
     
     return render(request, 'cases/case_detail.html', context)
+
+
+@login_required
+def edit_case(request, pk):
+    """Edit case details (members only, before submission)"""
+    user = request.user
+    case = get_object_or_404(Case, pk=pk)
+    
+    # Permission check - only the member who owns the case can edit
+    if user.role != 'member' or case.member != user:
+        messages.error(request, 'You do not have permission to edit this case.')
+        return redirect('case_detail', pk=pk)
+    
+    # Check if case can be edited
+    if case.status == 'submitted':
+        messages.error(request, 'Cannot edit a submitted case.')
+        return redirect('case_detail', pk=pk)
+    
+    if request.method == 'POST':
+        # Get form data
+        urgency = request.POST.get('urgency', case.urgency)
+        num_reports = request.POST.get('num_reports_requested', case.num_reports_requested)
+        due_date = request.POST.get('date_due', case.date_due)
+        special_notes = request.POST.get('special_notes', case.special_notes)
+        
+        # Validate data
+        try:
+            num_reports = int(num_reports)
+            if num_reports < 1 or num_reports > 10:
+                num_reports = case.num_reports_requested
+        except (ValueError, TypeError):
+            num_reports = case.num_reports_requested
+        
+        # Validate urgency
+        if urgency not in ['normal', 'urgent']:
+            urgency = case.urgency
+        
+        # Update case
+        case.urgency = urgency
+        case.num_reports_requested = num_reports
+        if due_date:
+            case.date_due = due_date
+        case.special_notes = special_notes
+        case.save()
+        
+        messages.success(request, 'Case details updated successfully.')
+        return redirect('case_detail', pk=pk)
+    
+    context = {
+        'case': case,
+    }
+    return render(request, 'cases/edit_case.html', context)
 
 
 @login_required

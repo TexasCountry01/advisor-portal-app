@@ -8,10 +8,10 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
 from datetime import timedelta, datetime
-import uuid
 import json
 from cases.models import Case
 from accounts.models import User
+from cases.services.case_id_generator import generate_case_id
 
 @login_required
 def submit_case(request):
@@ -119,8 +119,8 @@ def submit_case(request):
             except (ValueError, TypeError):
                 num_reports = 1
             
-            # Create case
-            external_case_id = f"CASE-{uuid.uuid4().hex[:8].upper()}"
+            # Create case with meaningful ID
+            external_case_id = generate_case_id(workshop_code)
             
             fact_finder_data = {
                 'basic_information': {

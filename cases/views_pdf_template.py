@@ -177,17 +177,24 @@ def download_document(request, doc_id):
 
 @login_required
 def delete_document(request, doc_id):
-    """Delete an uploaded document"""
+    """Delete an uploaded document (only if case is not submitted)"""
     doc = get_object_or_404(CaseDocument, id=doc_id)
     case = doc.case
     
-    # Check permissions - only member or admin can delete
+    # Check permissions - only member can delete their own case documents
     if request.user.role == 'member' and case.member != request.user:
-        return HttpResponse('Access denied', status=403)
+        messages.error(request, 'Access denied - this is not your case.')
+        return redirect('case_detail', pk=case.id)
     
+    # Check case status - cannot delete documents from submitted cases
+    if case.status == 'submitted':
+        messages.error(request, 'Cannot delete documents from a submitted case.')
+        return redirect('case_detail', pk=case.id)
+    
+    filename = doc.original_filename
     doc.delete()
-    messages.success(request, 'Document deleted.')
-    return redirect('case_fact_finder', case_id=case.id)
+    messages.success(request, f'Document "{filename}" deleted successfully.')
+    return redirect('case_detail', pk=case.id)
 
 @login_required
 def submit_case(request, case_id):

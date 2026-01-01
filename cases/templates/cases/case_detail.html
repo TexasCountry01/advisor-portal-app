@@ -70,6 +70,11 @@
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
             {% endif %}
+            {% if user.role == 'member' and case.status != 'submitted' %}
+                <a href="{% url 'edit_case' case.id %}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Edit Case
+                </a>
+            {% endif %}
             {% if user.role == 'member' %}
                 <a href="{% url 'member_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -269,8 +274,9 @@
                 </div>
                 <div class="card-body">
                     {% if documents %}
-                        <!-- Federal Fact Finder Section -->
                         {% regroup documents by document_type as docs_by_type %}
+                        
+                        <!-- Federal Fact Finder Documents -->
                         {% for doc_type_group in docs_by_type %}
                             {% if doc_type_group.grouper == 'Federal Fact Finder' %}
                             <div class="mb-4">
@@ -288,12 +294,20 @@
                                                 {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
                                                     <strong>{{ doc.original_filename }}</strong>
                                                 {% if doc.file %}</a>{% endif %}
+                                                <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
                                             </div>
                                             <div class="text-end">
-                                                {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                                {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download title="Download document">
                                                     <i class="bi bi-download"></i>
                                                 </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
-                                                <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                                {% if can_edit and case.status != 'submitted' %}
+                                                <form method="post" action="{% url 'delete_document' doc.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this document?');" title="Delete document">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
@@ -303,7 +317,7 @@
                             {% endif %}
                         {% endfor %}
 
-                        <!-- Supporting Documents Section -->
+                        <!-- Supporting Documents -->
                         {% for doc_type_group in docs_by_type %}
                             {% if doc_type_group.grouper == 'Supporting Document' %}
                             <div class="mb-4">
@@ -321,12 +335,20 @@
                                                 {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
                                                     <strong>{{ doc.original_filename }}</strong>
                                                 {% if doc.file %}</a>{% endif %}
+                                                <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
                                             </div>
                                             <div class="text-end">
-                                                {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                                {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download title="Download document">
                                                     <i class="bi bi-download"></i>
                                                 </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
-                                                <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                                {% if can_edit and case.status != 'submitted' %}
+                                                <form method="post" action="{% url 'delete_document' doc.id %}" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this document?');" title="Delete document">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
@@ -483,10 +505,11 @@
             </div>
         </div>
 
-        <!-- Right Column: Timeline & Actions -->
+        <!-- Right Column: Timeline & Actions (Technician/Admin only) -->
         <div class="col-md-4">
+            {% if user.role != 'member' %}
             <!-- Assignment -->
-            <div class="card mb-4 {% if user.role == 'technician' %}tech-admin-field{% endif %}">
+            <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">Assignment</h5>
                 </div>
@@ -563,6 +586,7 @@
                     </small>
                 </div>
             </div>
+            {% endif %}
             {% endif %}
         </div>
     </div>

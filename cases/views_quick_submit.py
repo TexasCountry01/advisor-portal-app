@@ -7,8 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
-import uuid
 from cases.models import Case
+from cases.services.case_id_generator import generate_case_id
 
 @login_required
 def quick_case_submit(request):
@@ -25,7 +25,8 @@ def quick_case_submit(request):
     
     if request.method == 'POST':
         # Create minimal case with just essential info
-        external_case_id = f"CASE-{uuid.uuid4().hex[:8].upper()}"
+        workshop_code = user.workshop_code
+        external_case_id = generate_case_id(workshop_code)
         
         # Get basic info from form
         employee_name = request.POST.get('employee_name', 'Unknown')

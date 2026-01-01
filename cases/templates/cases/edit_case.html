@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Case {{ case.external_case_id }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'member_dashboard' %}">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'case_detail' case.id %}">{{ case.external_case_id }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+            <h2>Edit Case: {{ case.external_case_id }}</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Edit Case Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Urgency -->
+                        <div class="mb-3">
+                            <label for="urgency" class="form-label">Urgency <span class="text-danger">*</span></label>
+                            <select id="urgency" name="urgency" class="form-select" required>
+                                <option value="normal" {% if case.urgency == 'normal' %}selected{% endif %}>Normal (Standard processing)</option>
+                                <option value="urgent" {% if case.urgency == 'urgent' %}selected{% endif %}>Urgent (Rush fee applies - Due date less than 7 days)</option>
+                            </select>
+                            <small class="form-text text-muted">Cases marked urgent have a rush fee and priority processing</small>
+                        </div>
+
+                        <!-- Due Date -->
+                        <div class="mb-3">
+                            <label for="date_due" class="form-label">Due Date <span class="text-danger">*</span></label>
+                            <input type="date" id="date_due" name="date_due" class="form-control" 
+                                   value="{{ case.date_due|date:'Y-m-d' }}" required>
+                            <small class="form-text text-muted">Date when this case should be completed</small>
+                        </div>
+
+                        <!-- Number of Reports -->
+                        <div class="mb-3">
+                            <label for="num_reports_requested" class="form-label">Number of Reports Requested <span class="text-danger">*</span></label>
+                            <select id="num_reports_requested" name="num_reports_requested" class="form-select" required>
+                                {% for i in "x1x2x3x4x5x6x7x8x9x10"|make_list %}
+                                    <option value="{{ forloop.counter }}" {% if case.num_reports_requested == forloop.counter %}selected{% endif %}>
+                                        {{ forloop.counter }} Report{{ forloop.counter|pluralize }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">How many retirement benefit reports are needed for this employee</small>
+                        </div>
+
+                        <!-- Member Notes -->
+                        <div class="mb-3">
+                            <label for="special_notes" class="form-label">Member Notes</label>
+                            <textarea id="special_notes" name="special_notes" class="form-control" rows="4" placeholder="Any additional notes or context about this case">{{ case.special_notes }}</textarea>
+                            <small class="form-text text-muted">Internal notes visible only to the benefits team</small>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Save Changes
+                            </button>
+                            <a href="{% url 'case_detail' case.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Case Summary Card -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Case Summary</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Case ID:</dt>
+                        <dd class="col-sm-6">{{ case.external_case_id }}</dd>
+                        
+                        <dt class="col-sm-6">Employee:</dt>
+                        <dd class="col-sm-6">{{ case.employee_first_name }} {{ case.employee_last_name }}</dd>
+                        
+                        <dt class="col-sm-6">Status:</dt>
+                        <dd class="col-sm-6">
+                            <span class="badge bg-secondary">{{ case.get_status_display }}</span>
+                        </dd>
+                        
+                        <dt class="col-sm-6">Created:</dt>
+                        <dd class="col-sm-6">{{ case.created_at|date:"m/d/Y H:i" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Instructions -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info">
+                    <h6 class="mb-0 text-white"><i class="bi bi-info-circle"></i> Editing Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>You can edit:</strong></p>
+                    <ul class="small">
+                        <li>Urgency status</li>
+                        <li>Due date</li>
+                        <li>Number of reports</li>
+                        <li>Member notes</li>
+                    </ul>
+                    
+                    <p class="mt-3"><strong>You cannot edit:</strong></p>
+                    <ul class="small">
+                        <li>Case ID</li>
+                        <li>Employee information</li>
+                        <li>After case is submitted</li>
+                    </ul>
+
+                    <hr>
+
+                    <div class="alert alert-info" role="alert">
+                        <small>Once you submit this case, the benefits team will begin processing it. You will not be able to make changes after submission.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

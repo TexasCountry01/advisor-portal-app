@@ -25,6 +25,7 @@ urlpatterns = [
     # Shared views
     path('list/', views.case_list, name='case_list'),
     path('<int:pk>/', views.case_detail, name='case_detail'),
+    path('<int:pk>/edit/', views.edit_case, name='edit_case'),
     path('<int:pk>/delete/', views.delete_case, name='delete_case'),
     path('<int:case_id>/reassign/', views.reassign_case, name='reassign_case'),
     path('<int:case_id>/take-ownership/', views.take_case_ownership, name='take_case_ownership'),
