@@ -101,14 +101,9 @@ def submit_case(request):
             except (ValueError, TypeError):
                 due_date = None
             
-            # Determine urgency based on due date
-            default_due_date = timezone.now().date() + timedelta(days=7)
-            if due_date is None:
-                due_date = default_due_date
-                urgency = 'normal'
-            elif due_date < default_due_date:
-                urgency = 'urgent'  # Rushed report
-            else:
+            # Get urgency from form (member selection)
+            urgency = request.POST.get('urgency', 'normal')
+            if urgency not in ['normal', 'urgent']:
                 urgency = 'normal'
             
             # Validate num_reports

@@ -510,10 +510,23 @@
                     </div>
                 </div>
 
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            Turnaround Time <span class="required">*</span>
+                        </label>
+                        <select name="urgency" id="urgencySelect" class="form-control" required onchange="updateRushFee()">
+                            <option value="normal">Normal (Standard Processing - 7+ days)</option>
+                            <option value="urgent">Urgent (Rush Service - Less than 7 days)</option>
+                        </select>
+                        <small class="help-text">Select the turnaround time for your case analysis</small>
+                    </div>
+                </div>
+
                 <!-- Rushed Status Alert -->
                 <div class="alert alert-warning" id="rushAlert" style="display: none;">
-                    <strong>⚠️ Rushed Report Detected!</strong>
-                    <p>This case is due in less than 7 days. A rush fee of <span class="fee-amount" id="rushFeeAmount">$0</span> will apply.</p>
+                    <strong>⚠️ Rushed Report!</strong>
+                    <p>You've selected urgent/rush service. A rush fee of <span class="fee-amount" id="rushFeeAmount">$0</span> will apply.</p>
                 </div>
             </div>
 
@@ -764,6 +777,17 @@
                 }
             })
             .catch(error => console.error('Error checking rushed status:', error));
+    }
+
+    // Update rush fee based on urgency selection
+    function updateRushFee() {
+        const urgencySelect = document.getElementById('urgencySelect');
+        const rushAlert = document.getElementById('rushAlert');
+        if (urgencySelect.value === 'urgent') {
+            rushAlert.classList.add('show');
+        } else {
+            rushAlert.classList.remove('show');
+        }
     }
 
     // Select advisor (for delegates)
