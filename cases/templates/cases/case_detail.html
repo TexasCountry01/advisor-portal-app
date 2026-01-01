@@ -226,16 +226,7 @@
                             {{ case.num_reports_requested }} Report{{ case.num_reports_requested|pluralize }}
                         </div>
                     </div>
-                    {% if case.special_notes %}
-                    <div class="row">
-                        <div class="col-12">
-                            <strong>Notes/Comments:</strong><br>
-                            <div class="p-3 bg-light rounded">
-                                {{ case.special_notes|linebreaks }}
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+
                 </div>
             </div>
 
@@ -349,73 +340,63 @@
             <!-- Notes Section -->
             <div class="card mb-4">
                 <div class="card-header">
-                    <h5 class="mb-0">Notes</h5>
+                    <h5 class="mb-0">Member Intake Notes</h5>
                 </div>
                 <div class="card-body">
-                    <!-- Member's Special Notes -->
                     {% if case.special_notes %}
-                    <div class="mb-4">
-                        <h6 class="mb-2">
-                            <i class="bi bi-chat-left-text"></i> Member Notes
-                            <span class="badge bg-info">From Intake</span>
-                        </h6>
-                        <div class="alert alert-light border">
-                            {{ case.special_notes|linebreaks }}
-                        </div>
+                    <div class="p-3 bg-light rounded">
+                        {{ case.special_notes|linebreaks }}
                     </div>
                     {% else %}
-                    <div class="mb-4">
-                        <h6 class="mb-2">
-                            <i class="bi bi-chat-left-text"></i> Member Notes
-                            <span class="badge bg-info">From Intake</span>
-                        </h6>
-                        <p class="text-muted">No special notes from member.</p>
-                    </div>
-                    {% endif %}
-
-                    <!-- Technician Notes -->
-                    {% if user.role == 'technician' or user.role == 'administrator' or user.role == 'manager' %}
-                    <div class="mt-4 pt-4 border-top">
-                        <h6 class="mb-3">
-                            <i class="bi bi-pencil-square"></i> Internal Notes
-                            {% if case_notes.count > 0 %}
-                            <span class="badge bg-warning">{{ case_notes.count }}</span>
-                            {% endif %}
-                        </h6>
-                        
-                        {% if case_notes %}
-                        <div class="list-group mb-3">
-                            {% for note in case_notes %}
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between">
-                                    <div>
-                                        <strong>{{ note.author.get_full_name|default:note.author.username }}</strong>
-                                        <small class="text-muted d-block">{{ note.created_at|date:"m/d/Y H:i" }}</small>
-                                    </div>
-                                </div>
-                                <p class="mt-2 mb-0">{{ note.note|linebreaks }}</p>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% else %}
-                        <p class="text-muted mb-3">No internal notes yet.</p>
-                        {% endif %}
-
-                        {% if can_edit %}
-                        <form method="post" action="{% url 'add_case_note' case.id %}" class="mt-3">
-                            {% csrf_token %}
-                            <div class="form-group">
-                                <textarea class="form-control" name="notes" rows="3" placeholder="Add an internal note..." required></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-sm btn-primary">
-                                <i class="bi bi-plus-circle"></i> Add Note
-                            </button>
-                        </form>
-                        {% endif %}
-                    </div>
+                    <p class="text-muted">No notes from member intake.</p>
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Technician/Internal Notes Section -->
+            {% if user.role == 'technician' or user.role == 'administrator' or user.role == 'manager' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> Internal Notes/Comments
+                        {% if case_notes.count > 0 %}
+                        <span class="badge bg-warning">{{ case_notes.count }}</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if case_notes %}
+                    <div class="list-group mb-3">
+                        {% for note in case_notes %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong>{{ note.author.get_full_name|default:note.author.username }}</strong>
+                                    <small class="text-muted d-block">{{ note.created_at|date:"m/d/Y H:i" }}</small>
+                                </div>
+                            </div>
+                            <p class="mt-2 mb-0">{{ note.note|linebreaks }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted mb-3">No internal notes yet.</p>
+                    {% endif %}
+
+                    {% if can_edit %}
+                    <form method="post" action="{% url 'add_case_note' case.id %}" class="mt-3">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Add an internal note..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-plus-circle"></i> Add Note
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
 
             <!-- Reports -->
             <div class="card mb-4">
