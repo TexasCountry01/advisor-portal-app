@@ -257,6 +257,11 @@ class Case(models.Model):
         if self.assigned_to and self.assigned_to.user_level == 'level_1':
             return True
         return False
+    
+    @property
+    def get_report_numbers(self):
+        """Return list of report numbers (1 through num_reports_requested)"""
+        return range(1, self.num_reports_requested + 1)
 
 
 class CaseDocument(models.Model):

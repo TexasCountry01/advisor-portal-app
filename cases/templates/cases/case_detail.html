@@ -441,10 +441,10 @@
                 </div>
             </div>
 
-            <!-- Technician Documents -->
+            <!-- Additional Documents -->
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Technician Documents</h5>
+                    <h5 class="mb-0">Additional Documents</h5>
                     {% if can_edit %}
                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
                         <i class="bi bi-upload"></i> Upload Document
@@ -581,8 +581,13 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label for="reportNumber" class="form-label">Report Number <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="reportNumber" name="report_number" min="1" max="10" required>
-                        <small class="text-muted">Which report is this? (1-{{ case.num_reports_requested }})</small>
+                        <select class="form-select" id="reportNumber" name="report_number" required>
+                            <option value="">-- Select Report Number --</option>
+                            {% for i in case.get_report_numbers %}
+                            <option value="{{ i }}">Report {{ i }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">Requested: {{ case.num_reports_requested }} report{{ case.num_reports_requested|pluralize }}</small>
                     </div>
                     <div class="mb-3">
                         <label for="reportFile" class="form-label">Select File <span class="text-danger">*</span></label>

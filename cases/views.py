@@ -857,14 +857,17 @@ def mark_case_completed(request, case_id):
     if user.role == 'technician' and case.assigned_to != user:
         return JsonResponse({'success': False, 'error': 'You can only mark cases you are assigned to as completed.'}, status=403)
     
-    # Check if at least one report has been uploaded
+    # Check if ALL requested reports have been uploaded
     from cases.models import CaseReport
-    report_count = CaseReport.objects.filter(case=case).count()
+    uploaded_report_numbers = set(CaseReport.objects.filter(case=case).values_list('report_number', flat=True))
+    required_report_numbers = set(range(1, case.num_reports_requested + 1))
     
-    if report_count == 0:
+    if uploaded_report_numbers != required_report_numbers:
+        missing_reports = required_report_numbers - uploaded_report_numbers
+        missing_str = ', '.join(str(r) for r in sorted(missing_reports))
         return JsonResponse({
             'success': False, 
-            'error': 'At least one report must be uploaded before marking the case as completed.'
+            'error': f'All {case.num_reports_requested} reports must be uploaded. Missing: Report {missing_str}'
         }, status=400)
     
     if request.method == 'POST':
