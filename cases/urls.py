@@ -29,6 +29,7 @@ urlpatterns = [
     path('<int:case_id>/reassign/', views.reassign_case, name='reassign_case'),
     path('<int:case_id>/take-ownership/', views.take_case_ownership, name='take_case_ownership'),
     path('<int:case_id>/submit-final/', views.submit_case_final, name='submit_case_final'),
+    path('<int:case_id>/add-note/', views.add_case_note, name='add_case_note'),
     
     # Reference PDF template with document upload
     path('<int:case_id>/fact-finder-template/', views_pdf_template.fact_finder_template, name='case_fact_finder'),

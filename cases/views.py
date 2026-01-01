@@ -558,10 +558,15 @@ def case_detail(request, pk):
     # Get related documents
     documents = CaseDocument.objects.filter(case=case).order_by('-uploaded_at')
     
+    # Get case notes (technician/internal notes)
+    from cases.models import CaseNote
+    case_notes = CaseNote.objects.filter(case=case).order_by('-created_at')
+    
     context = {
         'case': case,
         'can_edit': can_edit,
         'documents': documents,
+        'case_notes': case_notes,
     }
     
     return render(request, 'cases/case_detail.html', context)
@@ -683,3 +688,32 @@ def take_case_ownership(request, case_id):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
 
+
+@login_required
+def add_case_note(request, case_id):
+    """Add an internal note to a case (technician/admin only)"""
+    from cases.models import CaseNote
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only techs and admins can add notes
+    if user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'You do not have permission to add notes to this case.')
+        return redirect('case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        note_text = request.POST.get('notes', '').strip()
+        
+        if note_text:
+            CaseNote.objects.create(
+                case=case,
+                author=user,
+                note=note_text,
+                is_internal=True
+            )
+            messages.success(request, 'Note added successfully.')
+        else:
+            messages.warning(request, 'Note cannot be empty.')
+    
+    return redirect('case_detail', pk=case_id)

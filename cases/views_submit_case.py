@@ -145,6 +145,7 @@ def submit_case(request):
                 fact_finder_data=fact_finder_data,
                 api_sync_status='pending',
                 created_by=user,  # Track who created it (could be delegate)
+                special_notes=notes,  # Save notes to special_notes field
             )
             case.save()
             
