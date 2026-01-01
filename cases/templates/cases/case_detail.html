@@ -12,7 +12,7 @@
                         {% if user.role == 'member' %}
                             <a href="{% url 'member_dashboard' %}">Dashboard</a>
                         {% elif user.role == 'technician' %}
-                            <a href="{% url 'technician_workbench' %}">Workbench</a>
+                            <a href="{% url 'technician_dashboard' %}">Dashboard</a>
                         {% else %}
                             <a href="{% url 'case_list' %}">Cases</a>
                         {% endif %}
@@ -22,8 +22,25 @@
             </nav>
             <h2>Case Details: {{ case.external_case_id }}</h2>
         </div>
-        <div class="col-auto">
+        <div class="col-auto d-flex align-items-center gap-2">
             <span class="badge badge-{{ case.status }} fs-5">{{ case.get_status_display }}</span>
+            {% if user.role == 'member' %}
+                <a href="{% url 'member_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% elif user.role == 'technician' %}
+                <a href="{% url 'technician_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% elif user.role == 'manager' %}
+                <a href="{% url 'manager_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% elif user.role == 'administrator' %}
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% endif %}
         </div>
     </div>
 

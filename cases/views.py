@@ -4,7 +4,9 @@ from django.contrib import messages
 from django.db.models import Q
 from django.db import models
 from django.utils import timezone
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
+from django.urls import reverse
+from accounts.models import User
 from .models import Case, CaseDocument
 import logging
 
@@ -86,53 +88,6 @@ def member_dashboard(request):
 
 
 @login_required
-def technician_workbench(request):
-    """Workbench view for Technician role"""
-    user = request.user
-    
-    # Ensure user is a technician
-    if user.role != 'technician':
-        messages.error(request, 'Access denied. Technicians only.')
-        return redirect('home')
-    
-    # Get assigned cases
-    assigned_cases = Case.objects.filter(
-        assigned_to=user
-    ).select_related('member').order_by('-updated_at')
-    
-    # Apply filters
-    status_filter = request.GET.get('status')
-    search_query = request.GET.get('search')
-    
-    if status_filter:
-        assigned_cases = assigned_cases.filter(status=status_filter)
-    
-    if search_query:
-        assigned_cases = assigned_cases.filter(
-            Q(external_case_id__icontains=search_query) |
-            Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query) |
-            Q(workshop_code__icontains=search_query)
-        )
-    
-    # Calculate statistics
-    stats = {
-        'assigned': assigned_cases.count(),
-        'accepted': assigned_cases.filter(status='accepted').count(),
-        'completed': assigned_cases.filter(status='completed').count(),
-    }
-    
-    context = {
-        'assigned_cases': assigned_cases,
-        'stats': stats,
-        'status_filter': status_filter,
-        'search_query': search_query,
-    }
-    
-    return render(request, 'cases/technician_workbench.html', context)
-
-
-@login_required
 def technician_dashboard(request):
     """Dashboard view for Benefits Technician - shows all cases (not just assigned)"""
     user = request.user
@@ -155,6 +110,11 @@ def technician_dashboard(request):
     tier_filter = request.GET.get('tier')
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort', '-date_submitted')
+    assigned_filter = request.GET.get('assigned', 'all')  # 'all' or 'mine'
+    
+    # Apply "My Cases" filter
+    if assigned_filter == 'mine':
+        cases = cases.filter(assigned_to=user)
     
     if status_filter:
         cases = cases.filter(status=status_filter)
@@ -204,6 +164,9 @@ def technician_dashboard(request):
         'urgent': all_cases.filter(urgency='urgent').count(),
     }
     
+    # Get available technicians for assignment dropdown
+    technicians = User.objects.filter(role='technician').order_by('last_name', 'first_name')
+    
     context = {
         'cases': cases,
         'stats': stats,
@@ -212,6 +175,8 @@ def technician_dashboard(request):
         'tier_filter': tier_filter,
         'search_query': search_query,
         'sort_by': sort_by,
+        'assigned_filter': assigned_filter,
+        'technicians': technicians,
         'dashboard_type': 'technician',
     }
     
@@ -556,7 +521,7 @@ def delete_case(request, pk):
         messages.error(request, 'You do not have permission to delete this case.')
         return redirect('member_dashboard')
     elif request.user.role == 'technician':
-        return redirect('technician_workbench')
+        return redirect('technician_dashboard')
     else:
         return redirect('case_list')
 
@@ -594,3 +559,120 @@ def case_detail(request, pk):
     }
     
     return render(request, 'cases/case_detail.html', context)
+
+
+@login_required
+def reassign_case(request, case_id):
+    """API endpoint to reassign a case to a different technician"""
+    from django.http import JsonResponse
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only techs and admins can reassign
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    
+    if request.method == 'POST':
+        new_technician_id = request.POST.get('technician_id')
+        
+        if not new_technician_id:
+            return JsonResponse({'success': False, 'error': 'No technician selected'}, status=400)
+        
+        try:
+            new_technician = User.objects.get(id=new_technician_id, role='technician')
+            old_technician = case.assigned_to
+            case.assigned_to = new_technician
+            case.save()
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Case reassigned from {old_technician.username if old_technician else "Unassigned"} to {new_technician.username}',
+                'new_assignee': new_technician.get_full_name() or new_technician.username
+            })
+        except User.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Technician not found'}, status=404)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def submit_case_final(request, case_id):
+    """Submit a draft case to transition it from draft to submitted status"""
+    if request.method == 'POST':
+        try:
+            user = request.user
+            case = get_object_or_404(Case, pk=case_id)
+            
+            # Permission check: Only the case creator (member) can submit their own case
+            if case.member != user:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'You do not have permission to submit this case'
+                }, status=403)
+            
+            # Status check: Only draft cases can be submitted
+            if case.status != 'draft':
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Only draft cases can be submitted. This case is {case.get_status_display()}'
+                }, status=400)
+            
+            # Update case status to submitted
+            case.status = 'submitted'
+            case.date_submitted = timezone.now()
+            case.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Case {case.external_case_id} has been submitted successfully',
+                'redirect': reverse('member_dashboard')
+            })
+        except Case.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Case not found'}, status=404)
+        except Exception as e:
+            logger.error(f'Error submitting case {case_id}: {str(e)}')
+            return JsonResponse({'success': False, 'error': 'An error occurred while submitting the case'}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def take_case_ownership(request, case_id):
+    """API endpoint for a technician to take ownership of an unassigned case"""
+    if request.method == 'POST':
+        try:
+            user = request.user
+            case = get_object_or_404(Case, pk=case_id)
+            
+            # Permission check: Only technicians can take ownership
+            if user.role != 'technician':
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Only technicians can take ownership of cases'
+                }, status=403)
+            
+            # Check if case is already assigned
+            if case.assigned_to is not None:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Case is already assigned to {case.assigned_to.get_full_name()}'
+                }, status=400)
+            
+            # Assign the case to the current technician
+            case.assigned_to = user
+            case.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'You have taken ownership of case {case.external_case_id}',
+                'new_assignee': user.get_full_name() or user.username
+            })
+        except Case.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Case not found'}, status=404)
+        except Exception as e:
+            logger.error(f'Error taking ownership of case {case_id}: {str(e)}')
+            return JsonResponse({'success': False, 'error': 'An error occurred while taking ownership'}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+

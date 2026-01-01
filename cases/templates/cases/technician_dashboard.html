@@ -16,6 +16,22 @@
         </div>
     </div>
 
+    <!-- Case View Filters: All Cases / My Cases -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <a href="{% url 'technician_dashboard' %}?assigned=all{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                   class="btn btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}">
+                    <i class="bi bi-list-ul"></i> All Cases
+                </a>
+                <a href="{% url 'technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                   class="btn btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}">
+                    <i class="bi bi-person-check"></i> My Cases
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Statistics Cards -->
     <div class="row mb-4">
         <div class="col-md-2">
@@ -205,6 +221,18 @@
                                 {% else %}
                                     <span class="text-muted">Unassigned</span>
                                 {% endif %}
+                                {% if case.assigned_to %}
+                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="takeOwnership({{ case.id }})">
+                                        <i class="bi bi-hand-thumbs-up"></i> Take
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                {% endif %}
                             </td>
                             <td>
                                 {% if case.date_scheduled %}
@@ -267,7 +295,117 @@
             {% endif %}
         </div>
     </div>
+
+    <!-- Reassignment Modals (one per case) -->
+    {% for case in cases %}
+    <div class="modal fade" id="reassignModal{{ case.id }}" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reassign Case {{ case.external_case_id }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Employee: <strong>{{ case.employee_first_name }} {{ case.employee_last_name }}</strong></p>
+                    <label for="technician{{ case.id }}" class="form-label">Assign To:</label>
+                    <select id="technician{{ case.id }}" class="form-select">
+                        <option value="">-- Select Technician --</option>
+                        {% for tech in technicians %}
+                        <option value="{{ tech.id }}" {% if tech.id == case.assigned_to.id %}selected{% endif %}>
+                            {{ tech.get_full_name|default:tech.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="reassignCase({{ case.id }})">Reassign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
 </div>
+
+<script>
+    function takeOwnership(caseId) {
+        if (!confirm('Take ownership of this case?')) {
+            return;
+        }
+        
+        const formData = new FormData();
+        
+        fetch(`/cases/${caseId}/take-ownership/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to take ownership'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while taking ownership');
+        });
+    }
+    
+    function reassignCase(caseId) {
+        const selectId = `technician${caseId}`;
+        const technicianId = document.getElementById(selectId).value;
+        
+        if (!technicianId) {
+            alert('Please select a technician');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('technician_id', technicianId);
+        
+        fetch(`/cases/${caseId}/reassign/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Failed to reassign case'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while reassigning the case');
+        });
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
 
 <style>
     .stat-card {

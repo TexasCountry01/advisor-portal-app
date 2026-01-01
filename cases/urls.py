@@ -14,7 +14,6 @@ urlpatterns = [
     path('dev/form-preview/', views.form_preview, name='form_preview'),
     
     # Technician views
-    path('technician/workbench/', views.technician_workbench, name='technician_workbench'),
     path('technician/dashboard/', views.technician_dashboard, name='technician_dashboard'),
     
     # Admin views
@@ -27,6 +26,9 @@ urlpatterns = [
     path('list/', views.case_list, name='case_list'),
     path('<int:pk>/', views.case_detail, name='case_detail'),
     path('<int:pk>/delete/', views.delete_case, name='delete_case'),
+    path('<int:case_id>/reassign/', views.reassign_case, name='reassign_case'),
+    path('<int:case_id>/take-ownership/', views.take_case_ownership, name='take_case_ownership'),
+    path('<int:case_id>/submit-final/', views.submit_case_final, name='submit_case_final'),
     
     # Reference PDF template with document upload
     path('<int:case_id>/fact-finder-template/', views_pdf_template.fact_finder_template, name='case_fact_finder'),

@@ -93,6 +93,13 @@
                             <p class="text-muted mt-2">Loading PDF...</p>
                         </div>
                     </div>
+                    <!-- CSS to hide the top header text of the PDF -->
+                    <style>
+                        #pdf-container {
+                            clip-path: inset(50px 0 0 0);
+                            height: calc(700px - 50px) !important;
+                        }
+                    </style>
                 </div>
                 <div class="card-footer text-center">
                     <small class="text-muted d-block">

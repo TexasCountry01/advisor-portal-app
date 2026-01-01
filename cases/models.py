@@ -5,6 +5,26 @@ from django.db.models.signals import post_delete
 from django.dispatch import receiver
 import os
 
+
+def case_document_upload_path(instance, filename):
+    """
+    Rename uploaded files to include employee's last name (beneficiary).
+    Format: [employee_lastname]_[original_filename].[ext]
+    """
+    if instance.case and instance.case.employee_last_name:
+        last_name = instance.case.employee_last_name
+        name, ext = os.path.splitext(filename)
+        # Remove any existing last_name_ prefix to avoid duplicates
+        if name.startswith(f"{last_name}_"):
+            new_filename = filename
+        else:
+            new_filename = f"{last_name}_{filename}"
+    else:
+        new_filename = filename
+    
+    # Return path with date structure
+    return os.path.join('case_documents', '%Y', '%m', '%d', new_filename)
+
 class Case(models.Model):
     """Main case model with all 18 dashboard fields"""
     
@@ -251,7 +271,7 @@ class CaseDocument(models.Model):
     
     case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='documents')
     document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES)
-    file = models.FileField(upload_to='case_documents/%Y/%m/%d/')
+    file = models.FileField(upload_to=case_document_upload_path)
     original_filename = models.CharField(max_length=255)
     file_size = models.BigIntegerField()  # in bytes
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
