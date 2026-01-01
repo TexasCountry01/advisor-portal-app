@@ -540,9 +540,13 @@ def case_detail(request, pk):
     
     if user.role == 'member' and case.member == user:
         can_view = True
-    elif user.role == 'technician' and case.assigned_to == user:
-        can_view = True
-        can_edit = True
+    elif user.role == 'technician':
+        # Technicians can view all submitted cases (before and after taking ownership)
+        if case.status in ['submitted', 'accepted', 'hold', 'pending_review', 'completed']:
+            can_view = True
+        # Technicians can edit cases they own
+        if case.assigned_to == user:
+            can_edit = True
     elif user.role in ['admin', 'manager']:
         can_view = True
         can_edit = True
