@@ -239,6 +239,30 @@
                 </div>
             </div>
 
+            <!-- Document Summary Alert -->
+            <div class="alert alert-light border mb-4">
+                <h6 class="mb-2"><i class="bi bi-file-earmark"></i> Document Summary:</h6>
+                <div>
+                    {% with ff_docs=documents|dictsort:"document_type"|first %}
+                    {% if ff_docs %}
+                        Federal Fact Finder: {{ ff_docs|length }} file(s)<br>
+                    {% else %}
+                        Federal Fact Finder: 0 file(s)<br>
+                    {% endif %}
+                    {% endwith %}
+                    
+                    {% with support_docs=documents|dictsort:"document_type"|last %}
+                    {% if support_docs %}
+                        Supporting Documents: {{ support_docs|length }} file(s)<br>
+                    {% else %}
+                        Supporting Documents: 0 file(s)<br>
+                    {% endif %}
+                    {% endwith %}
+                    
+                    <strong>Total: {{ documents|length }} document(s)</strong>
+                </div>
+            </div>
+
             <!-- Supporting Documents -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -319,37 +343,6 @@
                     {% else %}
                     <p class="text-muted">No supporting documents uploaded yet. Download the Federal Fact Finder template below and upload it with your supporting documents.</p>
                     {% endif %}
-                </div>
-            </div>
-
-            <!-- Federal Fact Finder PDF -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Federal Fact Finder Form</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted">Download the official Federal Fact Finder template and upload supporting documents.</p>
-                    <div class="row">
-                        {% if case.status == 'draft' %}
-                        <div class="col-md-6">
-                            <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded mb-2">
-                                <div>
-                                    <i class="bi bi-file-pdf fs-3 text-success"></i>
-                                    <strong class="ms-2">Federal Fact Finder Form</strong>
-                                    <br>
-                                    <small class="text-muted ms-5">Continue with form entry</small>
-                                </div>
-                                <a href="{% url 'case_fact_finder' case.pk %}" class="btn btn-success" target="_blank">
-                                    <i class="bi bi-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
