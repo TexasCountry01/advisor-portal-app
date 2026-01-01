@@ -554,8 +554,8 @@ def case_detail(request, pk):
         can_view = True
         can_edit = True  # Members can edit their own cases (add/remove documents)
     elif user.role == 'technician':
-        # Technicians can view all submitted cases (before and after taking ownership)
-        if case.status in ['submitted', 'accepted', 'hold', 'pending_review', 'completed']:
+        # Technicians can view all submitted cases and cases assigned to them
+        if case.status != 'draft' or case.assigned_to == user:
             can_view = True
         # Technicians can edit cases they own
         if case.assigned_to == user:

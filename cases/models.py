@@ -29,6 +29,7 @@ class Case(models.Model):
     """Main case model with all 18 dashboard fields"""
     
     STATUS_CHOICES = [
+        ('draft', 'Draft'),
         ('submitted', 'Submitted'),
         ('accepted', 'Accepted'),
         ('hold', 'Hold'),
