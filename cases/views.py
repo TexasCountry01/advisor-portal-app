@@ -164,8 +164,10 @@ def technician_dashboard(request):
         'urgent': all_cases.filter(urgency='urgent').count(),
     }
     
-    # Get available technicians for assignment dropdown
-    technicians = User.objects.filter(role='technician').order_by('last_name', 'first_name')
+    # Get available technicians and administrators for assignment dropdown
+    technicians = User.objects.filter(
+        role__in=['technician', 'administrator']
+    ).order_by('last_name', 'first_name')
     
     context = {
         'cases': cases,

@@ -309,10 +309,10 @@
                     <p>Employee: <strong>{{ case.employee_first_name }} {{ case.employee_last_name }}</strong></p>
                     <label for="technician{{ case.id }}" class="form-label">Assign To:</label>
                     <select id="technician{{ case.id }}" class="form-select">
-                        <option value="">-- Select Technician --</option>
+                        <option value="">-- Select User --</option>
                         {% for tech in technicians %}
                         <option value="{{ tech.id }}" {% if tech.id == case.assigned_to.id %}selected{% endif %}>
-                            {{ tech.get_full_name|default:tech.username }}
+                            {{ tech.get_full_name|default:tech.username }} ({{ tech.get_role_display }})
                         </option>
                         {% endfor %}
                     </select>
