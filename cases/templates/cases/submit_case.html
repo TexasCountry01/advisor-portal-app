@@ -556,7 +556,7 @@
                         <div class="file-upload-text">Click to upload Federal Fact Finder</div>
                         <div class="file-upload-subtext">PDF, DOC, DOCX, JPG, PNG (Max 10MB)</div>
                     </div>
-                    <input type="file" id="ffFileInput" name="fact_finder_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleFFFileSelect()">
+                    <input type="file" id="ffFileInput" name="fact_finder_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleFFFileSelect(event)">
                     <ul class="file-list" id="ffFileList"></ul>
                 </div>
 
@@ -574,7 +574,7 @@
                         <div class="file-upload-text">Click to upload supporting documents</div>
                         <div class="file-upload-subtext">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB per file)</div>
                     </div>
-                    <input type="file" id="supportFileInput" name="support_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleSupportFileSelect()">
+                    <input type="file" id="supportFileInput" name="support_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleSupportFileSelect(event)">
                     <ul class="file-list" id="supportFileList"></ul>
                 </div>
 
@@ -623,7 +623,7 @@
 
     // Federal Fact Finder file handling
     function handleFFFileSelect(event) {
-        const files = event.target.files || event.dataTransfer.files;
+        const files = (event && event.target.files) ? event.target.files : event.dataTransfer.files;
         ffFiles = Array.from(files);
         updateFFFileList();
         updateDocumentCount();
@@ -660,7 +660,7 @@
 
     // Supporting Documents file handling
     function handleSupportFileSelect(event) {
-        const files = event.target.files || event.dataTransfer.files;
+        const files = (event && event.target.files) ? event.target.files : event.dataTransfer.files;
         supportFiles = Array.from(files);
         updateSupportFileList();
         updateDocumentCount();
