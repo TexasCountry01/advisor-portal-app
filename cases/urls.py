@@ -34,6 +34,10 @@ urlpatterns = [
     path('<int:case_id>/upload-tech-document/', views.upload_technician_document, name='upload_technician_document'),
     path('<int:case_id>/mark-completed/', views.mark_case_completed, name='mark_case_completed'),
     
+    # View preference API
+    path('api/view-preference/save/<str:view_type>/', views.save_view_preference, name='save_view_preference'),
+    path('api/view-preference/get/', views.get_view_preference, name='get_view_preference'),
+    
     # Reference PDF template with document upload
     path('<int:case_id>/fact-finder-template/', views_pdf_template.fact_finder_template, name='case_fact_finder'),
     path('<int:case_id>/view-fact-finder-pdf/', views_pdf_template.view_fact_finder_pdf, name='view_fact_finder_pdf'),

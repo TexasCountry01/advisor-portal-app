@@ -97,6 +97,18 @@ def technician_dashboard(request):
         messages.error(request, 'Access denied. Technicians and Admins only.')
         return redirect('home')
     
+    # Load saved view preference
+    from accounts.models import UserPreference
+    saved_preference = UserPreference.objects.filter(
+        user=user,
+        preference_key='technician_dashboard_view'
+    ).first()
+    
+    # Get saved view type or default to 'all'
+    default_view = 'all'
+    if saved_preference:
+        default_view = saved_preference.preference_value.get('view', 'all')
+    
     # Get all cases (technicians see all, not just assigned)
     cases = Case.objects.all().prefetch_related(
         'documents'
@@ -110,7 +122,7 @@ def technician_dashboard(request):
     tier_filter = request.GET.get('tier')
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort', '-date_submitted')
-    assigned_filter = request.GET.get('assigned', 'all')  # 'all' or 'mine'
+    assigned_filter = request.GET.get('assigned', default_view)  # Use saved preference as default
     
     # Apply "My Cases" filter
     if assigned_filter == 'mine':
@@ -886,3 +898,70 @@ def mark_case_completed(request, case_id):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def save_view_preference(request, view_type):
+    """Save technician's dashboard view preference (all vs mine)"""
+    
+    user = request.user
+    
+    # Permission check
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    
+    # Validate view_type
+    if view_type not in ['all', 'mine']:
+        return JsonResponse({'success': False, 'error': 'Invalid view type'}, status=400)
+    
+    if request.method == 'POST':
+        try:
+            from accounts.models import UserPreference
+            
+            # Save or update the preference
+            preference, created = UserPreference.objects.update_or_create(
+                user=user,
+                preference_key='technician_dashboard_view',
+                defaults={'preference_value': {'view': view_type}}
+            )
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'View preference saved ({view_type})',
+                'view': view_type
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def get_view_preference(request):
+    """Get technician's saved dashboard view preference"""
+    
+    user = request.user
+    
+    # Permission check
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    
+    try:
+        from accounts.models import UserPreference
+        
+        preference = UserPreference.objects.filter(
+            user=user,
+            preference_key='technician_dashboard_view'
+        ).first()
+        
+        if preference:
+            view_type = preference.preference_value.get('view', 'all')
+        else:
+            view_type = 'all'  # Default to All Cases
+        
+        return JsonResponse({
+            'success': True, 
+            'view': view_type
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

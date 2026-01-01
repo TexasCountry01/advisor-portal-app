@@ -21,11 +21,17 @@
         <div class="col-12">
             <div class="btn-group" role="group">
                 <a href="{% url 'technician_dashboard' %}?assigned=all{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
-                   class="btn btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}">
+                   id="view-all-btn"
+                   class="btn btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
+                   data-view-type="all"
+                   onclick="saveViewPreference(event, 'all')">
                     <i class="bi bi-list-ul"></i> All Cases
                 </a>
                 <a href="{% url 'technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
-                   class="btn btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}">
+                   id="view-mine-btn"
+                   class="btn btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
+                   data-view-type="mine"
+                   onclick="saveViewPreference(event, 'mine')">
                     <i class="bi bi-person-check"></i> My Cases
                 </a>
             </div>
@@ -404,6 +410,38 @@
             }
         }
         return cookieValue;
+    }
+    
+    // Save view preference and redirect
+    function saveViewPreference(event, viewType) {
+        event.preventDefault();
+        const csrftoken = getCookie('csrftoken');
+        
+        // Save preference via AJAX
+        fetch(`{% url 'save_view_preference' view_type='__PLACEHOLDER__' %}`.replace('__PLACEHOLDER__', viewType), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ view: viewType })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Preference saved, redirect to the new view
+                window.location.href = event.currentTarget.href;
+            } else {
+                console.error('Failed to save preference:', data.error);
+                // Still redirect even if preference save fails
+                window.location.href = event.currentTarget.href;
+            }
+        })
+        .catch(error => {
+            console.error('Error saving preference:', error);
+            // Still redirect even on error
+            window.location.href = event.currentTarget.href;
+        });
     }
 </script>
 
