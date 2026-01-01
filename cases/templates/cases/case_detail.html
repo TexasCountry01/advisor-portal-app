@@ -508,85 +508,83 @@
         <!-- Right Column: Timeline & Actions (Technician/Admin only) -->
         <div class="col-md-4">
             {% if user.role != 'member' %}
-            <!-- Assignment -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Assignment</h5>
-                </div>
-                <div class="card-body">
-                    <div class="mb-3">
-                        <strong>Assigned To:</strong><br>
-                        {% if case.assigned_to %}
-                            {{ case.assigned_to.username }}
-                            <br><small class="text-muted">{{ case.assigned_to.user_level }}</small>
-                        {% else %}
-                            <span class="text-muted">Unassigned</span>
-                        {% endif %}
+                <!-- Assignment -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Assignment</h5>
                     </div>
-                    <div class="mb-3">
-                        <strong>Reviewed By:</strong><br>
-                        {% if case.reviewed_by %}
-                            {{ case.reviewed_by.username }}
-                            <br><small class="text-muted">{{ case.reviewed_by.user_level }}</small>
-                        {% else %}
-                            <span class="text-muted">Not reviewed</span>
-                        {% endif %}
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Assigned To:</strong><br>
+                            {% if case.assigned_to %}
+                                {{ case.assigned_to.username }}
+                                <br><small class="text-muted">{{ case.assigned_to.user_level }}</small>
+                            {% else %}
+                                <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Reviewed By:</strong><br>
+                            {% if case.reviewed_by %}
+                                {{ case.reviewed_by.username }}
+                                <br><small class="text-muted">{{ case.reviewed_by.user_level }}</small>
+                            {% else %}
+                                <span class="text-muted">Not reviewed</span>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Timeline -->
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Timeline</h5>
-                </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        <div class="timeline-item">
-                            <strong>Submitted:</strong><br>
-                            {{ case.date_submitted|date:"m/d/Y H:i" }}
+                <!-- Timeline -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Timeline</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <strong>Submitted:</strong><br>
+                                {{ case.date_submitted|date:"m/d/Y H:i" }}
+                            </div>
+                            {% if case.date_accepted %}
+                            <div class="timeline-item">
+                                <strong>Accepted:</strong><br>
+                                {{ case.accepted_at|date:"m/d/Y H:i" }}
+                            </div>
+                            {% endif %}
+                            {% if case.date_completed %}
+                            <div class="timeline-item">
+                                <strong>Completed:</strong><br>
+                                {{ case.date_completed|date:"m/d/Y H:i" }}
+                            </div>
+                            {% endif %}
                         </div>
-                        {% if case.date_accepted %}
-                        <div class="timeline-item">
-                            <strong>Accepted:</strong><br>
-                            {{ case.accepted_at|date:"m/d/Y H:i" }}
-                        </div>
-                        {% endif %}
-                        {% if case.date_completed %}
-                        <div class="timeline-item">
-                            <strong>Completed:</strong><br>
-                            {{ case.date_completed|date:"m/d/Y H:i" }}
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
-            </div>
 
-            <!-- Actions -->
-            {% if can_edit %}
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Actions</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <button type="button" class="btn btn-success" id="markCompletedBtn" onclick="markCaseCompleted()">
-                            <i class="bi bi-check-circle"></i> Mark as Completed
-                        </button>
-                        <button class="btn btn-warning" disabled>
-                            <i class="bi bi-pause-circle"></i> Put on Hold
-                        </button>
-                        <button class="btn btn-primary" disabled>
-                            <i class="bi bi-arrow-right-circle"></i> Submit for Review
-                        </button>
+                <!-- Actions -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Actions</h5>
                     </div>
-                    <hr>
-                    <small class="text-muted" id="actionHelp">
-                        <i class="bi bi-info-circle"></i> At least one report must be uploaded before marking as completed.
-                    </small>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success" id="markCompletedBtn" onclick="markCaseCompleted()">
+                                <i class="bi bi-check-circle"></i> Mark as Completed
+                            </button>
+                            <button class="btn btn-warning" disabled>
+                                <i class="bi bi-pause-circle"></i> Put on Hold
+                            </button>
+                            <button class="btn btn-primary" disabled>
+                                <i class="bi bi-arrow-right-circle"></i> Submit for Review
+                            </button>
+                        </div>
+                        <hr>
+                        <small class="text-muted" id="actionHelp">
+                            <i class="bi bi-info-circle"></i> At least one report must be uploaded before marking as completed.
+                        </small>
+                    </div>
                 </div>
-            </div>
-            {% endif %}
             {% endif %}
         </div>
     </div>
