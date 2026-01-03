@@ -616,12 +616,12 @@ def edit_case(request, pk):
     # Permission check - only the member who owns the case can edit
     if user.role != 'member' or case.member != user:
         messages.error(request, 'You do not have permission to edit this case.')
-        return redirect('case_detail', pk=pk)
+        return redirect('cases:case_detail', pk=pk)
     
     # Check if case can be edited
     if case.status == 'submitted':
         messages.error(request, 'Cannot edit a submitted case.')
-        return redirect('case_detail', pk=pk)
+        return redirect('cases:case_detail', pk=pk)
     
     if request.method == 'POST':
         # Get form data
@@ -651,7 +651,7 @@ def edit_case(request, pk):
         case.save()
         
         messages.success(request, 'Case details updated successfully.')
-        return redirect('case_detail', pk=pk)
+        return redirect('cases:case_detail', pk=pk)
     
     context = {
         'case': case,
@@ -787,7 +787,7 @@ def add_case_note(request, case_id):
     # Permission check - only techs and admins can add notes
     if user.role not in ['technician', 'administrator', 'manager']:
         messages.error(request, 'You do not have permission to add notes to this case.')
-        return redirect('case_detail', pk=case_id)
+        return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
         note_text = request.POST.get('notes', '').strip()
@@ -803,7 +803,7 @@ def add_case_note(request, case_id):
         else:
             messages.warning(request, 'Note cannot be empty.')
     
-    return redirect('case_detail', pk=case_id)
+    return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
@@ -817,12 +817,12 @@ def upload_case_report(request, case_id):
     # Permission check - only techs and admins can upload reports
     if user.role not in ['technician', 'administrator', 'manager']:
         messages.error(request, 'You do not have permission to upload reports to this case.')
-        return redirect('case_detail', pk=case_id)
+        return redirect('cases:case_detail', pk=case_id)
     
     # Check if technician owns the case
     if user.role == 'technician' and case.assigned_to != user:
         messages.error(request, 'You can only upload reports to cases you are assigned to.')
-        return redirect('case_detail', pk=case_id)
+        return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
         report_file = request.FILES.get('report_file')
@@ -831,20 +831,20 @@ def upload_case_report(request, case_id):
         
         if not report_file:
             messages.error(request, 'Please select a file to upload.')
-            return redirect('case_detail', pk=case_id)
+            return redirect('cases:case_detail', pk=case_id)
         
         if not report_number:
             messages.error(request, 'Report number is required.')
-            return redirect('case_detail', pk=case_id)
+            return redirect('cases:case_detail', pk=case_id)
         
         try:
             report_number = int(report_number)
             if report_number < 1 or report_number > 10:
                 messages.error(request, 'Report number must be between 1 and 10.')
-                return redirect('case_detail', pk=case_id)
+                return redirect('cases:case_detail', pk=case_id)
         except (ValueError, TypeError):
             messages.error(request, 'Invalid report number.')
-            return redirect('case_detail', pk=case_id)
+            return redirect('cases:case_detail', pk=case_id)
         
         # Check if report already exists
         existing_report = CaseReport.objects.filter(
@@ -871,7 +871,7 @@ def upload_case_report(request, case_id):
             )
             messages.success(request, f'Report #{report_number} uploaded successfully.')
     
-    return redirect('case_detail', pk=case_id)
+    return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
@@ -884,12 +884,12 @@ def upload_technician_document(request, case_id):
     # Permission check - only techs and admins can upload documents
     if user.role not in ['technician', 'administrator', 'manager']:
         messages.error(request, 'You do not have permission to upload documents to this case.')
-        return redirect('case_detail', pk=case_id)
+        return redirect('cases:case_detail', pk=case_id)
     
     # Check if technician owns the case
     if user.role == 'technician' and case.assigned_to != user:
         messages.error(request, 'You can only upload documents to cases you are assigned to.')
-        return redirect('case_detail', pk=case_id)
+        return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
         document_file = request.FILES.get('document_file')
@@ -897,7 +897,7 @@ def upload_technician_document(request, case_id):
         
         if not document_file:
             messages.error(request, 'Please select a file to upload.')
-            return redirect('case_detail', pk=case_id)
+            return redirect('cases:case_detail', pk=case_id)
         
         from cases.models import CaseDocument
         
@@ -918,7 +918,7 @@ def upload_technician_document(request, case_id):
         
         messages.success(request, 'Document uploaded successfully.')
     
-    return redirect('case_detail', pk=case_id)
+    return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
