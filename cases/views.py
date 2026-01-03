@@ -37,9 +37,9 @@ def member_dashboard(request):
         return redirect('home')
     
     # Get all cases for this member
-    # For completed cases, only show those that have been released (actual_release_date is set)
+    # Show all cases - completed cases appear as "working" if scheduled but not yet released
     cases = Case.objects.filter(
-        Q(member=user) & (Q(status__in=['draft', 'submitted', 'accepted']) | Q(status='completed', actual_release_date__isnull=False))
+        member=user
     ).prefetch_related(
         'documents'
     ).select_related(
@@ -72,11 +72,8 @@ def member_dashboard(request):
         cases = cases.order_by(sort_by)
     
     # Calculate statistics
-    # For completed cases, only count those that have been released
     stats = {
-        'total_cases': Case.objects.filter(
-            Q(member=user) & (Q(status__in=['draft', 'submitted', 'accepted']) | Q(status='completed', actual_release_date__isnull=False))
-        ).count(),
+        'total_cases': Case.objects.filter(member=user).count(),
         'draft': Case.objects.filter(member=user, status='draft').count(),
         'submitted': Case.objects.filter(member=user, status='submitted').count(),
         'accepted': Case.objects.filter(member=user, status='accepted').count(),
