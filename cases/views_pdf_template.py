@@ -81,9 +81,10 @@ def fact_finder_template(request, case_id):
         return render(request, 'cases/fact_finder_template.html', context)
     
     # Federal Fact Finder exists - use direct media URL for iframe display
-    # Use absolute URL to ensure iframe can load it correctly
+    # Use absolute URL with correct protocol to ensure iframe can load it correctly
+    request_protocol = 'https' if request.is_secure() else 'http'
     request_host = request.get_host()  # Gets hostname:port
-    ff_url = f"http://{request_host}{ff_document.file.url}"
+    ff_url = f"{request_protocol}://{request_host}{ff_document.file.url}"
     
     context = {
         'case': case,
