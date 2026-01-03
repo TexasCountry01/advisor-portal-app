@@ -297,7 +297,7 @@
                                                     <i class="bi bi-download"></i>
                                                 </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
                                                 {% if can_edit and case.status != 'submitted' %}
-                                                <form method="post" action="{% url 'cases:delete_document' doc.id %}" style="display: inline;\">ine;\">
+                                                <form method="post" action="{% url 'cases:delete_document' doc.id %}" style="display: inline;">
                                                     {% csrf_token %}
                                                     <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this document?');" title="Delete document">
                                                         <i class="bi bi-trash"></i>
