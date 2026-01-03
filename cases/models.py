@@ -61,7 +61,9 @@ class Case(models.Model):
     # Field 3: Member (Financial Advisor)
     member = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='submitted_cases',
         limit_choices_to={'role': 'member'}
     )
