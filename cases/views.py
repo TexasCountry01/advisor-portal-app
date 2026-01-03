@@ -524,30 +524,52 @@ def case_list(request):
 
 @login_required
 def delete_case(request, pk):
-    """Delete a case - members can only delete draft cases"""
+    """Delete a case - members can only delete draft cases, admins can delete any case"""
     case = get_object_or_404(Case, pk=pk)
     
-    # Permission check - only members can delete their own cases
+    # Permission check
+    can_delete = False
+    redirect_to = 'cases:case_list'
+    
     if request.user.role == 'member' and case.member == request.user:
-        # Only allow deletion of draft cases
+        # Members can only delete their own draft cases
         if case.status == 'draft':
-            case_id = case.external_case_id
-            case.delete()
-            messages.success(request, f'Case {case_id} has been deleted.')
-            return redirect('cases:member_dashboard')
+            can_delete = True
+            redirect_to = 'cases:member_dashboard'
         else:
-            # Prevent deletion of submitted or in-progress cases
             messages.error(request, f'Cannot delete case {case.external_case_id}. Only draft cases can be deleted. This case is currently {case.get_status_display().lower()}.')
             return redirect('cases:case_detail', pk=pk)
+    elif request.user.role in ['administrator', 'manager']:
+        # Admins can delete any case
+        can_delete = True
+        redirect_to = 'cases:admin_dashboard'
     
-    # Redirect based on user role
-    if request.user.role == 'member':
+    if not can_delete:
         messages.error(request, 'You do not have permission to delete this case.')
-        return redirect('cases:member_dashboard')
-    elif request.user.role == 'technician':
-        return redirect('cases:technician_dashboard')
-    else:
-        return redirect('cases:case_list')
+        return redirect(redirect_to)
+    
+    if request.method == 'POST':
+        case_id = case.external_case_id
+        
+        # Get counts before deletion for the success message
+        documents = case.documents.count()
+        reports = case.reports.count()
+        notes = case.case_notes.count()
+        
+        # Delete the case (cascade will handle related objects)
+        case.delete()
+        
+        messages.success(request, f'Case {case_id} and all related data ({documents} documents, {reports} reports, {notes} notes) have been permanently deleted.')
+        return redirect(redirect_to)
+    
+    # GET request - show confirmation page
+    context = {
+        'case': case,
+        'documents_count': case.documents.count(),
+        'reports_count': case.reports.count(),
+        'notes_count': case.case_notes.count(),
+    }
+    return render(request, 'cases/confirm_delete_case.html', context)
 
 
 @login_required

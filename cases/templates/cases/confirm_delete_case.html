@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Case {{ case.external_case_id }} - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Delete Case - Permanent Action
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger mb-4" role="alert">
+                        <strong>⚠️ Warning:</strong> This action cannot be undone. Deleting this case will permanently remove all associated data from the database.
+                    </div>
+
+                    <!-- Case Information -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Case Information</h5>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="fw-bold" style="width: 150px;">Case ID:</td>
+                                <td><code>{{ case.external_case_id }}</code></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Workshop Code:</td>
+                                <td>{{ case.workshop_code }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Member:</td>
+                                <td>{{ case.member.first_name }} {{ case.member.last_name }} ({{ case.member.username }})</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Employee:</td>
+                                <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Status:</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ case.get_status_display }}</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Assigned To:</td>
+                                <td>{{ case.assigned_to.first_name }} {{ case.assigned_to.last_name }} ({{ case.assigned_to.username }}) || Unassigned</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-bold">Date Submitted:</td>
+                                <td>{{ case.date_submitted|date:"M d, Y H:i" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Data to be Deleted -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Data to be Permanently Deleted</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted mb-2">Documents</h6>
+                                        <h3 class="text-danger">{{ documents_count }}</h3>
+                                        <small class="text-muted">document(s)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted mb-2">Reports</h6>
+                                        <h3 class="text-danger">{{ reports_count }}</h3>
+                                        <small class="text-muted">report(s)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h6 class="text-muted mb-2">Internal Notes</h6>
+                                        <h3 class="text-danger">{{ notes_count }}</h3>
+                                        <small class="text-muted">note(s)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deletion Consequences -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">What Will Happen</h5>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i>
+                                <strong>Case Record:</strong> The case and all its core information will be permanently removed
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i>
+                                <strong>Documents ({{ documents_count }}):</strong> All uploaded case documents will be deleted
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i>
+                                <strong>Reports ({{ reports_count }}):</strong> All submitted reports for this case will be deleted
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-x-circle text-danger"></i>
+                                <strong>Internal Notes ({{ notes_count }}):</strong> All internal notes and communications will be deleted
+                            </li>
+                            <li class="list-group-item">
+                                <i class="bi bi-info-circle text-info"></i>
+                                <strong>Audit Log:</strong> A record of this deletion will be maintained in the audit log for compliance
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-lg btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel - Keep This Case
+                        </a>
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-lg btn-danger" onclick="return confirm('Are you absolutely sure? This cannot be undone.\n\nCase ID: {{ case.external_case_id }}\n\nDocuments: {{ documents_count }}\nReports: {{ reports_count }}\nNotes: {{ notes_count }}')">
+                                <i class="bi bi-trash"></i> Yes, Permanently Delete This Case
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    }
+    
+    .list-group-item {
+        border-left: 4px solid #dee2e6;
+        padding-left: 1rem;
+    }
+    
+    .list-group-item i {
+        margin-right: 0.75rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

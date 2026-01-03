@@ -312,6 +312,9 @@
                                 </a>
                                 <a href="{% url 'cases:case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">                                    <i class="bi bi-file-pdf"></i> PDF
                                 </a>
+                                <a href="{% url 'cases:delete_case' case.pk %}" class="btn btn-sm btn-outline-danger" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
+                                    <i class="bi bi-trash"></i> Delete
+                                </a>
                             </td>
                         </tr>
                         {% endfor %}
