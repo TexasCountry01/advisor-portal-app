@@ -17,15 +17,15 @@ from accounts.models import User
 
 
 def is_admin(user):
-    """Helper function to check if user is admin"""
-    return user.is_authenticated and user.role == 'administrator'
+    """Helper function to check if user is admin or manager"""
+    return user.is_authenticated and user.role in ['administrator', 'manager']
 
 
 @login_required
 def view_audit_log(request):
     """Display audit log with filtering and searching"""
     if not is_admin(request.user):
-        messages.error(request, 'Access denied. Administrators only.')
+        messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
     
     # Get all audit logs
@@ -145,7 +145,7 @@ def view_audit_log(request):
 def audit_log_detail(request, log_id):
     """Display detailed view of an audit log entry"""
     if not is_admin(request.user):
-        messages.error(request, 'Access denied. Administrators only.')
+        messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
     
     try:
@@ -167,7 +167,7 @@ def audit_log_detail(request, log_id):
 def export_audit_log_csv(request):
     """Export audit log in CSV format for compliance"""
     if not is_admin(request.user):
-        messages.error(request, 'Access denied. Administrators only.')
+        messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
     
     # Get all audit logs (with filters applied if needed)

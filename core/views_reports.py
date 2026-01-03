@@ -15,15 +15,15 @@ from accounts.models import User
 
 
 def is_admin(user):
-    """Helper function to check if user is admin"""
-    return user.is_authenticated and user.role == 'administrator'
+    """Helper function to check if user is admin or manager"""
+    return user.is_authenticated and user.role in ['administrator', 'manager']
 
 
 @login_required
 def view_reports(request):
-    """Main reports page - Admin only"""
+    """Main reports page - Admin and Manager only"""
     if not is_admin(request.user):
-        messages.error(request, 'Access denied. Administrators only.')
+        messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
     
     # Get all report data
@@ -185,7 +185,7 @@ def get_all_reports_data():
 def export_reports_csv(request):
     """Export all reports to CSV format"""
     if not is_admin(request.user):
-        messages.error(request, 'Access denied. Administrators only.')
+        messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
     
     # Get all report data

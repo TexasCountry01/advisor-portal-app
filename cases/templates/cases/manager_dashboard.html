@@ -44,12 +44,6 @@
         </div>
         <div class="col-md-2">
             <div class="stat-card">
-                <div class="stat-value">{{ stats.total_technicians }}</div>
-                <div class="stat-label">Active Technicians</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card">
                 <div class="stat-value">{{ stats.pending_review }}</div>
                 <div class="stat-label">Pending Review</div>
             </div>
@@ -108,6 +102,21 @@
                             <p><small class="text-muted">For editing, contact administrator</small></p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <p><a href="{% url 'view_reports' %}" class="btn btn-sm btn-primary w-100 mb-2"><i class="bi bi-graph-up"></i> View Reports & Analytics</a></p>
+                    <p><a href="{% url 'view_audit_log' %}" class="btn btn-sm btn-info w-100"><i class="bi bi-clipboard-check"></i> Audit Log</a></p>
                 </div>
             </div>
         </div>
