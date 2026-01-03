@@ -3,6 +3,12 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.urls import reverse
+from .models import SystemSettings
+
+
+def is_admin(user):
+    """Helper function to check if user is admin"""
+    return user.is_authenticated and user.role == 'administrator'
 
 
 def home(request):
@@ -72,3 +78,46 @@ def profile(request):
         'user': request.user
     })
 
+
+@login_required
+def system_settings(request):
+    """System settings management page - Admin only"""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators only.')
+        return redirect('home')
+    
+    settings = SystemSettings.get_settings()
+    
+    if request.method == 'POST':
+        # Handle form submission
+        try:
+            # Credits
+            settings.available_credits = request.POST.get('available_credits', '0.5,1.0,1.5,2.0,2.5,3.0')
+            
+            # Default Case Settings
+            settings.default_case_due_days = int(request.POST.get('default_case_due_days', 7))
+            settings.rush_case_threshold_days = int(request.POST.get('rush_case_threshold_days', 7))
+            
+            # Release Settings
+            settings.enable_scheduled_releases = request.POST.get('enable_scheduled_releases') == 'on'
+            settings.batch_release_time = request.POST.get('batch_release_time', '09:00')
+            settings.batch_release_enabled = request.POST.get('batch_release_enabled') == 'on'
+            
+            # API Configuration
+            settings.benefits_software_api_url = request.POST.get('benefits_software_api_url', '')
+            settings.benefits_software_api_key = request.POST.get('benefits_software_api_key', '')
+            settings.benefits_software_api_enabled = request.POST.get('benefits_software_api_enabled') == 'on'
+            
+            settings.updated_by = request.user
+            settings.save()
+            
+            messages.success(request, 'System settings updated successfully!')
+            return redirect('system_settings')
+        except (ValueError, Exception) as e:
+            messages.error(request, f'Error updating settings: {str(e)}')
+    
+    context = {
+        'settings': settings,
+    }
+    
+    return render(request, 'core/system_settings.html', context)
