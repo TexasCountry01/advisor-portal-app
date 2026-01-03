@@ -147,6 +147,19 @@ class Case(models.Model):
     # Field 17: Date Completed
     date_completed = models.DateTimeField(null=True, blank=True)
     
+    # Release Management Fields
+    scheduled_release_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date when completed case will be released to member (null = released immediately)'
+    )
+    
+    actual_release_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Actual date/time when case was released to member (auto-set when status allows release)'
+    )
+    
     # Field 18: Report Notes (per-report status, stored as JSON)
     report_notes = models.JSONField(
         default=list,

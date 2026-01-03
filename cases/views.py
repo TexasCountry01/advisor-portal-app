@@ -27,6 +27,8 @@ def form_preview(request):
 @login_required
 def member_dashboard(request):
     """Dashboard view for Member role"""
+    from django.db.models import Q
+    
     user = request.user
     
     # Ensure user is a member
@@ -35,7 +37,10 @@ def member_dashboard(request):
         return redirect('home')
     
     # Get all cases for this member
-    cases = Case.objects.filter(member=user).prefetch_related(
+    # For completed cases, only show those that have been released (actual_release_date is set)
+    cases = Case.objects.filter(
+        Q(member=user) & (Q(status__in=['draft', 'submitted', 'accepted']) | Q(status='completed', actual_release_date__isnull=False))
+    ).prefetch_related(
         'documents'
     ).select_related(
         'assigned_to'
@@ -67,12 +72,15 @@ def member_dashboard(request):
         cases = cases.order_by(sort_by)
     
     # Calculate statistics
+    # For completed cases, only count those that have been released
     stats = {
-        'total_cases': Case.objects.filter(member=user).count(),
+        'total_cases': Case.objects.filter(
+            Q(member=user) & (Q(status__in=['draft', 'submitted', 'accepted']) | Q(status='completed', actual_release_date__isnull=False))
+        ).count(),
         'draft': Case.objects.filter(member=user, status='draft').count(),
         'submitted': Case.objects.filter(member=user, status='submitted').count(),
         'accepted': Case.objects.filter(member=user, status='accepted').count(),
-        'completed': Case.objects.filter(member=user, status='completed').count(),
+        'completed': Case.objects.filter(member=user, status='completed', actual_release_date__isnull=False).count(),
     }
     
     context = {
@@ -1052,14 +1060,40 @@ def mark_case_completed(request, case_id):
     
     if request.method == 'POST':
         try:
+            from datetime import timedelta, date
+            
             case.status = 'completed'
             case.date_completed = timezone.now()
+            
+            # Handle release options
+            release_option = request.POST.get('release_option', 'schedule')  # 'now' or 'schedule'
+            
+            if release_option == 'now':
+                # Release immediately
+                case.scheduled_release_date = None
+                case.actual_release_date = timezone.now()
+            else:
+                # Schedule release - get the date from request or use default (7 days)
+                release_date_str = request.POST.get('release_date')
+                if release_date_str:
+                    try:
+                        release_date = date.fromisoformat(release_date_str)
+                        case.scheduled_release_date = release_date
+                    except (ValueError, TypeError):
+                        case.scheduled_release_date = date.today() + timedelta(days=7)
+                else:
+                    # Default to 7 days from now
+                    case.scheduled_release_date = date.today() + timedelta(days=7)
+                case.actual_release_date = None
+            
             case.save()
             
-            messages.success(request, 'Case marked as completed.')
+            release_msg = "released immediately" if release_option == 'now' else f"scheduled for release on {case.scheduled_release_date}"
+            
+            messages.success(request, f'Case marked as completed and {release_msg}.')
             return JsonResponse({
                 'success': True, 
-                'message': 'Case marked as completed successfully.',
+                'message': f'Case marked as completed and {release_msg}.',
                 'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
             })
         except Exception as e:

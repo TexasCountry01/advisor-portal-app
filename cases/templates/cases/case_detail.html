@@ -191,6 +191,32 @@
                 </div>
             </div>
 
+            <!-- Release Status (if applicable) -->
+            {% if case.status == 'completed' and user.role == 'member' %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="bi bi-calendar-check"></i> Release Status
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if case.actual_release_date %}
+                            <div class="alert alert-success" role="alert">
+                                <i class="bi bi-check-circle"></i>
+                                <strong>This case was released on:</strong><br>
+                                {{ case.actual_release_date|date:"F j, Y \a\t g:i A" }}
+                            </div>
+                        {% elif case.scheduled_release_date %}
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-calendar-event"></i>
+                                <strong>This case is scheduled to be released on:</strong><br>
+                                {{ case.scheduled_release_date|date:"F j, Y" }}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
             <!-- Case Submission Details -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -731,59 +757,11 @@ function markCaseCompleted() {
             return;
         }
         
-        // Validation passed - show confirmation dialog
-        if (confirm('Are you sure you want to mark this case as completed? This action cannot be undone.')) {
-            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
-            
-            // Proceed with marking as completed
-            fetch('{% url "cases:mark_case_completed" case.id %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({})
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success message
-                    const alertHtml = `
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle"></i> ${data.message}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `;
-                    document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
-                    
-                    // Reload the page after 2 seconds
-                    setTimeout(() => {
-                        location.reload();
-                    }, 2000);
-                } else {
-                    // Show error message
-                    const alertHtml = `
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-circle"></i> ${data.error}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `;
-                    document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
-                    
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while processing your request.');
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
-            });
-        } else {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
-        }
+        // Validation passed - show release options modal
+        const releaseModal = new bootstrap.Modal(document.getElementById('releaseOptionsModal'));
+        releaseModal.show();
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
     })
     .catch(error => {
         console.error('Error:', error);
@@ -792,6 +770,110 @@ function markCaseCompleted() {
         btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
     });
 }
+
+function confirmCaseCompletion() {
+    const btn = document.getElementById('confirmReleaseBtn');
+    const releaseNowRadio = document.getElementById('releaseNow');
+    const releaseDateInput = document.getElementById('releaseDate');
+    
+    let releaseOption = 'now';
+    let releaseDate = null;
+    
+    if (!releaseNowRadio.checked) {
+        releaseOption = 'schedule';
+        releaseDate = releaseDateInput.value;
+        
+        if (!releaseDate) {
+            alert('Please select a release date.');
+            return;
+        }
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+    
+    // Proceed with marking as completed
+    fetch('{% url "cases:mark_case_completed" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            release_option: releaseOption,
+            release_date: releaseDate
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle"></i> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            
+            // Close modal and reload the page after 2 seconds
+            bootstrap.Modal.getInstance(document.getElementById('releaseOptionsModal')).hide();
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Show error message
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> ${data.error}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirm Release';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirm Release';
+    });
+}
+
+// Set minimum date to today + 7 days when modal is shown
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('releaseOptionsModal');
+    if (modal) {
+        modal.addEventListener('show.bs.modal', function() {
+            const today = new Date();
+            const minDate = new Date(today);
+            minDate.setDate(minDate.getDate() + 7);
+            const dateInput = document.getElementById('releaseDate');
+            dateInput.min = minDate.toISOString().split('T')[0];
+            dateInput.value = minDate.toISOString().split('T')[0];
+        });
+    }
+    
+    // Toggle date input based on radio selection
+    const releaseNow = document.getElementById('releaseNow');
+    const scheduleRelease = document.getElementById('scheduleRelease');
+    const releaseDateGroup = document.getElementById('releaseDateGroup');
+    
+    if (releaseNow) {
+        releaseNow.addEventListener('change', function() {
+            if (releaseDateGroup) releaseDateGroup.style.display = 'none';
+        });
+    }
+    
+    if (scheduleRelease) {
+        scheduleRelease.addEventListener('change', function() {
+            if (releaseDateGroup) releaseDateGroup.style.display = 'block';
+        });
+    }
+});
 
 function markCaseIncomplete() {
     // Show confirmation dialog
@@ -875,6 +957,55 @@ function deleteNote(noteId, caseId) {
     });
 }
 </script>
+
+<!-- Release Options Modal -->
+<div class="modal fade" id="releaseOptionsModal" tabindex="-1" aria-labelledby="releaseOptionsLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="releaseOptionsLabel">
+                    <i class="bi bi-calendar-check"></i> When should this case be released to the member?
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-4">Choose when the member should be able to see the completed case:</p>
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="releaseOption" id="releaseNow" value="now" checked>
+                    <label class="form-check-label" for="releaseNow">
+                        <strong>Release Now</strong>
+                        <br>
+                        <small class="text-muted">Member can view the completed case immediately</small>
+                    </label>
+                </div>
+                
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="releaseOption" id="scheduleRelease" value="schedule">
+                    <label class="form-check-label" for="scheduleRelease">
+                        <strong>Schedule Release</strong>
+                        <br>
+                        <small class="text-muted">Member will see the case on a specific date</small>
+                    </label>
+                </div>
+                
+                <div id="releaseDateGroup" style="display: none; margin-top: 20px;">
+                    <label for="releaseDate" class="form-label">Release Date:</label>
+                    <input type="date" class="form-control" id="releaseDate">
+                    <small class="text-muted d-block mt-2">
+                        <i class="bi bi-info-circle"></i> Default is 7 days from completion. You can select a later date if preferred.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmReleaseBtn" onclick="confirmCaseCompletion()">
+                    <i class="bi bi-check-circle"></i> Confirm Release
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
