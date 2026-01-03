@@ -161,8 +161,6 @@
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
                                         <span class="badge bg-success">Completed</span>
-                                    {% elif case.scheduled_release_date %}
-                                        <span class="badge bg-warning">Scheduled for Release</span>
                                     {% else %}
                                         <span class="badge bg-info">Working</span>
                                     {% endif %}
