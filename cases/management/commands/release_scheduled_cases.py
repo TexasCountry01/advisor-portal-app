@@ -44,6 +44,7 @@ class Command(BaseCommand):
         # Release the cases
         for case in cases_to_release:
             case.actual_release_date = timezone.now()
+            case.date_completed = timezone.now()  # Set completion date when actually released
             case.save()
             self.stdout.write(
                 self.style.SUCCESS(

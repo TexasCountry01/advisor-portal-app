@@ -1076,7 +1076,7 @@ def mark_case_completed(request, case_id):
             from datetime import timedelta, date
             
             case.status = 'completed'
-            case.date_completed = timezone.now()
+            # Do NOT set date_completed here - it will be set when the case is actually released
             
             # Handle release options
             release_option = request.POST.get('release_option', 'schedule')  # 'now' or 'schedule'
@@ -1085,6 +1085,7 @@ def mark_case_completed(request, case_id):
                 # Release immediately
                 case.scheduled_release_date = None
                 case.actual_release_date = timezone.now()
+                case.date_completed = timezone.now()  # Set date_completed when released now
             else:
                 # Schedule release - get the date from request or use default (7 days)
                 release_date_str = request.POST.get('release_date')
@@ -1098,6 +1099,7 @@ def mark_case_completed(request, case_id):
                     # Default to 7 days from now
                     case.scheduled_release_date = date.today() + timedelta(days=7)
                 case.actual_release_date = None
+                case.date_completed = None  # Keep empty until released
             
             case.save()
             
