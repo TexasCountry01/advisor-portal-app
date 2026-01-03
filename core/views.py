@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib import messages
 from django.urls import reverse
 from .models import SystemSettings
@@ -27,6 +28,7 @@ def home(request):
     return render(request, 'core/home.html')
 
 
+@ensure_csrf_cookie
 def login_view(request):
     """Custom login view with role-based redirects"""
     if request.user.is_authenticated:
