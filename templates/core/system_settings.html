@@ -1,0 +1,335 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Settings - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>System Settings</h1>
+            <p class="text-muted">Configure global system parameters (Admin Only)</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" id="settingsForm">
+        {% csrf_token %}
+
+        <!-- Nav Tabs -->
+        <ul class="nav nav-tabs mb-4" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="credits-tab" data-bs-toggle="tab" data-bs-target="#credits" type="button" role="tab" aria-controls="credits" aria-selected="true">
+                    <i class="bi bi-coin"></i> Credits Management
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="case-settings-tab" data-bs-toggle="tab" data-bs-target="#case-settings" type="button" role="tab" aria-controls="case-settings" aria-selected="false">
+                    <i class="bi bi-sliders"></i> Case Defaults
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="release-tab" data-bs-toggle="tab" data-bs-target="#release" type="button" role="tab" aria-controls="release" aria-selected="false">
+                    <i class="bi bi-calendar-event"></i> Release Settings
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="api-tab" data-bs-toggle="tab" data-bs-target="#api" type="button" role="tab" aria-controls="api" aria-selected="false">
+                    <i class="bi bi-cloud-check"></i> API Configuration
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Credits Management Tab -->
+            <div class="tab-pane fade show active" id="credits" role="tabpanel" aria-labelledby="credits-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Available Credit Values</h5>
+                        
+                        <div class="mb-3">
+                            <label for="available_credits" class="form-label">
+                                Available Credits <span class="text-danger">*</span>
+                                <span class="badge bg-info ms-2">Comma-separated</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="available_credits" 
+                                   name="available_credits"
+                                   value="{{ settings.available_credits }}"
+                                   placeholder="0.5,1.0,1.5,2.0,2.5,3.0"
+                                   required>
+                            <small class="text-muted">
+                                Technicians can assign these credit values to cases based on complexity.
+                                <br>Default: 0.5 (partial report), 1.0 (single report), 1.5-3.0 (multiple scenarios)
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> <strong>Credit Assignment Examples:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Single report: 1.0 credit</li>
+                                <li>2 scenarios: 1.5 credits (1.0 base + 0.5)</li>
+                                <li>3 scenarios: 2.0 credits (1.0 base + 0.5 + 0.5)</li>
+                                <li>4+ scenarios: 2.5-3.0 credits</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case Defaults Tab -->
+            <div class="tab-pane fade" id="case-settings" role="tabpanel" aria-labelledby="case-settings-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Default Case Settings</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="default_case_due_days" class="form-label">
+                                        Default Case Due Date (Days)
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="default_case_due_days" 
+                                           name="default_case_due_days"
+                                           value="{{ settings.default_case_due_days }}"
+                                           min="1"
+                                           max="90"
+                                           required>
+                                    <small class="text-muted">Number of days from submission date (1-90)</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="rush_case_threshold_days" class="form-label">
+                                        Rush Case Threshold (Days)
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="rush_case_threshold_days" 
+                                           name="rush_case_threshold_days"
+                                           value="{{ settings.rush_case_threshold_days }}"
+                                           min="1"
+                                           max="90"
+                                           required>
+                                    <small class="text-muted">Cases with fewer days marked as "Rush"</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> <strong>Example:</strong>
+                            If default is 7 days and rush threshold is 7 days:
+                            <ul class="mb-0 mt-2">
+                                <li>Due date ≥ 7 days = Standard priority</li>
+                                <li>Due date &lt; 7 days = Rush priority (may incur additional charges)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Release Settings Tab -->
+            <div class="tab-pane fade" id="release" role="tabpanel" aria-labelledby="release-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Scheduled Release Configuration</h5>
+                        
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="enable_scheduled_releases" 
+                                       name="enable_scheduled_releases"
+                                       {% if settings.enable_scheduled_releases %}checked{% endif %}>
+                                <label class="form-check-label" for="enable_scheduled_releases">
+                                    Enable Scheduled Releases
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">Allow technicians to schedule delayed report releases to members</small>
+                        </div>
+
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="batch_release_time" class="form-label">
+                                        Batch Release Processing Time (UTC)
+                                    </label>
+                                    <input type="time" 
+                                           class="form-control" 
+                                           id="batch_release_time" 
+                                           name="batch_release_time"
+                                           value="{{ settings.batch_release_time }}">
+                                    <small class="text-muted">Time of day to process all scheduled releases</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check form-switch mt-4">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="batch_release_enabled" 
+                                               name="batch_release_enabled"
+                                               {% if settings.batch_release_enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="batch_release_enabled">
+                                            Enable Batch Processing
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block">Automatically process scheduled releases at specified time</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> <strong>Use Cases for Scheduled Releases:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Batch releases at specific times for coordinated member communications</li>
+                                <li>Quality hold periods before releasing reports</li>
+                                <li>Coordinating releases with member meetings or events</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Configuration Tab -->
+            <div class="tab-pane fade" id="api" role="tabpanel" aria-labelledby="api-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Benefits-Software API Configuration</h5>
+                        
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Placeholder Configuration</strong>
+                            <br>These settings are placeholders for future Benefits-Software API integration.
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="benefits_software_api_enabled" 
+                                       name="benefits_software_api_enabled"
+                                       {% if settings.benefits_software_api_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="benefits_software_api_enabled">
+                                    Enable Benefits-Software API Integration
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">(Currently disabled - placeholder for future use)</small>
+                        </div>
+
+                        <hr>
+
+                        <div class="mb-3">
+                            <label for="benefits_software_api_url" class="form-label">
+                                API Endpoint URL
+                            </label>
+                            <input type="url" 
+                                   class="form-control" 
+                                   id="benefits_software_api_url" 
+                                   name="benefits_software_api_url"
+                                   value="{{ settings.benefits_software_api_url }}"
+                                   placeholder="https://api.benefits-software.com/v1">
+                            <small class="text-muted">Base URL for Benefits-Software API</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="benefits_software_api_key" class="form-label">
+                                API Key / Authentication Token
+                            </label>
+                            <input type="password" 
+                                   class="form-control" 
+                                   id="benefits_software_api_key" 
+                                   name="benefits_software_api_key"
+                                   value="{{ settings.benefits_software_api_key }}"
+                                   placeholder="Enter API key (hidden for security)">
+                            <small class="text-muted">Secure authentication credential for API requests</small>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> <strong>Integration Status:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>✅ Case ID generation: Ready</li>
+                                <li>⏳ Case submission: Placeholder configured</li>
+                                <li>⏳ Report generation: Placeholder configured</li>
+                                <li>🔒 API credentials: Securely stored</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="mt-4">
+            <div class="row">
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-circle"></i> Save Settings
+                    </button>
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary btn-lg ms-2">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Last Updated Info -->
+        {% if settings.updated_at %}
+        <div class="alert alert-light mt-4 border" role="alert">
+            <small class="text-muted">
+                <i class="bi bi-clock-history"></i> Last updated: {{ settings.updated_at|date:"M d, Y H:i:s" }} UTC
+                {% if settings.updated_by %}
+                    by <strong>{{ settings.updated_by.get_full_name|default:settings.updated_by.username }}</strong>
+                {% endif %}
+            </small>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+<style>
+    .nav-link {
+        padding: 12px 16px;
+        border-radius: 6px 6px 0 0;
+    }
+    
+    .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+    
+    .tab-content {
+        background-color: #f8f9fa;
+        padding: 24px;
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .btn-lg {
+        padding: 12px 24px;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}

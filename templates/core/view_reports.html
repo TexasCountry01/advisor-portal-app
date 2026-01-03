@@ -346,13 +346,11 @@
                             <h2 class="mb-2">{{ item.count }}</h2>
                             <div class="progress">
                                 <div class="progress-bar" role="progressbar" 
-                                     style="width: {% if total_cases > 0 %}{{ item.count|floatformat:0 }}%{% else %}0%{% endif %}"
+                                     style="width: {{ item.percentage }}%;"
                                      aria-valuenow="{{ item.count }}" aria-valuemin="0" aria-valuemax="{{ total_cases }}"></div>
                             </div>
                             <small class="text-muted">
-                                {% if total_cases > 0 %}
-                                    {{ item.count|floatformat:0 }}% of total
-                                {% endif %}
+                                {{ item.percentage }}% of total
                             </small>
                         </div>
                     </div>
@@ -383,7 +381,7 @@
                                         <td>{{ item.count }}</td>
                                         <td>
                                             {% if total_cases > 0 %}
-                                                {{ item.count|floatformat:0 }}%
+                                                {{ item.percentage }}%
                                             {% else %}
                                                 0%
                                             {% endif %}
@@ -391,7 +389,7 @@
                                         <td>
                                             <div class="progress" style="height: 20px;">
                                                 <div class="progress-bar" role="progressbar"
-                                                     style="width: {% if total_cases > 0 %}{{ item.count|floatformat:0 }}%{% else %}0%{% endif %}"
+                                                     style="width: {{ item.percentage }}%;"
                                                      aria-valuenow="{{ item.count }}" aria-valuemin="0" aria-valuemax="{{ total_cases }}"></div>
                                             </div>
                                         </td>

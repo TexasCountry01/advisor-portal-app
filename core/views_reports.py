@@ -128,10 +128,12 @@ def get_all_reports_data():
     # Cases by status with readable labels
     cases_by_status = []
     for item in status_distribution:
+        percentage = (item['count'] / total_cases * 100) if total_cases > 0 else 0
         cases_by_status.append({
             'status': item['status'],
             'label': status_labels.get(item['status'], item['status']),
-            'count': item['count']
+            'count': item['count'],
+            'percentage': round(percentage, 1)
         })
     
     # === TECHNICIAN WORKLOAD ===
