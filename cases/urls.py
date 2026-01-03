@@ -36,6 +36,7 @@ urlpatterns = [
     path('<int:case_id>/upload-report/', views.upload_case_report, name='upload_case_report'),
     path('<int:case_id>/upload-tech-document/', views.upload_technician_document, name='upload_technician_document'),
     path('<int:case_id>/mark-completed/', views.mark_case_completed, name='mark_case_completed'),
+    path('<int:case_id>/mark-incomplete/', views.mark_case_incomplete, name='mark_case_incomplete'),
     
     # View preference API
     path('api/view-preference/save/<str:view_type>/', views.save_view_preference, name='save_view_preference'),

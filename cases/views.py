@@ -958,6 +958,43 @@ def mark_case_completed(request, case_id):
 
 
 @login_required
+def mark_case_incomplete(request, case_id):
+    """Mark a completed case as incomplete (reactivate it) (technician/admin only)"""
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only techs and admins can mark as incomplete
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to modify this case.'}, status=403)
+    
+    # Check if technician owns the case
+    if user.role == 'technician' and case.assigned_to != user:
+        return JsonResponse({'success': False, 'error': 'You can only modify cases you are assigned to.'}, status=403)
+    
+    # Check if case is actually completed
+    if case.status != 'completed':
+        return JsonResponse({'success': False, 'error': 'This case is not marked as completed.'}, status=400)
+    
+    if request.method == 'POST':
+        try:
+            case.status = 'pending_review'  # Revert to pending review status
+            case.date_completed = None  # Clear completion date
+            case.save()
+            
+            messages.success(request, 'Case marked as incomplete and reactivated.')
+            return JsonResponse({
+                'success': True, 
+                'message': 'Case has been reactivated successfully.',
+                'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
 def save_view_preference(request, view_type):
     """Save technician's dashboard view preference (all vs mine)"""
     

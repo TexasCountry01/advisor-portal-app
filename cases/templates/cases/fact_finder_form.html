@@ -2646,7 +2646,7 @@
             <!-- FORM ACTIONS -->
             <div class="form-section text-center" style="border-top: 2px solid #003366; padding-top: 30px;">
                 <div class="d-flex justify-content-center gap-3">
-                    <button type="button" class="btn btn-lg btn-outline-secondary" onclick="window.location.href='{% url 'member_dashboard' %}'">
+                    <button type="button" class="btn btn-lg btn-outline-secondary" onclick="window.location.href='{% url 'cases:member_dashboard' %}'">
                         <i class="bi bi-x-circle"></i> CANCEL
                     </button>
                     <button type="submit" class="btn btn-lg btn-primary">
@@ -3067,7 +3067,7 @@
                     <small>By submitting this form, I certify that the information provided is accurate and complete to the best of my knowledge.</small>
                 </p>
                 <div class="d-grid gap-2 d-md-flex justify-content-md-center">
-                    <a href="{% url 'member_dashboard' %}" class="btn btn-outline-secondary btn-lg px-5">
+                    <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary btn-lg px-5">
                         <i class="bi bi-x-circle"></i> Cancel
                     </a>
                     <button type="submit" class="btn btn-primary btn-lg px-5">

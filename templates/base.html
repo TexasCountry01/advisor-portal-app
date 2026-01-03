@@ -34,18 +34,18 @@
                     {% if user.is_authenticated %}
                         {% if user.role == 'member' %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'member_dashboard' %}">
+                                <a class="nav-link" href="{% url 'cases:member_dashboard' %}">
                                     <i class="bi bi-speedometer2"></i> Dashboard
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'case_submit' %}">
+                                <a class="nav-link" href="{% url 'cases:case_submit' %}">
                                     <i class="bi bi-plus-circle"></i> Submit Case
                                 </a>
                             </li>
                         {% elif user.role == 'technician' %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'technician_dashboard' %}">
+                                <a class="nav-link" href="{% url 'cases:technician_dashboard' %}">
                                     <i class="bi bi-kanban"></i> Dashboard
                                 </a>
                             </li>

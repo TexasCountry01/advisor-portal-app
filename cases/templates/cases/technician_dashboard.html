@@ -20,14 +20,14 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="btn-group" role="group">
-                <a href="{% url 'technician_dashboard' %}?assigned=all{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
                    id="view-all-btn"
                    class="btn btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
                    data-view-type="all"
                    onclick="saveViewPreference('all'); return true;">
                     <i class="bi bi-list-ul"></i> All Cases
                 </a>
-                <a href="{% url 'technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
                    id="view-mine-btn"
                    class="btn btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
                    data-view-type="mine"
@@ -118,7 +118,7 @@
                 </div>
                 <div class="col-md-3 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
-                    <a href="{% url 'technician_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
+                    <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
                 </div>
             </form>
         </div>
@@ -280,10 +280,10 @@
                                 {% endif %}
                             </td>
                             <td style="min-width: 200px;">
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                <a href="{% url 'case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
+                                <a href="{% url 'cases:case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
                             </td>
@@ -296,7 +296,7 @@
             <div class="text-center py-5">
                 <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
                 <p class="text-muted mt-3">No cases found matching your filters.</p>
-                <a href="{% url 'technician_dashboard' %}" class="btn btn-primary">View All Cases</a>
+                <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-primary">View All Cases</a>
             </div>
             {% endif %}
         </div>

@@ -166,7 +166,7 @@
                             </td>
                             <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
                             <td>
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
                                     View
                                 </a>
                             </td>

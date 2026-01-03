@@ -608,7 +608,7 @@
                 <h4>📥 Federal Fact Finder Template</h4>
                 <p>You can download the blank Federal Fact Finder PDF template now to preview it, or after creating your case.</p>
                 <p>Fill it out (you can print and scan if you prefer) and upload it with your supporting documents.</p>
-                <a href="{% url 'download_template' %}" class="btn-download" target="_blank">
+                <a href="{% url 'cases:download_template' %}" class="btn-download" target="_blank">
                     <i class="bi bi-download"></i> Download Blank Template PDF
                 </a>
             </div>
@@ -765,7 +765,7 @@
             return;
         }
 
-        fetch(`{% url 'api_calculate_rushed_fee' %}?due_date=${dueDateInput}`)
+        fetch(`{% url 'cases:api_calculate_rushed_fee' %}?due_date=${dueDateInput}`)
             .then(response => response.json())
             .then(data => {
                 const rushAlert = document.getElementById('rushAlert');

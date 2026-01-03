@@ -83,7 +83,7 @@
                             <td>{{ case.assigned_to.username }}</td>
                             <td>{{ case.submitted_at|date:"m/d/Y" }}</td>
                             <td>
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-warning">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-warning">
                                     <i class="bi bi-eye"></i> Review
                                 </a>
                             </td>
@@ -185,7 +185,7 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary">
                                     Work On
                                 </a>
                             </td>
