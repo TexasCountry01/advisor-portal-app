@@ -160,6 +160,7 @@
                             <th>
                                 <a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Status</a>
                             </th>
+                            <th>Release Date</th>
                             <th>Reports</th>
                             <th>Assigned To</th>
                             <th>
@@ -220,6 +221,15 @@
                                     {% else %}
                                         <span class="badge bg-info">Working</span>
                                     {% endif %}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if case.scheduled_release_date %}
+                                    <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/Y" }}</span>
+                                {% elif case.actual_release_date %}
+                                    <small class="text-muted">Released</small>
+                                {% else %}
+                                    —
                                 {% endif %}
                             </td>
                             <td style="text-align: center;">{{ case.num_reports_requested }}</td>
