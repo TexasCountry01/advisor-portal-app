@@ -38,22 +38,18 @@
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
             {% elif user.role == 'technician' %}
-                {% if case.assigned_to and case.assigned_to.id == user.id %}
-                    <span class="badge bg-info fs-5">Working</span>
+                {% if case.status == 'draft' %}
+                    <span class="badge bg-secondary fs-5">Draft</span>
+                {% elif case.status == 'submitted' %}
+                    <span class="badge bg-primary fs-5">Submitted</span>
+                {% elif case.status == 'accepted' %}
+                    <span class="badge bg-success fs-5">Accepted</span>
+                {% elif case.status == 'pending_review' %}
+                    <span class="badge bg-warning fs-5">Pending Review</span>
+                {% elif case.status == 'completed' %}
+                    <span class="badge bg-success fs-5">Completed</span>
                 {% else %}
-                    {% if case.status == 'draft' %}
-                        <span class="badge bg-secondary fs-5">Draft</span>
-                    {% elif case.status == 'submitted' %}
-                        <span class="badge bg-primary fs-5">Submitted</span>
-                    {% elif case.status == 'accepted' %}
-                        <span class="badge bg-success fs-5">Accepted</span>
-                    {% elif case.status == 'pending_review' %}
-                        <span class="badge bg-warning fs-5">Pending Review</span>
-                    {% elif case.status == 'completed' %}
-                        <span class="badge bg-success fs-5">Completed</span>
-                    {% else %}
-                        <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
-                    {% endif %}
+                    <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
             {% else %}
                 {% if case.status == 'draft' %}
