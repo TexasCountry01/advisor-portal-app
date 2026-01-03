@@ -94,12 +94,8 @@ if DB_ENGINE == 'django.db.backends.mysql':
             'HOST': config('DB_HOST'),
             'PORT': config('DB_PORT', default='3306'),
             'OPTIONS': {
-                'ssl': {
-                    'ca': None,
-                    'check_hostname': False,
-                    'ssl_verify_cert': False,
-                    'ssl_verify_identity': False,
-                }
+                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+                'charset': 'utf8mb4',
             },
         }
     }
