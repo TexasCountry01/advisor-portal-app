@@ -414,7 +414,7 @@
                         <span class="badge bg-info">{{ case.reports.count }}</span>
                         {% endif %}
                     </h5>
-                    {% if can_edit %}
+                    {% if can_upload_reports %}
                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReportModal">
                         <i class="bi bi-upload"></i> Upload Report
                     </button>
@@ -454,7 +454,7 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No reports uploaded yet. Click "Upload Report" to add one.</p>
+                    <p class="text-muted">No reports uploaded yet.</p>
                     {% endif %}
                 </div>
             </div>

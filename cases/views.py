@@ -591,9 +591,13 @@ def case_detail(request, pk):
     # Get case reports
     reports = case.reports.all().order_by('report_number')
     
+    # Only technicians can upload reports
+    can_upload_reports = user.role == 'technician' and can_edit
+    
     context = {
         'case': case,
         'can_edit': can_edit,
+        'can_upload_reports': can_upload_reports,
         'documents': documents,
         'tech_documents': tech_documents,
         'case_notes': case_notes,
