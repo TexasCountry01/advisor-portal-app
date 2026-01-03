@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>User Management</h1>
+            <p class="text-muted">Create and manage application users (Admin Only)</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'home' %}" class="btn btn-secondary">← Back to Home</a>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Create User Form -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Create New User</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" id="userForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.username.id_for_label }}" class="form-label">Username <span class="text-danger">*</span></label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.username.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email <span class="text-danger">*</span></label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.email.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">First Name <span class="text-danger">*</span></label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.first_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.last_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">Password <span class="text-danger">*</span></label>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.password.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.role.id_for_label }}" class="form-label">Role <span class="text-danger">*</span></label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.role.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3" id="workshopCodeContainer" style="display: none;">
+                            <label for="{{ form.workshop_code.id_for_label }}" class="form-label">Workshop Code <span class="text-info">(Members Only)</span></label>
+                            {{ form.workshop_code }}
+                            {% if form.workshop_code.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.workshop_code.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3" id="userLevelContainer" style="display: none;">
+                            <label for="{{ form.user_level.id_for_label }}" class="form-label">Technician Level</label>
+                            {{ form.user_level }}
+                            {% if form.user_level.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.user_level.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <button type="submit" class="btn btn-primary w-100">Create User</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- User List -->
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Users ({{ users.count }} total)</h5>
+                </div>
+                <div class="card-body">
+                    {% if users %}
+                        <div class="table-responsive">
+                            <table class="table table-hover table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Level</th>
+                                        <th>Created</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                                            </td>
+                                            <td>
+                                                <code>{{ user.username }}</code>
+                                            </td>
+                                            <td>
+                                                {% if user.role == 'member' %}
+                                                    <span class="badge bg-info">Member</span>
+                                                {% elif user.role == 'technician' %}
+                                                    <span class="badge bg-warning">Technician</span>
+                                                {% elif user.role == 'administrator' %}
+                                                    <span class="badge bg-danger">Admin</span>
+                                                {% elif user.role == 'manager' %}
+                                                    <span class="badge bg-secondary">Manager</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if user.user_level %}
+                                                    <small class="text-muted">{{ user.get_user_level_display }}</small>
+                                                {% else %}
+                                                    <small class="text-muted">—</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">{{ user.created_at|date:"M d, Y" }}</small>
+                                            </td>
+                                            <td>
+                                                {% if user.id != request.user.id %}
+                                                    <a href="{% url 'delete_user' user.id %}" 
+                                                       class="btn btn-sm btn-danger"
+                                                       onclick="return confirm('Are you sure you want to delete {{ user.get_full_name }}?');">
+                                                        Delete
+                                                    </a>
+                                                {% else %}
+                                                    <small class="text-muted">(current user)</small>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">No users created yet.</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show/hide technician level field based on role selection
+document.getElementById('roleSelect').addEventListener('change', function() {
+    const userLevelContainer = document.getElementById('userLevelContainer');
+    const workshopCodeContainer = document.getElementById('workshopCodeContainer');
+    
+    if (this.value === 'technician') {
+        userLevelContainer.style.display = 'block';
+        workshopCodeContainer.style.display = 'none';
+        document.getElementById('userLevelSelect').required = true;
+    } else if (this.value === 'member') {
+        userLevelContainer.style.display = 'none';
+        workshopCodeContainer.style.display = 'block';
+        document.getElementById('userLevelSelect').required = false;
+    } else {
+        userLevelContainer.style.display = 'none';
+        workshopCodeContainer.style.display = 'none';
+        document.getElementById('userLevelSelect').required = false;
+        document.getElementById('userLevelSelect').value = '';
+    }
+});
+
+// Initialize on page load
+document.getElementById('roleSelect').dispatchEvent(new Event('change'));
+</script>
+{% endblock %}

@@ -1,0 +1,999 @@
+[
+{
+  "model": "auth.permission",
+  "pk": 1,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 3,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 4,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 5,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 3,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 6,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 3,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 7,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 3,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 8,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 3,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 9,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 2,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 10,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 2,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 11,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 2,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 12,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 2,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 13,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 4,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 14,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 4,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 15,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 4,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 16,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 4,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 17,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 5,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 18,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 5,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 19,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 5,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 20,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 5,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 21,
+  "fields": {
+    "name": "Can add User",
+    "content_type": 8,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 22,
+  "fields": {
+    "name": "Can change User",
+    "content_type": 8,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 23,
+  "fields": {
+    "name": "Can delete User",
+    "content_type": 8,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 24,
+  "fields": {
+    "name": "Can view User",
+    "content_type": 8,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 25,
+  "fields": {
+    "name": "Can add Audit Log",
+    "content_type": 7,
+    "codename": "add_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 26,
+  "fields": {
+    "name": "Can change Audit Log",
+    "content_type": 7,
+    "codename": "change_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 27,
+  "fields": {
+    "name": "Can delete Audit Log",
+    "content_type": 7,
+    "codename": "delete_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 28,
+  "fields": {
+    "name": "Can view Audit Log",
+    "content_type": 7,
+    "codename": "view_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 29,
+  "fields": {
+    "name": "Can add User Preference",
+    "content_type": 9,
+    "codename": "add_userpreference"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 30,
+  "fields": {
+    "name": "Can change User Preference",
+    "content_type": 9,
+    "codename": "change_userpreference"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 31,
+  "fields": {
+    "name": "Can delete User Preference",
+    "content_type": 9,
+    "codename": "delete_userpreference"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 32,
+  "fields": {
+    "name": "Can view User Preference",
+    "content_type": 9,
+    "codename": "view_userpreference"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 33,
+  "fields": {
+    "name": "Can add Advisor Delegate",
+    "content_type": 6,
+    "codename": "add_advisordelegate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 34,
+  "fields": {
+    "name": "Can change Advisor Delegate",
+    "content_type": 6,
+    "codename": "change_advisordelegate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 35,
+  "fields": {
+    "name": "Can delete Advisor Delegate",
+    "content_type": 6,
+    "codename": "delete_advisordelegate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 36,
+  "fields": {
+    "name": "Can view Advisor Delegate",
+    "content_type": 6,
+    "codename": "view_advisordelegate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 37,
+  "fields": {
+    "name": "Can add Case",
+    "content_type": 11,
+    "codename": "add_case"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 38,
+  "fields": {
+    "name": "Can change Case",
+    "content_type": 11,
+    "codename": "change_case"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 39,
+  "fields": {
+    "name": "Can delete Case",
+    "content_type": 11,
+    "codename": "delete_case"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 40,
+  "fields": {
+    "name": "Can view Case",
+    "content_type": 11,
+    "codename": "view_case"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 41,
+  "fields": {
+    "name": "Can add Case Document",
+    "content_type": 12,
+    "codename": "add_casedocument"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 42,
+  "fields": {
+    "name": "Can change Case Document",
+    "content_type": 12,
+    "codename": "change_casedocument"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 43,
+  "fields": {
+    "name": "Can delete Case Document",
+    "content_type": 12,
+    "codename": "delete_casedocument"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 44,
+  "fields": {
+    "name": "Can view Case Document",
+    "content_type": 12,
+    "codename": "view_casedocument"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 45,
+  "fields": {
+    "name": "Can add Case Note",
+    "content_type": 13,
+    "codename": "add_casenote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 46,
+  "fields": {
+    "name": "Can change Case Note",
+    "content_type": 13,
+    "codename": "change_casenote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 47,
+  "fields": {
+    "name": "Can delete Case Note",
+    "content_type": 13,
+    "codename": "delete_casenote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 48,
+  "fields": {
+    "name": "Can view Case Note",
+    "content_type": 13,
+    "codename": "view_casenote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 49,
+  "fields": {
+    "name": "Can add Case Report",
+    "content_type": 14,
+    "codename": "add_casereport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 50,
+  "fields": {
+    "name": "Can change Case Report",
+    "content_type": 14,
+    "codename": "change_casereport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 51,
+  "fields": {
+    "name": "Can delete Case Report",
+    "content_type": 14,
+    "codename": "delete_casereport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 52,
+  "fields": {
+    "name": "Can view Case Report",
+    "content_type": 14,
+    "codename": "view_casereport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 53,
+  "fields": {
+    "name": "Can add API Call Log",
+    "content_type": 10,
+    "codename": "add_apicalllog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 54,
+  "fields": {
+    "name": "Can change API Call Log",
+    "content_type": 10,
+    "codename": "change_apicalllog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 55,
+  "fields": {
+    "name": "Can delete API Call Log",
+    "content_type": 10,
+    "codename": "delete_apicalllog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 56,
+  "fields": {
+    "name": "Can view API Call Log",
+    "content_type": 10,
+    "codename": "view_apicalllog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 57,
+  "fields": {
+    "name": "Can add Federal Fact Finder",
+    "content_type": 15,
+    "codename": "add_federalfactfinder"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 58,
+  "fields": {
+    "name": "Can change Federal Fact Finder",
+    "content_type": 15,
+    "codename": "change_federalfactfinder"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 59,
+  "fields": {
+    "name": "Can delete Federal Fact Finder",
+    "content_type": 15,
+    "codename": "delete_federalfactfinder"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 60,
+  "fields": {
+    "name": "Can view Federal Fact Finder",
+    "content_type": 15,
+    "codename": "view_federalfactfinder"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "accounts",
+    "model": "advisordelegate"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "accounts",
+    "model": "auditlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "accounts",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "accounts",
+    "model": "userpreference"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "cases",
+    "model": "apicalllog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "cases",
+    "model": "case"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "cases",
+    "model": "casedocument"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 13,
+  "fields": {
+    "app_label": "cases",
+    "model": "casenote"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 14,
+  "fields": {
+    "app_label": "cases",
+    "model": "casereport"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 15,
+  "fields": {
+    "app_label": "cases",
+    "model": "federalfactfinder"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "ivedsqv7xcz1c4nltq9excv9kkkwe89r",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAURP-FtSG8BZfu-w3kcuFK1dCktCvjvytJF7qcOWfmxSLsW417L2ucM7sww06_XQJ8lDZAvkO7LRyXtq1z4kPhB-18WnJ5Xg_376BCr2ONAoqWxgQoSAq_WQsVrBYOnPRE5L0MzieirJDAavDnbF2xGJQIib0__Ig4aw:1vc1I6:LvJQS1-XRYRmwZNixE-cmoNFIi4oqrKC-6JsovhhwpQ",
+    "expire_date": "2026-01-17T13:03:34.433Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "me3kgbwwjblyk86msjrw2vzf5r2skucn",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGln4s8GmpOcM0a53jQPIluKkQtwdIqWA9s3Me6kR16WMa5d5nFidFajD70aYHlI3wHest6ZTq8s8kd4UvdOur43ledndv4OCvXxrb0MAcMwCdAze5exEBEwMg7AM6LOzOYixQhgBU2Q4MTEhZvHWG_X-APhwOQM:1vbJoA:a-JcF8YKPA9y8xzAXc9t_1yu6FwibdyrBfvrVEFWlOM",
+    "expire_date": "2026-01-15T14:37:46.457Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "myocbai2dxsbnw8erz0l14np1sbibf5a",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGln4s8GmpOcM0a53jQPIluKkQtwdIqWA9s3Me6kR16WMa5d5nFidFajD70aYHlI3wHest6ZTq8s8kd4UvdOur43ledndv4OCvXxrb0MAcMwCdAze5exEBEwMg7AM6LOzOYixQhgBU2Q4MTEhZvHWG_X-APhwOQM:1vbK56:37WQ-tXvPCZNZNy0z_hQw2rkOt4F73MzFv1zPF86ClE",
+    "expire_date": "2026-01-15T14:55:16.808Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "n3y7la3i0mxfeuhvkrs2zf9bq4ith5bn",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGln4s8GmpOcM0a53jQPIluKkQtwdIqWA9s3Me6kR16WMa5d5nFidFajD70aYHlI3wHest6ZTq8s8kd4UvdOur43ledndv4OCvXxrb0MAcMwCdAze5exEBEwMg7AM6LOzOYixQhgBU2Q4MTEhZvHWG_X-APhwOQM:1vbJsK:FCrYtnAeTs-Oi502chMbc6a2C2clfMWuqkNrwy6_9oU",
+    "expire_date": "2026-01-15T14:42:04.094Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "ttefeimymakpb2n6pmbf0ay2n89ue29d",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGln4s8GmpOcM0a53jQPIluKkQtwdIqWA9s3Me6kR16WMa5d5nFidFajD70aYHlI3wHest6ZTq8s8kd4UvdOur43ledndv4OCvXxrb0MAcMwCdAze5exEBEwMg7AM6LOzOYixQhgBU2Q4MTEhZvHWG_X-APhwOQM:1vbK3h:V9XuniVFT7ubFvA1Az2YOgpMUTKRF_peQOHakUJNUhk",
+    "expire_date": "2026-01-15T14:53:49.087Z"
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$RfkWLMLG8KkTZ130UbN6xs$dlO5ag9gS0W4TKLIYMapk+KWIn8lN4fjLT3B2PClWjs=",
+    "last_login": "2026-01-01T13:00:21.430Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T12:58:15.746Z",
+    "role": "member",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T12:58:16.017Z",
+    "updated_at": "2026-01-01T12:58:16.017Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$RqfXcGjND1emnMFHc1ZRVV$GtdXwP75zROpswANaXWNJUkWoaVyVCNSQp+Yr9lSxNk=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "member1test",
+    "first_name": "",
+    "last_name": "",
+    "email": "test@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:04:20.850Z",
+    "role": "member",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:04:20.850Z",
+    "updated_at": "2026-01-01T13:04:21.490Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$zjFTGFn3XB1TyVDV5j7bfc$JVZiBQlg/M+J9cEya4QGBBhlBdYmbisWM+IDMw29qHM=",
+    "last_login": "2026-01-03T13:03:34.419Z",
+    "is_superuser": false,
+    "username": "Member1",
+    "first_name": "",
+    "last_name": "Advisor",
+    "email": "member1@example.com",
+    "is_staff": false,
+    "date_joined": "2026-01-01T13:09:05.821Z",
+    "role": "member",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.082Z",
+    "updated_at": "2026-01-01T13:39:07.754Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$p2nvRgA6F8SFyAG7Be8spS$YIWIjqF/8qfxhX2OpmPsbgiPI/b2JNq4pITeIdTO+aI=",
+    "last_login": "2026-01-01T19:30:56.442Z",
+    "is_superuser": false,
+    "username": "Ben1",
+    "first_name": "",
+    "last_name": "Tech",
+    "email": "ben1@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:09:06.082Z",
+    "role": "technician",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.348Z",
+    "updated_at": "2026-01-01T13:39:07.761Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$6EUrTb0T73SKmwRO9O09h5$llXFuMBWDAJPDCozpePIXRJg8KoEwjx1nwjIolLDnfM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Manager1",
+    "first_name": "",
+    "last_name": "Manager",
+    "email": "manager1@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:09:06.348Z",
+    "role": "manager",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.616Z",
+    "updated_at": "2026-01-01T13:39:07.764Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 7,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$JnxVBA3aTCvSDLN9sZTCRy$rYzq7GdlEov2ANLCEVsNmxx+Tuk/PnoE5UXhE28l2xk=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "Admin1",
+    "first_name": "",
+    "last_name": "Admin",
+    "email": "admin1@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:09:06.616Z",
+    "role": "administrator",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.888Z",
+    "updated_at": "2026-01-01T13:39:07.768Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "cases.case",
+  "pk": 7,
+  "fields": {
+    "external_case_id": "CASE-TEST0001",
+    "workshop_code": "TEST",
+    "member": 1,
+    "created_by": 1,
+    "employee_first_name": "Test",
+    "employee_last_name": "Employee",
+    "client_email": "",
+    "num_reports_requested": 1,
+    "urgency": "normal",
+    "status": "draft",
+    "assigned_to": null,
+    "reviewed_by": null,
+    "tier": "",
+    "date_submitted": "2026-01-01T17:07:38.536Z",
+    "date_accepted": null,
+    "date_due": null,
+    "date_scheduled": null,
+    "date_completed": null,
+    "report_notes": [],
+    "fact_finder_data": {},
+    "fact_finder_pdf_status": "pending",
+    "fact_finder_pdf_generated_at": null,
+    "special_notes": "This is a test note from the intake form.",
+    "retirement_date_preference": null,
+    "api_sync_status": "pending",
+    "api_synced_at": null,
+    "credit_value": null,
+    "notes": "",
+    "created_at": "2026-01-01T17:07:38.536Z",
+    "updated_at": "2026-01-01T17:07:38.536Z"
+  }
+},
+{
+  "model": "cases.case",
+  "pk": 9,
+  "fields": {
+    "external_case_id": "WS000-2026-01-0001",
+    "workshop_code": "WORKY",
+    "member": 4,
+    "created_by": 4,
+    "employee_first_name": "Billy",
+    "employee_last_name": "Miller",
+    "client_email": "MillerBilly@noblah.com",
+    "num_reports_requested": 2,
+    "urgency": "urgent",
+    "status": "completed",
+    "assigned_to": 5,
+    "reviewed_by": null,
+    "tier": "",
+    "date_submitted": "2026-01-01T19:29:07.673Z",
+    "date_accepted": null,
+    "date_due": "2026-01-08",
+    "date_scheduled": null,
+    "date_completed": "2026-01-01T19:32:58.698Z",
+    "report_notes": [],
+    "fact_finder_data": {
+      "basic_information": {
+        "employee_name": "Billy Miller",
+        "first_name": "Billy",
+        "last_name": "Miller"
+      },
+      "case_notes": "This is Billy Miller's test case.  He gets 1 report."
+    },
+    "fact_finder_pdf_status": "pending",
+    "fact_finder_pdf_generated_at": null,
+    "special_notes": "This is Billy Miller's test case.  He gets 2 report.",
+    "retirement_date_preference": null,
+    "api_sync_status": "pending",
+    "api_synced_at": null,
+    "credit_value": null,
+    "notes": "",
+    "created_at": "2026-01-01T19:02:09.237Z",
+    "updated_at": "2026-01-01T19:32:58.698Z"
+  }
+},
+{
+  "model": "cases.casedocument",
+  "pk": 16,
+  "fields": {
+    "case": 9,
+    "document_type": "Federal Fact Finder",
+    "file": "case_documents/%Y/%m/%d/Miller_Federal-Fact-Finder-Template_13.pdf",
+    "original_filename": "Miller_Federal-Fact-Finder-Template (13).pdf",
+    "file_size": 1785289,
+    "uploaded_by": 4,
+    "uploaded_at": "2026-01-01T19:02:09.253Z",
+    "notes": ""
+  }
+},
+{
+  "model": "cases.casedocument",
+  "pk": 18,
+  "fields": {
+    "case": 9,
+    "document_type": "Supporting Document",
+    "file": "case_documents/%Y/%m/%d/Miller_20220126_142911.jpg",
+    "original_filename": "Miller_20220126_142911.jpg",
+    "file_size": 7732654,
+    "uploaded_by": 4,
+    "uploaded_at": "2026-01-01T19:02:09.270Z",
+    "notes": ""
+  }
+},
+{
+  "model": "cases.casereport",
+  "pk": 1,
+  "fields": {
+    "case": 9,
+    "report_number": 1,
+    "status": "completed",
+    "assigned_to": 5,
+    "reviewed_by": null,
+    "report_file": "case_reports/2026/01/01/Federal-Fact-Finder-Template_8.pdf",
+    "notes": "Blah test report 1",
+    "started_at": null,
+    "completed_at": null,
+    "created_at": "2026-01-01T19:32:09.547Z",
+    "updated_at": "2026-01-01T19:32:09.547Z"
+  }
+},
+{
+  "model": "cases.casereport",
+  "pk": 2,
+  "fields": {
+    "case": 9,
+    "report_number": 2,
+    "status": "completed",
+    "assigned_to": 5,
+    "reviewed_by": null,
+    "report_file": "case_reports/2026/01/01/Federal-Fact-Finder-Template_6.pdf",
+    "notes": "blah report 2",
+    "started_at": null,
+    "completed_at": null,
+    "created_at": "2026-01-01T19:32:49.594Z",
+    "updated_at": "2026-01-01T19:32:49.594Z"
+  }
+},
+{
+  "model": "cases.casenote",
+  "pk": 1,
+  "fields": {
+    "case": 9,
+    "author": 5,
+    "note": "It's true Billy is a substandard employee",
+    "is_internal": true,
+    "created_at": "2026-01-01T19:31:42.139Z",
+    "updated_at": "2026-01-01T19:31:42.139Z"
+  }
+}
+]

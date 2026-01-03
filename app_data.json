@@ -1,0 +1,299 @@
+[
+{
+  "model": "accounts.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$RfkWLMLG8KkTZ130UbN6xs$dlO5ag9gS0W4TKLIYMapk+KWIn8lN4fjLT3B2PClWjs=",
+    "last_login": "2026-01-01T13:00:21.430Z",
+    "is_superuser": true,
+    "username": "admin",
+    "first_name": "",
+    "last_name": "",
+    "email": "admin@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T12:58:15.746Z",
+    "role": "member",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T12:58:16.017Z",
+    "updated_at": "2026-01-01T12:58:16.017Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 2,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$RqfXcGjND1emnMFHc1ZRVV$GtdXwP75zROpswANaXWNJUkWoaVyVCNSQp+Yr9lSxNk=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "member1test",
+    "first_name": "",
+    "last_name": "",
+    "email": "test@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:04:20.850Z",
+    "role": "member",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:04:20.850Z",
+    "updated_at": "2026-01-01T13:04:21.490Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 4,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$zjFTGFn3XB1TyVDV5j7bfc$JVZiBQlg/M+J9cEya4QGBBhlBdYmbisWM+IDMw29qHM=",
+    "last_login": "2026-01-03T13:03:34.419Z",
+    "is_superuser": false,
+    "username": "Member1",
+    "first_name": "",
+    "last_name": "Advisor",
+    "email": "member1@example.com",
+    "is_staff": false,
+    "date_joined": "2026-01-01T13:09:05.821Z",
+    "role": "member",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.082Z",
+    "updated_at": "2026-01-01T13:39:07.754Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 5,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$p2nvRgA6F8SFyAG7Be8spS$YIWIjqF/8qfxhX2OpmPsbgiPI/b2JNq4pITeIdTO+aI=",
+    "last_login": "2026-01-01T19:30:56.442Z",
+    "is_superuser": false,
+    "username": "Ben1",
+    "first_name": "",
+    "last_name": "Tech",
+    "email": "ben1@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:09:06.082Z",
+    "role": "technician",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.348Z",
+    "updated_at": "2026-01-01T13:39:07.761Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 6,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$6EUrTb0T73SKmwRO9O09h5$llXFuMBWDAJPDCozpePIXRJg8KoEwjx1nwjIolLDnfM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "Manager1",
+    "first_name": "",
+    "last_name": "Manager",
+    "email": "manager1@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:09:06.348Z",
+    "role": "manager",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.616Z",
+    "updated_at": "2026-01-01T13:39:07.764Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "accounts.user",
+  "pk": 7,
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$JnxVBA3aTCvSDLN9sZTCRy$rYzq7GdlEov2ANLCEVsNmxx+Tuk/PnoE5UXhE28l2xk=",
+    "last_login": null,
+    "is_superuser": true,
+    "username": "Admin1",
+    "first_name": "",
+    "last_name": "Admin",
+    "email": "admin1@example.com",
+    "is_staff": true,
+    "date_joined": "2026-01-01T13:09:06.616Z",
+    "role": "administrator",
+    "user_level": null,
+    "workshop_code": "",
+    "phone": "",
+    "is_active": true,
+    "created_at": "2026-01-01T13:09:06.888Z",
+    "updated_at": "2026-01-01T13:39:07.768Z",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "cases.case",
+  "pk": 7,
+  "fields": {
+    "external_case_id": "CASE-TEST0001",
+    "workshop_code": "TEST",
+    "member": 1,
+    "created_by": 1,
+    "employee_first_name": "Test",
+    "employee_last_name": "Employee",
+    "client_email": "",
+    "num_reports_requested": 1,
+    "urgency": "normal",
+    "status": "draft",
+    "assigned_to": null,
+    "reviewed_by": null,
+    "tier": "",
+    "date_submitted": "2026-01-01T17:07:38.536Z",
+    "date_accepted": null,
+    "date_due": null,
+    "date_scheduled": null,
+    "date_completed": null,
+    "report_notes": [],
+    "fact_finder_data": {},
+    "fact_finder_pdf_status": "pending",
+    "fact_finder_pdf_generated_at": null,
+    "special_notes": "This is a test note from the intake form.",
+    "retirement_date_preference": null,
+    "api_sync_status": "pending",
+    "api_synced_at": null,
+    "credit_value": null,
+    "notes": "",
+    "created_at": "2026-01-01T17:07:38.536Z",
+    "updated_at": "2026-01-01T17:07:38.536Z"
+  }
+},
+{
+  "model": "cases.case",
+  "pk": 9,
+  "fields": {
+    "external_case_id": "WS000-2026-01-0001",
+    "workshop_code": "WORKY",
+    "member": 4,
+    "created_by": 4,
+    "employee_first_name": "Billy",
+    "employee_last_name": "Miller",
+    "client_email": "MillerBilly@noblah.com",
+    "num_reports_requested": 2,
+    "urgency": "urgent",
+    "status": "completed",
+    "assigned_to": 5,
+    "reviewed_by": null,
+    "tier": "",
+    "date_submitted": "2026-01-01T19:29:07.673Z",
+    "date_accepted": null,
+    "date_due": "2026-01-08",
+    "date_scheduled": null,
+    "date_completed": "2026-01-01T19:32:58.698Z",
+    "report_notes": [],
+    "fact_finder_data": {
+      "basic_information": {
+        "employee_name": "Billy Miller",
+        "first_name": "Billy",
+        "last_name": "Miller"
+      },
+      "case_notes": "This is Billy Miller's test case.  He gets 1 report."
+    },
+    "fact_finder_pdf_status": "pending",
+    "fact_finder_pdf_generated_at": null,
+    "special_notes": "This is Billy Miller's test case.  He gets 2 report.",
+    "retirement_date_preference": null,
+    "api_sync_status": "pending",
+    "api_synced_at": null,
+    "credit_value": null,
+    "notes": "",
+    "created_at": "2026-01-01T19:02:09.237Z",
+    "updated_at": "2026-01-01T19:32:58.698Z"
+  }
+},
+{
+  "model": "cases.casedocument",
+  "pk": 16,
+  "fields": {
+    "case": 9,
+    "document_type": "Federal Fact Finder",
+    "file": "case_documents/%Y/%m/%d/Miller_Federal-Fact-Finder-Template_13.pdf",
+    "original_filename": "Miller_Federal-Fact-Finder-Template (13).pdf",
+    "file_size": 1785289,
+    "uploaded_by": 4,
+    "uploaded_at": "2026-01-01T19:02:09.253Z",
+    "notes": ""
+  }
+},
+{
+  "model": "cases.casedocument",
+  "pk": 18,
+  "fields": {
+    "case": 9,
+    "document_type": "Supporting Document",
+    "file": "case_documents/%Y/%m/%d/Miller_20220126_142911.jpg",
+    "original_filename": "Miller_20220126_142911.jpg",
+    "file_size": 7732654,
+    "uploaded_by": 4,
+    "uploaded_at": "2026-01-01T19:02:09.270Z",
+    "notes": ""
+  }
+},
+{
+  "model": "cases.casenote",
+  "pk": 1,
+  "fields": {
+    "case": 9,
+    "author": 5,
+    "note": "It's true Billy is a substandard employee",
+    "is_internal": true,
+    "created_at": "2026-01-01T19:31:42.139Z",
+    "updated_at": "2026-01-01T19:31:42.139Z"
+  }
+},
+{
+  "model": "cases.casereport",
+  "pk": 1,
+  "fields": {
+    "case": 9,
+    "report_number": 1,
+    "status": "completed",
+    "assigned_to": 5,
+    "reviewed_by": null,
+    "report_file": "case_reports/2026/01/01/Federal-Fact-Finder-Template_8.pdf",
+    "notes": "Blah test report 1",
+    "started_at": null,
+    "completed_at": null,
+    "created_at": "2026-01-01T19:32:09.547Z",
+    "updated_at": "2026-01-01T19:32:09.547Z"
+  }
+},
+{
+  "model": "cases.casereport",
+  "pk": 2,
+  "fields": {
+    "case": 9,
+    "report_number": 2,
+    "status": "completed",
+    "assigned_to": 5,
+    "reviewed_by": null,
+    "report_file": "case_reports/2026/01/01/Federal-Fact-Finder-Template_6.pdf",
+    "notes": "blah report 2",
+    "started_at": null,
+    "completed_at": null,
+    "created_at": "2026-01-01T19:32:49.594Z",
+    "updated_at": "2026-01-01T19:32:49.594Z"
+  }
+}
+]
