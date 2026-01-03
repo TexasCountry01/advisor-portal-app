@@ -16,13 +16,13 @@ def home(request):
     if request.user.is_authenticated:
         # Redirect based on role
         if request.user.role == 'member':
-            return redirect('member_dashboard')
+            return redirect('cases:member_dashboard')
         elif request.user.role == 'technician':
-            return redirect('technician_dashboard')
+            return redirect('cases:technician_dashboard')
         elif request.user.role == 'manager':
-            return redirect('manager_dashboard')
+            return redirect('cases:manager_dashboard')
         elif request.user.role == 'administrator':
-            return redirect('admin_dashboard')
+            return redirect('cases:admin_dashboard')
     
     return render(request, 'core/home.html')
 
@@ -49,13 +49,13 @@ def login_view(request):
             
             # Role-based redirect
             if user.role == 'member':
-                return redirect('member_dashboard')
+                return redirect('cases:member_dashboard')
             elif user.role == 'technician':
-                return redirect('technician_dashboard')
+                return redirect('cases:technician_dashboard')
             elif user.role == 'manager':
-                return redirect('manager_dashboard')
+                return redirect('cases:manager_dashboard')
             elif user.role == 'administrator':
-                return redirect('admin_dashboard')
+                return redirect('cases:admin_dashboard')
             
             return redirect('home')
         else:

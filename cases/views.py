@@ -532,16 +532,16 @@ def delete_case(request, pk):
         case_id = case.external_case_id
         case.delete()
         messages.success(request, f'Case {case_id} has been deleted.')
-        return redirect('member_dashboard')
+        return redirect('cases:member_dashboard')
     
     # Redirect based on user role
     if request.user.role == 'member':
         messages.error(request, 'You do not have permission to delete this case.')
-        return redirect('member_dashboard')
+        return redirect('cases:member_dashboard')
     elif request.user.role == 'technician':
-        return redirect('technician_dashboard')
+        return redirect('cases:technician_dashboard')
     else:
-        return redirect('case_list')
+        return redirect('cases:case_list')
 
 
 @login_required

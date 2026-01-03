@@ -205,7 +205,7 @@ def submit_case(request):
                 )
             
             # Redirect to member dashboard
-            return redirect('member_dashboard')
+            return redirect('cases:member_dashboard')
         
         except Exception as e:
             messages.error(request, f'Error creating case: {str(e)}')

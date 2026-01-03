@@ -68,9 +68,9 @@ def fact_finder_template(request, case_id):
         if not ff_document and request.POST.get('action') != 'upload':
             messages.error(request, 'Please upload the Federal Fact Finder form first.')
             if request.user.role == 'member':
-                return redirect('member_dashboard')
+                return redirect('cases:member_dashboard')
             else:
-                return redirect('case_list')
+                return redirect('cases:case_list')
     
     # If no Federal Fact Finder document exists, show upload form
     if not ff_document:
