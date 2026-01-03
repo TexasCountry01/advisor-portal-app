@@ -297,6 +297,22 @@ def admin_dashboard(request):
     
     # Calculate comprehensive statistics
     all_cases = Case.objects.all()
+    
+    # Get active users (currently logged in) from sessions
+    from django.contrib.sessions.models import Session
+    from django.utils import timezone
+    active_sessions = Session.objects.filter(expire_date__gte=timezone.now())
+    active_user_ids = set()
+    for session in active_sessions:
+        session_data = session.get_decoded()
+        user_id = session_data.get('_auth_user_id')
+        if user_id:
+            active_user_ids.add(int(user_id))
+    
+    # Count active members and technicians
+    active_members = User.objects.filter(id__in=active_user_ids, role='member').count()
+    active_technicians = User.objects.filter(id__in=active_user_ids, role='technician').count()
+    
     stats = {
         'total': all_cases.count(),
         'submitted': all_cases.filter(status='submitted').count(),
@@ -305,8 +321,8 @@ def admin_dashboard(request):
         'pending_review': all_cases.filter(status='pending_review').count(),
         'completed': all_cases.filter(status='completed').count(),
         'urgent': all_cases.filter(urgency='urgent').count(),
-        'total_members': User.objects.filter(role='member', is_active=True).count(),
-        'total_technicians': User.objects.filter(role='technician', is_active=True).count(),
+        'total_members': active_members,
+        'total_technicians': active_technicians,
         'unassigned': all_cases.filter(assigned_to__isnull=True).count(),
         'requiring_review': all_cases.filter(status='pending_review').count(),
     }
