@@ -151,8 +151,6 @@
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
                                         <span class="badge bg-success">Completed</span>
-                                    {% elif case.scheduled_release_date %}
-                                        <span class="badge bg-warning">Scheduled for Release</span>
                                     {% else %}
                                         <span class="badge bg-info">Working</span>
                                     {% endif %}
@@ -198,7 +196,7 @@
             </div>
 
             <!-- Release Status (if applicable) -->
-            {% if case.status == 'completed' %}
+            {% if case.status == 'completed' and user.role != 'member' %}
                 <div class="card mb-4">
                     <div class="card-header bg-light">
                         <h5 class="mb-0">
