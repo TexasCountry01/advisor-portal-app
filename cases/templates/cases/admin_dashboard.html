@@ -173,7 +173,7 @@
                 </div>
                 <div class="col-md-8 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
-                    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
+                    <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
                 </div>
             </form>
         </div>
@@ -323,7 +323,7 @@
             <div class="text-center py-5">
                 <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
                 <p class="text-muted mt-3">No cases found matching your filters.</p>
-                <a href="{% url 'admin_dashboard' %}" class="btn btn-primary">View All Cases</a>
+                <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-primary">View All Cases</a>
             </div>
             {% endif %}
         </div>

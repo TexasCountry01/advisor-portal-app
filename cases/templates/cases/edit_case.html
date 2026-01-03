@@ -9,10 +9,10 @@
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'member_dashboard' %}">Dashboard</a>
+                        <a href="{% url 'cases:member_dashboard' %}">Dashboard</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'case_detail' case.id %}">{{ case.external_case_id }}</a>
+                        <a href="{% url 'cases:case_detail' case.id %}">{{ case.external_case_id }}</a>
                     </li>
                     <li class="breadcrumb-item active">Edit</li>
                 </ol>
@@ -74,7 +74,7 @@
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i> Save Changes
                             </button>
-                            <a href="{% url 'case_detail' case.id %}" class="btn btn-secondary">
+                            <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-secondary">
                                 <i class="bi bi-x-circle"></i> Cancel
                             </a>
                         </div>
