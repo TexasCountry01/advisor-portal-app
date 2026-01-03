@@ -780,6 +780,8 @@ def take_case_ownership(request, case_id):
 def add_case_note(request, case_id):
     """Add an internal note to a case (technician/admin only)"""
     from cases.models import CaseNote
+    from django.utils import timezone
+    from datetime import timedelta
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
@@ -793,13 +795,24 @@ def add_case_note(request, case_id):
         note_text = request.POST.get('notes', '').strip()
         
         if note_text:
-            CaseNote.objects.create(
+            # Check for duplicate notes created in the last 30 seconds to prevent accidental duplicates
+            recent_duplicate = CaseNote.objects.filter(
                 case=case,
                 author=user,
                 note=note_text,
-                is_internal=True
-            )
-            messages.success(request, 'Note added successfully.')
+                created_at__gte=timezone.now() - timedelta(seconds=30)
+            ).exists()
+            
+            if recent_duplicate:
+                messages.warning(request, 'This note was just added. Duplicate prevented.')
+            else:
+                CaseNote.objects.create(
+                    case=case,
+                    author=user,
+                    note=note_text,
+                    is_internal=True
+                )
+                messages.success(request, 'Note added successfully.')
         else:
             messages.warning(request, 'Note cannot be empty.')
     
