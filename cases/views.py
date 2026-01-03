@@ -820,6 +820,40 @@ def add_case_note(request, case_id):
 
 
 @login_required
+def delete_case_note(request, case_id, note_id):
+    """Delete a case note (author or admin only)"""
+    from cases.models import CaseNote
+    from django.http import JsonResponse
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    note = get_object_or_404(CaseNote, id=note_id, case=case)
+    
+    # Permission check - only note author or admins can delete
+    if user.id != note.author.id and user.role not in ['administrator', 'manager']:
+        return JsonResponse({
+            'success': False,
+            'error': 'You do not have permission to delete this note'
+        }, status=403)
+    
+    if request.method == 'POST':
+        try:
+            note.delete()
+            return JsonResponse({
+                'success': True,
+                'message': 'Note deleted successfully'
+            })
+        except Exception as e:
+            logger.error(f'Error deleting note {note_id}: {str(e)}')
+            return JsonResponse({
+                'success': False,
+                'error': 'Failed to delete note'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
 def upload_case_report(request, case_id):
     """Upload a completed report for a case (technician/admin only)"""
     from cases.models import CaseReport
