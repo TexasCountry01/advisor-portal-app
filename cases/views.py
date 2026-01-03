@@ -724,7 +724,7 @@ def submit_case_final(request, case_id):
             return JsonResponse({
                 'success': True,
                 'message': f'Case {case.external_case_id} has been submitted successfully',
-                'redirect': reverse('member_dashboard')
+                'redirect': reverse('cases:member_dashboard')
             })
         except Case.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Case not found'}, status=404)
