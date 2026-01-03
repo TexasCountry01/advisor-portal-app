@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reports & Analytics - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Reports & Analytics</h1>
+            <p class="text-muted">Comprehensive reporting and performance analytics</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary me-2">← Back to Dashboard</a>
+            <a href="{% url 'export_reports_csv' %}" class="btn btn-success">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Nav Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab" aria-controls="analytics" aria-selected="true">
+                <i class="bi bi-graph-up"></i> Case Analytics
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab" aria-controls="performance" aria-selected="false">
+                <i class="bi bi-speedometer2"></i> Performance Metrics
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab" aria-controls="financial" aria-selected="false">
+                <i class="bi bi-coin"></i> Financial Reports
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab" aria-controls="status" aria-selected="false">
+                <i class="bi bi-clipboard-check"></i> Status Distribution
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content">
+        <!-- CASE ANALYTICS TAB -->
+        <div class="tab-pane fade show active" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Total Cases</h6>
+                            <h2 class="text-primary">{{ total_cases }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Completed</h6>
+                            <h2 class="text-success">{{ completed_cases }}</h2>
+                            <small class="text-muted">
+                                {% if total_cases > 0 %}
+                                    ({{ completed_cases|floatformat:0 }}%)
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Submitted</h6>
+                            <h2 class="text-info">{{ submitted_cases }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Avg Processing Time</h6>
+                            <h2 class="text-warning">
+                                {% if avg_processing_time %}
+                                    {{ avg_processing_time }}d
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Rush vs Standard Cases</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 text-center">
+                                    <h3 class="text-danger">{{ rush_cases }}</h3>
+                                    <p class="text-muted">Rush Cases</p>
+                                </div>
+                                <div class="col-md-6 text-center">
+                                    <h3 class="text-success">{{ standard_cases }}</h3>
+                                    <p class="text-muted">Standard Cases</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Cases by Urgency Level</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Urgency</th>
+                                        <th>Count</th>
+                                        <th>%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in cases_by_urgency %}
+                                    <tr>
+                                        <td>
+                                            {% if item.urgency == 'urgent' %}
+                                                <span class="badge bg-danger">Urgent</span>
+                                            {% else %}
+                                                <span class="badge bg-info">Normal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ item.count }}</td>
+                                        <td>
+                                            {% if total_cases > 0 %}
+                                                {{ item.count|floatformat:0 }}%
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PERFORMANCE METRICS TAB -->
+        <div class="tab-pane fade" id="performance" role="tabpanel" aria-labelledby="performance-tab">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Avg Credits/Case</h6>
+                            <h2 class="text-primary">{{ avg_credits|floatformat:2 }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">L1 Approval Rate</h6>
+                            <h2 class="text-success">{{ level_1_approval_rate|floatformat:1 }}%</h2>
+                            <small class="text-muted">{{ level_1_completed }}/{{ level_1_total }} approved</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Active Members</h6>
+                            <h2 class="text-info">{{ active_members }}/{{ total_members }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h6 class="card-title text-muted">Cases (30 Days)</h6>
+                            <h2 class="text-warning">{{ recent_cases_30days }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Technician Workload</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Level</th>
+                                        <th>Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="badge bg-warning">Level 1 (New)</span></td>
+                                        <td>{{ level_1_count }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-info">Level 2 (Independent)</span></td>
+                                        <td>{{ level_2_count }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge bg-success">Level 3 (Senior)</span></td>
+                                        <td>{{ level_3_count }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Cases Per Technician</h5>
+                        </div>
+                        <div class="card-body" style="max-height: 350px; overflow-y: auto;">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Technician</th>
+                                        <th>Cases</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for tech in cases_per_tech %}
+                                    <tr>
+                                        <td>{{ tech.first_name }} {{ tech.last_name }}</td>
+                                        <td><span class="badge bg-primary">{{ tech.case_count }}</span></td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="2" class="text-center text-muted">No assigned cases</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> <strong>Quality Review Summary:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Level 1 Technicians: {{ level_1_total }} total | {{ level_1_completed }} completed | {{ level_1_pending }} pending review</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FINANCIAL REPORTS TAB -->
+        <div class="tab-pane fade" id="financial" role="tabpanel" aria-labelledby="financial-tab">
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h6 class="card-title">Total Credits Issued</h6>
+                            <h1>{{ total_credits_issued|floatformat:1 }} credits</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Credits by Workshop Code (Top 10)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Workshop Code</th>
+                                            <th>Total Credits</th>
+                                            <th>Cases</th>
+                                            <th>Avg Credits/Case</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in credits_by_workshop %}
+                                        <tr>
+                                            <td><strong>{{ item.workshop_code }}</strong></td>
+                                            <td><span class="badge bg-info">{{ item.total_credits|floatformat:1 }}</span></td>
+                                            <td>{{ item.case_count }}</td>
+                                            <td>{{ item.total_credits|floatformat:2|add:"0" | divisibleby:item.case_count }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">No credit data available</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> <strong>Credit Assignment Baseline:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Single Report: 1.0 credit</li>
+                            <li>2 Scenarios: 1.5 credits (1.0 base + 0.5)</li>
+                            <li>3 Scenarios: 2.0 credits (1.0 base + 0.5 + 0.5)</li>
+                            <li>4+ Scenarios: 2.5-3.0 credits</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS DISTRIBUTION TAB -->
+        <div class="tab-pane fade" id="status" role="tabpanel" aria-labelledby="status-tab">
+            <div class="row">
+                {% for item in cases_by_status %}
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title text-muted">{{ item.label }}</h6>
+                            <h2 class="mb-2">{{ item.count }}</h2>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: {% if total_cases > 0 %}{{ item.count|floatformat:0 }}%{% else %}0%{% endif %}"
+                                     aria-valuenow="{{ item.count }}" aria-valuemin="0" aria-valuemax="{{ total_cases }}"></div>
+                            </div>
+                            <small class="text-muted">
+                                {% if total_cases > 0 %}
+                                    {{ item.count|floatformat:0 }}% of total
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Status Breakdown Table</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th>Count</th>
+                                        <th>Percentage</th>
+                                        <th>Visual</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in cases_by_status %}
+                                    <tr>
+                                        <td><strong>{{ item.label }}</strong></td>
+                                        <td>{{ item.count }}</td>
+                                        <td>
+                                            {% if total_cases > 0 %}
+                                                {{ item.count|floatformat:0 }}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 20px;">
+                                                <div class="progress-bar" role="progressbar"
+                                                     style="width: {% if total_cases > 0 %}{{ item.count|floatformat:0 }}%{% else %}0%{% endif %}"
+                                                     aria-valuenow="{{ item.count }}" aria-valuemin="0" aria-valuemax="{{ total_cases }}"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Footer -->
+    <div class="alert alert-light mt-4 border" role="alert">
+        <small class="text-muted">
+            <i class="bi bi-clock-history"></i> Report generated: <strong>{{ now|date:"M d, Y H:i:s" }} UTC</strong>
+            <br>
+            <a href="{% url 'export_reports_csv' %}" class="text-decoration-none">
+                <i class="bi bi-download"></i> Download as CSV for external analysis
+            </a>
+        </small>
+    </div>
+</div>
+
+<style>
+    .nav-link {
+        padding: 12px 16px;
+        border-radius: 6px 6px 0 0;
+    }
+    
+    .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+    
+    .tab-content {
+        background-color: #f8f9fa;
+        padding: 24px;
+        border-radius: 0 0 8px 8px;
+    }
+    
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    }
+    
+    .badge {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+    }
+</style>
+{% endblock %}
