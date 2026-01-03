@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Audit Log Detail - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1><i class="fas fa-search"></i> Audit Log Detail</h1>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mb-3">
+        <a href="{% url 'view_audit_log' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Audit Log
+        </a>
+    </div>
+
+    <!-- Main Details Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">{{ audit_log.get_action_type_display }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <h6 class="text-muted">User</h6>
+                    {% if audit_log.user %}
+                        <p class="mb-3">
+                            <strong>{{ audit_log.user.username }}</strong><br>
+                            <small>{{ audit_log.user.email }}</small><br>
+                            <span class="badge bg-secondary">{{ audit_log.user.get_role_display }}</span>
+                        </p>
+                    {% else %}
+                        <p class="mb-3"><span class="badge bg-warning">System</span></p>
+                    {% endif %}
+
+                    <h6 class="text-muted">Timestamp</h6>
+                    <p class="mb-3">
+                        <strong>{{ audit_log.timestamp|date:"F d, Y \a\t H:i:s" }}</strong><br>
+                        <small class="text-muted">({{ audit_log.timestamp|timesince }} ago)</small>
+                    </p>
+                </div>
+
+                <div class="col-md-6">
+                    <h6 class="text-muted">Action Type</h6>
+                    <p class="mb-3">
+                        {% with action_display=audit_log.get_action_type_display %}
+                            {% if "login" in audit_log.action_type %}
+                                <span class="badge bg-success" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% elif "logout" in audit_log.action_type %}
+                                <span class="badge bg-info" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% elif "created" in audit_log.action_type %}
+                                <span class="badge bg-primary" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% elif "deleted" in audit_log.action_type %}
+                                <span class="badge bg-danger" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% elif "status" in audit_log.action_type %}
+                                <span class="badge bg-warning" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% elif "assigned" in audit_log.action_type %}
+                                <span class="badge bg-info" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% elif "uploaded" in audit_log.action_type %}
+                                <span class="badge bg-light text-dark" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% elif "review" in audit_log.action_type %}
+                                <span class="badge bg-secondary" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% else %}
+                                <span class="badge bg-light text-dark" style="font-size: 0.9rem; padding: 0.5rem;">{{ action_display }}</span>
+                            {% endif %}
+                        {% endwith %}
+                    </p>
+
+                    <h6 class="text-muted">IP Address</h6>
+                    <p class="mb-3">
+                        {% if audit_log.ip_address %}
+                            <code>{{ audit_log.ip_address }}</code>
+                        {% else %}
+                            <span class="text-muted">Not available</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <hr>
+
+            <!-- Description -->
+            <h6 class="text-muted">Description</h6>
+            <p class="mb-4">
+                <strong>{{ audit_log.description }}</strong>
+            </p>
+
+            <!-- Related Entities -->
+            {% if audit_log.case or audit_log.document or audit_log.related_user %}
+                <h6 class="text-muted">Related Entities</h6>
+                <div class="row mb-4">
+                    {% if audit_log.case %}
+                        <div class="col-md-4">
+                            <div class="card border-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Case</h6>
+                                    <p class="card-text">
+                                        <a href="{% url 'cases:case_detail' audit_log.case.id %}" class="text-decoration-none">
+                                            Case #{{ audit_log.case.id }}
+                                        </a>
+                                    </p>
+                                    <small class="text-muted">Status: {{ audit_log.case.get_status_display }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if audit_log.document %}
+                        <div class="col-md-4">
+                            <div class="card border-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Document</h6>
+                                    <p class="card-text">{{ audit_log.document.filename }}</p>
+                                    <small class="text-muted">
+                                        Size: {{ audit_log.document.file_size|filesizeformat }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if audit_log.related_user %}
+                        <div class="col-md-4">
+                            <div class="card border-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Related User</h6>
+                                    <p class="card-text">{{ audit_log.related_user.username }}</p>
+                                    <small class="text-muted">{{ audit_log.related_user.get_role_display }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Changes Section -->
+    {% if audit_log.changes %}
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Changes Made</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Previous Value</th>
+                            <th>New Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for field, change in audit_log.changes.items %}
+                            <tr>
+                                <td><strong>{{ field|title }}</strong></td>
+                                <td>
+                                    {% if change.from %}
+                                        <code>{{ change.from }}</code>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if change.to %}
+                                        <code>{{ change.to }}</code>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Metadata Section -->
+    {% if audit_log.metadata %}
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Additional Metadata</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        {% for key, value in audit_log.metadata.items %}
+                            <tr>
+                                <td><strong>{{ key|title }}</strong></td>
+                                <td>
+                                    {% if value|length > 100 %}
+                                        <code class="text-break">{{ value|truncatechars:100 }}</code>
+                                    {% else %}
+                                        <code>{{ value }}</code>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

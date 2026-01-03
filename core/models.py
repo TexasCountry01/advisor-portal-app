@@ -1,5 +1,164 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+
+
+class AuditLog(models.Model):
+    """
+    Complete audit trail of all user actions in the system.
+    Tracks all activities with timestamp, user, action type, and details.
+    """
+    
+    # Action type choices
+    ACTION_CHOICES = [
+        ('login', 'User Login'),
+        ('logout', 'User Logout'),
+        ('case_created', 'Case Created'),
+        ('case_updated', 'Case Updated'),
+        ('case_submitted', 'Case Submitted'),
+        ('case_assigned', 'Case Assigned'),
+        ('case_reassigned', 'Case Reassigned'),
+        ('case_status_changed', 'Status Changed'),
+        ('document_uploaded', 'Document Uploaded'),
+        ('document_viewed', 'Document Viewed'),
+        ('document_downloaded', 'Document Downloaded'),
+        ('document_deleted', 'Document Deleted'),
+        ('note_added', 'Note Added'),
+        ('note_deleted', 'Note Deleted'),
+        ('review_submitted', 'Quality Review Submitted'),
+        ('review_updated', 'Quality Review Updated'),
+        ('user_created', 'User Created'),
+        ('user_updated', 'User Updated'),
+        ('user_deleted', 'User Deleted'),
+        ('settings_updated', 'Settings Updated'),
+        ('export_generated', 'Export Generated'),
+        ('other', 'Other Activity'),
+    ]
+    
+    # User who performed the action
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+        help_text='User who performed the action'
+    )
+    
+    # Action type
+    action_type = models.CharField(
+        max_length=50,
+        choices=ACTION_CHOICES,
+        help_text='Type of action performed'
+    )
+    
+    # Timestamp of action (auto-set to current time)
+    timestamp = models.DateTimeField(
+        default=timezone.now,
+        db_index=True,
+        help_text='When the action occurred'
+    )
+    
+    # Description of what happened
+    description = models.TextField(
+        help_text='Human-readable description of the action'
+    )
+    
+    # Related case (if applicable)
+    case = models.ForeignKey(
+        'cases.Case',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+        help_text='Related case (if applicable)'
+    )
+    
+    # Related document (if applicable)
+    document = models.ForeignKey(
+        'cases.CaseDocument',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+        help_text='Related document (if applicable)'
+    )
+    
+    # Related user (if action is about another user)
+    related_user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs_about',
+        help_text='Related user (if action is about another user)'
+    )
+    
+    # Detailed change data (JSON for flexibility)
+    changes = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Dictionary of field changes (before/after for updates)'
+    )
+    
+    # IP address (if available)
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        help_text='IP address from which action was performed'
+    )
+    
+    # Additional metadata
+    metadata = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Additional metadata about the action'
+    )
+    
+    class Meta:
+        verbose_name = 'Audit Log'
+        verbose_name_plural = 'Audit Logs'
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', '-timestamp']),
+            models.Index(fields=['action_type', '-timestamp']),
+            models.Index(fields=['case', '-timestamp']),
+            models.Index(fields=['-timestamp']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_action_type_display()} by {self.user} at {self.timestamp}"
+    
+    @classmethod
+    def log_activity(cls, user, action_type, description, case=None, document=None, 
+                     related_user=None, changes=None, ip_address=None, metadata=None):
+        """
+        Helper method to create an audit log entry.
+        
+        Args:
+            user: User who performed the action
+            action_type: Type of action from ACTION_CHOICES
+            description: Human-readable description
+            case: Related case (optional)
+            document: Related document (optional)
+            related_user: Related user if action is about another user (optional)
+            changes: Dictionary of field changes (optional)
+            ip_address: IP address of request (optional)
+            metadata: Additional metadata dictionary (optional)
+        """
+        return cls.objects.create(
+            user=user,
+            action_type=action_type,
+            description=description,
+            case=case,
+            document=document,
+            related_user=related_user,
+            changes=changes or {},
+            ip_address=ip_address,
+            metadata=metadata or {}
+        )
+
+
 
 class SystemSettings(models.Model):
     """
