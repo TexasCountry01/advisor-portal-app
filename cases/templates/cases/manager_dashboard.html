@@ -17,115 +17,102 @@
     </div>
 
     <!-- System Statistics Cards -->
-    <div class="row mb-4">
+    <div class="row mb-3" style="gap: 0;">
         <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.total }}</div>
-                <div class="stat-label">Total Cases</div>
+            <div class="stat-card" style="padding: 12px; text-align: center;">
+                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.total }}</div>
+                <div class="stat-label" style="font-size: 0.85rem;">Total Cases</div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.completed }}</div>
-                <div class="stat-label">Completed</div>
+            <div class="stat-card" style="padding: 12px; text-align: center;">
+                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.completed }}</div>
+                <div class="stat-label" style="font-size: 0.85rem;">Completed</div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.completion_rate }}%</div>
-                <div class="stat-label">Completion Rate</div>
+            <div class="stat-card" style="padding: 12px; text-align: center;">
+                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.completion_rate }}%</div>
+                <div class="stat-label" style="font-size: 0.85rem;">Completion Rate</div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.total_members }}</div>
-                <div class="stat-label">Active Members</div>
+            <div class="stat-card" style="padding: 12px; text-align: center;">
+                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.total_members }}</div>
+                <div class="stat-label" style="font-size: 0.85rem;">Active Members</div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.pending_review }}</div>
-                <div class="stat-label">Pending Review</div>
+            <div class="stat-card" style="padding: 12px; text-align: center;">
+                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.pending_review }}</div>
+                <div class="stat-label" style="font-size: 0.85rem;">Pending Review</div>
             </div>
         </div>
     </div>
 
     <!-- Case Status Overview -->
-    <div class="row mb-4">
+    <div class="row mb-3" style="gap: 0;">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Case Status Distribution</h5>
+                <div class="card-header py-2">
+                    <h5 class="mb-0" style="font-size: 0.95rem;">Case Status Distribution</h5>
                 </div>
-                <div class="card-body">
-                    <div class="progress mb-3">
+                <div class="card-body py-2" style="padding: 12px;">
+                    <div class="progress mb-2" style="height: 18px;">
                         <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.submitted_pct }}%"></div>
                     </div>
                     <small class="text-muted">In Progress: {{ stats.submitted }} submitted + {{ stats.accepted }} accepted</small>
                     
-                    <div class="progress mb-3">
+                    <div class="progress mb-2" style="height: 18px;">
                         <div class="progress-bar bg-warning" role="progressbar" style="width: {{ stats.pending_review_pct }}%"></div>
                     </div>
                     <small class="text-muted">Pending Review: {{ stats.pending_review }}</small>
                     
-                    <div class="progress mb-3">
+                    <div class="progress mb-2" style="height: 18px;">
                         <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.completed_pct }}%"></div>
                     </div>
                     <small class="text-muted">Completed: {{ stats.completed }} ({{ stats.completion_rate }}%)</small>
                     
-                    <div class="progress">
+                    <div class="progress" style="height: 18px;">
                         <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.hold_pct }}%"></div>
                     </div>
                     <small class="text-muted">On Hold: {{ stats.hold }}</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Urgency & Tier Distribution</h5>
+                <div class="card-header pb-2">
+                    <h5 class="mb-0" style="font-size: 0.95rem;">Urgency & Tier</h5>
                 </div>
-                <div class="card-body">
-                    <div class="row text-center">
-                        <div class="col-md-6">
-                            <h6>Urgency</h6>
-                            <p class="mb-2">
-                                <span class="badge bg-danger">Urgent: {{ stats.urgent }}</span>
-                            </p>
-                            <p>
-                                <span class="badge bg-secondary">Normal: {{ stats.normal }}</span>
-                            </p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Analytics</h6>
-                            <p><small class="text-muted">All data is read-only</small></p>
-                            <p><small class="text-muted">For editing, contact administrator</small></p>
+                <div class="card-body py-2">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <p class="mb-2"><small><strong>Urgency</strong></small></p>
+                            <p class="mb-2"><span class="badge bg-danger">Urgent: {{ stats.urgent }}</span></p>
+                            <p><span class="badge bg-secondary">Normal: {{ stats.normal }}</span></p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="row mb-4">
-        <div class="col-md-6">
+        <div class="col-md-3">
             <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Quick Actions</h5>
+                <div class="card-header pb-2">
+                    <h5 class="mb-0" style="font-size: 0.95rem;">Quick Actions</h5>
                 </div>
-                <div class="card-body">
-                    <p><a href="{% url 'view_reports' %}" class="btn btn-sm btn-primary w-100 mb-2"><i class="bi bi-graph-up"></i> View Reports & Analytics</a></p>
-                    <p><a href="{% url 'view_audit_log' %}" class="btn btn-sm btn-info w-100"><i class="bi bi-clipboard-check"></i> Audit Log</a></p>
+                <div class="card-body py-2">
+                    <a href="{% url 'view_reports' %}" class="btn btn-sm btn-primary w-100 mb-2"><i class="bi bi-graph-up"></i> Reports</a>
+                    <a href="{% url 'view_audit_log' %}" class="btn btn-sm btn-info w-100"><i class="bi bi-clipboard-check"></i> Audit Log</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Advanced Filters -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
+    <div class="card mb-3" style="margin-top: -10px;">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2">
                 <div class="col-md-2">
                     <label for="status" class="form-label">Status</label>
                     <select name="status" id="status" class="form-select">
