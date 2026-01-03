@@ -704,57 +704,93 @@
 
 <script>
 function markCaseCompleted() {
-    // Show confirmation dialog
-    if (confirm('Are you sure you want to mark this case as completed? This action cannot be undone.')) {
-        const btn = document.getElementById('markCompletedBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
-        
-        fetch('{% url "cases:mark_case_completed" case.id %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Show success message
-                const alertHtml = `
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        <i class="bi bi-check-circle"></i> ${data.message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
-                
-                // Reload the page after 2 seconds
-                setTimeout(() => {
-                    location.reload();
-                }, 2000);
-            } else {
-                // Show error message
-                const alertHtml = `
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        <i class="bi bi-exclamation-circle"></i> ${data.error}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-                document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
-                
-                btn.disabled = false;
-                btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while processing your request.');
+    const btn = document.getElementById('markCompletedBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Validating...';
+    
+    // First, validate that case can be completed
+    fetch('{% url "cases:validate_case_completion" case.id %}', {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.valid) {
+            // Validation failed - show error immediately
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> ${data.error}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
-        });
-    }
+            return;
+        }
+        
+        // Validation passed - show confirmation dialog
+        if (confirm('Are you sure you want to mark this case as completed? This action cannot be undone.')) {
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+            
+            // Proceed with marking as completed
+            fetch('{% url "cases:mark_case_completed" case.id %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    const alertHtml = `
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle"></i> ${data.message}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+                    
+                    // Reload the page after 2 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 2000);
+                } else {
+                    // Show error message
+                    const alertHtml = `
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="bi bi-exclamation-circle"></i> ${data.error}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    `;
+                    document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+                    
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing your request.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
+            });
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while validating your request.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
+    });
 }
 
 function markCaseIncomplete() {

@@ -991,6 +991,38 @@ def upload_technician_document(request, case_id):
 
 
 @login_required
+def validate_case_completion(request, case_id):
+    """Validate if a case can be marked as completed (returns errors before confirmation)"""
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only techs and admins can mark as completed
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'valid': False, 'error': 'You do not have permission to mark this case as completed.'}, status=403)
+    
+    # Check if technician owns the case
+    if user.role == 'technician' and case.assigned_to != user:
+        return JsonResponse({'valid': False, 'error': 'You can only mark cases you are assigned to as completed.'}, status=403)
+    
+    # Check if ALL requested reports have been uploaded
+    from cases.models import CaseReport
+    uploaded_report_numbers = set(CaseReport.objects.filter(case=case).values_list('report_number', flat=True))
+    required_report_numbers = set(range(1, case.num_reports_requested + 1))
+    
+    if uploaded_report_numbers != required_report_numbers:
+        missing_reports = required_report_numbers - uploaded_report_numbers
+        missing_str = ', '.join(str(r) for r in sorted(missing_reports))
+        return JsonResponse({
+            'valid': False, 
+            'error': f'All {case.num_reports_requested} reports must be uploaded. Missing: Report {missing_str}'
+        }, status=400)
+    
+    # All validations passed
+    return JsonResponse({'valid': True, 'message': f'Case {case.external_case_id} is ready to be marked as completed.'})
+
+
+@login_required
 def mark_case_completed(request, case_id):
     """Mark a case as completed (technician/admin only)"""
     
