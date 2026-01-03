@@ -19,23 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/exe" -u root -p < C:\Users\ProFed\workspace\advisor-portal-app\mysql_setup.sql
-At line:1 char:59
-+ "C:\Program Files\MySQL\MySQL Workbench 8.0 CE\mysql.exe" -u root -p  ...
-+                                                           ~~
-Unexpected token '-u' in expression or statement.
-At line:1 char:62
-+ ... Program Files\MySQL\MySQL Workbench 8.0 CE\mysql.exe" -u root -p < C: ...
-+                                                              ~~~~
-Unexpected token 'root' in expression or statement.
-At line:1 char:70
-+ ... am Files\MySQL\MySQL Workbench 8.0 CE\mysql.exe" -u root -p < C:\User ...
-+                                                                 ~
-The '<' operator is reserved for future use.
-    + CategoryInfo          : ParserError: (:) [], ParentContainsErrorRecordException
-    + FullyQualifiedErrorId : UnexpectedToken
-
-PS C:\Users\ProFed\workspace\advisor-portal-app> 
+# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-4-!+ec_gh4*-vap+do#iw76prls*e9j)xq%5q@n3smd3tdx1o$')
