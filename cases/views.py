@@ -1074,12 +1074,20 @@ def mark_case_completed(request, case_id):
     if request.method == 'POST':
         try:
             from datetime import timedelta, date
+            import json
             
             case.status = 'completed'
             # Do NOT set date_completed here - it will be set when the case is actually released
             
-            # Handle release options
-            release_option = request.POST.get('release_option', 'schedule')  # 'now' or 'schedule'
+            # Handle release options - data comes as JSON from fetch
+            try:
+                data = json.loads(request.body)
+                release_option = data.get('release_option', 'schedule')  # 'now' or 'schedule'
+                release_date_str = data.get('release_date')
+            except (json.JSONDecodeError, AttributeError):
+                # Fallback to POST data if JSON fails
+                release_option = request.POST.get('release_option', 'schedule')
+                release_date_str = request.POST.get('release_date')
             
             if release_option == 'now':
                 # Release immediately
@@ -1088,7 +1096,6 @@ def mark_case_completed(request, case_id):
                 case.date_completed = timezone.now()  # Set date_completed when released now
             else:
                 # Schedule release - get the date from request or use default (7 days)
-                release_date_str = request.POST.get('release_date')
                 if release_date_str:
                     try:
                         release_date = date.fromisoformat(release_date_str)
