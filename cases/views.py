@@ -524,15 +524,21 @@ def case_list(request):
 
 @login_required
 def delete_case(request, pk):
-    """Delete a case"""
+    """Delete a case - members can only delete draft cases"""
     case = get_object_or_404(Case, pk=pk)
     
-    # Permission check - only members can delete their own cases (any status)
+    # Permission check - only members can delete their own cases
     if request.user.role == 'member' and case.member == request.user:
-        case_id = case.external_case_id
-        case.delete()
-        messages.success(request, f'Case {case_id} has been deleted.')
-        return redirect('cases:member_dashboard')
+        # Only allow deletion of draft cases
+        if case.status == 'draft':
+            case_id = case.external_case_id
+            case.delete()
+            messages.success(request, f'Case {case_id} has been deleted.')
+            return redirect('cases:member_dashboard')
+        else:
+            # Prevent deletion of submitted or in-progress cases
+            messages.error(request, f'Cannot delete case {case.external_case_id}. Only draft cases can be deleted. This case is currently {case.get_status_display().lower()}.')
+            return redirect('cases:case_detail', pk=pk)
     
     # Redirect based on user role
     if request.user.role == 'member':
