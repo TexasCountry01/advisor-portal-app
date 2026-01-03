@@ -1006,7 +1006,7 @@ def mark_case_completed(request, case_id):
             return JsonResponse({
                 'success': True, 
                 'message': 'Case marked as completed successfully.',
-                'redirect_url': str(reverse('case_detail', kwargs={'pk': case_id}))
+                'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
