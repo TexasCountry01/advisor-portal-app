@@ -480,7 +480,7 @@ def case_list(request):
     user = request.user
     
     # Ensure user is admin or manager
-    if user.role not in ['admin', 'manager']:
+    if user.role not in ['administrator', 'manager']:
         messages.error(request, 'Access denied.')
         return redirect('home')
     
@@ -570,7 +570,7 @@ def case_detail(request, pk):
         # Technicians can edit cases they own
         if case.assigned_to == user:
             can_edit = True
-    elif user.role in ['admin', 'manager']:
+    elif user.role in ['administrator', 'manager']:
         can_view = True
         can_edit = True
     
