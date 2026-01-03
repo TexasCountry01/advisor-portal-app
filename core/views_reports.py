@@ -74,9 +74,9 @@ def get_all_reports_data():
     ).order_by('-case_count')
     
     # Average credits per case
-    avg_credits = Case.objects.exclude(credits__isnull=True).exclude(
-        credits=''
-    ).aggregate(avg=Avg(F('credits'), output_field=FloatField()))
+    avg_credits = Case.objects.exclude(credit_value__isnull=True).aggregate(
+        avg=Avg(F('credit_value'), output_field=FloatField())
+    )
     
     avg_credits_value = avg_credits['avg'] or 0
     
@@ -99,15 +99,15 @@ def get_all_reports_data():
     
     # === FINANCIAL REPORTS ===
     # Credits analysis
-    total_credits_issued = Case.objects.exclude(credits__isnull=True).exclude(
-        credits=''
-    ).aggregate(total=Sum(F('credits'), output_field=FloatField()))['total'] or 0
+    total_credits_issued = Case.objects.exclude(credit_value__isnull=True).aggregate(
+        total=Sum(F('credit_value'), output_field=FloatField())
+    )['total'] or 0
     
     # Credits by workshop code
-    credits_by_workshop = Case.objects.exclude(credits__isnull=True).exclude(
-        credits=''
-    ).values('workshop_code').annotate(
-        total_credits=Sum(F('credits'), output_field=FloatField()),
+    credits_by_workshop = Case.objects.exclude(credit_value__isnull=True).values(
+        'workshop_code'
+    ).annotate(
+        total_credits=Sum(F('credit_value'), output_field=FloatField()),
         case_count=Count('id')
     ).order_by('-total_credits')[:10]
     
