@@ -4,6 +4,8 @@ from . import views_pdf_template
 from . import views_quick_submit
 from . import views_submit_case
 
+app_name = 'cases'
+
 urlpatterns = [
     # Member views
     path('member/dashboard/', views.member_dashboard, name='member_dashboard'),

@@ -92,10 +92,29 @@ def view_audit_log(request):
     total_logs = audit_logs.count()
     total_pages = (total_logs + per_page - 1) // per_page
     
+    # Ensure page is within valid range
+    if page_num < 1:
+        page_num = 1
+    elif page_num > total_pages and total_pages > 0:
+        page_num = total_pages
+    
     start_idx = (page_num - 1) * per_page
     end_idx = start_idx + per_page
     
     paginated_logs = audit_logs[start_idx:end_idx]
+    
+    # Generate page numbers for pagination (max 5 pages to display)
+    page_numbers = []
+    if total_pages <= 5:
+        page_numbers = list(range(1, total_pages + 1))
+    else:
+        # Show first page, last page, and pages around current page
+        if page_num <= 3:
+            page_numbers = [1, 2, 3, 4, '...', total_pages]
+        elif page_num >= total_pages - 2:
+            page_numbers = [1, '...', total_pages - 3, total_pages - 2, total_pages - 1, total_pages]
+        else:
+            page_numbers = [1, '...', page_num - 1, page_num, page_num + 1, '...', total_pages]
     
     # Get filter options
     users = User.objects.filter(role__in=['administrator', 'technician', 'member']).order_by('username')
@@ -109,6 +128,7 @@ def view_audit_log(request):
         'page': page_num,
         'total_pages': total_pages,
         'per_page': per_page,
+        'page_numbers': page_numbers,
         # Current filters (for display)
         'user_filter': user_filter,
         'action_filter': action_filter,
