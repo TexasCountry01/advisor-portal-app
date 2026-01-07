@@ -19,6 +19,11 @@
             </nav>
             <h2>Edit Case: {{ case.external_case_id }}</h2>
         </div>
+        <div class="col-auto d-flex align-items-center">
+            <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
     </div>
 
     <div class="row">

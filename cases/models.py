@@ -31,6 +31,7 @@ class Case(models.Model):
     STATUS_CHOICES = [
         ('draft', 'Draft'),
         ('submitted', 'Submitted'),
+        ('resubmitted', 'Resubmitted'),
         ('accepted', 'Accepted'),
         ('hold', 'Hold'),
         ('pending_review', 'Pending Review'),
@@ -242,6 +243,35 @@ class Case(models.Model):
             (3.0, '3.0'),
         ],
         help_text='Credit value assigned by technician based on complexity and number of reports. Members can view but not change.'
+    )
+    
+    # Resubmission Tracking Fields
+    is_resubmitted = models.BooleanField(
+        default=False,
+        help_text='Indicates if this case has been resubmitted after completion'
+    )
+    
+    resubmission_count = models.PositiveIntegerField(
+        default=0,
+        help_text='Number of times this case has been resubmitted'
+    )
+    
+    previous_status = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=STATUS_CHOICES,
+        help_text='Previous status before resubmission'
+    )
+    
+    resubmission_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the case was resubmitted by the member'
+    )
+    
+    resubmission_notes = models.TextField(
+        blank=True,
+        help_text='Notes from member explaining why the case is being resubmitted'
     )
     
     # Additional fields for internal tracking

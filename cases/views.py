@@ -9,6 +9,7 @@ from django.urls import reverse
 from accounts.models import User
 from .models import Case, CaseDocument
 import logging
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -118,7 +119,7 @@ def technician_dashboard(request):
     # BUT exclude draft cases unless assigned to them
     from django.db.models import Q
     cases = Case.objects.filter(
-        Q(status__in=['submitted', 'accepted', 'hold', 'pending_review', 'completed']) |  # Non-draft cases
+        Q(status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'completed']) |  # Non-draft cases
         Q(assigned_to=user)  # OR cases assigned to this technician (even if draft)
     ).prefetch_related(
         'documents'
@@ -230,6 +231,8 @@ def admin_dashboard(request):
     member_filter = request.GET.get('member')
     technician_filter = request.GET.get('technician')
     date_range = request.GET.get('date_range')
+    custom_date_from = request.GET.get('date_from')
+    custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort', '-date_submitted')
     
@@ -248,8 +251,16 @@ def admin_dashboard(request):
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
     
-    # Date range filter
-    if date_range:
+    # Date range filter - custom dates take precedence
+    if custom_date_from or custom_date_to:
+        from datetime import datetime
+        if custom_date_from:
+            date_from = datetime.strptime(custom_date_from, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__gte=date_from)
+        if custom_date_to:
+            date_to = datetime.strptime(custom_date_to, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__lte=date_to)
+    elif date_range:
         from datetime import timedelta
         today = timezone.now().date()
         if date_range == 'today':
@@ -338,6 +349,8 @@ def admin_dashboard(request):
         'member_filter': member_filter,
         'technician_filter': technician_filter,
         'date_range': date_range,
+        'custom_date_from': custom_date_from,
+        'custom_date_to': custom_date_to,
         'search_query': search_query,
         'sort_by': sort_by,
         'dashboard_type': 'admin',
@@ -370,6 +383,8 @@ def manager_dashboard(request):
     member_filter = request.GET.get('member')
     technician_filter = request.GET.get('technician')
     date_range = request.GET.get('date_range')
+    custom_date_from = request.GET.get('date_from')
+    custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort', '-date_submitted')
     
@@ -388,8 +403,16 @@ def manager_dashboard(request):
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
     
-    # Date range filter
-    if date_range:
+    # Date range filter - custom dates take precedence
+    if custom_date_from or custom_date_to:
+        from datetime import datetime
+        if custom_date_from:
+            date_from = datetime.strptime(custom_date_from, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__gte=date_from)
+        if custom_date_to:
+            date_to = datetime.strptime(custom_date_to, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__lte=date_to)
+    elif date_range:
         from datetime import timedelta
         today = timezone.now().date()
         if date_range == 'today':
@@ -486,6 +509,8 @@ def manager_dashboard(request):
         'member_filter': member_filter,
         'technician_filter': technician_filter,
         'date_range': date_range,
+        'custom_date_from': custom_date_from,
+        'custom_date_to': custom_date_to,
         'search_query': search_query,
         'sort_by': sort_by,
         'dashboard_type': 'manager',
@@ -1034,10 +1059,13 @@ def validate_case_completion(request, case_id):
     if uploaded_report_numbers != required_report_numbers:
         missing_reports = required_report_numbers - uploaded_report_numbers
         missing_str = ', '.join(str(r) for r in sorted(missing_reports))
+        # Allow override - return warning but allow technician to proceed
         return JsonResponse({
-            'valid': False, 
-            'error': f'All {case.num_reports_requested} reports must be uploaded. Missing: Report {missing_str}'
-        }, status=400)
+            'valid': False,
+            'canOverride': True,
+            'error': f'All {case.num_reports_requested} reports must be uploaded. Missing: Report {missing_str}',
+            'warning': f'This case was requested with {case.num_reports_requested} reports, but only {len(uploaded_report_numbers)} report(s) have been submitted. Would you like to proceed with completion anyway?'
+        }, status=200)  # Return 200 instead of 400 since this is overridable
     
     # All validations passed
     return JsonResponse({'valid': True, 'message': f'Case {case.external_case_id} is ready to be marked as completed.'})
@@ -1063,7 +1091,15 @@ def mark_case_completed(request, case_id):
     uploaded_report_numbers = set(CaseReport.objects.filter(case=case).values_list('report_number', flat=True))
     required_report_numbers = set(range(1, case.num_reports_requested + 1))
     
-    if uploaded_report_numbers != required_report_numbers:
+    # Parse request body once
+    try:
+        body_data = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        body_data = {}
+    
+    override_incomplete = body_data.get('override_incomplete', False)
+    
+    if uploaded_report_numbers != required_report_numbers and not override_incomplete:
         missing_reports = required_report_numbers - uploaded_report_numbers
         missing_str = ', '.join(str(r) for r in sorted(missing_reports))
         return JsonResponse({
@@ -1074,20 +1110,13 @@ def mark_case_completed(request, case_id):
     if request.method == 'POST':
         try:
             from datetime import timedelta, date
-            import json
             
             case.status = 'completed'
             # Do NOT set date_completed here - it will be set when the case is actually released
             
-            # Handle release options - data comes as JSON from fetch
-            try:
-                data = json.loads(request.body)
-                release_option = data.get('release_option', 'schedule')  # 'now' or 'schedule'
-                release_date_str = data.get('release_date')
-            except (json.JSONDecodeError, AttributeError):
-                # Fallback to POST data if JSON fails
-                release_option = request.POST.get('release_option', 'schedule')
-                release_date_str = request.POST.get('release_date')
+            # Handle release options - data comes from already-parsed body_data
+            release_option = body_data.get('release_option', 'schedule')  # 'now' or 'schedule'
+            release_date_str = body_data.get('release_date')
             
             if release_option == 'now':
                 # Release immediately
@@ -1226,3 +1255,120 @@ def get_view_preference(request):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+@login_required
+def upload_member_document_to_completed_case(request, case_id):
+    """Allow members to upload supplementary documents to their completed cases"""
+    from cases.models import CaseDocument
+    import os
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only the member who owns the case can upload
+    if user.role != 'member' or case.member != user:
+        messages.error(request, 'You do not have permission to upload documents to this case.')
+        return redirect('cases:case_detail', pk=case_id)
+    
+    # Check if case is completed
+    if case.status != 'completed':
+        messages.error(request, 'You can only upload documents to completed cases.')
+        return redirect('cases:case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        document_file = request.FILES.get('document_file')
+        document_notes = request.POST.get('document_notes', '').strip()
+        
+        if not document_file:
+            messages.error(request, 'Please select a file to upload.')
+            return redirect('cases:case_detail', pk=case_id)
+        
+        # Validate file size (max 50MB)
+        if document_file.size > 50 * 1024 * 1024:
+            messages.error(request, 'File size exceeds 50MB limit.')
+            return redirect('cases:case_detail', pk=case_id)
+        
+        # Append employee last name to filename
+        fed_last_name = case.employee_last_name
+        filename_with_employee = f"{fed_last_name}_{document_file.name}"
+        
+        # Create document with 'member_supplement' type
+        CaseDocument.objects.create(
+            case=case,
+            document_type='supporting',  # Using 'supporting' type for member supplements
+            original_filename=filename_with_employee,
+            file_size=document_file.size,
+            uploaded_by=user,
+            file=document_file,
+            notes=document_notes if document_notes else 'Member supplementary document',
+        )
+        
+        messages.success(request, 'Document uploaded successfully. You can upload more documents before resubmitting.')
+    
+    return redirect('cases:case_detail', pk=case_id)
+
+
+@login_required
+def resubmit_case(request, case_id):
+    """Allow members to resubmit completed cases with additional documentation"""
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only the member who owns the case can resubmit
+    if user.role != 'member' or case.member != user:
+        messages.error(request, 'You do not have permission to resubmit this case.')
+        return redirect('cases:case_detail', pk=case_id)
+    
+    # Check if case is completed
+    if case.status != 'completed':
+        messages.error(request, 'Only completed cases can be resubmitted.')
+        return redirect('cases:case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        try:
+            resubmission_notes = request.POST.get('resubmission_notes', '').strip()
+            
+            # Store the old status before changing
+            case.previous_status = 'completed'
+            
+            # Update case for resubmission
+            case.status = 'resubmitted'
+            case.is_resubmitted = True
+            case.resubmission_count = case.resubmission_count + 1
+            case.resubmission_date = timezone.now()
+            case.resubmission_notes = resubmission_notes
+            
+            # Reset completion and release dates when resubmitting
+            case.date_completed = None
+            case.actual_release_date = None
+            case.scheduled_release_date = None
+            
+            case.save()
+            
+            messages.success(
+                request, 
+                f'Case {case.external_case_id} has been resubmitted successfully. '
+                f'The assigned technician will review your submitted documents and any supplementary files you have uploaded.'
+            )
+            return redirect('cases:member_dashboard')
+        except Exception as e:
+            logger.error(f'Error resubmitting case {case_id}: {str(e)}')
+            messages.error(request, 'An error occurred while resubmitting the case. Please try again.')
+            return redirect('cases:case_detail', pk=case_id)
+    
+    # GET request - show confirmation page
+    # Get supplementary documents uploaded since completion
+    from cases.models import CaseDocument
+    supplementary_docs = CaseDocument.objects.filter(
+        case=case,
+        uploaded_by=user,
+        uploaded_at__gte=case.date_completed if case.date_completed else timezone.now()
+    ).order_by('-uploaded_at')
+    
+    context = {
+        'case': case,
+        'supplementary_docs': supplementary_docs,
+        'resubmission_count': case.resubmission_count + 1,
+    }
+    
+    return render(request, 'cases/confirm_resubmit_case.html', context)

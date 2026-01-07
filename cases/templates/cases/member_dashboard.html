@@ -152,6 +152,8 @@
                                     <span class="badge bg-info">Pending Review</span>
                                 {% elif case.status == 'submitted' %}
                                     <span class="badge bg-primary">Submitted</span>
+                                {% elif case.status == 'resubmitted' %}
+                                    <span class="badge bg-info">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
                                     <span class="badge bg-success">Accepted</span>
                                 {% elif case.status == 'hold' %}
@@ -195,6 +197,11 @@
                                 <a href="{% url 'cases:case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
+                                {% if case.status == 'completed' and case.is_resubmitted %}
+                                <span class="badge bg-info" title="This case has been resubmitted">
+                                    <i class="bi bi-arrow-repeat"></i> Resubmitted #{{ case.resubmission_count }}
+                                </span>
+                                {% endif %}
                                 {% if case.status == 'draft' %}
                                 <button class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" onclick="submitCaseFinal({{ case.id }})">
                                     <i class="bi bi-check-circle"></i> Submit

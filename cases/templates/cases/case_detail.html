@@ -28,6 +28,8 @@
                     <span class="badge bg-secondary fs-5">Draft</span>
                 {% elif case.status == 'submitted' %}
                     <span class="badge bg-primary fs-5">Submitted</span>
+                {% elif case.status == 'resubmitted' %}
+                    <span class="badge bg-info fs-5">Resubmitted</span>
                 {% elif case.status == 'accepted' %}
                     <span class="badge bg-success fs-5">Accepted</span>
                 {% elif case.status == 'pending_review' %}
@@ -42,6 +44,8 @@
                     <span class="badge bg-secondary fs-5">Draft</span>
                 {% elif case.status == 'submitted' %}
                     <span class="badge bg-primary fs-5">Submitted</span>
+                {% elif case.status == 'resubmitted' %}
+                    <span class="badge bg-info fs-5">Resubmitted</span>
                 {% elif case.status == 'accepted' %}
                     <span class="badge bg-success fs-5">Accepted</span>
                 {% elif case.status == 'pending_review' %}
@@ -56,6 +60,8 @@
                     <span class="badge bg-secondary fs-5">Draft</span>
                 {% elif case.status == 'submitted' %}
                     <span class="badge bg-primary fs-5">Submitted</span>
+                {% elif case.status == 'resubmitted' %}
+                    <span class="badge bg-info fs-5">Resubmitted</span>
                 {% elif case.status == 'accepted' %}
                     <span class="badge bg-success fs-5">Accepted</span>
                 {% elif case.status == 'pending_review' %}
@@ -395,6 +401,106 @@
                 </div>
             </div>
 
+            <!-- Member Upload & Resubmit Section (for completed cases) -->
+            {% if case.status == 'completed' and user.role == 'member' and case.member == user %}
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-light border-warning">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-upload"></i> Upload Additional Documents & Resubmit
+                        </h5>
+                        {% if case.resubmission_count > 0 %}
+                        <span class="badge bg-info">Resubmission #{{ case.resubmission_count }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info alert-permanent mb-4" role="alert">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>This case has been completed.</strong> 
+                        If you have additional documents or information that should be reviewed, 
+                        you can upload them here and resubmit the case for further processing.
+                    </div>
+
+                    <!-- Document Upload Form -->
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">Upload Supplementary Documents</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" action="{% url 'cases:upload_member_document_completed' case.id %}" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="document_file" class="form-label">Select File</label>
+                                    <input type="file" class="form-control" id="document_file" name="document_file" required>
+                                    <small class="text-muted">
+                                        Accepted formats: PDF, Word, Excel, images, etc. (Max 50MB)
+                                    </small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="document_notes" class="form-label">Document Description (Optional)</label>
+                                    <textarea class="form-control" id="document_notes" name="document_notes" rows="2" placeholder="Describe what this document contains..."></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-upload"></i> Upload Document
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Previously Uploaded Supplementary Documents -->
+                    {% with supplementary_docs=documents %}
+                        {% if supplementary_docs %}
+                        <div class="mb-3">
+                            <h6>Supplementary Documents Uploaded</h6>
+                            <div class="list-group">
+                                {% for doc in supplementary_docs %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">
+                                                <i class="bi bi-file-earmark"></i> {{ doc.original_filename }}
+                                            </h6>
+                                            <small class="text-muted">
+                                                Uploaded: {{ doc.uploaded_at|date:"M d, Y \a\t g:i A" }}
+                                            </small>
+                                            {% if doc.notes %}
+                                            <br>
+                                            <small class="text-secondary">
+                                                {{ doc.notes }}
+                                            </small>
+                                            {% endif %}
+                                        </div>
+                                        {% if doc.file %}
+                                        <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary ms-2" download title="Download this document">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Resubmit Button -->
+                    <div class="mt-4 pt-3 border-top">
+                        <p class="text-muted small mb-3">
+                            When ready, submit the form below to resubmit this case for technician review:
+                        </p>
+                        <a href="{% url 'cases:resubmit_case' case.id %}" class="btn btn-warning btn-lg">
+                            <i class="bi bi-arrow-repeat"></i> Resubmit Case
+                        </a>
+                        <p class="text-muted small mt-3 mb-0">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            Resubmitting will change the case status back to "Submitted" and notify the assigned technician to review your documents.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Technician/Internal Notes Section -->
             {% if user.role == 'technician' or user.role == 'administrator' or user.role == 'manager' %}
             <div class="card mb-4">
@@ -413,10 +519,14 @@
                         <div class="list-group-item">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
-                                    <strong>{{ note.author.get_full_name|default:note.author.username }}</strong>
+                                    {% if note.author %}
+                                        <strong>{{ note.author.get_full_name|default:note.author.username }}</strong>
+                                    {% else %}
+                                        <strong class="text-muted">[Deleted User]</strong>
+                                    {% endif %}
                                     <small class="text-muted d-block">{{ note.created_at|date:"m/d/Y H:i" }}</small>
                                 </div>
-                                {% if user.id == note.author.id or user.role in 'administrator' %}
+                                {% if note.author and user.id == note.author.id or user.role == 'administrator' %}
                                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteNote({{ note.id }}, {{ case.id }})" title="Delete this note">
                                     <i class="bi bi-trash"></i>
                                 </button>
@@ -753,14 +863,33 @@ function markCaseCompleted() {
     .then(response => response.json())
     .then(data => {
         if (!data.valid) {
-            // Validation failed - show error immediately
-            const alertHtml = `
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="bi bi-exclamation-circle"></i> ${data.error}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            // Validation failed
+            if (data.canOverride) {
+                // Show warning with override option
+                const alertHtml = `
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> ${data.error}
+                        <hr>
+                        <p class="mb-2">${data.warning}</p>
+                        <button type="button" class="btn btn-sm btn-warning me-2" onclick="confirmCaseCompletionOverride()">
+                            <i class="bi bi-check-circle"></i> Yes, Complete Anyway
+                        </button>
+                        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="alert">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </button>
+                    </div>
+                `;
+                document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            } else {
+                // Show hard error (no override allowed)
+                const alertHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-circle"></i> ${data.error}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            }
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
             return;
@@ -778,6 +907,14 @@ function markCaseCompleted() {
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
     });
+}
+
+function confirmCaseCompletionOverride() {
+    // User confirmed they want to override the missing reports validation
+    const releaseModal = new bootstrap.Modal(document.getElementById('releaseOptionsModal'));
+    releaseModal.show();
+    // Store override flag for later use
+    window.caseCompletionOverride = true;
 }
 
 function confirmCaseCompletion() {
@@ -810,7 +947,8 @@ function confirmCaseCompletion() {
         },
         body: JSON.stringify({
             release_option: releaseOption,
-            release_date: releaseDate
+            release_date: releaseDate,
+            override_incomplete: window.caseCompletionOverride || false
         })
     })
     .then(response => response.json())
@@ -859,10 +997,26 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.addEventListener('show.bs.modal', function() {
             const today = new Date();
             const minDate = new Date(today);
-            minDate.setDate(minDate.getDate() + 7);
+            minDate.setDate(minDate.getDate() + 1);  // Minimum 1 day from now for testing
             const dateInput = document.getElementById('releaseDate');
-            dateInput.min = minDate.toISOString().split('T')[0];
-            dateInput.value = minDate.toISOString().split('T')[0];
+            const minDateStr = minDate.toISOString().split('T')[0];
+            dateInput.min = minDateStr;
+            dateInput.value = minDateStr;
+            
+            // Set max date to the case due date if it exists
+            const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
+            if (caseDueDate && caseDueDate !== 'None' && caseDueDate.length > 0) {
+                dateInput.max = caseDueDate;
+                console.log('Date Input Min:', minDateStr);
+                console.log('Date Input Max:', caseDueDate);
+                // If the default date (1 day from now) is after due date, use due date instead
+                if (minDateStr > caseDueDate) {
+                    dateInput.value = caseDueDate;
+                    console.log('Default date after due date, setting to:', caseDueDate);
+                }
+            } else {
+                console.log('No due date set, min only:', minDateStr);
+            }
         });
     }
     

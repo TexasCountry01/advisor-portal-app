@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Resubmission - Case {{ case.external_case_id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'cases:member_dashboard' %}">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'cases:case_detail' case.pk %}">{{ case.external_case_id }}</a>
+                    </li>
+                    <li class="breadcrumb-item active">Confirm Resubmission</li>
+                </ol>
+            </nav>
+
+            <!-- Header -->
+            <div class="card border-warning mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Confirm Case Resubmission
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        You are about to resubmit case <strong>{{ case.external_case_id }}</strong> for further processing.
+                    </p>
+                    <p class="text-muted">
+                        This is resubmission #{{ resubmission_count }}.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Case Summary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Case Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Case ID:</strong><br>
+                            {{ case.external_case_id }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Employee:</strong><br>
+                            {{ case.employee_first_name }} {{ case.employee_last_name }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Workshop Code:</strong><br>
+                            {{ case.workshop_code }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Reports Requested:</strong><br>
+                            {{ case.num_reports_requested }}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Current Status:</strong><br>
+                            <span class="badge bg-success">Completed</span>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>After Resubmission:</strong><br>
+                            <span class="badge bg-primary">Submitted</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supplementary Documents -->
+            {% if supplementary_docs %}
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-check"></i> 
+                        Supplementary Documents
+                        <span class="badge bg-info">{{ supplementary_docs|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for doc in supplementary_docs %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <i class="bi bi-file-earmark"></i> {{ doc.original_filename }}
+                                    </h6>
+                                    <small class="text-muted">
+                                        Uploaded: {{ doc.uploaded_at|date:"M d, Y \a\t g:i A" }}
+                                    </small>
+                                    {% if doc.notes %}
+                                    <br>
+                                    <small class="text-secondary">
+                                        <strong>Notes:</strong> {{ doc.notes }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                {% if doc.file %}
+                                <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary ms-2" download>
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- What Happens Next -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle"></i> What Happens Next
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li>Your case will be returned to "Submitted" status</li>
+                        <li>The assigned technician will be notified of the resubmission</li>
+                        <li>The technician will review your original documents and any supplementary files</li>
+                        <li>The technician may request additional information or mark the case as completed again</li>
+                        <li>You can upload additional documents before final completion</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Resubmission Notes -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Optional Resubmission Notes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Provide any additional context or explanation for the resubmission (optional):
+                    </p>
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <textarea 
+                                class="form-control" 
+                                name="resubmission_notes" 
+                                rows="4" 
+                                placeholder="Explain why you're resubmitting (e.g., additional documents attached, clarification needed on previous submission, etc.)..."
+                                maxlength="500"></textarea>
+                            <small class="text-muted">Maximum 500 characters</small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="bi bi-arrow-repeat"></i> Confirm Resubmission
+                            </button>
+                            <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Warning Alert -->
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-triangle"></i>
+                <strong>Important:</strong> Once you resubmit this case, it will be moved back to "Submitted" status 
+                and the assigned technician will be responsible for reviewing and processing it again. Make sure all 
+                supplementary documents are uploaded before confirming resubmission.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Quick Info -->
+        <div class="col-lg-4">
+            <div class="card sticky-top">
+                <div class="card-header">
+                    <h6 class="mb-0">Resubmission Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Case Status</small>
+                        <div class="mt-1">
+                            <span class="badge bg-success">Completed</span>
+                            <i class="bi bi-arrow-right"></i>
+                            <span class="badge bg-primary">Submitted</span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Original Submission</small>
+                        <div class="mt-1">
+                            <strong>{{ case.date_submitted|date:"M d, Y" }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Completed On</small>
+                        <div class="mt-1">
+                            <strong>{{ case.date_completed|date:"M d, Y" }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Supplementary Documents</small>
+                        <div class="mt-1">
+                            <strong>{{ supplementary_docs|length }} file(s)</strong>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">Resubmission #</small>
+                        <div class="mt-1">
+                            <strong>{{ resubmission_count }}</strong>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        After resubmission, your case will return to "Submitted" status and be available for the assigned technician to review.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media (max-width: 991px) {
+    .sticky-top {
+        position: static !important;
+    }
+}
+</style>
+{% endblock %}

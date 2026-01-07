@@ -26,22 +26,40 @@ def view_reports(request):
         messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
     
+    # Get custom date range if provided
+    custom_date_from = request.GET.get('date_from')
+    custom_date_to = request.GET.get('date_to')
+    
     # Get all report data
-    context = get_all_reports_data()
+    context = get_all_reports_data(custom_date_from, custom_date_to)
+    context['custom_date_from'] = custom_date_from
+    context['custom_date_to'] = custom_date_to
     
     return render(request, 'core/view_reports.html', context)
 
 
-def get_all_reports_data():
-    """Compile all report data for the dashboard"""
+def get_all_reports_data(date_from=None, date_to=None):
+    """Compile all report data for the dashboard with optional date filtering"""
+    from datetime import datetime
+    
+    # Build base queryset with optional date filter
+    cases_qs = Case.objects.all()
+    
+    if date_from or date_to:
+        if date_from:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+            cases_qs = cases_qs.filter(date_submitted__date__gte=date_from_obj)
+        if date_to:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+            cases_qs = cases_qs.filter(date_submitted__date__lte=date_to_obj)
     
     # === CASE ANALYTICS ===
-    total_cases = Case.objects.count()
-    completed_cases = Case.objects.filter(status='completed').count()
-    submitted_cases = Case.objects.filter(status='submitted').count()
+    total_cases = cases_qs.count()
+    completed_cases = cases_qs.filter(status='completed').count()
+    submitted_cases = cases_qs.filter(status='submitted').count()
     
     # Average processing time (days from submission to completion)
-    completed_with_dates = Case.objects.filter(
+    completed_with_dates = cases_qs.filter(
         status='completed',
         date_submitted__isnull=False,
         date_completed__isnull=False
@@ -54,15 +72,15 @@ def get_all_reports_data():
         avg_processing_time = avg_processing_time.days
     
     # Rush vs Standard cases
-    rush_cases = Case.objects.filter(urgency='urgent').count()
-    standard_cases = Case.objects.filter(urgency='normal').count()
+    rush_cases = cases_qs.filter(urgency='urgent').count()
+    standard_cases = cases_qs.filter(urgency='normal').count()
     
     # Cases by urgency level
-    cases_by_urgency = Case.objects.values('urgency').annotate(count=Count('id')).order_by('urgency')
+    cases_by_urgency = cases_qs.values('urgency').annotate(count=Count('id')).order_by('urgency')
     
     # === PERFORMANCE METRICS ===
     # Cases per technician
-    cases_per_tech = Case.objects.filter(
+    cases_per_tech = cases_qs.filter(
         assigned_to__isnull=False
     ).values(
         'assigned_to__id',
@@ -74,14 +92,14 @@ def get_all_reports_data():
     ).order_by('-case_count')
     
     # Average credits per case
-    avg_credits = Case.objects.exclude(credit_value__isnull=True).aggregate(
+    avg_credits = cases_qs.exclude(credit_value__isnull=True).aggregate(
         avg=Avg(F('credit_value'), output_field=FloatField())
     )
     
     avg_credits_value = avg_credits['avg'] or 0
     
     # Quality review metrics - approval rates
-    level_1_cases = Case.objects.filter(assigned_to__user_level='level_1')
+    level_1_cases = cases_qs.filter(assigned_to__user_level='level_1')
     level_1_completed = level_1_cases.filter(status='completed').count()
     level_1_pending_review = level_1_cases.filter(status='pending_review').count()
     level_1_total = level_1_cases.count()
@@ -93,18 +111,18 @@ def get_all_reports_data():
     
     # Member activity
     total_members = User.objects.filter(role='member').count()
-    members_with_cases = Case.objects.filter(
+    members_with_cases = cases_qs.filter(
         member__isnull=False
     ).values('member_id').distinct().count()
     
     # === FINANCIAL REPORTS ===
     # Credits analysis
-    total_credits_issued = Case.objects.exclude(credit_value__isnull=True).aggregate(
+    total_credits_issued = cases_qs.exclude(credit_value__isnull=True).aggregate(
         total=Sum(F('credit_value'), output_field=FloatField())
     )['total'] or 0
     
     # Credits by workshop code
-    credits_by_workshop = Case.objects.exclude(credit_value__isnull=True).values(
+    credits_by_workshop = cases_qs.exclude(credit_value__isnull=True).values(
         'workshop_code'
     ).annotate(
         total_credits=Sum(F('credit_value'), output_field=FloatField()),
@@ -112,7 +130,7 @@ def get_all_reports_data():
     ).order_by('-total_credits')[:10]
     
     # === STATUS REPORTS ===
-    status_distribution = Case.objects.values('status').annotate(
+    status_distribution = cases_qs.values('status').annotate(
         count=Count('id')
     ).order_by('status')
     
@@ -142,9 +160,12 @@ def get_all_reports_data():
     level_2_techs = User.objects.filter(role='technician', user_level='level_2').count()
     level_3_techs = User.objects.filter(role='technician', user_level='level_3').count()
     
-    # Recent cases (last 30 days)
-    thirty_days_ago = timezone.now() - timedelta(days=30)
-    recent_cases = Case.objects.filter(date_submitted__gte=thirty_days_ago).count()
+    # Recent cases based on date filter (use custom date range if provided, else last 30 days)
+    if date_from or date_to:
+        recent_cases = cases_qs.count()
+    else:
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+        recent_cases = Case.objects.filter(date_submitted__gte=thirty_days_ago).count()
     
     return {
         # Case Analytics

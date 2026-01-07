@@ -207,6 +207,8 @@
                             <td>
                                 {% if case.status == 'submitted' %}
                                     <span class="badge bg-primary">Submitted</span>
+                                {% elif case.status == 'resubmitted' %}
+                                    <span class="badge bg-info">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
                                     <span class="badge bg-success">Accepted</span>
                                 {% elif case.status == 'pending_review' %}
