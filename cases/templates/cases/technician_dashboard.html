@@ -16,109 +16,108 @@
         </div>
     </div>
 
-    <!-- Case View Filters: All Cases / My Cases -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="btn-group" role="group">
-                <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
-                   id="view-all-btn"
-                   class="btn btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
-                   data-view-type="all"
-                   onclick="saveViewPreference('all'); return true;">
-                    <i class="bi bi-list-ul"></i> All Cases
-                </a>
-                <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
-                   id="view-mine-btn"
-                   class="btn btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
-                   data-view-type="mine"
-                   onclick="saveViewPreference('mine'); return true;">
-                    <i class="bi bi-person-check"></i> My Cases
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.total }}</div>
-                <div class="stat-label">Total Cases</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.submitted }}</div>
-                <div class="stat-label">Submitted</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.accepted }}</div>
-                <div class="stat-label">Accepted</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.pending_review }}</div>
-                <div class="stat-label">Pending Review</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.completed }}</div>
-                <div class="stat-label">Completed</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card">
-                <div class="stat-value">{{ stats.urgent }}</div>
-                <div class="stat-label">Urgent</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filters -->
+    <!-- Filters + View Options + Stats (All in One Card) -->
     <div class="card mb-4">
-        <div class="card-body">
-            <form method="get" class="row g-3">
-                <div class="col-md-2">
-                    <label for="status" class="form-label">Status</label>
-                    <select name="status" id="status" class="form-select">
-                        <option value="">All Statuses</option>
-                        <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
-                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
-                        <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Pending Review</option>
-                        <option value="hold" {% if status_filter == 'hold' %}selected{% endif %}>On Hold</option>
-                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-                    </select>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Filters & Quick Stats</h5>
+            <button type="button" id="toggle-view-stats" class="btn btn-sm btn-outline-secondary" title="Show/hide view options and stats">
+                <i class="bi bi-chevron-up"></i> Hide
+            </button>
+        </div>
+        <div id="view-stats-container" class="card-body">
+            <form method="get">
+                <!-- Row 1: View Options (Left) | Stats (Right) -->
+                <div class="row mb-3" id="top-row">
+                    <!-- LEFT: View Options -->
+                    <div class="col-auto d-flex align-items-center gap-2">
+                        <small class="text-muted">View:</small>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                               id="view-all-btn"
+                               class="btn btn-sm btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
+                               data-view-type="all"
+                               onclick="saveViewPreference('all'); return true;">
+                                <i class="bi bi-list-ul"></i> All Cases
+                            </a>
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                               id="view-mine-btn"
+                               class="btn btn-sm btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
+                               data-view-type="mine"
+                               onclick="saveViewPreference('mine'); return true;">
+                                <i class="bi bi-person-check"></i> My Cases
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Compact Stats -->
+                    <div class="col-auto ms-auto d-flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.total }}</div>
+                            <div class="stat-mini-label">Total</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.submitted }}</div>
+                            <div class="stat-mini-label">Submitted</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.accepted }}</div>
+                            <div class="stat-mini-label">Accepted</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.pending_review }}</div>
+                            <div class="stat-mini-label">Pending</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.completed }}</div>
+                            <div class="stat-mini-label">Completed</div>
+                        </div>
+                        <div class="stat-mini" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                            <div class="stat-mini-value">{{ stats.urgent }}</div>
+                            <div class="stat-mini-label">Urgent</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <label for="urgency" class="form-label">Urgency</label>
-                    <select name="urgency" id="urgency" class="form-select">
-                        <option value="">All Urgencies</option>
-                        <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Normal</option>
-                        <option value="urgent" {% if urgency_filter == 'urgent' %}selected{% endif %}>Urgent</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="tier" class="form-label">Tier</label>
-                    <select name="tier" id="tier" class="form-select">
-                        <option value="">All Tiers</option>
-                        <option value="tier_1" {% if tier_filter == 'tier_1' %}selected{% endif %}>Tier 1</option>
-                        <option value="tier_2" {% if tier_filter == 'tier_2' %}selected{% endif %}>Tier 2</option>
-                        <option value="tier_3" {% if tier_filter == 'tier_3' %}selected{% endif %}>Tier 3</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="search" class="form-label">Search</label>
-                    <input type="text" name="search" id="search" class="form-control" 
-                           placeholder="Case ID, Employee, Workshop..." 
-                           value="{{ search_query|default:'' }}">
-                </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
-                    <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
+
+                <!-- Row 2: Filter Dropdowns -->
+                <div class="row g-3" id="filter-row">
+                    <div class="col-md-2">
+                        <label for="status" class="form-label">Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
+                            <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
+                            <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Pending Review</option>
+                            <option value="hold" {% if status_filter == 'hold' %}selected{% endif %}>On Hold</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="urgency" class="form-label">Urgency</label>
+                        <select name="urgency" id="urgency" class="form-select">
+                            <option value="">All Urgencies</option>
+                            <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Normal</option>
+                            <option value="urgent" {% if urgency_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="tier" class="form-label">Tier</label>
+                        <select name="tier" id="tier" class="form-select">
+                            <option value="">All Tiers</option>
+                            <option value="tier_1" {% if tier_filter == 'tier_1' %}selected{% endif %}>Tier 1</option>
+                            <option value="tier_2" {% if tier_filter == 'tier_2' %}selected{% endif %}>Tier 2</option>
+                            <option value="tier_3" {% if tier_filter == 'tier_3' %}selected{% endif %}>Tier 3</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" name="search" id="search" class="form-control" 
+                               placeholder="Case ID, Employee, Workshop..." 
+                               value="{{ search_query|default:'' }}">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                        <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
+                    </div>
                 </div>
             </form>
         </div>
@@ -131,15 +130,50 @@
         </div>
         <div class="card-body">
             {% if cases %}
+            <style>
+                .stat-mini {
+                    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                    color: white;
+                    padding: 6px 10px;
+                    border-radius: 6px;
+                    text-align: center;
+                    min-width: 70px;
+                    flex-shrink: 0;
+                }
+                .stat-mini-value {
+                    font-size: 1.2rem;
+                    font-weight: bold;
+                }
+                .stat-mini-label {
+                    font-size: 0.7rem;
+                    opacity: 0.9;
+                    margin-top: 2px;
+                }
+                .table { margin-bottom: 0; }
+                .table thead th { 
+                    padding: 0.5rem 0.35rem; 
+                    font-size: 0.8rem; 
+                    font-weight: 600;
+                    vertical-align: middle;
+                }
+                .table tbody td { 
+                    padding: 0.2rem 0.35rem; 
+                    font-size: 0.85rem;
+                    vertical-align: middle;
+                }
+                .table a { padding: 0.2rem 0.4rem; font-size: 0.85rem; }
+                #id-column { min-width: 40px; text-align: center; }
+                #code-column { min-width: 80px; text-align: left; }
+            </style>
             <div class="table-responsive">
                 <table class="table table-hover table-sm">
                     <thead>
                         <tr>
-                            <th>
-                                <a href="?{% if sort_by == 'external_case_id' %}sort=-external_case_id{% else %}sort=external_case_id{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Case ID</a>
+                            <th id="id-column">
+                                <a href="?{% if sort_by == 'external_case_id' %}sort=-external_case_id{% else %}sort=external_case_id{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">ID</a>
                             </th>
-                            <th>
-                                <a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Workshop</a>
+                            <th id="code-column">
+                                <a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Code</a>
                             </th>
                             <th>
                                 <a href="?{% if sort_by == 'member__first_name' %}sort=-member__first_name{% else %}sort=member__first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Member</a>
@@ -147,7 +181,6 @@
                             <th>
                                 <a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Employee Name</a>
                             </th>
-                            <th>Email</th>
                             <th>
                                 <a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Submitted</a>
                             </th>
@@ -178,8 +211,12 @@
                     <tbody>
                         {% for case in cases %}
                         <tr>
-                            <td><strong>{{ case.external_case_id }}</strong></td>
-                            <td>{{ case.workshop_code }}</td>
+                            <td id="id-column">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-link" title="{{ case.external_case_id }}">
+                                    Link
+                                </a>
+                            </td>
+                            <td id="code-column">{{ case.workshop_code }}</td>
                             <td>
                                 {% if case.member.get_full_name %}
                                     {{ case.member.get_full_name }}
@@ -188,7 +225,6 @@
                                 {% endif %}
                             </td>
                             <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td><small>{{ case.client_email }}</small></td>
                             <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
                             <td>
                                 {% if case.date_due %}
@@ -237,8 +273,8 @@
                             <td style="text-align: center;">{{ case.num_reports_requested }}</td>
                             <td>
                                 {% if case.assigned_to %}
-                                    {% if case.assigned_to.get_full_name %}
-                                        {{ case.assigned_to.get_full_name }}
+                                    {% if case.assigned_to.first_name %}
+                                        {{ case.assigned_to.first_name }}
                                     {% else %}
                                         {{ case.assigned_to.username }}
                                     {% endif %}
@@ -301,7 +337,7 @@
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                <a href="{% url 'cases:case_fact_finder' case.id %}" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
+                                    <a href="{% url 'cases:view_fact_finder_pdf' case.id %}" target="_blank" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
                             </td>
@@ -358,15 +394,23 @@
         }
         
         const formData = new FormData();
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
         
         fetch(`/cases/${caseId}/take-ownership/`, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken')
+                'X-CSRFToken': csrfToken
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.error || `HTTP ${response.status}`);
+                });
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert(data.message);
@@ -377,7 +421,7 @@
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while taking ownership');
+            alert('Error: ' + error.message);
         });
     }
     
@@ -454,6 +498,31 @@
         // Return true to allow normal link navigation
         return true;
     }
+
+    // Toggle view/stats section
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('toggle-view-stats');
+        const container = document.getElementById('view-stats-container');
+
+        // Restore state from localStorage
+        const isHidden = localStorage.getItem('viewStatsHidden') === 'true';
+        if (isHidden) {
+            container.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i> Show';
+            toggleBtn.classList.add('collapsed');
+        }
+
+        // Handle toggle button click
+        toggleBtn.addEventListener('click', function() {
+            const isCurrentlyHidden = container.style.display === 'none';
+            container.style.display = isCurrentlyHidden ? 'block' : 'none';
+            toggleBtn.innerHTML = isCurrentlyHidden ? 
+                '<i class="bi bi-chevron-up"></i> Hide' : 
+                '<i class="bi bi-chevron-down"></i> Show';
+            toggleBtn.classList.toggle('collapsed');
+            localStorage.setItem('viewStatsHidden', !isCurrentlyHidden);
+        });
+    });
 </script>
 
 <style>
@@ -475,6 +544,79 @@
     .stat-card .stat-label {
         font-size: 0.9rem;
         opacity: 0.9;
+    }
+
+    /* Mini stat cards for header */
+    .stat-mini {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 5px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        min-width: 55px;
+    }
+
+    .stat-mini-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+
+    .stat-mini-label {
+        font-size: 0.6rem;
+        opacity: 0.95;
+        margin-top: 2px;
+        line-height: 1.1;
+    }
+
+    #toggle-view-stats {
+        transition: transform 0.2s ease;
+    }
+
+    #toggle-view-stats.collapsed i::before {
+        content: '\f07d'; /* chevron-down icon */
+    }
+    
+    /* Column-specific widths and alignment */
+    table th:nth-child(1),
+    table td:nth-child(1) {
+        min-width: 40px;
+        white-space: nowrap;
+    }
+
+    table th:nth-child(2),
+    table td:nth-child(2) {
+        min-width: 80px;
+        text-align: center;
+        padding-right: 5px;
+    }
+
+    table th:nth-child(2) {
+        text-align: center;
+    }
+
+    /* Tighten table spacing */
+    table.table {
+        margin-bottom: 0;
+    }
+
+    table thead th,
+    table tbody td {
+        padding: 0.2rem 0.35rem;
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+
+    table thead th {
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    /* Compact button styling */
+    .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
     }
     
     table thead a {

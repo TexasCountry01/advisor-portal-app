@@ -136,7 +136,7 @@ def submit_case(request):
                 urgency=urgency,
                 num_reports_requested=num_reports,
                 date_due=due_date,
-                status='submitted',
+                status='draft',
                 fact_finder_data=fact_finder_data,
                 api_sync_status='pending',
                 created_by=user,  # Track who created it (could be delegate)
@@ -157,7 +157,7 @@ def submit_case(request):
                     
                     CaseDocument.objects.create(
                         case=case,
-                        document_type='Federal Fact Finder',
+                        document_type='fact_finder',
                         original_filename=filename_with_employee,
                         file_size=file.size,
                         uploaded_by=user,
@@ -177,7 +177,7 @@ def submit_case(request):
                     
                     CaseDocument.objects.create(
                         case=case,
-                        document_type='Supporting Document',
+                        document_type='supporting',
                         original_filename=filename_with_employee,
                         file_size=file.size,
                         uploaded_by=user,
@@ -186,8 +186,8 @@ def submit_case(request):
             
             # Get total document count
             total_documents = case.documents.count()
-            ff_count = case.documents.filter(document_type='Federal Fact Finder').count()
-            support_count = case.documents.filter(document_type='Supporting Document').count()
+            ff_count = case.documents.filter(document_type='fact_finder').count()
+            support_count = case.documents.filter(document_type='supporting').count()
             
             # Determine if this is rushed
             if urgency == 'urgent':

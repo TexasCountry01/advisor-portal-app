@@ -654,7 +654,7 @@ def case_detail(request, pk):
     case_notes = CaseNote.objects.filter(case=case).order_by('-created_at')
     
     # Get technician documents only
-    tech_documents = documents.filter(document_type='Technician Document').order_by('-uploaded_at')
+    tech_documents = documents.filter(document_type='report').order_by('-uploaded_at')
     
     # Get case reports
     reports = case.reports.all().order_by('report_number')

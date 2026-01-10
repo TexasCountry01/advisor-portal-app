@@ -38,7 +38,7 @@ def fact_finder_template(request, case_id):
     # Check if Federal Fact Finder document has been uploaded
     ff_document = CaseDocument.objects.filter(
         case=case, 
-        document_type='Federal Fact Finder'
+        document_type='fact_finder'
     ).first()
     
     # Handle file uploads
@@ -54,7 +54,7 @@ def fact_finder_template(request, case_id):
             # Create new document
             ff_document = CaseDocument.objects.create(
                 case=case,
-                document_type='Federal Fact Finder',
+                document_type='fact_finder',
                 original_filename=file.name,
                 file_size=file.size,
                 uploaded_by=request.user,
@@ -107,7 +107,7 @@ def view_fact_finder_pdf(request, case_id):
     # Get the Federal Fact Finder document
     ff_document = CaseDocument.objects.filter(
         case=case,
-        document_type='Federal Fact Finder'
+        document_type='fact_finder'
     ).first()
     
     if not ff_document or not ff_document.file:

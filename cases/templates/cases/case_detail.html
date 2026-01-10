@@ -315,7 +315,7 @@
                         
                         <!-- Federal Fact Finder Documents -->
                         {% for doc_type_group in docs_by_type %}
-                            {% if doc_type_group.grouper == 'Federal Fact Finder' %}
+                            {% if doc_type_group.grouper == 'fact_finder' %}
                             <div class="mb-4">
                                 <h6 class="mb-3">
                                     <i class="bi bi-file-pdf" style="color: #dc3545;"></i> 
@@ -356,7 +356,7 @@
 
                         <!-- Supporting Documents -->
                         {% for doc_type_group in docs_by_type %}
-                            {% if doc_type_group.grouper == 'Supporting Document' %}
+                            {% if doc_type_group.grouper == 'supporting' %}
                             <div class="mb-4">
                                 <h6 class="mb-3">
                                     <i class="bi bi-file-earmark" style="color: #6c757d;"></i> 
@@ -715,27 +715,33 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            {% if case.status == 'completed' %}
-                                <button type="button" class="btn btn-secondary" id="markCompletedBtn" onclick="markCaseIncomplete()">
-                                    <i class="bi bi-arrow-counterclockwise"></i> Mark as Incomplete
-                                </button>
-                                <p class="text-muted small mt-2 mb-0">
-                                    <i class="bi bi-info-circle"></i> This case was completed on {{ case.date_completed|date:"m/d/Y H:i" }}
-                                </p>
+                            {% if case.assigned_to == user %}
+                                {% if case.status == 'completed' %}
+                                    <button type="button" class="btn btn-secondary" id="markCompletedBtn" onclick="markCaseIncomplete()">
+                                        <i class="bi bi-arrow-counterclockwise"></i> Mark as Incomplete
+                                    </button>
+                                    <p class="text-muted small mt-2 mb-0">
+                                        <i class="bi bi-info-circle"></i> This case was completed on {{ case.date_completed|date:"m/d/Y H:i" }}
+                                    </p>
+                                {% else %}
+                                    <button type="button" class="btn btn-success" id="markCompletedBtn" onclick="markCaseCompleted()">
+                                        <i class="bi bi-check-circle"></i> Mark as Completed
+                                    </button>
+                                    <button class="btn btn-warning" disabled>
+                                        <i class="bi bi-pause-circle"></i> Put on Hold
+                                    </button>
+                                    <button class="btn btn-primary" disabled>
+                                        <i class="bi bi-arrow-right-circle"></i> Submit for Review
+                                    </button>
+                                    <hr>
+                                    <small class="text-muted" id="actionHelp">
+                                        <i class="bi bi-info-circle"></i> At least one report must be uploaded before marking as completed.
+                                    </small>
+                                {% endif %}
                             {% else %}
-                                <button type="button" class="btn btn-success" id="markCompletedBtn" onclick="markCaseCompleted()">
-                                    <i class="bi bi-check-circle"></i> Mark as Completed
-                                </button>
-                                <button class="btn btn-warning" disabled>
-                                    <i class="bi bi-pause-circle"></i> Put on Hold
-                                </button>
-                                <button class="btn btn-primary" disabled>
-                                    <i class="bi bi-arrow-right-circle"></i> Submit for Review
-                                </button>
-                                <hr>
-                                <small class="text-muted" id="actionHelp">
-                                    <i class="bi bi-info-circle"></i> At least one report must be uploaded before marking as completed.
-                                </small>
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle"></i> You have not taken ownership of this case. Case actions are only available to the assigned technician.
+                                </div>
                             {% endif %}
                         </div>
                     </div>

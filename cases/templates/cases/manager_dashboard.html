@@ -16,103 +16,47 @@
         </div>
     </div>
 
-    <!-- System Statistics Cards -->
-    <div class="row mb-3" style="gap: 0;">
-        <div class="col-md-2">
-            <div class="stat-card" style="padding: 12px; text-align: center;">
-                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.total }}</div>
-                <div class="stat-label" style="font-size: 0.85rem;">Total Cases</div>
-            </div>
+    <!-- Filters + Quick Stats (All in One Card) -->
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Quick Stats & Filters</h5>
+            <button type="button" id="toggle-view-stats" class="btn btn-sm btn-outline-secondary" title="Show/hide stats">
+                <i class="bi bi-chevron-up"></i> Hide
+            </button>
         </div>
-        <div class="col-md-2">
-            <div class="stat-card" style="padding: 12px; text-align: center;">
-                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.completed }}</div>
-                <div class="stat-label" style="font-size: 0.85rem;">Completed</div>
+        <div id="view-stats-container" class="card-body">
+            <!-- Stats Row (Right side only) -->
+            <div class="row mb-3" id="top-row">
+                <div class="col-auto ms-auto d-flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">{{ stats.total }}</div>
+                        <div class="stat-mini-label">Total</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">{{ stats.completed }}</div>
+                        <div class="stat-mini-label">Completed</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">{{ stats.completion_rate }}%</div>
+                        <div class="stat-mini-label">Rate</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">{{ stats.total_members }}</div>
+                        <div class="stat-mini-label">Members</div>
+                    </div>
+                    <div class="stat-mini">
+                        <div class="stat-mini-value">{{ stats.pending_review }}</div>
+                        <div class="stat-mini-label">Pending</div>
+                    </div>
+                    <div class="stat-mini" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
+                        <div class="stat-mini-value">{{ stats.urgent }}</div>
+                        <div class="stat-mini-label">Urgent</div>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card" style="padding: 12px; text-align: center;">
-                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.completion_rate }}%</div>
-                <div class="stat-label" style="font-size: 0.85rem;">Completion Rate</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card" style="padding: 12px; text-align: center;">
-                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.total_members }}</div>
-                <div class="stat-label" style="font-size: 0.85rem;">Active Members</div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="stat-card" style="padding: 12px; text-align: center;">
-                <div class="stat-value" style="font-size: 1.75rem; font-weight: bold;">{{ stats.pending_review }}</div>
-                <div class="stat-label" style="font-size: 0.85rem;">Pending Review</div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Case Status Overview -->
-    <div class="row mb-3" style="gap: 0;">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header py-2">
-                    <h5 class="mb-0" style="font-size: 0.95rem;">Case Status Distribution</h5>
-                </div>
-                <div class="card-body py-2" style="padding: 12px;">
-                    <div class="progress mb-2" style="height: 18px;">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: {{ stats.submitted_pct }}%"></div>
-                    </div>
-                    <small class="text-muted">In Progress: {{ stats.submitted }} submitted + {{ stats.accepted }} accepted</small>
-                    
-                    <div class="progress mb-2" style="height: 18px;">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: {{ stats.pending_review_pct }}%"></div>
-                    </div>
-                    <small class="text-muted">Pending Review: {{ stats.pending_review }}</small>
-                    
-                    <div class="progress mb-2" style="height: 18px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.completed_pct }}%"></div>
-                    </div>
-                    <small class="text-muted">Completed: {{ stats.completed }} ({{ stats.completion_rate }}%)</small>
-                    
-                    <div class="progress" style="height: 18px;">
-                        <div class="progress-bar bg-danger" role="progressbar" style="width: {{ stats.hold_pct }}%"></div>
-                    </div>
-                    <small class="text-muted">On Hold: {{ stats.hold }}</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-header pb-2">
-                    <h5 class="mb-0" style="font-size: 0.95rem;">Urgency & Tier</h5>
-                </div>
-                <div class="card-body py-2">
-                    <div class="row g-2">
-                        <div class="col-12">
-                            <p class="mb-2"><small><strong>Urgency</strong></small></p>
-                            <p class="mb-2"><span class="badge bg-danger">Urgent: {{ stats.urgent }}</span></p>
-                            <p><span class="badge bg-secondary">Normal: {{ stats.normal }}</span></p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card">
-                <div class="card-header pb-2">
-                    <h5 class="mb-0" style="font-size: 0.95rem;">Quick Actions</h5>
-                </div>
-                <div class="card-body py-2">
-                    <a href="{% url 'view_reports' %}" class="btn btn-sm btn-primary w-100 mb-2"><i class="bi bi-graph-up"></i> Reports</a>
-                    <a href="{% url 'view_audit_log' %}" class="btn btn-sm btn-info w-100"><i class="bi bi-clipboard-check"></i> Audit Log</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Advanced Filters -->
-    <div class="card mb-3" style="margin-top: -10px;">
-        <div class="card-body py-2">
-            <form method="get" class="row g-2">
+            <!-- Filter Form -->
+            <form method="get" class="row g-3" id="filter-row">
                 <div class="col-md-2">
                     <label for="status" class="form-label">Status</label>
                     <select name="status" id="status" class="form-select">
@@ -189,11 +133,22 @@
                            value="{{ search_query|default:'' }}">
                 </div>
                 <div class="col-md-8 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
-                    <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
+                    <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                    <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-info" title="View Reports">
+                        <i class="bi bi-graph-up"></i> Reports
+                    </a>
+                    <a href="{% url 'view_audit_log' %}" class="btn btn-sm btn-outline-info" title="Audit Log">
+                        <i class="bi bi-clipboard-check"></i> Audit
+                    </a>
+                    <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-sm btn-outline-info" title="Refresh">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </a>
                 </div>
             </form>
         </div>
+    </div>
+
     </div>
 
     <!-- Cases Table (Read-Only) -->
@@ -203,15 +158,49 @@
         </div>
         <div class="card-body">
             {% if cases %}
+            <style>
+                .stat-mini {
+                    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                    color: white;
+                    padding: 6px 10px;
+                    border-radius: 6px;
+                    text-align: center;
+                    min-width: 70px;
+                    flex-shrink: 0;
+                }
+                .stat-mini-value {
+                    font-size: 1.2rem;
+                    font-weight: bold;
+                }
+                .stat-mini-label {
+                    font-size: 0.7rem;
+                    opacity: 0.9;
+                    margin-top: 2px;
+                }
+                .table { margin-bottom: 0; }
+                .table thead th { 
+                    padding: 0.5rem 0.35rem; 
+                    font-size: 0.8rem; 
+                    font-weight: 600;
+                    vertical-align: middle;
+                }
+                .table tbody td { 
+                    padding: 0.2rem 0.35rem; 
+                    font-size: 0.85rem;
+                    vertical-align: middle;
+                }
+                .table a { padding: 0.2rem 0.4rem; font-size: 0.85rem; }
+                #id-column { min-width: 40px; text-align: center; }
+                #code-column { min-width: 80px; text-align: left; }
+            </style>
             <div class="table-responsive">
                 <table class="table table-hover table-sm">
                     <thead>
                         <tr>
-                            <th><a href="?{% if sort_by == 'external_case_id' %}sort=-external_case_id{% else %}sort=external_case_id{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Case ID</a></th>
-                            <th><a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Workshop</a></th>
+                            <th id="id-column"><a href="?{% if sort_by == 'external_case_id' %}sort=-external_case_id{% else %}sort=external_case_id{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">ID</a></th>
+                            <th id="code-column"><a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Code</a></th>
                             <th><a href="?{% if sort_by == 'member__first_name' %}sort=-member__first_name{% else %}sort=member__first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Member</a></th>
                             <th><a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Employee</a></th>
-                            <th>Email</th>
                             <th><a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Submitted</a></th>
                             <th><a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Due</a></th>
                             <th><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Urgency</a></th>
@@ -230,8 +219,8 @@
                     <tbody>
                         {% for case in cases %}
                         <tr>
-                            <td><strong>{{ case.external_case_id }}</strong></td>
-                            <td>{{ case.workshop_code }}</td>
+                            <td id="id-column"><a href="{% url 'cases:case_detail' case.id %}" class="btn btn-sm btn-outline-primary" title="{{ case.external_case_id }}">Link</a></td>
+                            <td id="code-column">{{ case.workshop_code }}</td>
                             <td>
                                 {% if case.member.get_full_name %}
                                     <span class="badge bg-primary">{{ case.member.get_full_name }}</span>
@@ -240,7 +229,6 @@
                                 {% endif %}
                             </td>
                             <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td><small>{{ case.client_email }}</small></td>
                             <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
                             <td>
                                 {% if case.date_due %}
@@ -288,11 +276,7 @@
                             <td>
                                 {% if case.assigned_to %}
                                     <span class="badge bg-info">
-                                        {% if case.assigned_to.get_full_name %}
-                                            {{ case.assigned_to.get_full_name }}
-                                        {% else %}
-                                            {{ case.assigned_to.username }}
-                                        {% endif %}
+                                        {{ case.assigned_to.first_name }}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-light text-dark">Unassigned</span>
@@ -343,7 +327,7 @@
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                <a href="{% url 'cases:case_fact_finder' case.id %}" class="btn btn-sm btn-outline-info" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
+                                <a href="{% url 'cases:view_fact_finder_pdf' case.id %}" target="_blank" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
                             </td>
@@ -383,6 +367,79 @@
         font-size: 0.9rem;
         opacity: 0.9;
     }
+
+    /* Mini stat cards for header */
+    .stat-mini {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 6px 10px;
+        border-radius: 5px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        min-width: 55px;
+    }
+
+    .stat-mini-value {
+        font-size: 1.2rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+
+    .stat-mini-label {
+        font-size: 0.6rem;
+        opacity: 0.95;
+        margin-top: 2px;
+        line-height: 1.1;
+    }
+
+    #toggle-view-stats {
+        transition: transform 0.2s ease;
+    }
+
+    #toggle-view-stats.collapsed i::before {
+        content: '\f07d';
+    }
+
+    /* Column-specific widths and alignment */
+    table th:nth-child(1),
+    table td:nth-child(1) {
+        min-width: 40px;
+        white-space: nowrap;
+    }
+
+    table th:nth-child(2),
+    table td:nth-child(2) {
+        min-width: 80px;
+        text-align: center;
+        padding-right: 5px;
+    }
+
+    table th:nth-child(2) {
+        text-align: center;
+    }
+
+    /* Tighten table spacing */
+    table.table {
+        margin-bottom: 0;
+    }
+
+    table thead th,
+    table tbody td {
+        padding: 0.2rem 0.35rem;
+        vertical-align: middle;
+        font-size: 0.85rem;
+    }
+
+    table thead th {
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    /* Compact button styling */
+    .btn-sm {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
     
     table thead a {
         color: inherit;
@@ -395,5 +452,32 @@
         color: #0d6efd;
     }
 </style>
+
+<script>
+    // Toggle view/stats section
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleBtn = document.getElementById('toggle-view-stats');
+        const container = document.getElementById('view-stats-container');
+
+        // Restore state from localStorage
+        const isHidden = localStorage.getItem('viewStatsHidden') === 'true';
+        if (isHidden) {
+            container.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i> Show';
+            toggleBtn.classList.add('collapsed');
+        }
+
+        // Handle toggle button click
+        toggleBtn.addEventListener('click', function() {
+            const isCurrentlyHidden = container.style.display === 'none';
+            container.style.display = isCurrentlyHidden ? 'block' : 'none';
+            toggleBtn.innerHTML = isCurrentlyHidden ? 
+                '<i class="bi bi-chevron-up"></i> Hide' : 
+                '<i class="bi bi-chevron-down"></i> Show';
+            toggleBtn.classList.toggle('collapsed');
+            localStorage.setItem('viewStatsHidden', !isCurrentlyHidden);
+        });
+    });
+</script>
 
 {% endblock %}
