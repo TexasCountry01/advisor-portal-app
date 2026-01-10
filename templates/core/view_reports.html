@@ -331,7 +331,7 @@
                                             <td><strong>{{ item.workshop_code }}</strong></td>
                                             <td><span class="badge bg-info">{{ item.total_credits|floatformat:1 }}</span></td>
                                             <td>{{ item.case_count }}</td>
-                                            <td>{{ item.total_credits|floatformat:2|add:"0" | divisibleby:item.case_count }}</td>
+                                            <td>{{ item.avg_credits|floatformat:2 }}</td>
                                         </tr>
                                         {% empty %}
                                         <tr>

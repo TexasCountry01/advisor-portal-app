@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+
+{% block title %}Credit Audit Trail - {{ case.external_case_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'cases:case_list' %}">Cases</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'cases:case_detail' case.id %}">{{ case.external_case_id }}</a></li>
+                    <li class="breadcrumb-item active">Credit Audit Trail</li>
+                </ol>
+            </nav>
+            <h2>Credit Audit Trail</h2>
+            <p class="text-muted">Case: {{ case.external_case_id }} - {{ case.employee_first_name }} {{ case.employee_last_name }}</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Case
+            </a>
+        </div>
+    </div>
+
+    <!-- Current Credit Information -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">Current Credit Status</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>Current Credit Value:</strong><br>
+                    <span class="h5 text-primary">{{ case.credit_value }}</span>
+                </div>
+                <div class="col-md-4">
+                    <strong>Case Status:</strong><br>
+                    <span class="badge bg-info">{{ case.get_status_display }}</span>
+                </div>
+                <div class="col-md-4">
+                    <strong>Assigned To:</strong><br>
+                    {% if case.assigned_technician %}
+                        {{ case.assigned_technician.first_name }} {{ case.assigned_technician.last_name }}
+                    {% else %}
+                        <span class="text-muted">Unassigned</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Trail Table -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h6 class="mb-0">Adjustment History</h6>
+        </div>
+        <div class="card-body">
+            {% if audit_logs %}
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Adjusted By</th>
+                                <th>Context</th>
+                                <th>Before</th>
+                                <th>After</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                                <tr>
+                                    <td>
+                                        <small>{{ log.adjusted_at|date:"m/d/Y g:i A" }}</small>
+                                    </td>
+                                    <td>
+                                        {{ log.adjusted_by.first_name }} {{ log.adjusted_by.last_name }}
+                                        <br>
+                                        <small class="text-muted">@{{ log.adjusted_by.username }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ log.get_adjustment_context_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if log.credit_value_before %}
+                                            <code>{{ log.credit_value_before }}</code>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <code class="text-success">{{ log.credit_value_after }}</code>
+                                    </td>
+                                    <td>
+                                        <small>{{ log.adjustment_reason|default:"No reason provided" }}</small>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No credit adjustment history found for this case.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -148,6 +148,11 @@ def submit_case(request):
             )
             case.save()
             
+            # Calculate and set default credit value
+            from cases.services.credit_service import calculate_default_credit, set_case_credit
+            default_credit = calculate_default_credit(num_reports)
+            set_case_credit(case, default_credit, user, 'submission', f'Default: {num_reports} report(s) requested')
+            
             # Handle file uploads - Combined document upload
             # All documents are now stored together as one unified type
             if 'case_documents' in request.FILES:

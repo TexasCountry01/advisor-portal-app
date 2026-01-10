@@ -6,6 +6,7 @@ from django.db import models
 from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
+from django.core.paginator import Paginator
 from accounts.models import User
 from .models import Case, CaseDocument
 import logging
@@ -719,13 +720,28 @@ def admin_take_ownership(request, case_id):
         
         # Admin takes ownership by setting assigned_to to the admin user
         case.assigned_to = user
+        
+        # Get credit value from form if provided, otherwise keep existing
+        credit_value = request.POST.get('credit_value')
+        if credit_value:
+            from decimal import Decimal
+            try:
+                credit_value = Decimal(credit_value)
+                # Log credit change if it differs from current
+                from cases.services.credit_service import set_case_credit
+                set_case_credit(case, credit_value, user, 'acceptance', 'Confirmed/adjusted upon taking ownership')
+            except (ValueError, TypeError):
+                pass
+        
+        # Transition to 'accepted' status when ownership is taken
+        case.status = 'accepted'
         case.save()
         
         # Log the action
         previous_owner_name = f"{previous_owner.first_name} {previous_owner.last_name}" if previous_owner else "None"
         messages.success(
             request, 
-            f'You have taken ownership of case {case.external_case_id}. Previous owner: {previous_owner_name}'
+            f'You have taken ownership of case {case.external_case_id}. Previous owner: {previous_owner_name}. Status: Accepted'
         )
         
         return redirect('cases:case_detail', pk=case_id)
@@ -1447,3 +1463,112 @@ def resubmit_case(request, case_id):
     }
     
     return render(request, 'cases/confirm_resubmit_case.html', context)
+
+
+@login_required
+def adjust_case_credit(request, case_id):
+    """Adjust case credit value and create audit trail entry."""
+    case = get_object_or_404(Case, pk=case_id)
+    user = request.user
+    
+    # Check permissions - only technician/admin assigned to case or admin/manager
+    if user not in [case.assigned_to, case.created_by]:
+        if not user.is_staff or user.groups.filter(name__in=['admin', 'manager']).count() == 0:
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            credit_value = request.POST.get('credit_value')
+            reason = request.POST.get('reason', 'Manual adjustment')
+            
+            if not credit_value:
+                return JsonResponse({'success': False, 'error': 'Credit value required'})
+            
+            from decimal import Decimal
+            credit_value = Decimal(credit_value)
+            
+            # Validate range
+            if credit_value < Decimal('0.5') or credit_value > Decimal('3.0'):
+                return JsonResponse({'success': False, 'error': 'Credit must be between 0.5 and 3.0'})
+            
+            # Get current credit before update
+            old_credit = case.credit_value
+            
+            # Update case and log
+            from cases.services.credit_service import set_case_credit
+            set_case_credit(case, credit_value, user, 'update', reason)
+            
+            messages.success(request, f'Credit value updated from {old_credit} to {credit_value}')
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Credit updated to {credit_value}',
+                    'new_credit': str(credit_value)
+                })
+            else:
+                return redirect('cases:case_detail', pk=case_id)
+                
+        except Exception as e:
+            logger.error(f'Error adjusting credit for case {case_id}: {str(e)}', exc_info=True)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': f'Error updating credit: {str(e)}'})
+            else:
+                messages.error(request, f'Error updating credit: {str(e)}')
+                return redirect('cases:case_detail', pk=case_id)
+    
+    return JsonResponse({'success': False, 'error': 'POST request required'}, status=400)
+
+
+@login_required
+def credit_audit_trail(request, case_id=None):
+    """View credit audit trail for cases - Manager/Admin only."""
+    user = request.user
+    
+    # Check if user is admin or manager
+    if not user.is_staff and user.groups.filter(name__in=['admin', 'manager']).count() == 0:
+        messages.error(request, 'You do not have permission to view credit audit trails.')
+        return redirect('cases:case_list')
+    
+    from cases.models import CreditAuditLog
+    
+    if case_id:
+        # Single case audit trail
+        case = get_object_or_404(Case, pk=case_id)
+        audit_logs = CreditAuditLog.objects.filter(case=case).order_by('-adjusted_at')
+        context = {
+            'case': case,
+            'audit_logs': audit_logs,
+            'page_title': f'Credit Audit Trail - {case.external_case_id}'
+        }
+        return render(request, 'cases/credit_audit_trail.html', context)
+    else:
+        # All cases audit trail for reporting
+        audit_logs = CreditAuditLog.objects.select_related('case', 'adjusted_by').order_by('-adjusted_at')
+        
+        # Apply filters if provided
+        filter_context = request.GET.get('context', '')
+        filter_case_id = request.GET.get('case_id', '')
+        filter_user = request.GET.get('user', '')
+        
+        if filter_context:
+            audit_logs = audit_logs.filter(adjustment_context=filter_context)
+        if filter_case_id:
+            audit_logs = audit_logs.filter(case__external_case_id__icontains=filter_case_id)
+        if filter_user:
+            audit_logs = audit_logs.filter(adjusted_by__username__icontains=filter_user)
+        
+        # Pagination
+        paginator = Paginator(audit_logs, 50)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        
+        context = {
+            'page_obj': page_obj,
+            'audit_logs': page_obj.object_list,
+            'filter_context': filter_context,
+            'filter_case_id': filter_case_id,
+            'filter_user': filter_user,
+            'page_title': 'Credit Audit Trail Report'
+        }
+        return render(request, 'cases/credit_audit_trail_report.html', context)

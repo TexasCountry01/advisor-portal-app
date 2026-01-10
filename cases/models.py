@@ -247,6 +247,13 @@ class Case(models.Model):
         help_text='Credit value assigned by technician based on complexity and number of reports. Members can view but not change.'
     )
     
+    # Credit adjustment reason (optional, backend tracking)
+    credit_adjustment_reason = models.TextField(
+        blank=True,
+        default='',
+        help_text='Reason for credit adjustments from default value'
+    )
+    
     # Resubmission Tracking Fields
     is_resubmitted = models.BooleanField(
         default=False,
@@ -479,6 +486,57 @@ class APICallLog(models.Model):
 
 # Import FederalFactFinder from separate module (defined in models_fact_finder.py)
 from .models_fact_finder import FederalFactFinder
+
+
+class CreditAuditLog(models.Model):
+    """Audit trail for credit value changes on cases"""
+    
+    CONTEXT_CHOICES = [
+        ('submission', 'Case Submission (Default)'),
+        ('acceptance', 'Case Acceptance (Ownership Taken)'),
+        ('update', 'Manual Update'),
+        ('completion', 'Case Completion'),
+    ]
+    
+    case = models.ForeignKey(
+        Case, 
+        on_delete=models.CASCADE, 
+        related_name='credit_audit_logs'
+    )
+    adjusted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='credit_adjustments'
+    )
+    adjusted_at = models.DateTimeField(auto_now_add=True)
+    
+    credit_value_before = models.DecimalField(
+        max_digits=3,
+        decimal_places=1,
+        null=True,
+        blank=True
+    )
+    credit_value_after = models.DecimalField(
+        max_digits=3,
+        decimal_places=1
+    )
+    
+    adjustment_reason = models.TextField(blank=True, default='')
+    adjustment_context = models.CharField(
+        max_length=20,
+        choices=CONTEXT_CHOICES,
+        default='update'
+    )
+    
+    class Meta:
+        verbose_name = 'Credit Audit Log'
+        verbose_name_plural = 'Credit Audit Logs'
+        ordering = ['-adjusted_at']
+    
+    def __str__(self):
+        return f"Case {self.case.external_case_id}: {self.credit_value_before} → {self.credit_value_after} ({self.adjusted_at})"
 
 
 # Signal handlers for file cleanup

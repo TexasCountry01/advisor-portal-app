@@ -126,7 +126,8 @@ def get_all_reports_data(date_from=None, date_to=None):
         'workshop_code'
     ).annotate(
         total_credits=Sum(F('credit_value'), output_field=FloatField()),
-        case_count=Count('id')
+        case_count=Count('id'),
+        avg_credits=F('total_credits') / F('case_count')
     ).order_by('-total_credits')[:10]
     
     # === STATUS REPORTS ===

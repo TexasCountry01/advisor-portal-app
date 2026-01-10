@@ -56,11 +56,36 @@
                     </div>
                     {% endif %}
 
+                    <h6>Credit Value Review</h6>
+                    <div class="alert alert-info">
+                        <i class="bi bi-coin"></i>
+                        <strong>Current Default Credit:</strong> {{ case.credit_value }} credits
+                        <br>
+                        <small>Based on {{ case.num_reports_requested }} report(s) requested (1.0 + 0.5 × ({{ case.num_reports_requested }} - 1))</small>
+                    </div>
+                    
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="credit_value" class="form-label">Adjust Credit Value (Optional)</label>
+                            <select class="form-select" id="credit_value" name="credit_value">
+                                <option value="">Keep Default ({{ case.credit_value }})</option>
+                                <option value="0.5">0.5 credits</option>
+                                <option value="1.0" {% if case.credit_value == 1.0 %}selected{% endif %}>1.0 credits</option>
+                                <option value="1.5" {% if case.credit_value == 1.5 %}selected{% endif %}>1.5 credits</option>
+                                <option value="2.0" {% if case.credit_value == 2.0 %}selected{% endif %}>2.0 credits</option>
+                                <option value="2.5" {% if case.credit_value == 2.5 %}selected{% endif %}>2.5 credits</option>
+                                <option value="3.0" {% if case.credit_value == 3.0 %}selected{% endif %}>3.0 credits</option>
+                            </select>
+                            <small class="text-muted">You can modify this later at any time</small>
+                        </div>
+
                     <h6>After Taking Ownership</h6>
                     <p>You will have full technician access to this case, including:</p>
                     <ul>
                         <li>Upload and manage reports</li>
                         <li>Add internal notes</li>
+                        <li>Adjust credit value based on actual complexity</li>
                         <li>Mark the case as completed</li>
                         <li>Perform all technician functions</li>
                     </ul>
@@ -68,17 +93,16 @@
                     <div class="alert alert-secondary">
                         <i class="bi bi-info-circle"></i>
                         The benefits technician dashboard will show you as the owner of this case.
+
                     </div>
                 </div>
                 <div class="card-footer bg-light">
                     <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-secondary">
                         <i class="bi bi-x-circle"></i> Cancel
                     </a>
-                    <form method="post" style="display: inline;">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-danger">
-                            <i class="bi bi-person-check"></i> Confirm - Take Ownership
-                        </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-person-check"></i> Confirm - Take Ownership
+                    </button>
                     </form>
                 </div>
             </div>
