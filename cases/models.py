@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 import os
+from datetime import datetime
 
 
 def case_document_upload_path(instance, filename):
@@ -22,8 +23,9 @@ def case_document_upload_path(instance, filename):
     else:
         new_filename = filename
     
-    # Return path with date structure
-    return os.path.join('case_documents', '%Y', '%m', '%d', new_filename)
+    # Return path with date structure - expand date placeholders
+    now = datetime.now()
+    return os.path.join('case_documents', now.strftime('%Y'), now.strftime('%m'), now.strftime('%d'), new_filename)
 
 class Case(models.Model):
     """Main case model with all 18 dashboard fields"""
