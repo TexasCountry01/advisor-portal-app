@@ -385,13 +385,21 @@
 
 {% block content %}
 <div class="submit-case-container">
-    <!-- Header -->
-    <div class="form-card">
-        <div class="form-header">
+    <!-- Header with Back button using Bootstrap grid -->
+    <div style="display: grid; grid-template-columns: 1fr auto; gap: 20px; align-items: start; margin-bottom: 20px;">
+        <div>
             <h1>Submit New Case</h1>
             <p>Create a new federal retirement planning case and upload supporting documents.</p>
         </div>
+        <div>
+            <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
 
+    <!-- Main Form Container -->
+    <div class="form-card">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">
@@ -510,25 +518,34 @@
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">
-                            Turnaround Time <span class="required">*</span>
-                        </label>
-                        <select name="urgency" id="urgencySelect" class="form-control" required onchange="updateRushFee()">
-                            <option value="normal">Normal (Standard Processing - 7+ days)</option>
-                            <option value="urgent">Urgent (Rush Service - Less than 7 days)</option>
-                        </select>
-                        <small class="help-text">Select the turnaround time for your case analysis</small>
+                <!-- Urgency is automatically determined by due date -->
+                <input type="hidden" name="urgency" id="urgencyInput" value="normal">
+            </div>
+
+            <!-- Rushed Status Alert - Prominent Warning (OUTSIDE form-section) -->
+            <div id="rushAlertContainer" style="margin-top: 20px;">
+                <div class="alert alert-danger alert-permanent" id="rushAlert" style="border: 3px solid #dc3545; font-size: 1.1em; margin: 0;">
+                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                        <div style="font-size: 2em;">⚠️</div>
+                        <div>
+                            <strong style="font-size: 1.2em; display: block; margin-bottom: 8px;">Rushed Request</strong>
+                            <p style="margin: 0; line-height: 1.6;">
+                                This date is less than the standard 7-day turnaround period and will be considered a "rushed" request which incurs a <strong>$20 fee</strong>.
+                            </p>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Rushed Status Alert -->
-                <div class="alert alert-warning" id="rushAlert" style="display: none;">
-                    <strong>⚠️ Rushed Report!</strong>
-                    <p>You've selected urgent/rush service. A rush fee of <span class="fee-amount" id="rushFeeAmount">$0</span> will apply.</p>
-                </div>
             </div>
+            <style>
+                #rushAlertContainer {
+                    max-height: 0;
+                    overflow: hidden;
+                    transition: max-height 0.3s ease-out;
+                }
+                #rushAlertContainer.show {
+                    max-height: 500px;
+                }
+            </style>
 
             <!-- Section 4: Notes/Comments -->
             <div class="form-section">
@@ -757,37 +774,53 @@
         handleSupportFileSelect({ target: { files: files } });
     });
 
-    // Check for rushed status when due date changes
+    // Check if due date is less than 7 days from now and update urgency accordingly
     function checkRushedStatus() {
-        const dueDateInput = document.getElementById('dueDateInput').value;
-        if (!dueDateInput) {
-            document.getElementById('rushAlert').classList.remove('show');
+        const dueDateInput = document.getElementById('dueDateInput');
+        const urgencyInput = document.getElementById('urgencyInput');
+        
+        if (!dueDateInput || !dueDateInput.value) {
+            const container = document.getElementById('rushAlertContainer');
+            if (container) container.classList.remove('show');
+            if (urgencyInput) urgencyInput.value = 'normal';
             return;
         }
-
-        fetch(`{% url 'cases:api_calculate_rushed_fee' %}?due_date=${dueDateInput}`)
-            .then(response => response.json())
-            .then(data => {
-                const rushAlert = document.getElementById('rushAlert');
-                if (data.is_rushed) {
-                    document.getElementById('rushFeeAmount').textContent = `$${data.fee}`;
-                    rushAlert.classList.add('show');
-                } else {
-                    rushAlert.classList.remove('show');
-                }
-            })
-            .catch(error => console.error('Error checking rushed status:', error));
+        
+        // Parse the due date (format: YYYY-MM-DD) - avoid timezone issues
+        const [year, month, day] = dueDateInput.value.split('-');
+        const dueDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        
+        // Get today's date
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // Calculate 7 days from today
+        const sevenDaysFromNow = new Date(today);
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+        
+        // Check if due date is less than 7 days from now
+        const isRushed = dueDate < sevenDaysFromNow;
+        
+        console.log('Date check - Due:', dueDate.toDateString(), 'Today:', today.toDateString(), '7DaysFrom:', sevenDaysFromNow.toDateString(), 'isRushed:', isRushed);
+        
+        if (isRushed) {
+            const container = document.getElementById('rushAlertContainer');
+            if (container) {
+                container.classList.add('show');
+            }
+            if (urgencyInput) urgencyInput.value = 'urgent';
+        } else {
+            const container = document.getElementById('rushAlertContainer');
+            if (container) {
+                container.classList.remove('show');
+            }
+            if (urgencyInput) urgencyInput.value = 'normal';
+        }
     }
 
-    // Update rush fee based on urgency selection
-    function updateRushFee() {
-        const urgencySelect = document.getElementById('urgencySelect');
-        const rushAlert = document.getElementById('rushAlert');
-        if (urgencySelect.value === 'urgent') {
-            rushAlert.classList.add('show');
-        } else {
-            rushAlert.classList.remove('show');
-        }
+    // Automatically set urgency based on rushed status
+    function updateUrgencyBasedOnDate() {
+        checkRushedStatus();
     }
 
     // Select advisor (for delegates)
@@ -807,17 +840,45 @@
         }
     }
 
+    // Clear form when canceling
+    function clearFormOnCancel() {
+        const form = document.getElementById('submitCaseForm');
+        // Clear all input fields
+        form.querySelectorAll('input[type="text"], input[type="date"], input[type="email"], input[type="number"], textarea, select').forEach(field => {
+            if (field.type === 'date') {
+                // Reset date to default if it has one
+                field.value = '';
+            } else if (field.type === 'select-one') {
+                field.selectedIndex = 0;
+            } else {
+                field.value = '';
+            }
+        });
+        // Clear file inputs
+        form.querySelectorAll('input[type="file"]').forEach(field => {
+            field.value = '';
+        });
+        // Reset checkboxes and radio buttons
+        form.querySelectorAll('input[type="checkbox"], input[type="radio"]').forEach(field => {
+            field.checked = false;
+        });
+    }
+
     // Initialize on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Commented out - advisor auto-selection may interfere with form
         // If user is delegate, select first advisor by default
-        const advisorOptions = document.querySelectorAll('.advisor-option');
-        if (advisorOptions.length > 0) {
-            const firstOption = advisorOptions[0];
-            firstOption.click();
-        }
+        // const advisorOptions = document.querySelectorAll('.advisor-option');
+        // if (advisorOptions.length > 0) {
+        //     const firstOption = advisorOptions[0];
+        //     firstOption.click();
+        // }
         
-        // Check due date on load
-        checkRushedStatus();
+        // Hide rushed alert container on page load - only show when user changes the date
+        const rushAlertContainer = document.getElementById('rushAlertContainer');
+        if (rushAlertContainer) {
+            rushAlertContainer.classList.remove('show');
+        }
     });
 </script>
 {% endblock %}

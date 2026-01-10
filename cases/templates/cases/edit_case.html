@@ -36,22 +36,29 @@
                     <form method="post">
                         {% csrf_token %}
 
-                        <!-- Urgency -->
-                        <div class="mb-3">
-                            <label for="urgency" class="form-label">Urgency <span class="text-danger">*</span></label>
-                            <select id="urgency" name="urgency" class="form-select" required>
-                                <option value="normal" {% if case.urgency == 'normal' %}selected{% endif %}>Normal (Standard processing)</option>
-                                <option value="urgent" {% if case.urgency == 'urgent' %}selected{% endif %}>Urgent (Rush fee applies - Due date less than 7 days)</option>
-                            </select>
-                            <small class="form-text text-muted">Cases marked urgent have a rush fee and priority processing</small>
-                        </div>
+                        <!-- Urgency is automatically determined by due date -->
+                        <input type="hidden" id="urgency" name="urgency" value="{{ case.urgency }}">
 
                         <!-- Due Date -->
                         <div class="mb-3">
                             <label for="date_due" class="form-label">Due Date <span class="text-danger">*</span></label>
                             <input type="date" id="date_due" name="date_due" class="form-control" 
-                                   value="{{ case.date_due|date:'Y-m-d' }}" required>
-                            <small class="form-text text-muted">Date when this case should be completed</small>
+                                   value="{{ case.date_due|date:'Y-m-d' }}" required onchange="updateUrgencyFromDueDate()">
+                            <small class="form-text text-muted">Date when this case should be completed. Dates less than 7 days from now will be automatically marked as "rushed" with a $20 fee.</small>
+                            <!-- Rushed Status Alert -->
+                            <div id="rushAlertContainerEdit" style="max-height: 0; overflow: hidden; margin-top: 15px; transition: max-height 0.3s ease-out;">
+                                <div class="alert alert-danger alert-permanent" id="rushAlertEdit" style="border: 3px solid #dc3545; font-size: 1.1em; margin: 0;">
+                                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                                        <div style="font-size: 2em;">⚠️</div>
+                                        <div>
+                                            <strong style="font-size: 1.2em; display: block; margin-bottom: 8px;">Rushed Request</strong>
+                                            <p style="margin: 0; line-height: 1.6;">
+                                                This date is less than the standard 7-day turnaround period and will be considered a "rushed" request which incurs a <strong>$20 fee</strong>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Number of Reports -->
@@ -144,5 +151,41 @@
         </div>
     </div>
 </div>
+
+<script>
+    function updateUrgencyFromDueDate() {
+        const dueDateInput = document.getElementById('date_due').value;
+        const urgencyInput = document.getElementById('urgency');
+        const container = document.getElementById('rushAlertContainerEdit');
+        
+        if (!dueDateInput) {
+            urgencyInput.value = 'normal';
+            if (container) container.style.maxHeight = '0';
+            return;
+        }
+
+        // Parse the due date (format: YYYY-MM-DD) - avoid timezone issues
+        const [year, month, day] = dueDateInput.split('-');
+        const dueDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const sevenDaysFromNow = new Date(today);
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+        
+        if (dueDate < sevenDaysFromNow) {
+            urgencyInput.value = 'urgent';
+            if (container) container.style.maxHeight = '500px';
+        } else {
+            urgencyInput.value = 'normal';
+            if (container) container.style.maxHeight = '0';
+        }
+    }
+
+    // Check on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateUrgencyFromDueDate();
+    });
+</script>
 
 {% endblock %}

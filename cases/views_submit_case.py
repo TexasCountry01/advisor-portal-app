@@ -136,7 +136,7 @@ def submit_case(request):
                 urgency=urgency,
                 num_reports_requested=num_reports,
                 date_due=due_date,
-                status='draft',
+                status='submitted',
                 fact_finder_data=fact_finder_data,
                 api_sync_status='pending',
                 created_by=user,  # Track who created it (could be delegate)
@@ -231,18 +231,13 @@ def api_calculate_rushed_fee(request):
         
         is_rushed = due_date < default_due_date
         
-        # Calculate rush fee (example: $50 per day under 7 days)
-        if is_rushed:
-            days_under = (default_due_date - due_date).days
-            fee = days_under * 50  # $50 per day rushed
-        else:
-            fee = 0
+        # Flat $20 fee for rushed requests (less than 7 days)
+        fee = 20 if is_rushed else 0
         
         return JsonResponse({
             'is_rushed': is_rushed,
             'fee': fee,
-            'days_under': days_under if is_rushed else 0,
-            'message': f'Rushed report - ${fee} additional fee' if is_rushed else 'Standard processing',
+            'message': 'Rushed request - $20 fee applies' if is_rushed else 'Standard processing - no rush fee',
         })
     
     except Exception as e:
