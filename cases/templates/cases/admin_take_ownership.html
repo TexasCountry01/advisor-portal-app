@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Take Case Ownership - {{ case.external_case_id }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Case
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-check"></i> Take Case Ownership
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Case Information</h6>
+                    <table class="table table-sm mb-4">
+                        <tr>
+                            <td><strong>Case ID:</strong></td>
+                            <td>{{ case.external_case_id }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Employee:</strong></td>
+                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Member:</strong></td>
+                            <td>{{ case.member.first_name }} {{ case.member.last_name }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Status:</strong></td>
+                            <td>{{ case.get_status_display }}</td>
+                        </tr>
+                    </table>
+
+                    <h6>Current Assignment</h6>
+                    {% if current_owner %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Current Owner:</strong> {{ current_owner.first_name }} {{ current_owner.last_name }}
+                        <br>
+                        <small>After you take ownership, {{ current_owner.first_name }} will no longer be assigned to this case.</small>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>No current owner.</strong> This case is unassigned. You will become the assigned owner.
+                    </div>
+                    {% endif %}
+
+                    <h6>After Taking Ownership</h6>
+                    <p>You will have full technician access to this case, including:</p>
+                    <ul>
+                        <li>Upload and manage reports</li>
+                        <li>Add internal notes</li>
+                        <li>Mark the case as completed</li>
+                        <li>Perform all technician functions</li>
+                    </ul>
+
+                    <div class="alert alert-secondary">
+                        <i class="bi bi-info-circle"></i>
+                        The benefits technician dashboard will show you as the owner of this case.
+                    </div>
+                </div>
+                <div class="card-footer bg-light">
+                    <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-secondary">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </a>
+                    <form method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-person-check"></i> Confirm - Take Ownership
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -703,6 +703,42 @@ def case_detail(request, pk):
 
 
 @login_required
+def admin_take_ownership(request, case_id):
+    """Allow admin to take ownership of a case (becomes the assigned technician)"""
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only admin can take ownership
+    if user.role != 'administrator':
+        messages.error(request, 'Only administrators can take ownership of cases.')
+        return redirect('cases:case_detail', pk=case_id)
+    
+    if request.method == 'POST':
+        # Store the previous owner for audit trail
+        previous_owner = case.assigned_to
+        
+        # Admin takes ownership by setting assigned_to to the admin user
+        case.assigned_to = user
+        case.save()
+        
+        # Log the action
+        previous_owner_name = f"{previous_owner.first_name} {previous_owner.last_name}" if previous_owner else "None"
+        messages.success(
+            request, 
+            f'You have taken ownership of case {case.external_case_id}. Previous owner: {previous_owner_name}'
+        )
+        
+        return redirect('cases:case_detail', pk=case_id)
+    
+    # GET request - show confirmation page
+    context = {
+        'case': case,
+        'current_owner': case.assigned_to,
+    }
+    return render(request, 'cases/admin_take_ownership.html', context)
+
+
+@login_required
 def edit_case(request, pk):
     """Edit case details (members only, before submission)"""
     user = request.user
