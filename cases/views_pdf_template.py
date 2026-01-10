@@ -104,11 +104,28 @@ def view_fact_finder_pdf(request, case_id):
     if request.user.role == 'member' and case.member != request.user:
         return HttpResponse('Access denied', status=403)
     
-    # Get the Federal Fact Finder document
-    ff_document = CaseDocument.objects.filter(
+    # Get all fact_finder documents ordered by upload date (oldest first = first uploaded)
+    ff_documents = CaseDocument.objects.filter(
         case=case,
         document_type='fact_finder'
-    ).first()
+    ).order_by('uploaded_at')  # Oldest first = first uploaded
+    
+    if not ff_documents.exists():
+        return HttpResponse('Federal Fact Finder not found', status=404)
+    
+    # Find the first PDF file (prioritize PDF over images)
+    ff_document = None
+    for doc in ff_documents:
+        if doc.file and doc.original_filename.lower().endswith('.pdf'):
+            ff_document = doc
+            break
+    
+    # If no PDF found, fall back to first document that exists
+    if not ff_document:
+        for doc in ff_documents:
+            if doc.file:
+                ff_document = doc
+                break
     
     if not ff_document or not ff_document.file:
         return HttpResponse('Federal Fact Finder not found', status=404)
@@ -119,6 +136,22 @@ def view_fact_finder_pdf(request, case_id):
     if not os.path.exists(file_path):
         return HttpResponse('File not found on disk', status=404)
     
+    # Determine content type based on file extension
+    file_extension = os.path.splitext(ff_document.original_filename)[1].lower()
+    content_type_map = {
+        '.pdf': 'application/pdf',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.bmp': 'image/bmp',
+        '.doc': 'application/msword',
+        '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.xls': 'application/vnd.ms-excel',
+        '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }
+    content_type = content_type_map.get(file_extension, 'application/octet-stream')
+    
     # Open and serve the file with inline disposition
     try:
         file_obj = open(file_path, 'rb')
@@ -126,7 +159,7 @@ def view_fact_finder_pdf(request, case_id):
         
         response = FileResponse(
             file_obj,
-            content_type='application/pdf'
+            content_type=content_type
         )
         response['Content-Disposition'] = f'inline; filename="{ff_document.original_filename}"'
         response['Content-Length'] = file_size
@@ -134,8 +167,8 @@ def view_fact_finder_pdf(request, case_id):
         
         return response
     except Exception as e:
-        logger.error(f"Error serving PDF for case {case_id}: {str(e)}")
-        return HttpResponse(f'Error serving PDF: {str(e)}', status=500)
+        logger.error(f"Error serving document for case {case_id}: {str(e)}")
+        return HttpResponse(f'Error serving document: {str(e)}', status=500)
 
 @login_required
 def download_template(request):

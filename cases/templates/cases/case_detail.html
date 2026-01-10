@@ -72,7 +72,7 @@
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
             {% endif %}
-            {% if user.role == 'member' and case.status != 'submitted' %}
+            {% if user.role == 'member' and case.status != 'submitted' and case.status != 'draft' %}
                 <a href="{% url 'cases:edit_case' case.id %}" class="btn btn-warning">
                     <i class="bi bi-pencil"></i> Edit Case
                 </a>
@@ -81,6 +81,19 @@
                 <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if case.status == 'draft' and case.member == user %}
+                <button type="button" class="btn btn-warning" id="editDraftBtn" onclick="toggleEditMode()">
+                    <i class="bi bi-pencil"></i> Edit Draft
+                </button>
+                <span id="editActions" style="display: none;">
+                    <button type="button" class="btn btn-success" onclick="saveDraftChanges()">
+                        <i class="bi bi-check-circle"></i> Save Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="cancelEditMode()">
+                        <i class="bi bi-x-circle"></i> Cancel
+                    </button>
+                </span>
+                {% endif %}
             {% elif user.role == 'technician' %}
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -153,16 +166,36 @@
                         </div>
                         <div class="col-md-6">
                             <strong>Reports requested:</strong><br>
-                            {{ case.num_reports_requested }}
+                            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+                                <span id="reportDisplay">{{ case.num_reports_requested }}</span>
+                                <select id="reportEdit" name="num_reports_requested" class="form-select" style="display: none;">
+                                    {% for i in "12345" %}
+                                        <option value="{{ i }}" {% if case.num_reports_requested == i|add:0 %}selected{% endif %}>{{ i }}</option>
+                                    {% endfor %}
+                                </select>
+                            {% else %}
+                                {{ case.num_reports_requested }}
+                            {% endif %}
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Date Due:</strong><br>
-                            {% if case.date_due %}
-                                {{ case.date_due|date:"m/d/Y" }}
+                            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+                                <span id="dueDateDisplay">
+                                    {% if case.date_due %}
+                                        {{ case.date_due|date:"m/d/Y" }}
+                                    {% else %}
+                                        <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </span>
+                                <input type="date" id="dueDateEdit" name="date_due" class="form-control" style="display: none;" value="{% if case.date_due %}{{ case.date_due|date:'Y-m-d' }}{% endif %}">
                             {% else %}
-                                <span class="text-muted">Not set</span>
+                                {% if case.date_due %}
+                                    {{ case.date_due|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">Not set</span>
+                                {% endif %}
                             {% endif %}
                         </div>
                         <div class="col-md-6">
@@ -261,7 +294,35 @@
             </div>
 
             <!-- Member Notes to Benefits Team -->
-            {% if case.special_notes %}
+            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Member Notes to Benefits Team</h6>
+                        {% if not case.special_notes %}
+                        <button type="button" class="btn btn-sm btn-info" id="addNotesBtn" onclick="toggleEditMode()">
+                            <i class="bi bi-pencil"></i> Add Notes
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        {% if case.special_notes %}
+                            <div id="notesDisplay" class="p-3 bg-light rounded">
+                                {{ case.special_notes|linebreaks }}
+                            </div>
+                            <div id="notesEdit" style="display: none;">
+                                <textarea id="notesEditField" class="form-control" rows="4">{{ case.special_notes }}</textarea>
+                            </div>
+                        {% else %}
+                            <div id="notesDisplay" class="p-3 bg-light rounded text-muted">
+                                No notes added yet
+                            </div>
+                            <div id="notesEdit" style="display: none;">
+                                <textarea id="notesEditField" class="form-control" rows="4" placeholder="Add notes for the benefits team..."></textarea>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% elif case.special_notes %}
             <div class="card mb-4">
                 <div class="card-header bg-light">
                     <h6 class="mb-0">Member Notes to Benefits Team</h6>
@@ -418,6 +479,14 @@
                             </div>
                             {% endif %}
                         {% endfor %}
+                        
+                        {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+                        <div class="mt-4 pt-3 border-top">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
+                                <i class="bi bi-upload"></i> Add More Documents
+                            </button>
+                        </div>
+                        {% endif %}
                         
                     {% else %}
                     <p class="text-muted">No supporting documents uploaded yet. Download the Federal Fact Finder template below and upload it with your supporting documents.</p>
@@ -817,12 +886,16 @@
     </div>
 </div>
 
-<!-- Upload Technician Document Modal -->
+<!-- Upload Document Modal -->
 <div class="modal fade" id="uploadTechDocModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Upload Technician Document</h5>
+                {% if user.role == 'technician' %}
+                    <h5 class="modal-title">Upload Technician Document</h5>
+                {% else %}
+                    <h5 class="modal-title">Upload Document</h5>
+                {% endif %}
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" action="{% url 'cases:upload_technician_document' case.id %}" enctype="multipart/form-data">
@@ -1199,6 +1272,113 @@ function deleteNote(noteId, caseId) {
         </div>
     </div>
 </div>
+
+<script>
+// Draft Case Edit Mode Functions
+let isEditMode = false;
+
+function toggleEditMode() {
+    isEditMode = !isEditMode;
+    
+    // Toggle visibility of display vs edit fields
+    const reportDisplay = document.getElementById('reportDisplay');
+    const reportEdit = document.getElementById('reportEdit');
+    const dueDateDisplay = document.getElementById('dueDateDisplay');
+    const dueDateEdit = document.getElementById('dueDateEdit');
+    const notesDisplay = document.getElementById('notesDisplay');
+    const notesEdit = document.getElementById('notesEdit');
+    const editDraftBtn = document.getElementById('editDraftBtn');
+    const editActions = document.getElementById('editActions');
+    
+    if (isEditMode) {
+        // Show edit fields
+        if (reportDisplay) reportDisplay.style.display = 'none';
+        if (reportEdit) reportEdit.style.display = 'block';
+        if (dueDateDisplay) dueDateDisplay.style.display = 'none';
+        if (dueDateEdit) dueDateEdit.style.display = 'block';
+        if (notesDisplay) notesDisplay.style.display = 'none';
+        if (notesEdit) notesEdit.style.display = 'block';
+        if (editDraftBtn) editDraftBtn.style.display = 'none';
+        if (editActions) editActions.style.display = 'block';
+    } else {
+        // Hide edit fields
+        if (reportDisplay) reportDisplay.style.display = 'inline';
+        if (reportEdit) reportEdit.style.display = 'none';
+        if (dueDateDisplay) dueDateDisplay.style.display = 'inline';
+        if (dueDateEdit) dueDateEdit.style.display = 'none';
+        if (notesDisplay) notesDisplay.style.display = 'block';
+        if (notesEdit) notesEdit.style.display = 'none';
+        if (editDraftBtn) editDraftBtn.style.display = 'inline-block';
+        if (editActions) editActions.style.display = 'none';
+    }
+}
+
+function cancelEditMode() {
+    isEditMode = true;  // Set to true so toggleEditMode will set it to false
+    toggleEditMode();
+    
+    // Force reset of field values to original
+    const reportEdit = document.getElementById('reportEdit');
+    const dueDateEdit = document.getElementById('dueDateEdit');
+    const notesEditField = document.getElementById('notesEditField');
+    
+    // Reset to original values (they're already there from HTML)
+    if (reportEdit && reportEdit.querySelectorAll) {
+        // Just toggle back to display mode, original values stay in HTML
+    }
+}
+
+function saveDraftChanges() {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "cases:case_detail" case.id %}';
+    
+    // Add CSRF token
+    const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrftoken) {
+        form.appendChild(csrftoken.cloneNode(true));
+    }
+    
+    // Add hidden input for edit action
+    const editInput = document.createElement('input');
+    editInput.type = 'hidden';
+    editInput.name = 'edit_draft';
+    editInput.value = 'true';
+    form.appendChild(editInput);
+    
+    // Get values from edit fields
+    const reportEdit = document.getElementById('reportEdit');
+    const dueDateEdit = document.getElementById('dueDateEdit');
+    const notesEditField = document.getElementById('notesEditField');
+    
+    if (reportEdit) {
+        const reportInput = document.createElement('input');
+        reportInput.type = 'hidden';
+        reportInput.name = 'num_reports_requested';
+        reportInput.value = reportEdit.value;
+        form.appendChild(reportInput);
+    }
+    
+    if (dueDateEdit) {
+        const dueDateInput = document.createElement('input');
+        dueDateInput.type = 'hidden';
+        dueDateInput.name = 'date_due';
+        dueDateInput.value = dueDateEdit.value;
+        form.appendChild(dueDateInput);
+    }
+    
+    if (notesEditField) {
+        const notesInput = document.createElement('input');
+        notesInput.type = 'hidden';
+        notesInput.name = 'special_notes';
+        notesInput.value = notesEditField.value;
+        form.appendChild(notesInput);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
 
 {% endblock %}
 

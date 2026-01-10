@@ -646,6 +646,33 @@ def case_detail(request, pk):
         messages.error(request, 'You do not have permission to view this case.')
         return redirect('home')
     
+    # Handle draft edit POST requests
+    if request.method == 'POST' and request.POST.get('edit_draft'):
+        if case.status == 'draft' and user.role == 'member' and case.member == user:
+            # Update the case fields
+            if 'num_reports_requested' in request.POST:
+                try:
+                    case.num_reports_requested = int(request.POST.get('num_reports_requested'))
+                except (ValueError, TypeError):
+                    pass
+            
+            if 'date_due' in request.POST and request.POST.get('date_due'):
+                try:
+                    from datetime import datetime
+                    case.date_due = datetime.strptime(request.POST.get('date_due'), '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    pass
+            
+            if 'special_notes' in request.POST:
+                case.special_notes = request.POST.get('special_notes', '')
+            
+            case.save()
+            messages.success(request, 'Draft case updated successfully.')
+            return redirect('cases:case_detail', pk=case.id)
+        else:
+            messages.error(request, 'You do not have permission to edit this case.')
+            return redirect('cases:case_detail', pk=case.id)
+    
     # Get related documents - ordered by type for proper grouping in template
     documents = CaseDocument.objects.filter(case=case).order_by('document_type', '-uploaded_at')
     
@@ -991,19 +1018,27 @@ def upload_case_report(request, case_id):
 
 @login_required
 def upload_technician_document(request, case_id):
-    """Upload an additional document for a case (technician/admin only)"""
+    """Upload an additional document for a case (technician/admin, or members on draft cases)"""
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - only techs and admins can upload documents
-    if user.role not in ['technician', 'administrator', 'manager']:
-        messages.error(request, 'You do not have permission to upload documents to this case.')
-        return redirect('cases:case_detail', pk=case_id)
+    # Permission check
+    can_upload = False
     
-    # Check if technician owns the case
-    if user.role == 'technician' and case.assigned_to != user:
-        messages.error(request, 'You can only upload documents to cases you are assigned to.')
+    if user.role in ['technician', 'administrator', 'manager']:
+        # Technicians and admins can upload
+        if user.role == 'technician' and case.assigned_to != user:
+            # Technician must own the case
+            messages.error(request, 'You can only upload documents to cases you are assigned to.')
+            return redirect('cases:case_detail', pk=case_id)
+        can_upload = True
+    elif user.role == 'member' and case.member == user and case.status == 'draft':
+        # Members can upload to their own draft cases
+        can_upload = True
+    
+    if not can_upload:
+        messages.error(request, 'You do not have permission to upload documents to this case.')
         return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
@@ -1021,9 +1056,13 @@ def upload_technician_document(request, case_id):
         fed_last_name = case.employee_last_name
         filename_with_employee = f"{fed_last_name}_{document_file.name}"
         
+        # For members uploading to draft cases, use 'fact_finder' type
+        # For technicians, use 'report' type
+        doc_type = 'fact_finder' if user.role == 'member' else 'report'
+        
         CaseDocument.objects.create(
             case=case,
-            document_type='Technician Document',
+            document_type=doc_type,
             original_filename=filename_with_employee,
             file_size=document_file.size,
             uploaded_by=user,
