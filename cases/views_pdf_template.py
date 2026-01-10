@@ -104,23 +104,43 @@ def view_fact_finder_pdf(request, case_id):
     if request.user.role == 'member' and case.member != request.user:
         return HttpResponse('Access denied', status=403)
     
-    # Get all fact_finder documents ordered by upload date (oldest first = first uploaded)
+    # Get all fact_finder documents ordered by upload date (newest first)
     ff_documents = CaseDocument.objects.filter(
         case=case,
         document_type='fact_finder'
-    ).order_by('uploaded_at')  # Oldest first = first uploaded
+    ).order_by('-uploaded_at')  # Newest first
     
     if not ff_documents.exists():
         return HttpResponse('Federal Fact Finder not found', status=404)
     
-    # Find the first PDF file (prioritize PDF over images)
+    # Priority-based search for PDFs with filename convention matching
     ff_document = None
+    
+    # Priority 1: Most recent PDF with both "fact" AND "finder" in filename
     for doc in ff_documents:
         if doc.file and doc.original_filename.lower().endswith('.pdf'):
-            ff_document = doc
-            break
+            filename_lower = doc.original_filename.lower()
+            if 'fact' in filename_lower and 'finder' in filename_lower:
+                ff_document = doc
+                break
     
-    # If no PDF found, fall back to first document that exists
+    # Priority 2: Most recent PDF with either "fact" OR "finder" in filename
+    if not ff_document:
+        for doc in ff_documents:
+            if doc.file and doc.original_filename.lower().endswith('.pdf'):
+                filename_lower = doc.original_filename.lower()
+                if 'fact' in filename_lower or 'finder' in filename_lower:
+                    ff_document = doc
+                    break
+    
+    # Priority 3: Most recent PDF (any name)
+    if not ff_document:
+        for doc in ff_documents:
+            if doc.file and doc.original_filename.lower().endswith('.pdf'):
+                ff_document = doc
+                break
+    
+    # Priority 4: Most recent document that exists (fallback)
     if not ff_document:
         for doc in ff_documents:
             if doc.file:
