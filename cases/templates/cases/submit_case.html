@@ -436,28 +436,29 @@
                     <!-- User is an advisor - auto-select themselves -->
                     <!-- TODO: Future Enhancement - Pull advisor info from signon/session data -->
                     <!-- TODO: Add org hierarchy, team structure, and full advisor profile integration -->
-                    <div class="form-group">
-                        <label class="form-label">
-                            Advisor <span class="required">*</span>
-                        </label>
-                        <input type="text" name="advisor_name" class="form-control" 
-                               value="{{ current_user.first_name }} {{ current_user.last_name }}" required
-                               placeholder="Advisor name">
-                        <input type="hidden" name="advisor_id" value="{{ current_user.id }}">
-                        <small class="help-text">Your cases will be submitted under your name</small>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">
+                                Advisor <span class="required">*</span>
+                            </label>
+                            <input type="text" name="advisor_name" class="form-control" 
+                                   value="{{ current_user.first_name }} {{ current_user.last_name }}" required
+                                   placeholder="Advisor name">
+                            <input type="hidden" name="advisor_id" value="{{ current_user.id }}">
+                            <small class="help-text">Your cases will be submitted under your name</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                Workshop Code <span class="required">*</span>
+                            </label>
+                            <input type="text" name="workshop_code" id="workshopCode" class="form-control" 
+                                   placeholder="e.g., ABCD or XYZ" maxlength="5" 
+                                   value="{{ current_user.workshop_code }}" required
+                                   onchange="this.value = this.value.toUpperCase()">
+                            <small class="help-text">2-5 character code (e.g., ABCD, XYZ). Most advisors have one primary code.</small>
+                        </div>
                     </div>
                 {% endif %}
-
-                <div class="form-group">
-                    <label class="form-label">
-                        Workshop Code <span class="required">*</span>
-                    </label>
-                    <input type="text" name="workshop_code" id="workshopCode" class="form-control" 
-                           placeholder="e.g., ABCD or XYZ" maxlength="5" 
-                           value="{{ current_user.workshop_code }}" required
-                           onchange="this.value = this.value.toUpperCase()">
-                    <small class="help-text">2-5 character code (e.g., ABCD, XYZ). Most advisors have one primary code.</small>
-                </div>
             </div>
 
             <!-- Section 2: Federal Employee Information -->
@@ -479,11 +480,8 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Email Address (Optional)</label>
-                    <input type="email" name="fed_email" class="form-control" placeholder="john.smith@agency.gov">
-                    <small class="help-text">Employee's email address for case notifications</small>
-                </div>
+                <!-- Email Address field hidden for now -->
+                <input type="hidden" name="fed_email" class="form-control">
             </div>
 
             <!-- Section 3: Case Details -->
@@ -552,9 +550,9 @@
                 <h2 class="section-title">Additional Information</h2>
 
                 <div class="form-group">
-                    <label class="form-label">Notes/Comments (Optional)</label>
+                    <label class="form-label">Notes for the Benefits Team (Optional)</label>
                     <textarea name="notes" class="form-control" rows="5" 
-                              placeholder="Enter any special instructions, account numbers, or additional information that will help with the analysis..."></textarea>
+                              placeholder="Enter any special instructions or additional information that will help with the analysis..."></textarea>
                     <small class="help-text">Include any relevant details about the employee's situation</small>
                 </div>
             </div>
@@ -565,78 +563,61 @@
 
                 <div class="alert alert-info">
                     <strong>📄 Documents to Submit:</strong><br>
-                    Please upload the following:
-                    <ul style="margin-bottom: 0; margin-top: 10px; padding-left: 20px;">
-                        <li><strong>Federal Fact Finder Form:</strong> The completed form (PDF or scan)</li>
-                        <li><strong>Supporting Documents:</strong> Pay stub, TSP statement, Social Security statement, etc.</li>
-                    </ul>
+                    Please upload the completed Federal Fact Finder form along with supporting documents (pay stubs, TSP statements, Social Security statements, etc.).
                 </div>
 
-                <!-- Federal Fact Finder Upload -->
+                <!-- Document Upload -->
                 <div class="mb-4 p-4 border rounded" style="background: #f0f8ff;">
                     <h5 style="color: #003366; margin-bottom: 15px;">
-                        <i class="bi bi-file-pdf"></i> Federal Fact Finder Form
+                        <i class="bi bi-file-pdf"></i> Upload Documents
                     </h5>
                     <p style="color: #666; margin-bottom: 15px;">
-                        Upload the completed Federal Fact Finder PDF form. You can fill it out digitally or print, fill by hand, and scan.
+                        Upload your completed Federal Fact Finder form and any supporting documents. You can upload multiple files at once.
                     </p>
                     
-                    <div class="file-upload-section" id="ffUploadArea" onclick="document.getElementById('ffFileInput').click();" style="margin-bottom: 15px;">
+                    <div class="file-upload-section" id="documentUploadArea" onclick="document.getElementById('documentFileInput').click();" style="margin-bottom: 15px;">
                         <div class="file-upload-icon">📁</div>
-                        <div class="file-upload-text">Click to upload Federal Fact Finder</div>
-                        <div class="file-upload-subtext">PDF, DOC, DOCX, JPG, PNG (Max 10MB)</div>
+                        <div class="file-upload-text">Click to upload documents</div>
+                        <div class="file-upload-subtext">PDF, DOC, DOCX, JPG, PNG (Max 100MB per file)</div>
                     </div>
-                    <input type="file" id="ffFileInput" name="fact_finder_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleFFFileSelect(event)">
-                    <ul class="file-list" id="ffFileList"></ul>
-                </div>
-
-                <!-- Supporting Documents Upload -->
-                <div class="mb-4 p-4 border rounded" style="background: #f5f5f5;">
-                    <h5 style="color: #333; margin-bottom: 15px;">
-                        <i class="bi bi-file-earmark"></i> Supporting Documents
-                    </h5>
-                    <p style="color: #666; margin-bottom: 15px;">
-                        Upload pay stubs, TSP statements, Social Security statements, and any other supporting documents.
-                    </p>
-                    
-                    <div class="file-upload-section" id="supportUploadArea" onclick="document.getElementById('supportFileInput').click();" style="margin-bottom: 15px;">
-                        <div class="file-upload-icon">📁</div>
-                        <div class="file-upload-text">Click to upload supporting documents</div>
-                        <div class="file-upload-subtext">Accepted formats: PDF, DOC, DOCX, JPG, PNG (Max 10MB per file)</div>
-                    </div>
-                    <input type="file" id="supportFileInput" name="support_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleSupportFileSelect(event)">
-                    <ul class="file-list" id="supportFileList"></ul>
+                    <input type="file" id="documentFileInput" name="case_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleDocumentFileSelect(event)">
+                    <ul class="file-list" id="documentFileList"></ul>
                 </div>
 
                 <div class="alert alert-secondary">
                     <strong>📊 Document Summary:</strong><br>
-                    Federal Fact Finder: <span id="ffCount" style="font-weight: bold;">0</span> file(s)<br>
-                    Supporting Documents: <span id="supportCount" style="font-weight: bold;">0</span> file(s)<br>
                     <strong>Total: <span id="totalCount" style="font-weight: bold;">0</span> document(s)</strong>
                 </div>
 
                 <small class="help-text">
-                    You can upload multiple documents in each section. They will all be associated with this case and tracked separately.
+                    All documents will be associated with this case and tracked together.
                 </small>
             </div>
 
             <!-- Section 6: Download Template -->
+            {# HIDDEN - User requested template section be hidden for now (Jan 10, 2026) #}
+            {# TODO: Re-enable this section when user is ready. Just uncomment the HTML below. #}
+            <!--
             <div class="download-section">
                 <h4>📥 Federal Fact Finder Template</h4>
                 <p>You can download the blank Federal Fact Finder PDF template now to preview it, or after creating your case.</p>
                 <p>Fill it out (you can print and scan if you prefer) and upload it with your supporting documents.</p>
-                <a href="{% url 'cases:download_template' %}" class="btn-download" target="_blank">
+                <a href="https://www.profeds.com/FFF" class="btn-download" target="_blank">
                     <i class="bi bi-download"></i> Download Blank Template PDF
                 </a>
             </div>
+            -->
 
             <!-- Form Actions -->
             <div class="form-actions">
                 <a href="{% url 'cases:member_dashboard' %}" class="btn btn-secondary">
                     <i class="bi bi-x-circle"></i> Cancel
                 </a>
-                <button type="submit" class="btn btn-primary" id="submitBtn">
-                    <i class="bi bi-check-circle"></i> Create Case & Continue
+                <button type="submit" name="action" value="draft" class="btn btn-primary" id="saveDraftBtn">
+                    <i class="bi bi-bookmark"></i> Save as Draft
+                </button>
+                <button type="submit" name="action" value="submit" class="btn btn-success" id="submitBtn">
+                    <i class="bi bi-check-circle"></i> Submit
                 </button>
             </div>
         </form>
@@ -645,133 +626,73 @@
 
 <script>
     // Handle file uploads
-    let selectedFiles = [];
+    let documentFiles = [];
 
-    // File tracking for both document types
-    let ffFiles = [];
-    let supportFiles = [];
-
-    // Federal Fact Finder file handling
-    function handleFFFileSelect(event) {
+    // Document file handling
+    function handleDocumentFileSelect(event) {
         const files = (event && event.target.files) ? event.target.files : event.dataTransfer.files;
-        ffFiles = Array.from(files);
-        updateFFFileList();
+        // APPEND new files to existing array instead of replacing
+        documentFiles = documentFiles.concat(Array.from(files));
+        updateDocumentFileList();
         updateDocumentCount();
+        updateFileInput();
     }
 
-    function updateFFFileList() {
-        const fileList = document.getElementById('ffFileList');
+    function updateDocumentFileList() {
+        const fileList = document.getElementById('documentFileList');
         fileList.innerHTML = '';
 
-        ffFiles.forEach((file, index) => {
+        documentFiles.forEach((file, index) => {
             const li = document.createElement('li');
             li.className = 'file-list-item';
             li.innerHTML = `
                 <span class="file-name">📄 ${file.name}</span>
                 <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                <button type="button" class="remove-btn" onclick="removeFFFile(${index})">Remove</button>
+                <button type="button" class="remove-btn" onclick="removeDocumentFile(${index})">Remove</button>
             `;
             fileList.appendChild(li);
         });
     }
 
-    function removeFFFile(index) {
-        ffFiles.splice(index, 1);
-        updateFFFileList();
+    function removeDocumentFile(index) {
+        documentFiles.splice(index, 1);
+        updateDocumentFileList();
         updateDocumentCount();
-        
-        // Update the file input
+        updateFileInput();
+    }
+
+    // Update the file input with current documentFiles
+    function updateFileInput() {
         const dataTransfer = new DataTransfer();
-        ffFiles.forEach(file => {
+        documentFiles.forEach(file => {
             dataTransfer.items.add(file);
         });
-        document.getElementById('ffFileInput').files = dataTransfer.files;
-    }
-
-    // Supporting Documents file handling
-    function handleSupportFileSelect(event) {
-        const files = (event && event.target.files) ? event.target.files : event.dataTransfer.files;
-        supportFiles = Array.from(files);
-        updateSupportFileList();
-        updateDocumentCount();
-    }
-
-    function updateSupportFileList() {
-        const fileList = document.getElementById('supportFileList');
-        fileList.innerHTML = '';
-
-        supportFiles.forEach((file, index) => {
-            const li = document.createElement('li');
-            li.className = 'file-list-item';
-            li.innerHTML = `
-                <span class="file-name">📄 ${file.name}</span>
-                <span class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                <button type="button" class="remove-btn" onclick="removeSupportFile(${index})">Remove</button>
-            `;
-            fileList.appendChild(li);
-        });
-    }
-
-    function removeSupportFile(index) {
-        supportFiles.splice(index, 1);
-        updateSupportFileList();
-        updateDocumentCount();
-        
-        // Update the file input
-        const dataTransfer = new DataTransfer();
-        supportFiles.forEach(file => {
-            dataTransfer.items.add(file);
-        });
-        document.getElementById('supportFileInput').files = dataTransfer.files;
+        document.getElementById('documentFileInput').files = dataTransfer.files;
     }
 
     // Update document count display
     function updateDocumentCount() {
-        const ffCount = ffFiles.length;
-        const supportCount = supportFiles.length;
-        const totalCount = ffCount + supportCount;
-        
-        document.getElementById('ffCount').textContent = ffCount;
-        document.getElementById('supportCount').textContent = supportCount;
+        const totalCount = documentFiles.length;
         document.getElementById('totalCount').textContent = totalCount;
     }
 
-    // Drag and drop for Federal Fact Finder
-    const ffUploadArea = document.getElementById('ffUploadArea');
-    ffUploadArea.addEventListener('dragover', (e) => {
+    // Drag and drop for documents
+    const documentUploadArea = document.getElementById('documentUploadArea');
+    documentUploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
-        ffUploadArea.classList.add('dragover');
+        documentUploadArea.classList.add('dragover');
     });
 
-    ffUploadArea.addEventListener('dragleave', () => {
-        ffUploadArea.classList.remove('dragover');
+    documentUploadArea.addEventListener('dragleave', () => {
+        documentUploadArea.classList.remove('dragover');
     });
 
-    ffUploadArea.addEventListener('drop', (e) => {
+    documentUploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
-        ffUploadArea.classList.remove('dragover');
+        documentUploadArea.classList.remove('dragover');
         const files = e.dataTransfer.files;
-        document.getElementById('ffFileInput').files = files;
-        handleFFFileSelect({ target: { files: files } });
-    });
-
-    // Drag and drop for Supporting Documents
-    const supportUploadArea = document.getElementById('supportUploadArea');
-    supportUploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        supportUploadArea.classList.add('dragover');
-    });
-
-    supportUploadArea.addEventListener('dragleave', () => {
-        supportUploadArea.classList.remove('dragover');
-    });
-
-    supportUploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        supportUploadArea.classList.remove('dragover');
-        const files = e.dataTransfer.files;
-        document.getElementById('supportFileInput').files = files;
-        handleSupportFileSelect({ target: { files: files } });
+        document.getElementById('documentFileInput').files = files;
+        handleDocumentFileSelect({ target: { files: files } });
     });
 
     // Check if due date is less than 7 days from now and update urgency accordingly

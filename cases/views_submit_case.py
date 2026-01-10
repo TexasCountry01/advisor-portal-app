@@ -56,6 +56,9 @@ def submit_case(request):
     
     if request.method == 'POST':
         try:
+            # Get the action (draft or submit)
+            action = request.POST.get('action', 'draft')
+            
             # Get form data
             advisor_id = request.POST.get('advisor_id')
             workshop_code = request.POST.get('workshop_code', '').strip().upper()
@@ -136,48 +139,30 @@ def submit_case(request):
                 urgency=urgency,
                 num_reports_requested=num_reports,
                 date_due=due_date,
-                status='draft',
+                status='draft' if action == 'draft' else 'submitted',
                 fact_finder_data=fact_finder_data,
                 api_sync_status='pending',
                 created_by=user,  # Track who created it (could be delegate)
                 special_notes=notes,  # Save notes to special_notes field
+                date_submitted=timezone.now() if action == 'submit' else None,
             )
             case.save()
             
-            # Handle file uploads - Federal Fact Finder
-            if 'fact_finder_documents' in request.FILES:
-                files = request.FILES.getlist('fact_finder_documents')
+            # Handle file uploads - Combined document upload
+            # All documents are now stored together as one unified type
+            if 'case_documents' in request.FILES:
+                files = request.FILES.getlist('case_documents')
                 for file in files:
                     from cases.models import CaseDocument
                     import os
                     
                     # Append employee last name to filename
-                    name, ext = os.path.splitext(file.name)
                     filename_with_employee = f"{fed_last_name}_{file.name}"
                     
+                    # All documents stored as 'fact_finder' type (unified document type)
                     CaseDocument.objects.create(
                         case=case,
                         document_type='fact_finder',
-                        original_filename=filename_with_employee,
-                        file_size=file.size,
-                        uploaded_by=user,
-                        file=file,
-                    )
-            
-            # Handle file uploads - Supporting Documents
-            if 'support_documents' in request.FILES:
-                files = request.FILES.getlist('support_documents')
-                for file in files:
-                    from cases.models import CaseDocument
-                    import os
-                    
-                    # Append employee last name to filename
-                    name, ext = os.path.splitext(file.name)
-                    filename_with_employee = f"{fed_last_name}_{file.name}"
-                    
-                    CaseDocument.objects.create(
-                        case=case,
-                        document_type='supporting',
                         original_filename=filename_with_employee,
                         file_size=file.size,
                         uploaded_by=user,
@@ -198,11 +183,18 @@ def submit_case(request):
                     f'📄 Documents submitted: {ff_count} Federal Fact Finder, {support_count} Supporting ({total_documents} total).'
                 )
             else:
-                messages.success(
-                    request,
-                    f'✓ Case created successfully! Case ID: {external_case_id}. '
-                    f'📄 Documents submitted: {ff_count} Federal Fact Finder, {support_count} Supporting ({total_documents} total).'
-                )
+                if action == 'draft':
+                    messages.success(
+                        request,
+                        f'✓ Case saved as draft! Case ID: {external_case_id}. '
+                        f'📄 Documents uploaded: {total_documents}. You can submit it later.'
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f'✓ Case submitted successfully! Case ID: {external_case_id}. '
+                        f'📄 Documents submitted: {ff_count} Federal Fact Finder, {support_count} Supporting ({total_documents} total).'
+                    )
             
             # Redirect to member dashboard
             return redirect('cases:member_dashboard')
