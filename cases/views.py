@@ -1196,7 +1196,7 @@ def validate_case_completion(request, case_id):
 
 @login_required
 def mark_case_completed(request, case_id):
-    """Mark a case as completed (technician/admin only)"""
+    """Mark a case as completed with optional delay before member visibility (technician/admin only)"""
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
@@ -1233,36 +1233,42 @@ def mark_case_completed(request, case_id):
     if request.method == 'POST':
         try:
             from datetime import timedelta, date
+            from cases.services.timezone_service import calculate_release_time_cst, convert_to_scheduled_date_cst, get_delay_label
+            from core.models import SystemSettings
             
             case.status = 'completed'
-            # Do NOT set date_completed here - it will be set when the case is actually released
             
-            # Handle release options - data comes from already-parsed body_data
-            release_option = body_data.get('release_option', 'schedule')  # 'now' or 'schedule'
-            release_date_str = body_data.get('release_date')
+            # Get completion delay option (hours: 0-5, or use default from settings)
+            completion_delay_hours = body_data.get('completion_delay_hours')
             
-            if release_option == 'now':
-                # Release immediately
+            if completion_delay_hours is None:
+                # Use default from system settings
+                settings = SystemSettings.get_settings()
+                completion_delay_hours = settings.default_completion_delay_hours
+            else:
+                try:
+                    completion_delay_hours = int(completion_delay_hours)
+                    if completion_delay_hours < 0 or completion_delay_hours > 5:
+                        completion_delay_hours = 0
+                except (ValueError, TypeError):
+                    completion_delay_hours = 0
+            
+            if completion_delay_hours == 0:
+                # Immediate release
                 case.scheduled_release_date = None
                 case.actual_release_date = timezone.now()
-                case.date_completed = timezone.now()  # Set date_completed when released now
+                case.date_completed = timezone.now()
+                release_msg = "released immediately"
             else:
-                # Schedule release - get the date from request or use default (7 days)
-                if release_date_str:
-                    try:
-                        release_date = date.fromisoformat(release_date_str)
-                        case.scheduled_release_date = release_date
-                    except (ValueError, TypeError):
-                        case.scheduled_release_date = date.today() + timedelta(days=7)
-                else:
-                    # Default to 7 days from now
-                    case.scheduled_release_date = date.today() + timedelta(days=7)
+                # Calculate release time in CST with delay
+                release_time_cst = calculate_release_time_cst(completion_delay_hours)
+                case.scheduled_release_date = convert_to_scheduled_date_cst(release_time_cst)
                 case.actual_release_date = None
                 case.date_completed = None  # Keep empty until released
+                delay_label = get_delay_label(completion_delay_hours)
+                release_msg = f"scheduled for release in {delay_label} (CST)"
             
             case.save()
-            
-            release_msg = "released immediately" if release_option == 'now' else f"scheduled for release on {case.scheduled_release_date}"
             
             messages.success(request, f'Case marked as completed and {release_msg}.')
             return JsonResponse({

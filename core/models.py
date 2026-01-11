@@ -202,6 +202,13 @@ class SystemSettings(models.Model):
         help_text='Allow technicians to schedule delayed releases'
     )
     
+    default_completion_delay_hours = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        choices=[(0, 'Immediate'), (1, '1 Hour'), (2, '2 Hours'), (3, '3 Hours'), (4, '4 Hours'), (5, '5 Hours')],
+        help_text='Default delay (in hours, CST) before case shows as completed to member (0 = immediate)'
+    )
+    
     batch_release_time = models.TimeField(
         default='09:00',
         help_text='Time of day to process scheduled batch releases (HH:MM format, UTC)'
