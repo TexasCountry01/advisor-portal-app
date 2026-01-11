@@ -1349,7 +1349,7 @@ def get_view_preference(request):
 
 @login_required
 def upload_member_document_to_completed_case(request, case_id):
-    """Allow members to upload supplementary documents to their completed cases"""
+    """Allow members to upload supplementary documents to their cases"""
     from cases.models import CaseDocument
     import os
     
@@ -1361,9 +1361,11 @@ def upload_member_document_to_completed_case(request, case_id):
         messages.error(request, 'You do not have permission to upload documents to this case.')
         return redirect('cases:case_detail', pk=case_id)
     
-    # Check if case is completed
-    if case.status != 'completed':
-        messages.error(request, 'You can only upload documents to completed cases.')
+    # Check if case is in an appropriate status for member document upload
+    # Allow uploads for: completed (resubmission), pending_review, accepted, and draft statuses
+    allowed_statuses = ['draft', 'completed', 'pending_review', 'accepted']
+    if case.status not in allowed_statuses:
+        messages.error(request, f'You cannot upload documents to cases in {case.get_status_display()} status.')
         return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
