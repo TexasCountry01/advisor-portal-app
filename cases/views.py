@@ -708,12 +708,20 @@ def case_detail(request, pk):
     # Only technicians can upload reports
     can_upload_reports = user.role == 'technician' and can_edit
     
+    # Check if user can release case immediately (case owner or admin, and case is scheduled for release)
+    can_release_immediately = False
+    if case.status == 'completed' and case.scheduled_release_date is not None:
+        # Only case owner (assigned_to) or admin can release
+        if user.role == 'administrator' or (user.role == 'technician' and case.assigned_to == user):
+            can_release_immediately = True
+    
     context = {
         'case': case,
         'can_edit': can_edit,
         'can_upload_reports': can_upload_reports,
         'can_view_report': can_view_report,
         'can_view_internal_notes': can_view_internal_notes,
+        'can_release_immediately': can_release_immediately,
         'documents': documents,
         'tech_documents': tech_documents,
         'case_notes': case_notes,
@@ -721,6 +729,40 @@ def case_detail(request, pk):
     }
     
     return render(request, 'cases/case_detail.html', context)
+
+
+@login_required
+def release_case_immediately(request, case_id):
+    """Release a scheduled case immediately to member"""
+    from django.http import JsonResponse
+    from django.utils import timezone
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - case must be scheduled for release
+    if case.status != 'completed' or case.scheduled_release_date is None:
+        return JsonResponse({
+            'success': False,
+            'message': 'This case is not scheduled for release.'
+        }, status=400)
+    
+    # Permission check - only case owner (assigned_to) or admin can release
+    if user.role == 'administrator' or (user.role == 'technician' and case.assigned_to == user):
+        # Release the case immediately
+        case.actual_release_date = timezone.now()
+        case.scheduled_release_date = None
+        case.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Case {case.external_case_id} has been released immediately to the member.'
+        })
+    else:
+        return JsonResponse({
+            'success': False,
+            'message': 'You do not have permission to release this case.'
+        }, status=403)
 
 
 @login_required

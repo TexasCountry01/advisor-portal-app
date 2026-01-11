@@ -394,6 +394,12 @@
                                 <i class="bi bi-calendar-event"></i>
                                 <strong>This case is scheduled to be released on:</strong><br>
                                 {{ case.scheduled_release_date|date:"F j, Y" }}
+                                {% if can_release_immediately %}
+                                    <br><br>
+                                    <button type="button" class="btn btn-sm btn-success" onclick="releaseImmediately({{ case.id }})">
+                                        <i class="bi bi-check-circle"></i> Release Immediately
+                                    </button>
+                                {% endif %}
                             </div>
                         {% else %}
                             <div class="alert alert-warning" role="alert">
@@ -1576,6 +1582,34 @@ function getCookie(name) {
         }
     }
     return cookieValue;
+}
+
+// Release case immediately (for technician who owns it or admin)
+function releaseImmediately(caseId) {
+    if (confirm('Are you sure you want to release this case immediately to the member? This action cannot be undone.')) {
+        fetch(`/cases/${caseId}/release-immediately/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message and reload
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while releasing the case.');
+        });
+    }
 }
 </script>
 

@@ -45,6 +45,7 @@ urlpatterns = [
     path('<int:case_id>/validate-completion/', views.validate_case_completion, name='validate_case_completion'),
     path('<int:case_id>/mark-completed/', views.mark_case_completed, name='mark_case_completed'),
     path('<int:case_id>/mark-incomplete/', views.mark_case_incomplete, name='mark_case_incomplete'),
+    path('<int:case_id>/release-immediately/', views.release_case_immediately, name='release_case_immediately'),
     
     # View preference API
     path('api/view-preference/save/<str:view_type>/', views.save_view_preference, name='save_view_preference'),
