@@ -62,7 +62,7 @@ def fact_finder_template(request, case_id):
             )
             
             messages.success(request, f'Federal Fact Finder PDF uploaded successfully!')
-            return redirect('case_fact_finder', case_id=case.id)
+            return redirect('cases:case_fact_finder', case_id=case.id)
         
         # If no Federal Fact Finder but tried to access view, redirect
         if not ff_document and request.POST.get('action') != 'upload':
@@ -238,17 +238,17 @@ def delete_document(request, doc_id):
     # Check permissions - only member can delete their own case documents
     if request.user.role == 'member' and case.member != request.user:
         messages.error(request, 'Access denied - this is not your case.')
-        return redirect('case_detail', pk=case.id)
+        return redirect('cases:case_detail', pk=case.id)
     
     # Check case status - cannot delete documents from submitted cases
     if case.status == 'submitted':
         messages.error(request, 'Cannot delete documents from a submitted case.')
-        return redirect('case_detail', pk=case.id)
+        return redirect('cases:case_detail', pk=case.id)
     
     filename = doc.original_filename
     doc.delete()
     messages.success(request, f'Document "{filename}" deleted successfully.')
-    return redirect('case_detail', pk=case.id)
+    return redirect('cases:case_detail', pk=case.id)
 
 @login_required
 def submit_case(request, case_id):
@@ -268,9 +268,9 @@ def submit_case(request, case_id):
             request, 
             f'Case {case.external_case_id} submitted successfully. Benefits team will review shortly.'
         )
-        return redirect('case_detail', pk=case_id)
+        return redirect('cases:case_detail', pk=case_id)
     
-    return redirect('case_fact_finder', case_id=case_id)
+    return redirect('cases:case_fact_finder', case_id=case_id)
 
 @login_required
 @require_http_methods(["POST"])
@@ -352,6 +352,6 @@ def save_case_draft(request, case_id):
         
         # For regular form submission, show message and redirect
         messages.success(request, f'Case {case.external_case_id} saved successfully!')
-        return redirect('case_fact_finder', case_id=case_id)
+        return redirect('cases:case_fact_finder', case_id=case_id)
     
-    return redirect('case_fact_finder', case_id=case_id)
+    return redirect('cases:case_fact_finder', case_id=case_id)
