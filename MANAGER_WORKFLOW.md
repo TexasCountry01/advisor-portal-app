@@ -311,17 +311,7 @@ Result: Admin reviews, takes appropriate action
    - No: Escalate to admin
 6. Document decision & communicate
 
-### Scenario C: "Member is waiting on report - it's not released yet"
-1. Member contacts support
-2. Check case status in system
-3. If scheduled for release: Check if time has passed
-   - Yes: Click "Release Immediately"
-   - No: Explain release time to member (set by admin in system settings)
-4. If not completed: Check why
-   - Talk to tech - when will they complete?
-   - If urgent: Can request immediate release from admin
-
-### Scenario D: "Quality issue in tech's work"
+### Scenario C: "Quality issue in tech's work"
 1. Review completed case
 2. Notice quality issue (incomplete, error, etc)
 3. Don't release to member yet
