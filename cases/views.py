@@ -679,7 +679,25 @@ def case_detail(request, pk):
     
     # Get case notes (technician/internal notes)
     from cases.models import CaseNote, CaseReport
-    case_notes = CaseNote.objects.filter(case=case).order_by('-created_at')
+    
+    # Determine if user can see internal notes
+    can_view_internal_notes = user.role in ['technician', 'administrator', 'manager']
+    
+    # Filter case notes based on visibility
+    if can_view_internal_notes:
+        # Techs/admins see all notes
+        case_notes = CaseNote.objects.filter(case=case).order_by('-created_at')
+    else:
+        # Members see only public notes (is_internal=False)
+        case_notes = CaseNote.objects.filter(case=case, is_internal=False).order_by('-created_at')
+    
+    # Check if member can view technician's report and documents
+    # Members can only see these if case is completed AND released
+    can_view_report = True
+    if user.role == 'member' and case.member == user:
+        # For members: only show report/docs if case is completed AND actual_release_date is set
+        if case.status == 'completed' and case.actual_release_date is None:
+            can_view_report = False
     
     # Get technician documents only
     tech_documents = documents.filter(document_type='report').order_by('-uploaded_at')
@@ -694,6 +712,8 @@ def case_detail(request, pk):
         'case': case,
         'can_edit': can_edit,
         'can_upload_reports': can_upload_reports,
+        'can_view_report': can_view_report,
+        'can_view_internal_notes': can_view_internal_notes,
         'documents': documents,
         'tech_documents': tech_documents,
         'case_notes': case_notes,
@@ -925,7 +945,7 @@ def take_case_ownership(request, case_id):
 
 @login_required
 def add_case_note(request, case_id):
-    """Add an internal note to a case (technician/admin only)"""
+    """Add a note to a case (everyone can add, but visibility depends on is_internal flag)"""
     from cases.models import CaseNote
     from django.utils import timezone
     from datetime import timedelta
@@ -933,8 +953,13 @@ def add_case_note(request, case_id):
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - only techs and admins can add notes
-    if user.role not in ['technician', 'administrator', 'manager']:
+    # Permission check - members and techs/admins can add notes
+    if user.role not in ['member', 'technician', 'administrator', 'manager']:
+        messages.error(request, 'You do not have permission to add notes to this case.')
+        return redirect('cases:case_detail', pk=case_id)
+    
+    # Additional check for members - can only add notes to their own cases
+    if user.role == 'member' and case.member != user:
         messages.error(request, 'You do not have permission to add notes to this case.')
         return redirect('cases:case_detail', pk=case_id)
     
@@ -953,11 +978,15 @@ def add_case_note(request, case_id):
             if recent_duplicate:
                 messages.warning(request, 'This note was just added. Duplicate prevented.')
             else:
+                # Members add public notes (is_internal=False)
+                # Techs/admins add internal notes (is_internal=True)
+                is_internal = user.role in ['technician', 'administrator', 'manager']
+                
                 CaseNote.objects.create(
                     case=case,
                     author=user,
                     note=note_text,
-                    is_internal=True
+                    is_internal=is_internal
                 )
                 messages.success(request, 'Note added successfully.')
         else:

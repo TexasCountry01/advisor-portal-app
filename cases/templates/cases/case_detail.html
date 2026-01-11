@@ -365,6 +365,15 @@
             </div>
             {% endif %}
 
+            <!-- Pending Release Notice (Members only) -->
+            {% if user.role == 'member' and case.status == 'completed' and case.actual_release_date is None %}
+                <div class="alert alert-info mb-4">
+                    <i class="bi bi-clock-history"></i>
+                    <strong>This case is complete and will be available for review on {{ case.scheduled_release_date|date:"F j, Y" }}</strong>
+                    <p class="mt-2 mb-0">The report and supporting documents will be displayed once the release date arrives.</p>
+                </div>
+            {% endif %}
+
             <!-- Release Status (if applicable) -->
             {% if case.status == 'completed' and user.role != 'member' %}
                 <div class="card mb-4">
@@ -627,12 +636,11 @@
                 {% endif %}
             {% endif %}
 
-            <!-- Technician/Internal Notes Section -->
-            {% if user.role == 'technician' or user.role == 'administrator' or user.role == 'manager' %}
+            <!-- Case Notes/Communication Section (Everyone can see and add) -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="bi bi-pencil-square"></i> Internal Notes/Comments
+                        <i class="bi bi-chat-left-text"></i> Notes & Communication
                         {% if case_notes.count > 0 %}
                         <span class="badge bg-warning">{{ case_notes.count }}</span>
                         {% endif %}
@@ -647,6 +655,7 @@
                                 <div>
                                     {% if note.author %}
                                         <strong>{{ note.author.get_full_name|default:note.author.username }}</strong>
+                                        {% if note.is_internal %}<span class="badge bg-danger ms-2">Internal</span>{% endif %}
                                     {% else %}
                                         <strong class="text-muted">[Deleted User]</strong>
                                     {% endif %}
@@ -663,25 +672,24 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted mb-3">No internal notes yet.</p>
+                    <p class="text-muted mb-3">No notes yet. Start the conversation!</p>
                     {% endif %}
 
-                    {% if can_edit %}
+                    <!-- Note: Everyone can add notes -->
                     <form method="post" action="{% url 'cases:add_case_note' case.id %}" class="mt-3">
                         {% csrf_token %}
                         <div class="form-group">
-                            <textarea class="form-control" name="notes" rows="3" placeholder="Add an internal note..." required></textarea>
+                            <textarea class="form-control" name="notes" rows="3" placeholder="Add a note to communicate with the team..." required></textarea>
                         </div>
                         <button type="submit" class="btn btn-sm btn-primary">
                             <i class="bi bi-plus-circle"></i> Add Note
                         </button>
                     </form>
-                    {% endif %}
                 </div>
             </div>
-            {% endif %}
 
-            <!-- Reports -->
+            <!-- Reports (Tech/Admin/Manager only OR Member if released) -->
+            {% if can_view_report %}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -734,8 +742,10 @@
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
 
-            <!-- Additional Documents -->
+            <!-- Additional Documents (Tech/Admin/Manager only OR Member if released) -->
+            {% if can_view_report %}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Additional Documents</h5>
@@ -775,6 +785,8 @@
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
+
         </div>
 
         <!-- Right Column: Timeline & Actions (Technician/Admin only) -->
