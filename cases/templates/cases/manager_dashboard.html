@@ -25,6 +25,27 @@
             </button>
         </div>
         <div id="view-stats-container" class="card-body">
+            <style>
+                #view-stats-container .stat-mini {
+                    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                    color: white;
+                    padding: 16px 24px;
+                    border-radius: 8px;
+                    text-align: center;
+                    min-width: 130px;
+                    flex-shrink: 0;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                }
+                #view-stats-container .stat-mini-value {
+                    font-size: 2rem;
+                    font-weight: bold;
+                }
+                #view-stats-container .stat-mini-label {
+                    font-size: 0.9rem;
+                    opacity: 0.9;
+                    margin-top: 6px;
+                }
+            </style>
             <!-- Stats Row (Right side only) -->
             <div class="row mb-3" id="top-row">
                 <div class="col-auto ms-auto d-flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
@@ -165,20 +186,25 @@
                 .stat-mini {
                     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
                     color: white;
-                    padding: 6px 10px;
+                    padding: 24px 32px;
                     border-radius: 6px;
                     text-align: center;
-                    min-width: 70px;
+                    min-width: 150px;
                     flex-shrink: 0;
                 }
                 .stat-mini-value {
-                    font-size: 1.2rem;
+                    font-size: 2.8rem;
                     font-weight: bold;
                 }
                 .stat-mini-label {
-                    font-size: 0.7rem;
+                    font-size: 1.1rem;
                     opacity: 0.9;
-                    margin-top: 2px;
+                    margin-top: 8px;
+                }
+                /* Larger buttons */
+                .btn-sm {
+                    padding: 0.6rem 1rem !important;
+                    font-size: 1rem !important;
                 }
                 .table { margin-bottom: 0; }
                 .table thead th { 
@@ -200,7 +226,10 @@
                 <table class="table table-hover table-sm">
                     <thead>
                         <tr>
+                            <!-- COMMENTED OUT: ID Column Header - 01/11/2026
+                                 Reason: ID column removed from dashboard. Full link available via "Workshop Code" column.
                             <th id="id-column"><a href="?{% if sort_by == 'external_case_id' %}sort=-external_case_id{% else %}sort=external_case_id{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">ID</a></th>
+                            -->
                             <th id="code-column"><a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Code</a></th>
                             <th><a href="?{% if sort_by == 'member__first_name' %}sort=-member__first_name{% else %}sort=member__first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Member</a></th>
                             <th><a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Employee</a></th>
@@ -215,14 +244,20 @@
                             <th><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Tier</a></th>
                             <th>Reviewed By</th>
                             <th>Notes</th>
+                            <!-- COMMENTED OUT: Completed Column Header - 01/11/2026
+                                 Reason: Completed date removed from dashboard. Status column shows release status.
                             <th><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Completed</a></th>
+                            -->
                             <th>View</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for case in cases %}
                         <tr>
+                            <!-- COMMENTED OUT: ID Column Cell - 01/11/2026
+                                 Reason: ID column removed from dashboard.
                             <td id="id-column"><a href="{% url 'cases:case_detail' case.id %}" class="btn btn-sm btn-outline-primary" title="{{ case.external_case_id }}">Link</a></td>
+                            -->
                             <td id="code-column">{{ case.workshop_code }}</td>
                             <td>
                                 {% if case.member.get_full_name %}
@@ -319,6 +354,8 @@
                                     —
                                 {% endif %}
                             </td>
+                            <!-- COMMENTED OUT: Completed Column Cell - 01/11/2026
+                                 Reason: Completed date removed from dashboard.
                             <td>
                                 {% if case.date_completed %}
                                     {{ case.date_completed|date:"m/d/Y" }}
@@ -326,13 +363,18 @@
                                     —
                                 {% endif %}
                             </td>
+                            -->
                             <td style="min-width: 120px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
+                                <!-- COMMENTED OUT: PDF Button - 01/11/2026
+                                     Reason: PDF viewer moved to Case Details page. Users can access PDF from there.
+                                     Link: {% url 'cases:view_fact_finder_pdf' case.id %}
                                 <a href="{% url 'cases:view_fact_finder_pdf' case.id %}" target="_blank" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-file-pdf"></i> PDF
                                 </a>
+                                -->
                             </td>
                         </tr>
                         {% endfor %}
