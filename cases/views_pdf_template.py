@@ -232,7 +232,12 @@ def download_document(request, doc_id):
 @login_required
 def delete_document(request, doc_id):
     """Delete an uploaded document (only if case is not submitted)"""
-    doc = get_object_or_404(CaseDocument, id=doc_id)
+    try:
+        doc = get_object_or_404(CaseDocument, id=doc_id)
+    except:
+        messages.error(request, f'Document not found (ID: {doc_id}). It may have already been deleted.')
+        return redirect('cases:case_list')
+    
     case = doc.case
     
     # Check permissions - only member can delete their own case documents
