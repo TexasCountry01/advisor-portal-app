@@ -1122,7 +1122,10 @@ def upload_technician_document(request, case_id):
             notes=document_notes,
         )
         
-        messages.success(request, 'Document uploaded successfully.')
+        # Show updated document count
+        from cases.services.document_count_service import get_document_count_message
+        doc_count_msg = get_document_count_message(case, include_breakdown=True)
+        messages.success(request, f'Document uploaded successfully. {doc_count_msg}')
     
     return redirect('cases:case_detail', pk=case_id)
 
@@ -1385,7 +1388,7 @@ def upload_member_document_to_completed_case(request, case_id):
         fed_last_name = case.employee_last_name
         filename_with_employee = f"{fed_last_name}_{document_file.name}"
         
-        # Create document with 'member_supplement' type
+        # Create document with 'supporting' type
         CaseDocument.objects.create(
             case=case,
             document_type='supporting',  # Using 'supporting' type for member supplements
@@ -1396,7 +1399,10 @@ def upload_member_document_to_completed_case(request, case_id):
             notes=document_notes if document_notes else 'Member supplementary document',
         )
         
-        messages.success(request, 'Document uploaded successfully. You can upload more documents before resubmitting.')
+        # Show updated document count
+        from cases.services.document_count_service import get_document_count_message
+        doc_count_msg = get_document_count_message(case, include_breakdown=True)
+        messages.success(request, f'Document uploaded successfully. {doc_count_msg} You can upload more documents before resubmitting.')
     
     return redirect('cases:case_detail', pk=case_id)
 

@@ -174,31 +174,30 @@ def submit_case(request):
                         file=file,
                     )
             
-            # Get total document count
-            total_documents = case.documents.count()
-            ff_count = case.documents.filter(document_type='fact_finder').count()
-            support_count = case.documents.filter(document_type='supporting').count()
+            # Get document count message using helper function
+            from cases.services.document_count_service import get_document_count_message
+            doc_count_msg = get_document_count_message(case, include_breakdown=True)
             
             # Determine if this is rushed
             if urgency == 'urgent':
                 messages.warning(
                     request,
-                    f'⚠️ This report has been marked as RUSHED (due date less than 7 days). '
+                    f'WARNING: This report has been marked as RUSHED (due date less than 7 days). '
                     f'A rush fee may apply. Case ID: {external_case_id}. '
-                    f'📄 Documents submitted: {ff_count} Federal Fact Finder, {support_count} Supporting ({total_documents} total).'
+                    f'{doc_count_msg}'
                 )
             else:
                 if action == 'draft':
                     messages.success(
                         request,
-                        f'✓ Case saved as draft! Case ID: {external_case_id}. '
-                        f'📄 Documents uploaded: {total_documents}. You can submit it later.'
+                        f'Case saved as draft! Case ID: {external_case_id}. '
+                        f'{doc_count_msg} You can submit it later.'
                     )
                 else:
                     messages.success(
                         request,
-                        f'✓ Case submitted successfully! Case ID: {external_case_id}. '
-                        f'📄 Documents submitted: {ff_count} Federal Fact Finder, {support_count} Supporting ({total_documents} total).'
+                        f'Case submitted successfully! Case ID: {external_case_id}. '
+                        f'{doc_count_msg}'
                     )
             
             # Redirect to member dashboard
