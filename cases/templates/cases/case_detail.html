@@ -98,6 +98,15 @@
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if not case.assigned_to or case.assigned_to != user %}
+                <button type="button" class="btn btn-outline-success" onclick="takeOwnership({{ case.id }})">
+                    <i class="bi bi-hand-thumbs-up"></i> Take Ownership
+                </button>
+                {% else %}
+                <span class="badge bg-success">
+                    <i class="bi bi-check-circle"></i> You own this case
+                </span>
+                {% endif %}
             {% elif user.role == 'manager' %}
                 <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -1501,6 +1510,60 @@ function submitCreditAdjustment() {
         console.error('Error:', error);
         alert('An error occurred while updating credit: ' + error.message);
     });
+}
+
+// Take Ownership Function (for technicians)
+function takeOwnership(caseId) {
+    if (!confirm('Take ownership of this case?')) {
+        return;
+    }
+    
+    const formData = new FormData();
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+    
+    fetch(`/cases/${caseId}/take-ownership/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.error || `HTTP ${response.status}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to take ownership'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    });
+}
+
+// Helper function to get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
 }
 </script>
 
