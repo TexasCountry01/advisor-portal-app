@@ -296,6 +296,19 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 
 ---
 
+## Release Timing: Admin-Controlled (NOT Technician-Controlled)
+
+✅ **Correct Behavior:**
+- Admin sets default delay in System Settings (0-5 hours CST)
+- When YOU mark a case "Complete", system AUTOMATICALLY uses that default
+- You do NOT select the delay - admin controls it
+- If immediate (0 hrs): Member sees report now
+- If delayed (1-5 hrs): System schedules release, cron job handles it
+
+**Exception**: If case is already scheduled and member needs urgent access, you/admin can click "Release Immediately" to override the schedule.
+
+---
+
 ## Key Features for Technicians
 
 ### Case Queue Management
@@ -322,56 +335,63 @@ My Dashboard shows:
 - ✓ Document evidence/findings
 - ✓ Attach supporting evidence
 
-### Case Completion Options
+### Release Timing Settings (Configured by Admin)
 
-| Option | Delay | Description | Use Case |
-|--------|-------|-------------|----------|
-| **Immediate** | 0 hours | Member sees report now | Urgent cases, quick turnaround |
-| **1 Hour** | CST | Member sees in 1 hour | Standard processing |
-| **2 Hours** | CST | Member sees in 2 hours | Standard (default) |
-| **3 Hours** | CST | Member sees in 3 hours | Quality review window |
-| **4 Hours** | CST | Member sees in 4 hours | Extended review |
-| **5 Hours** | CST | Member sees in 5 hours | Maximum delay window |
+| Setting | Effect | When Used |
+|---------|--------|----------|
+| **0 hours** | Immediate release to member | For quick turnaround cases |
+| **1 hour** | Member sees in 1 hour (CST) | Minimal delay |
+| **2 hours** | Member sees in 2 hours (CST) | Standard (common default) |
+| **3 hours** | Member sees in 3 hours (CST) | Quality review window |
+| **4 hours** | Member sees in 4 hours (CST) | Extended review |
+| **5 hours** | Member sees in 5 hours (CST) | Maximum delay window |
+
+**You do NOT select these - Admin configures once for entire team.**
 
 ---
 
 ## Common Technician Workflows
 
-### Workflow A: "Fast Track Case"
+### Workflow A: "Standard Case Processing"
 1. Dashboard shows new case (Submitted)
 2. Click "Take Ownership"
 3. Review fact-finder & documents
-4. Quick investigation (1-2 hours)
+4. Perform investigation
 5. Upload report
-6. Mark Complete → Select "0 hours" (Immediate)
-7. Report visible to member now
+6. Click "Mark as Complete"
+7. System automatically uses Admin's configured delay
+8. Case released to member based on admin setting
+   - If admin set 0 hrs: Report visible now
+   - If admin set 2 hrs: Report visible in 2 hours (CST)
 
-### Workflow B: "Standard Processing"
+### Workflow B: "Complex Investigation"
 1. Accept case from queue
 2. Full investigation (8-12 hours)
 3. Multiple document requests from member
 4. Upload comprehensive report
-5. Mark Complete → Select "2 hours" (CST)
-6. System releases at CST+2hrs
-7. Member sees report on time
+5. Click "Mark as Complete"
+6. System applies Admin's default delay automatically
+7. Member sees report when scheduled (no additional action needed)
 
-### Workflow C: "Complex Case with Escalation"
+### Workflow C: "Escalation Needed"
 1. Accept complex case
 2. Add internal notes (research phase)
 3. Request additional documents
 4. Perform detailed investigation
-5. If needed: Request manager review
+5. If complex: Escalate to manager or admin
 6. Upload final report
-7. Mark Complete with review delay
-8. Report released after quality check
+7. Click "Mark as Complete"
+8. System uses Admin's configured delay
+9. Manager/admin can review during delay if needed
 
-### Workflow D: "Member Resubmitted - Needs Re-review"
+### Workflow D: "Member Resubmitted Documents"
 1. See "Resubmitted" status
 2. New documents from member (updated info)
 3. Review what changed
 4. Incorporate into report
-5. Mark Complete → Select delay
-6. Release at scheduled time
+5. Click "Mark as Complete"
+6. System applies Admin's default delay
+7. Member gets updated report at scheduled release time
 
 ---
 
