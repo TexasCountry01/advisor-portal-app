@@ -186,9 +186,11 @@
                                     <span class="badge bg-secondary">Draft</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
-                                        <span class="badge bg-success">Completed</span>
+                                        <span class="badge bg-success" title="Report is ready to download">✓ Ready</span>
+                                    {% elif case.scheduled_release_date %}
+                                        <span class="badge bg-warning" title="Available on {{ case.scheduled_release_date|date:'M j, Y' }}">⏳ Available {{ case.scheduled_release_date|date:"m/d" }}</span>
                                     {% else %}
-                                        <span class="badge bg-info">Working</span>
+                                        <span class="badge bg-info">In Progress</span>
                                     {% endif %}
                                 {% endif %}
                             </td>
@@ -218,9 +220,19 @@
                             </td>
                             -->
                             <td style="min-width: 250px;">
+                                {% if case.status == 'completed' and case.actual_release_date %}
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-success" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible; font-weight: 500;" title="Your report is ready to download!">
+                                    <i class="bi bi-download"></i> Download
+                                </a>
+                                {% elif case.status == 'completed' and case.scheduled_release_date and not case.actual_release_date %}
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" title="Report will be available on {{ case.scheduled_release_date|date:'M j, Y' }}">
+                                    <i class="bi bi-clock"></i> Pending
+                                </a>
+                                {% else %}
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
+                                {% endif %}
                                 <!-- COMMENTED OUT: PDF Button - 01/11/2026
                                      Reason: PDF viewer moved to Case Details page. Users can access PDF from there.
                                      Link: {% url 'cases:view_fact_finder_pdf' case.id %}
