@@ -171,26 +171,3 @@ def reactivate_user(request, user_id):
     messages.success(request, f'User {username} has been reactivated.')
     
     return redirect('manage_users')
-
-
-@login_required
-def delete_user(request, user_id):
-    """Delete a user. Admin only."""
-    
-    # Check if user is admin
-    if not is_admin(request.user):
-        messages.error(request, 'You do not have permission to delete users.')
-        return redirect('home')
-    
-    # Prevent admin from deleting themselves
-    user_to_delete = get_object_or_404(User, id=user_id)
-    
-    if request.user.id == user_to_delete.id:
-        messages.error(request, 'You cannot delete your own account.')
-        return redirect('manage_users')
-    
-    username = user_to_delete.get_full_name() or user_to_delete.username
-    user_to_delete.delete()
-    messages.success(request, f'User {username} has been deleted.')
-    
-    return redirect('manage_users')

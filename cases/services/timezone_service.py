@@ -4,7 +4,7 @@ All release calculations should use this service to ensure consistency.
 """
 
 from django.utils import timezone
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import pytz
 
 # Central Standard Time timezone
@@ -72,7 +72,7 @@ def should_release_case(case) -> bool:
     return case.scheduled_release_date <= cst_today
 
 
-def convert_to_scheduled_date_cst(release_datetime: datetime) -> 'date':
+def convert_to_scheduled_date_cst(release_datetime: datetime) -> date:
     """
     Convert a release datetime to a scheduled_release_date (just the date part, in CST).
     Used when setting scheduled_release_date from a calculated release time.
