@@ -195,9 +195,24 @@
 - ✓ Monitor case release scheduling
 
 ### 2. **Manage Case Assignments**
-- ✓ View unassigned cases (queue)
-- ✓ Assign new cases to technicians
-- ✓ Reassign cases between technicians
+- ✓ View unassigned cases (queue) with "Review & Accept" needed
+- ✓ **Accept & Assign** new cases (or delegate to techs):
+  - Review Federal Fact Finder completeness
+  - Verify supporting documents
+  - Adjust credit value if needed
+  - Assign tier (Tier 1, 2, or 3)
+  - Select technician
+  - ⚠️ System warns if tier > tech level (can override)
+- ✓ **Reject/Request More Info** if case incomplete:
+  - Select rejection reason
+  - Add notes about what's needed
+  - Member receives email with requirements
+  - Case status → "Needs Resubmission"
+- ✓ **Reassign** cases between technicians:
+  - Click "Reassign" on accepted case
+  - Select new technician
+  - Add reason (optional)
+  - Audit trail automatically recorded
 - ✓ Balance workload across team
 - ✓ Assign based on expertise/urgency
 - ✓ Verify email notifications are scheduled correctly

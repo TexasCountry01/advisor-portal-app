@@ -205,19 +205,24 @@
 
 ### 3. **Case Management**
 - ✓ View all cases (unrestricted)
+- ✓ Accept & Assign cases (Review & Accept workflow)
+- ✓ Reject cases if incomplete (Request More Info)
 - ✓ Release cases immediately (override delay)
-- ✓ Reassign cases across any technician
+- ✓ Reassign cases across any technician (audit trail maintained)
 - ✓ Resolve complex escalations
 - ✓ View internal tech notes
+- ✓ View reassignment history for each case
+- ✓ Monitor rejection rates and trends
 - ✓ Delete/archive cases (if needed)
 
 ### 4. **Audit & Compliance**
-- ✓ View complete audit trail
+- ✓ View complete audit trail (including reassignments)
 - ✓ Track all user actions
 - ✓ Review case change history
 - ✓ Export audit logs
 - ✓ Generate compliance reports
 - ✓ Monitor access control
+- ✓ Review rejection analytics
 
 ### 5. **System Maintenance**
 - ✓ Backup & restore database
@@ -229,21 +234,49 @@
 
 ---
 
-## Role-Based User Creation Permissions
+## Role-Based User Creation & Management
 
-✅ **Super Admin Controls Who Can Create What:**
+✅ **Admin Controls Who Can Create & Manage What:**
 
-| **Your Role** | **Can Create** | **Cannot Create** |
-|---|---|---|
-| **Administrator** | Technician, Manager | Member, other Admins |
-| **Manager** | ✗ Cannot create users | All users |
-| **Technician** | ✗ Only Admin can grant | (Unless Admin) |
-| **Member** | ✗ No user creation | All users |
+| **Your Role** | **Can Create** | **Can Deactivate** | **Can Reactivate** |
+|---|---|---|---|
+| **Administrator** | Technician, Manager | All (except Admin) | All (except Admin) |
+| **Manager** | ✗ Cannot create users | Cannot deactivate | Cannot reactivate |
+| **Technician** | ✗ Cannot create users | Cannot deactivate | Cannot reactivate |
+| **Member** | ✗ No user creation | Cannot deactivate | Cannot reactivate |
 
-⚠️ **Technicians Get Special Permission:**
-- Admins can enable Technicians to create/manage Member users only
-- This enables field team self-sufficiency
-- Still logged and audited as admin action
+⚠️ **User Deactivation Model** (NOT Deletion):
+- Users can be deactivated (set inactive) but NEVER deleted
+- All user data, cases, and audit trail preserved
+- Deactivated users can be reactivated any time
+- Maintains data integrity and compliance
+
+---
+
+## Case Review & Acceptance Workflow (Admin Role)
+
+As an **Administrator**, you have full authority to:
+
+**1. Accept & Assign Cases:**
+- Click "Review & Accept" on submitted cases
+- Review Federal Fact Finder & documents
+- Adjust credit value (0.5 to 3.0)
+- Assign tier (Tier 1, 2, 3)
+- Select technician
+- ⚠️ Tier Warning if tier > tech level (can override)
+
+**2. Reject Cases (Request More Info):**
+- Select rejection reason (6 presets + custom)
+- Add detailed notes about requirements
+- Member receives email with what's needed
+- Case status → "Needs Resubmission"
+
+**3. Reassign Cases (Post-Acceptance):**
+- Click "Reassign" on accepted case
+- Select new technician
+- Add reason
+- Automatic audit trail:
+  - From technician, to technician, date, reason, by admin
 
 ---
 

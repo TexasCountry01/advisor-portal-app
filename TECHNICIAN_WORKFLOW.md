@@ -260,9 +260,19 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 
 ### 1. **Submitted Status** (Unassigned)
 - ✓ View case summary (not detailed)
-- ✓ Take ownership (become assigned tech)
-- ✓ Read member's fact-finder submission
-- ✗ Cannot complete case yet (need investigation)
+- ✓ **Review & Accept** button (NEW):
+  - Review Federal Fact Finder completeness
+  - Review supporting documents
+  - Adjust credit value (0.5 to 3.0)
+  - Assign case tier (Tier 1, 2, or 3)
+  - Select technician for assignment
+  - Complete pre-acceptance checklist
+  - ⚠️ Tier Warning if tier > your level (can override)
+- ✓ **Request More Info** (Reject):
+  - Select rejection reason
+  - Add detailed notes
+  - Member gets email with requirements
+- ✗ Cannot complete case yet (need acceptance first)
 
 ### 2. **Accepted Status** (Assigned to You)
 - ✓ Full access to case details
@@ -271,6 +281,7 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 - ✓ Request more documents from member
 - ✓ Add internal comments (not visible to member)
 - ✓ Update case status/progress
+- ℹ️ Reassignment: Manager/Admin can reassign to another tech
 
 ### 3. **In Progress Status**
 - ✓ Continue investigation
@@ -385,20 +396,43 @@ My Dashboard shows:
 
 ## Common Technician Workflows
 
-### Workflow A: "Standard Case Processing"
+### Workflow A: "New Case Review & Accept"
 1. Dashboard shows new case (Submitted)
-2. Click "Take Ownership"
-3. Review fact-finder & documents
-4. Perform investigation
-5. Upload report
-6. Click "Mark as Complete"
-7. System automatically uses Admin's configured delay
-8. Case released to member based on admin setting
+2. Click **"Review & Accept"** button
+3. Review screen displays:
+   - Federal Fact Finder sections (check for completeness)
+   - Supporting documents (verify presence)
+   - Pre-acceptance checklist (4 required items)
+4. Select credit value (0.5 to 3.0)
+5. Select case tier (Tier 1, 2, or 3)
+6. Select technician to assign to
+7. Check all 4 checklist items
+8. Click **"Accept & Assign"**
+   - If tier > your level: ⚠️ Warning popup (can override)
+9. Case status changes to "Accepted" and moves to tech's queue
+10. Continue to Workflow B (Process case)
+
+**Alternative: If Case Incomplete**
+- Click **"Request More Info"** instead
+- Select reason (missing FFF section, missing documents, etc.)
+- Add detailed notes about what's needed
+- Click **"Send & Request Info"**
+- Case status → "Needs Resubmission"
+- Member receives email with requirements
+
+### Workflow B: "Standard Case Processing"
+1. Case is Accepted and assigned to you
+2. Review fact-finder & documents
+3. Perform investigation
+4. Upload report
+5. Click "Mark as Complete"
+6. System automatically uses Admin's configured delay
+7. Case released to member based on admin setting
    - If admin set 0 hrs: Report visible now
    - If admin set 2 hrs: Report visible in 2 hours (CST)
 
-### Workflow B: "Complex Investigation"
-1. Accept case from queue
+### Workflow C: "Complex Investigation"
+1. Review & Accept case (see Workflow A)
 2. Full investigation (8-12 hours)
 3. Multiple document requests from member
 4. Upload comprehensive report
@@ -406,16 +440,15 @@ My Dashboard shows:
 6. System applies Admin's default delay automatically
 7. Member sees report when scheduled (no additional action needed)
 
-### Workflow C: "Escalation Needed"
-1. Accept complex case
-2. Add internal notes (research phase)
-3. Request additional documents
-4. Perform detailed investigation
-5. If complex: Escalate to manager or admin
-6. Upload final report
-7. Click "Mark as Complete"
-8. System uses Admin's configured delay
-9. Manager/admin can review during delay if needed
+### Workflow D: "Resubmitted Case"
+1. See case with "Needs Resubmission" status
+   - This is a case you previously rejected
+   - Member has resubmitted with requested documents
+2. Click **"Review & Accept"** again
+3. Verify all previously-missing items are now present
+4. Review updated documents
+5. Accept again OR reject again with updated notes
+6. Continue processing as normal
 
 ### Workflow D: "Member Resubmitted Documents"
 1. See "Resubmitted" status

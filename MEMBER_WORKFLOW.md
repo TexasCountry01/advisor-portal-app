@@ -249,6 +249,20 @@
 - ✗ Cannot edit main case fields
 - ✗ Cannot see final reports (not released yet)
 
+### 4. **Needs Resubmission Status** (NEW)
+- ⚠️ Case was **rejected** by technician/admin
+- ✓ View rejection reason (why case wasn't accepted)
+- ✓ View detailed notes about what's needed
+- ✓ Email notification sent with requirements
+- ✓ Resubmit case with updated documents/information
+  - Update Federal Fact Finder if needed
+  - Add missing supporting documents
+  - Re-upload any corrected forms
+  - Confirm all items from rejection notes are addressed
+- ✓ Submit again for tech review
+- Case re-enters review workflow
+
+
 ### 4. **Completed Status - Pending Release**
 - ✓ See "Available on [DATE]" message
 - ✓ View case timeline
