@@ -826,40 +826,37 @@
                 </div>
 
                 <!-- Member Notification Status -->
+                {% if case.status == 'completed' %}
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">Member Notification</h5>
                     </div>
                     <div class="card-body">
                         {% if case.actual_email_sent_date %}
-                            <div class="alert alert-success mb-0">
+                            <div class="alert alert-success alert-permanent mb-0">
                                 <i class="bi bi-envelope-check"></i> <strong>Member Notified</strong>
-                                <br><small>Email sent on {{ case.actual_email_sent_date|date:"M d, Y \a\t g:i A" }}</small>
+                                <br><small>Email sent on {{ case.actual_email_sent_date|date:"M d, Y \a\t g:i A" }} CST</small>
                                 {% if case.member %}
                                     <br><small class="text-muted">To: {{ case.member.email }}</small>
                                 {% endif %}
                             </div>
                         {% elif case.scheduled_email_date %}
-                            <div class="alert alert-info mb-0">
+                            <div class="alert alert-info alert-permanent mb-0">
                                 <i class="bi bi-hourglass-split"></i> <strong>Notification Scheduled</strong>
                                 <br><small>Will be sent on {{ case.scheduled_email_date|date:"M d, Y" }}</small>
                                 {% if case.member %}
                                     <br><small class="text-muted">To: {{ case.member.email }}</small>
                                 {% endif %}
                             </div>
-                        {% elif case.status == 'completed' %}
-                            <div class="alert alert-warning mb-0">
+                        {% else %}
+                            <div class="alert alert-warning alert-permanent mb-0">
                                 <i class="bi bi-exclamation-triangle"></i> <strong>No Notification Scheduled</strong>
                                 <br><small>Member will not receive notification for this case.</small>
-                            </div>
-                        {% else %}
-                            <div class="alert alert-secondary mb-0">
-                                <i class="bi bi-info-circle"></i> <strong>Not Yet Completed</strong>
-                                <br><small>Notification will be scheduled when case is marked as completed.</small>
                             </div>
                         {% endif %}
                     </div>
                 </div>
+                {% endif %}
 
                 <!-- Timeline -->
                 <div class="card mb-4">
