@@ -37,7 +37,17 @@ class Case(models.Model):
         ('accepted', 'Accepted'),
         ('hold', 'Hold'),
         ('pending_review', 'Pending Review'),
+        ('needs_resubmission', 'Needs Resubmission'),
         ('completed', 'Completed'),
+    ]
+    
+    REJECTION_REASON_CHOICES = [
+        ('incomplete_fff', 'Federal Fact Finder incomplete - missing required sections'),
+        ('missing_documents', 'Missing required source documents'),
+        ('insufficient_data', 'Insufficient data to process'),
+        ('invalid_credit_request', 'Credit value appears incorrect'),
+        ('tier_mismatch', 'Case tier does not match employee situation'),
+        ('other', 'Other (see notes)'),
     ]
     
     URGENCY_CHOICES = [
@@ -174,6 +184,42 @@ class Case(models.Model):
         null=True,
         blank=True,
         help_text='Actual date/time when notification email was sent to member'
+    )
+    
+    # Rejection/Review Feedback Fields
+    rejection_reason = models.CharField(
+        max_length=50,
+        choices=REJECTION_REASON_CHOICES,
+        null=True,
+        blank=True,
+        help_text='Primary reason for rejecting case (needs_resubmission status)'
+    )
+    
+    rejection_notes = models.TextField(
+        blank=True,
+        help_text='Detailed notes about why case was rejected or what needs to be addressed'
+    )
+    
+    date_rejected = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When case was rejected and moved to needs_resubmission status'
+    )
+    
+    rejected_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rejected_cases',
+        help_text='Technician or admin who rejected this case'
+    )
+    
+    # Case reassignment audit trail
+    reassignment_history = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='History of case reassignments: [{from_tech, to_tech, date, reason}]'
     )
     
     # Field 18: Report Notes (per-report status, stored as JSON)

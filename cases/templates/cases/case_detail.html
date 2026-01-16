@@ -98,7 +98,11 @@
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
-                {% if not case.assigned_to or case.assigned_to != user %}
+                {% if case.status in 'submitted,resubmitted' %}
+                    <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
+                        <i class="bi bi-clipboard-check"></i> Review & Accept
+                    </a>
+                {% elif not case.assigned_to or case.assigned_to != user %}
                 <button type="button" class="btn btn-outline-success" onclick="takeOwnership({{ case.id }})">
                     <i class="bi bi-hand-thumbs-up"></i> Take Ownership
                 </button>
@@ -111,10 +115,30 @@
                 <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if case.status in 'submitted,resubmitted' %}
+                    <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
+                        <i class="bi bi-clipboard-check"></i> Review & Accept
+                    </a>
+                {% endif %}
+                {% if case.status == 'accepted' %}
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
+                        <i class="bi bi-arrow-repeat"></i> Reassign
+                    </button>
+                {% endif %}
             {% elif user.role == 'administrator' %}
                 <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if case.status in 'submitted,resubmitted' %}
+                    <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
+                        <i class="bi bi-clipboard-check"></i> Review & Accept
+                    </a>
+                {% endif %}
+                {% if case.status == 'accepted' %}
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
+                        <i class="bi bi-arrow-repeat"></i> Reassign
+                    </button>
+                {% endif %}
                 {% if not case.assigned_to or case.assigned_to != user %}
                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#adminTakeOwnershipModal">
                     <i class="bi bi-person-check"></i> Take Ownership
@@ -1681,4 +1705,39 @@ function releaseImmediately(caseId) {
         </div>
     </div>
 </div>
+
+<!-- Reassign Modal -->
+<div class="modal fade" id="reassignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="bi bi-arrow-repeat"></i> Reassign Case</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="reassignForm" method="post" action="{% url 'cases:reassign_case' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="reassignTech" class="form-label"><strong>Reassign to Technician</strong></label>
+                        <select class="form-select" id="reassignTech" name="assigned_to" required>
+                            <option value="">Select a technician...</option>
+                            {% for tech in available_techs %}
+                                <option value="{{ tech.id }}">{{ tech.get_full_name }} ({{ tech.get_user_level_display }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reassignReason" class="form-label">Reason (optional)</label>
+                        <textarea class="form-control" id="reassignReason" name="reason" rows="3" placeholder="Why are you reassigning this case?"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning"><i class="bi bi-check"></i> Reassign</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

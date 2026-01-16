@@ -715,6 +715,9 @@ def case_detail(request, pk):
         if user.role == 'administrator' or (user.role == 'technician' and case.assigned_to == user):
             can_release_immediately = True
     
+    # Get available technicians for reassignment dropdown
+    available_techs = User.objects.filter(role='technician', is_active=True).order_by('first_name')
+    
     context = {
         'case': case,
         'can_edit': can_edit,
@@ -726,6 +729,7 @@ def case_detail(request, pk):
         'tech_documents': tech_documents,
         'case_notes': case_notes,
         'reports': reports,
+        'available_techs': available_techs,
     }
     
     return render(request, 'cases/case_detail.html', context)
@@ -1661,3 +1665,212 @@ def credit_audit_trail(request, case_id=None):
             'page_title': 'Credit Audit Trail Report'
         }
         return render(request, 'cases/credit_audit_trail_report.html', context)
+
+
+# ====== CASE REVIEW & ACCEPTANCE WORKFLOW ======
+
+@login_required
+def case_review_for_acceptance(request, pk):
+    """
+    Review case before acceptance. Technician or admin reviews FFF, documents,
+    and can adjust credit, assign tier, and select technician for assignment.
+    """
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: Only techs/admins/managers can review
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return HttpResponseForbidden('Access denied. Technicians and admins only.')
+    
+    # Case must be in 'submitted' or 'resubmitted' status
+    if case.status not in ['submitted', 'resubmitted']:
+        messages.error(request, f'Case cannot be reviewed. Status: {case.get_status_display()}')
+        return redirect('case_detail', pk=case.id)
+    
+    # Get available technicians for assignment (only those with role='technician')
+    available_techs = User.objects.filter(role='technician', is_active=True).order_by('first_name')
+    
+    context = {
+        'case': case,
+        'available_techs': available_techs,
+        'page_title': f'Review Case {case.external_case_id}',
+    }
+    
+    return render(request, 'cases/case_review_and_accept.html', context)
+
+
+@login_required
+def accept_case(request, pk):
+    """
+    Accept a case and assign it to a technician.
+    Updates: status → accepted, credit_value, tier, assigned_to, date_accepted
+    """
+    if request.method != 'POST':
+        return HttpResponseForbidden('POST required.')
+    
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        # Get form data
+        credit_value = request.POST.get('credit_value')
+        tier = request.POST.get('tier')
+        assigned_to_id = request.POST.get('assigned_to')
+        
+        # Validate
+        if not credit_value or not tier or not assigned_to_id:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        # Get assigned technician
+        assigned_to = get_object_or_404(User, pk=assigned_to_id, role='technician')
+        
+        # Update case
+        case.credit_value = credit_value
+        case.tier = tier
+        case.assigned_to = assigned_to
+        case.status = 'accepted'
+        case.date_accepted = timezone.now()
+        case.save()
+        
+        logger.info(f'Case {case.external_case_id} accepted by {user.username}. '
+                   f'Assigned to {assigned_to.username}, Tier: {tier}, Credit: {credit_value}')
+        
+        messages.success(request, f'✓ Case {case.external_case_id} accepted and assigned to {assigned_to.get_full_name()}')
+        return JsonResponse({'success': True, 'redirect': f'/cases/{case.id}/'})
+        
+    except User.DoesNotExist:
+        logger.error(f'Technician not found: {assigned_to_id}')
+        return JsonResponse({'error': 'Technician not found'}, status=404)
+    except Exception as e:
+        logger.error(f'Error accepting case: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def reject_case(request, pk):
+    """
+    Reject a case and request more information from the member.
+    Status changes to 'needs_resubmission' and email sent to member.
+    """
+    if request.method != 'POST':
+        return HttpResponseForbidden('POST required.')
+    
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return HttpResponseForbidden('Access denied.')
+    
+    try:
+        rejection_reason = request.POST.get('rejection_reason')
+        rejection_notes = request.POST.get('rejection_notes')
+        
+        if not rejection_reason or not rejection_notes:
+            messages.error(request, 'Please provide both a reason and detailed notes.')
+            return redirect('case_review_for_acceptance', pk=case.id)
+        
+        # Update case
+        case.status = 'needs_resubmission'
+        case.rejection_reason = rejection_reason
+        case.rejection_notes = rejection_notes
+        case.date_rejected = timezone.now()
+        case.rejected_by = user
+        case.save()
+        
+        # Send rejection email to member
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.conf import settings
+        
+        email_context = {
+            'member': case.member,
+            'case': case,
+            'rejection_reason': case.get_rejection_reason_display(),
+            'rejection_notes': rejection_notes,
+            'case_url': f'{settings.SITE_URL}/cases/{case.id}/' if hasattr(settings, 'SITE_URL') else 'https://yoursite.com/cases/',
+        }
+        
+        subject = f'Case {case.external_case_id} - Additional Information Needed'
+        text_message = render_to_string('emails/case_rejection_notification.txt', email_context)
+        html_message = render_to_string('emails/case_rejection_notification.html', email_context)
+        
+        send_mail(
+            subject=subject,
+            message=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[case.member.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        
+        logger.info(f'Case {case.external_case_id} rejected by {user.username}. '
+                   f'Reason: {rejection_reason}. Email sent to {case.member.email}')
+        
+        messages.success(request, f'✓ Case {case.external_case_id} moved to "Needs Resubmission". '
+                        f'Notification sent to {case.member.get_full_name()}.')
+        return redirect('case_detail', pk=case.id)
+        
+    except Exception as e:
+        logger.error(f'Error rejecting case: {str(e)}')
+        messages.error(request, f'Error: {str(e)}')
+        return redirect('case_review_for_acceptance', pk=case.id)
+
+
+@login_required
+def reassign_case(request, pk):
+    """
+    Reassign an accepted case to a different technician.
+    Maintains audit trail of all reassignments.
+    """
+    if request.method != 'POST':
+        return HttpResponseForbidden('POST required.')
+    
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: Only admin/manager can reassign
+    if user.role not in ['administrator', 'manager']:
+        return JsonResponse({'error': 'Access denied. Admin/Manager only.'}, status=403)
+    
+    try:
+        new_tech_id = request.POST.get('assigned_to')
+        reason = request.POST.get('reason', 'Manual reassignment')
+        
+        if not new_tech_id:
+            return JsonResponse({'error': 'Missing technician selection'}, status=400)
+        
+        new_tech = get_object_or_404(User, pk=new_tech_id, role='technician')
+        old_tech = case.assigned_to
+        
+        # Record in audit trail
+        if not isinstance(case.reassignment_history, list):
+            case.reassignment_history = []
+        
+        case.reassignment_history.append({
+            'from_tech': old_tech.username if old_tech else 'Unassigned',
+            'to_tech': new_tech.username,
+            'date': timezone.now().isoformat(),
+            'reason': reason,
+            'by_user': user.username,
+        })
+        
+        # Update assignment
+        case.assigned_to = new_tech
+        case.save()
+        
+        logger.info(f'Case {case.external_case_id} reassigned from {old_tech.username if old_tech else "Unassigned"} '
+                   f'to {new_tech.username} by {user.username}. Reason: {reason}')
+        
+        messages.success(request, f'✓ Case reassigned to {new_tech.get_full_name()}')
+        return JsonResponse({'success': True, 'redirect': f'/cases/{case.id}/'})
+        
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'Technician not found'}, status=404)
+    except Exception as e:
+        logger.error(f'Error reassigning case: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)

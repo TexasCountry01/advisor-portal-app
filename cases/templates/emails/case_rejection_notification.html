@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .header {
+            background-color: #d9534f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px 8px 0 0;
+            margin: -20px -20px 20px -20px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .case-info {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ff9800;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .case-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ffeaa7;
+        }
+        .case-info-row:last-child {
+            border-bottom: none;
+        }
+        .case-info-label {
+            font-weight: bold;
+            color: #856404;
+        }
+        .reason-box {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .reason-box h3 {
+            margin: 0 0 10px 0;
+            color: #721c24;
+        }
+        .details-box {
+            background-color: #e2e3e5;
+            border: 1px solid #d6d8db;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .details-box h4 {
+            margin: 0 0 10px 0;
+            color: #383d41;
+        }
+        .steps {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .steps h4 {
+            margin: 0 0 10px 0;
+            color: #0c5460;
+        }
+        .steps ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .steps li {
+            margin: 8px 0;
+            color: #0c5460;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>⚠️ Additional Information Needed</h1>
+        </div>
+
+        <p>Hi {{ member.get_full_name }},</p>
+
+        <p>We've reviewed your case and need some additional information before we can proceed with processing it.</p>
+
+        <div class="case-info">
+            <div class="case-info-row">
+                <span class="case-info-label">Case ID:</span>
+                <span><code>{{ case.external_case_id }}</code></span>
+            </div>
+            <div class="case-info-row">
+                <span class="case-info-label">Employee:</span>
+                <span>{{ case.employee_first_name }} {{ case.employee_last_name }}</span>
+            </div>
+            <div class="case-info-row">
+                <span class="case-info-label">Status:</span>
+                <span>Awaiting Resubmission</span>
+            </div>
+        </div>
+
+        <div class="reason-box">
+            <h3>🔴 Reason for Request:</h3>
+            <p><strong>{{ rejection_reason }}</strong></p>
+        </div>
+
+        <div class="details-box">
+            <h4>📋 Details:</h4>
+            <p>{{ rejection_notes }}</p>
+        </div>
+
+        <div class="steps">
+            <h4>📝 Next Steps:</h4>
+            <ol>
+                <li>Review the items listed above</li>
+                <li>Gather any missing documents or complete sections</li>
+                <li>Resubmit your case through the member portal</li>
+                <li>Our team will review the updated submission</li>
+            </ol>
+        </div>
+
+        <center>
+            <a href="{{ case_url }}" class="cta-button">Return to Your Case</a>
+        </center>
+
+        <p style="margin-top: 30px;">If you have any questions or need clarification on what's needed, please don't hesitate to contact us.</p>
+
+        <div class="footer">
+            <p><strong>ProFeds Advisor Portal Team</strong></p>
+            <p>Email: Reports@ProFeds.com | Fax: 866-779-9921</p>
+            <p style="font-size: 11px; margin-top: 10px;">This is an automated message. Please do not reply directly to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

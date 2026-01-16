@@ -1,0 +1,21 @@
+Hi {{ member.get_full_name }},
+
+We've reviewed your case {{ case.external_case_id }} and need some additional information before we can proceed with processing it.
+
+REASON FOR REQUEST:
+{{ rejection_reason }}
+
+DETAILS:
+{{ rejection_notes }}
+
+NEXT STEPS:
+1. Review the items listed above
+2. Gather any missing documents or complete sections
+3. Resubmit your case through the member portal
+4. Our team will review the updated submission
+
+If you have any questions or need clarification on what's needed, please don't hesitate to contact us.
+
+Best regards,
+ProFeds Advisor Portal Team
+Reports@ProFeds.com | Fax: 866-779-9921
