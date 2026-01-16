@@ -222,6 +222,12 @@ class Case(models.Model):
         help_text='History of case reassignments: [{from_tech, to_tech, date, reason}]'
     )
     
+    # Report Notes to Member (visible when case released)
+    report_notes_to_member = models.TextField(
+        blank=True,
+        help_text='Notes from technician visible to member when case is released'
+    )
+    
     # Field 18: Report Notes (per-report status, stored as JSON)
     report_notes = models.JSONField(
         default=list,

@@ -1874,3 +1874,45 @@ def reassign_case(request, pk):
     except Exception as e:
         logger.error(f'Error reassigning case: {str(e)}')
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def save_report_notes(request, pk):
+    """
+    Save report notes to member via AJAX.
+    Only techs/admins/managers can save notes.
+    Auto-saves as tech types in floating window.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: Only techs/admins/managers can save notes
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Case must be in appropriate status
+    if case.status not in ['accepted', 'pending_review', 'completed']:
+        return JsonResponse({'error': 'Cannot add notes to case in this status'}, status=400)
+    
+    try:
+        notes_text = request.POST.get('report_notes_to_member', '').strip()
+        
+        # Update case notes
+        case.report_notes_to_member = notes_text
+        case.save()
+        
+        # Log the update
+        logger.info(f'Report notes updated for case {case.external_case_id} by {user.username}')
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Notes saved',
+            'saved_at': timezone.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f'Error saving report notes: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)
