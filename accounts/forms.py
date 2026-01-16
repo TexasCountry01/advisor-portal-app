@@ -82,6 +82,27 @@ class UserCreationForm(forms.Form):
         help_text='Only for Members: Pre-assigned workshop code'
     )
     
+    def __init__(self, *args, current_user=None, **kwargs):
+        """Initialize form with role filtering based on current user"""
+        super().__init__(*args, **kwargs)
+        
+        # Filter role choices based on current user's role
+        if current_user:
+            if current_user.role == 'administrator':
+                # Admin can create techs and managers
+                self.fields['role'].choices = [
+                    ('technician', 'Technician'),
+                    ('manager', 'Manager'),
+                ]
+            elif current_user.role == 'technician':
+                # Tech can only create members
+                self.fields['role'].choices = [
+                    ('member', 'Member'),
+                ]
+            else:
+                # Others can't create users
+                self.fields['role'].choices = []
+    
     def clean_username(self):
         """Check if username already exists"""
         username = self.cleaned_data.get('username')

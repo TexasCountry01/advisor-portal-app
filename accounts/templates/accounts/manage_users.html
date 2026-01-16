@@ -8,7 +8,11 @@
     <div class="row mb-4">
         <div class="col-md-8">
             <h1>User Management</h1>
-            <p class="text-muted">Create and manage application users (Admin Only)</p>
+            {% if current_user_role == 'administrator' %}
+                <p class="text-muted">Create and manage Technician and Manager users</p>
+            {% elif current_user_role == 'technician' %}
+                <p class="text-muted">Create and manage Member users</p>
+            {% endif %}
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
@@ -148,15 +152,17 @@
                                         <th>Username</th>
                                         <th>Role</th>
                                         <th>Level</th>
+                                        <th>Status</th>
                                         <th>Created</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for user in users %}
-                                        <tr>
+                                        <tr {% if not user.is_active %}style="opacity: 0.6; background-color: #f8f9fa;"{% endif %}>
                                             <td>
                                                 <strong>{{ user.get_full_name|default:user.username }}</strong>
+                                                {% if not user.is_active %}<span class="badge bg-secondary ms-2">Inactive</span>{% endif %}
                                             </td>
                                             <td>
                                                 <code>{{ user.username }}</code>
@@ -180,15 +186,30 @@
                                                 {% endif %}
                                             </td>
                                             <td>
+                                                {% if user.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
                                                 <small class="text-muted">{{ user.created_at|date:"M d, Y" }}</small>
                                             </td>
                                             <td>
                                                 {% if user.id != request.user.id %}
-                                                    <a href="{% url 'delete_user' user.id %}" 
-                                                       class="btn btn-sm btn-danger"
-                                                       onclick="return confirm('Are you sure you want to delete {{ user.get_full_name }}?');">
-                                                        Delete
-                                                    </a>
+                                                    {% if user.is_active %}
+                                                        <a href="{% url 'deactivate_user' user.id %}" 
+                                                           class="btn btn-sm btn-warning"
+                                                           onclick="return confirm('Are you sure you want to deactivate {{ user.get_full_name }}? Their cases will be preserved.');">
+                                                            <i class="bi bi-person-dash"></i> Deactivate
+                                                        </a>
+                                                    {% else %}
+                                                        <a href="{% url 'reactivate_user' user.id %}" 
+                                                           class="btn btn-sm btn-success"
+                                                           onclick="return confirm('Are you sure you want to reactivate {{ user.get_full_name }}?');">
+                                                            <i class="bi bi-person-check"></i> Reactivate
+                                                        </a>
+                                                    {% endif %}
                                                 {% else %}
                                                     <small class="text-muted">(current user)</small>
                                                 {% endif %}
@@ -199,7 +220,7 @@
                             </table>
                         </div>
                     {% else %}
-                        <div class="alert alert-info">No users created yet.</div>
+                        <div class="alert alert-info">No users available for management.</div>
                     {% endif %}
                 </div>
             </div>
