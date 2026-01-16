@@ -185,6 +185,9 @@ else:
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Email Configuration
+DEFAULT_FROM_EMAIL = 'noreply@profeds.com'
+
 # Login/Logout URLs
 LOGIN_URL = '/admin/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
