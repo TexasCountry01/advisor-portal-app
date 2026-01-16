@@ -163,6 +163,19 @@ class Case(models.Model):
         help_text='Actual date/time when case was released to member (auto-set when status allows release)'
     )
     
+    # Email Notification Fields (tied to release schedule)
+    scheduled_email_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='Date when member notification email will be sent (tied to release date)'
+    )
+    
+    actual_email_sent_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Actual date/time when notification email was sent to member'
+    )
+    
     # Field 18: Report Notes (per-report status, stored as JSON)
     report_notes = models.JSONField(
         default=list,

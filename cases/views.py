@@ -1290,22 +1290,26 @@ def mark_case_completed(request, case_id):
             else:
                 try:
                     completion_delay_hours = int(completion_delay_hours)
-                    if completion_delay_hours < 0 or completion_delay_hours > 5:
+                    if completion_delay_hours < 0 or completion_delay_hours > 24:
                         completion_delay_hours = 0
                 except (ValueError, TypeError):
                     completion_delay_hours = 0
             
             if completion_delay_hours == 0:
-                # Immediate release
+                # Immediate release and email
                 case.scheduled_release_date = None
                 case.actual_release_date = timezone.now()
+                case.scheduled_email_date = None
+                case.actual_email_sent_date = timezone.now()
                 case.date_completed = timezone.now()
                 release_msg = "released immediately"
             else:
                 # Calculate release time in CST with delay
                 release_time_cst = calculate_release_time_cst(completion_delay_hours)
                 case.scheduled_release_date = convert_to_scheduled_date_cst(release_time_cst)
+                case.scheduled_email_date = convert_to_scheduled_date_cst(release_time_cst)  # Tied together
                 case.actual_release_date = None
+                case.actual_email_sent_date = None  # Keep empty until sent
                 case.date_completed = None  # Keep empty until released
                 delay_label = get_delay_label(completion_delay_hours)
                 release_msg = f"scheduled for release in {delay_label} (CST)"

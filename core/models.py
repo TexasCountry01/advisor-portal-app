@@ -219,6 +219,34 @@ class SystemSettings(models.Model):
         help_text='Automatically process scheduled releases at batch_release_time'
     )
     
+    # Email Notification Settings (tied to release schedule)
+    enable_delayed_email_notifications = models.BooleanField(
+        default=True,
+        help_text='Send member notification emails when case is released'
+    )
+    
+    default_email_delay_hours = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(24)],
+        choices=[
+            (0, 'Immediately'),
+            (1, '1 Hour'),
+            (2, '2 Hours'),
+            (3, '3 Hours'),
+            (4, '4 Hours'),
+            (5, '5 Hours'),
+            (6, '6 Hours'),
+            (12, '12 Hours'),
+            (24, '24 Hours'),
+        ],
+        help_text='Default delay (in hours, CST) before sending member notification email (tied to release date)'
+    )
+    
+    batch_email_enabled = models.BooleanField(
+        default=True,
+        help_text='Automatically send scheduled emails via batch job'
+    )
+    
     # API Configuration - Benefits Software
     benefits_software_api_url = models.CharField(
         max_length=500,

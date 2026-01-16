@@ -1,0 +1,33 @@
+Dear {{ member.first_name|default:member.username }},
+
+Your case {{ case.external_case_id }} has been completed and is now available for your review.
+
+CASE DETAILS:
+─────────────────────────────────────
+Employee Name: {{ employee_name }}
+Case ID: {{ case.external_case_id }}
+Workshop Code: {{ case.workshop_code }}
+Completion Date: {{ case.date_completed|date:"F j, Y \a\t g:i A" }}
+Status: {{ case.get_status_display }}
+
+NEXT STEPS:
+─────────────────────────────────────
+You can now access your completed case and review the report by logging into your account:
+
+View Your Case: {{ case_url }}
+
+If you have any questions about your case or the report, please contact your benefits advisor.
+
+IMPORTANT:
+─────────────────────────────────────
+- Your case documents are available immediately upon release
+- Reports may be subject to a release delay per system configuration
+- All information is confidential and intended only for the case participant
+
+For questions or concerns, please reach out to our support team.
+
+Best regards,
+Benefits Administration Portal
+
+─────────────────────────────────────
+This is an automated notification. Please do not reply to this email.
