@@ -101,43 +101,46 @@
                      ▼
             ┌──────────────────────────┐
             │ Mark Case as Complete    │
-            │ (w/ delay option)        │
+            │ (w/ delay option 0-24hr) │
             └────────┬─────────────────┘
                      │
                      ▼
             ┌──────────────────────────┐
             │ Select Release Timing:   │
-            │ 0, 1, 2, 3, 4, or 5 hrs  │
+            │ 0-24 hours               │
             └────────┬─────────────────┘
                      │
-         ┌───────────┴───────────┐
-         │                       │
-       0 hrs                   1-5 hrs
-    (Immediate)              (Delayed)
-         │                       │
-         ▼                       ▼
-    ┌────────────┐         ┌──────────────┐
-    │ Released   │         │ Scheduled    │
-    │ Immediately│         │ for Future   │
-    │            │         │ Release      │
-    └─────┬──────┘         └────┬─────────┘
-          │                     │
-          ▼                     ▼
-    ┌──────────────┐      ┌───────────────┐
-    │ Member Sees  │      │ Can Release   │
-    │ Report Now   │      │ Immediately   │
-    └──────────────┘      │ if Needed     │
-                          └───────────────┘
-                                 │
-                                 ▼
-                          ┌───────────────┐
-                          │ Member Gets   │
-                          │ Report on     │
-                          │ Release Date  │
-                          └───────────────┘
-                                 │
-                                 ▼
-                               END
+         ┌───────────┴───────────────────┐
+         │                               │
+       0 hrs                           1-24 hrs
+    (Immediate)                      (Delayed)
+         │                               │
+         ▼                               ▼
+    ┌────────────┐              ┌──────────────────┐
+    │ Released   │              │ Scheduled        │
+    │ Immediately│              │ for Future       │
+    │            │              │ Release (w/ Email│
+    │ Email Sent │              │ Notification)    │
+    │ Immediately│              │                  │
+    └─────┬──────┘              └────┬─────────────┘
+          │                          │
+          ▼                          ▼
+    ┌──────────────┐         ┌──────────────────┐
+    │ Member Sees  │         │ Member Scheduled │
+    │ Report Now   │         │ to Receive Email │
+    │ Gets Email   │         │ on Release Date  │
+    │ Notification │         │                  │
+    └──────────────┘         └──────────────────┘
+                                    │
+                                    ▼
+                            ┌──────────────────┐
+                            │ Cron Job Sends   │
+                            │ Email & Releases │
+                            │ on Scheduled Date│
+                            └──────────────────┘
+                                    │
+                                    ▼
+                                  END
 ```
 
 ---
@@ -285,9 +288,10 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 
 ### 5. **Completing Case**
 - ✓ Mark as "Completed"
-- ✓ Select release timing (0-5 hours)
+- ✓ Select release timing (0-24 hours CST)
 - ✓ Set actual_release_date (if 0 hrs)
-- ✓ Set scheduled_release_date (if 1-5 hrs)
+- ✓ Set scheduled_release_date & scheduled_email_date (if 1-24 hrs)
+- ✓ Email notification automatically scheduled with release
 
 ### 6. **Completed Case - Awaiting Release**
 - ✓ Can still add internal notes
@@ -299,13 +303,42 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 ## Release Timing: Admin-Controlled (NOT Technician-Controlled)
 
 ✅ **Correct Behavior:**
-- Admin sets default delay in System Settings (0-5 hours CST)
+- Admin sets default delay in System Settings (0-24 hours CST)
 - When YOU mark a case "Complete", system AUTOMATICALLY uses that default
 - You do NOT select the delay - admin controls it
-- If immediate (0 hrs): Member sees report now
-- If delayed (1-5 hrs): System schedules release, cron job handles it
+- Email notification is TIED to release delay (sent same time as release)
+- If immediate (0 hrs): Member sees report NOW and gets email immediately
+- If delayed (1-24 hrs): System schedules both release AND email notification for same date/time
+- Cron job processes both release and email sending on scheduled date
 
-**Exception**: If case is already scheduled and member needs urgent access, you/admin can click "Release Immediately" to override the schedule.
+**Exception**: If case is already scheduled and member needs urgent access, you/admin can click "Release Immediately" to override the schedule and trigger email immediately.
+
+---
+
+## Email Notification System
+
+### How It Works:
+1. **On Case Completion** (marked as Completed):
+   - System sets `scheduled_email_date` = completion delay date/time (CST)
+   - System sets `actual_email_sent_date` = NULL (awaiting send)
+
+2. **On Release** (if 0 hrs delay):
+   - Both release AND email happen immediately
+   - Member sees "Member Notified" with timestamp on case detail
+
+3. **On Scheduled Release** (if 1-24 hrs delay):
+   - Cron job runs daily (configured time)
+   - Finds all cases with `scheduled_email_date <= today`
+   - Sends email notification to member
+   - Sets `actual_email_sent_date` to timestamp
+
+4. **Member Notification Card**:
+   - Shows in case detail page (staff-only view)
+   - Displays one of:
+     - ✅ "Member Notified on [DATE TIME CST]"
+     - ⏳ "Notification Scheduled for [DATE]"
+     - ⚠️ "No Notification Scheduled"
+     - ℹ️ "Not Yet Completed"
 
 ---
 

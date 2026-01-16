@@ -189,8 +189,10 @@
 - ✓ See all team cases at a glance
 - ✓ Case count by status
 - ✓ Individual technician workload
-- ✓ Performance metrics
+- ✓ Performance metrics (case completion, quality)
 - ✓ Overdue cases alerts
+- ✓ Email notification status for completed cases
+- ✓ Monitor case release scheduling
 
 ### 2. **Manage Case Assignments**
 - ✓ View unassigned cases (queue)
@@ -198,6 +200,7 @@
 - ✓ Reassign cases between technicians
 - ✓ Balance workload across team
 - ✓ Assign based on expertise/urgency
+- ✓ Verify email notifications are scheduled correctly
 
 ### 3. **Monitor Case Progress**
 - ✓ Review case details (all cases)

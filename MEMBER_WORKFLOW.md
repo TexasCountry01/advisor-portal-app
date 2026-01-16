@@ -264,6 +264,32 @@
 - ✓ Add comments/feedback
 - ✓ Print for records
 - ✓ Contact technician with questions
+- ✓ **Email notification received** when case released to you
+  - If released immediately: Get email right away
+  - If scheduled release: Get email on release date
+  - Email contains case link and key information
+
+---
+
+## Email Notification System
+
+When a case is marked "Completed" by your technician, an **automatic email notification** is scheduled:
+
+- **Immediate Release (0 hours)**: You receive email immediately
+- **Scheduled Release (1-24 hours)**: You receive email on the scheduled release date
+- **Email includes**: 
+  - Case ID and employee name
+  - Case completion date
+  - Link to download reports
+  - Instructions for accessing documents
+  - Contact info for support
+
+### Notification Card on Case Detail:
+The staff team can see on the case detail page:
+- ✅ "Member Notified on [DATE TIME]" - email was sent
+- ⏳ "Notification Scheduled for [DATE]" - email waiting to send
+- ⚠️ "No Notification Scheduled" - notification not enabled
+- ℹ️ "Not Yet Completed" - case still being processed
 
 ---
 

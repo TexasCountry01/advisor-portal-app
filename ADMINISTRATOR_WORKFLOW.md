@@ -124,24 +124,27 @@
                          │
     ┌────────┬──────────┬┴─────┬──────────┐
     │        │          │      │          │
-  CREATE  UPDATE     RESET   DEACTIVATE TRANSFER
-  USER    ROLE       PASSWORD ACCOUNT    ASSIGNMENT
+  CREATE  UPDATE     RESET   DEACTIVATE REACTIVATE
+  USER    ROLE       PASSWORD ACCOUNT    ACCOUNT
     │      │          │        │         │
     ▼      ▼          ▼        ▼         ▼
-   Fill   Change    Send     Archive   Move
-  Form    Role      Reset    User      User
-  →       → Save    Link    → Confirm  → New
- Confirm           → Send            Role
-    │              Email              │
-    ▼                │                ▼
- User          ┌─────┴──────┐      User
- Created       │            │    Reassigned
- & Notified    User Updates │      &
-              Password      │    Notified
-                   │        │
+   Fill   Change    Send     Mark     Mark
+  Form    Role      Reset    Inactive  Active
+  →       → Save    Link    → Confirm  → Confirm
+ Confirm           → Send    (Preserves (Restore
+    │              Email      Data)     Access)
+    ▼                │          │        │
+ User          ┌─────┴──────┐   │        ▼
+ Created       │            │   │    User
+ & Notified   User Updates  │   │  Reactivated
+              Password      │   │
+                   │        │   ▼
                    ▼        ▼
-              Login & Proceed
+              Login &   Cases & Data
+              Proceed   Fully Preserved
 ```
+
+**⚠️ NO DELETE OPTION:** Users are deactivated (not deleted) to preserve all case data and audit trails.
 
 ---
 
@@ -183,16 +186,18 @@
 ## Key Administrator Actions
 
 ### 1. **User Management**
-- ✓ Create new user accounts
+- ✓ Create new user accounts (role-based permissions)
 - ✓ Assign roles (member, tech, manager, admin)
 - ✓ Reset user passwords
-- ✓ Deactivate/reactivate accounts
-- ✓ Transfer case assignments
+- ✓ **Deactivate accounts** (set inactive, preserves all data)
+- ✓ **Reactivate accounts** (restore access)
 - ✓ View user activity logs
+- ✗ Delete accounts (use deactivate instead)
 
 ### 2. **System Settings**
-- ✓ Set default case completion delay (0-5 hours CST)
+- ✓ Set default case completion delay (0-24 hours CST)
 - ✓ Enable/disable scheduled releases
+- ✓ Enable/disable delayed email notifications
 - ✓ Configure API settings
 - ✓ Set batch processing schedules
 - ✓ Configure email notifications
@@ -221,6 +226,24 @@
 - ✓ Clear cache/logs
 - ✓ Run diagnostic checks
 - ✓ Enable maintenance mode
+
+---
+
+## Role-Based User Creation Permissions
+
+✅ **Super Admin Controls Who Can Create What:**
+
+| **Your Role** | **Can Create** | **Cannot Create** |
+|---|---|---|
+| **Administrator** | Technician, Manager | Member, other Admins |
+| **Manager** | ✗ Cannot create users | All users |
+| **Technician** | ✗ Only Admin can grant | (Unless Admin) |
+| **Member** | ✗ No user creation | All users |
+
+⚠️ **Technicians Get Special Permission:**
+- Admins can enable Technicians to create/manage Member users only
+- This enables field team self-sufficiency
+- Still logged and audited as admin action
 
 ---
 
