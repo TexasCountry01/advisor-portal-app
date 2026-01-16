@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
+from tinymce.models import HTMLField
 import os
 from datetime import datetime
 
@@ -222,10 +223,10 @@ class Case(models.Model):
         help_text='History of case reassignments: [{from_tech, to_tech, date, reason}]'
     )
     
-    # Report Notes to Member (visible when case released)
-    report_notes_to_member = models.TextField(
+    # Report Notes to Member (visible when case released) - Rich text with formatting
+    report_notes_to_member = HTMLField(
         blank=True,
-        help_text='Notes from technician visible to member when case is released'
+        help_text='Formatted notes from technician visible to member when case is released'
     )
     
     # Field 18: Report Notes (per-report status, stored as JSON)

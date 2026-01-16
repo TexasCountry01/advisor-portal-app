@@ -1916,3 +1916,58 @@ def save_report_notes(request, pk):
     except Exception as e:
         logger.error(f'Error saving report notes: {str(e)}')
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def upload_image_for_notes(request):
+    """
+    Upload image for TinyMCE editor (notes).
+    Called by TinyMCE's image upload feature.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+    
+    user = request.user
+    
+    # Permission check: Only techs/admins/managers can upload images
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        # Get uploaded file
+        if 'file' not in request.FILES:
+            return JsonResponse({'error': 'No file provided'}, status=400)
+        
+        uploaded_file = request.FILES['file']
+        
+        # Validate file type
+        allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+        if uploaded_file.content_type not in allowed_types:
+            return JsonResponse({'error': 'Invalid file type. Only images allowed.'}, status=400)
+        
+        # Validate file size (5MB max)
+        if uploaded_file.size > 5 * 1024 * 1024:
+            return JsonResponse({'error': 'File too large. Max 5MB.'}, status=400)
+        
+        # Save file to media/notes_images/
+        import uuid
+        from django.core.files.storage import default_storage
+        
+        # Generate unique filename
+        filename = f'notes_{uuid.uuid4().hex}_{uploaded_file.name}'
+        file_path = f'notes_images/{filename}'
+        
+        # Save to storage
+        path = default_storage.save(file_path, uploaded_file)
+        url = default_storage.url(path)
+        
+        logger.info(f'Image uploaded for notes by {user.username}: {filename}')
+        
+        return JsonResponse({
+            'location': url,
+            'success': True
+        })
+        
+    except Exception as e:
+        logger.error(f'Error uploading image for notes: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)

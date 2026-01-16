@@ -1740,7 +1740,7 @@ function releaseImmediately(caseId) {
     </div>
 </div>
 
-<!-- Floating Report Notes Window -->
+<!-- Floating Report Notes Window with Rich Text Editor -->
 {% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed' %}
 <div id="floatingNotesWindow" class="floating-window" style="display: none;">
     <div class="floating-window-header">
@@ -1754,14 +1754,11 @@ function releaseImmediately(caseId) {
     <div class="floating-window-body">
         <textarea 
             id="reportNotesTextarea" 
-            class="form-control floating-notes-textarea" 
-            placeholder="Add notes that will be visible to the member when case is released...
-            
-Auto-saves as you type."
-        >{{ case.report_notes_to_member|default:'' }}</textarea>
+            class="tinymce-editor"
+        >{{ case.report_notes_to_member|safe }}</textarea>
         <small class="text-muted d-block mt-2">
             <i class="bi bi-info-circle"></i> 
-            These notes will be visible to the member once the case is released.
+            These formatted notes will be visible to the member once the case is released.
         </small>
     </div>
 </div>
@@ -1772,13 +1769,16 @@ Auto-saves as you type."
     <i class="bi bi-sticky"></i> Notes
 </button>
 
+<!-- TinyMCE Library -->
+<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js"></script>
+
 <style>
 .floating-window {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 350px;
-    max-height: 500px;
+    width: 500px;
+    max-height: 600px;
     background: white;
     border: 2px solid #007bff;
     border-radius: 8px;
@@ -1839,78 +1839,81 @@ Auto-saves as you type."
     padding: 12px 15px;
     overflow-y: auto;
     flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-.floating-notes-textarea {
-    min-height: 200px;
-    resize: none;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    font-size: 13px;
-}
-
-.floating-notes-textarea:focus {
-    border-color: #007bff;
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+/* TinyMCE in floating window */
+.tinymce-editor {
+    width: 100% !important;
+    min-height: 300px !important;
 }
 
 .floating-notes-saving {
-    color: #ffc107;
+    opacity: 0.7;
 }
 
 .floating-notes-saved {
-    color: #28a745;
+    border-color: #28a745 !important;
 }
 </style>
 
 <script>
+// Initialize TinyMCE with rich text features for notes
+tinymce.init({
+    selector: '.tinymce-editor',
+    plugins: 'link image paste code advlist lists',
+    toolbar: 'formatselect | bold italic underline forecolor | link image | numlist bullist | code',
+    menubar: false,
+    statusbar: true,
+    height: 300,
+    resize: false,
+    branding: false,
+    convert_urls: false,
+    relative_urls: false,
+    images_upload_url: '/cases/upload-image/',
+    automatic_uploads: true,
+    file_picker_types: 'image',
+    setup: function(editor) {
+        let notesAutoSaveTimeout = null;
+        let notesLastSaved = '';
+        
+        editor.on('init', function() {
+            notesLastSaved = editor.getContent();
+            setupFloatingWindowDrag();
+            
+            // Load saved position from localStorage
+            const notesWindow = document.getElementById('floatingNotesWindow');
+            const savedPos = localStorage.getItem('notesWindowPos');
+            if (savedPos) {
+                const pos = JSON.parse(savedPos);
+                notesWindow.style.bottom = pos.bottom + 'px';
+                notesWindow.style.right = pos.right + 'px';
+                notesWindow.style.left = 'auto';
+                notesWindow.style.top = 'auto';
+            }
+            
+            // Restore saved open state
+            const wasOpen = localStorage.getItem('notesWindowOpen');
+            if (wasOpen === 'true') {
+                notesWindow.style.display = 'flex';
+                document.getElementById('openNotesButton').style.display = 'none';
+            }
+        });
+        
+        // Auto-save on content change
+        editor.on('change keyup', function() {
+            clearTimeout(notesAutoSaveTimeout);
+            notesAutoSaveTimeout = setTimeout(function() {
+                saveReportNotes(editor);
+            }, 1000); // Save 1 second after user stops typing
+        });
+    }
+});
+
 // Floating Notes Window Management
 let notesWindowDragging = false;
 let notesWindowOffset = { x: 0, y: 0 };
-let notesAutoSaveTimeout = null;
-let notesLastSaved = '';
-
-document.addEventListener('DOMContentLoaded', function() {
-    const notesWindow = document.getElementById('floatingNotesWindow');
-    const openButton = document.getElementById('openNotesButton');
-    const textarea = document.getElementById('reportNotesTextarea');
-    
-    // Show button and window based on case status
-    if (notesWindow) {
-        openButton.style.display = 'block';
-        
-        // Load saved position from localStorage
-        const savedPos = localStorage.getItem('notesWindowPos');
-        if (savedPos) {
-            const pos = JSON.parse(savedPos);
-            notesWindow.style.bottom = pos.bottom + 'px';
-            notesWindow.style.right = pos.right + 'px';
-            notesWindow.style.left = 'auto';
-            notesWindow.style.top = 'auto';
-        }
-        
-        // Restore saved open state
-        const wasOpen = localStorage.getItem('notesWindowOpen');
-        if (wasOpen === 'true') {
-            notesWindow.style.display = 'flex';
-            openButton.style.display = 'none';
-        }
-        
-        // Setup drag
-        setupFloatingWindowDrag();
-        
-        // Setup auto-save
-        if (textarea) {
-            textarea.addEventListener('input', function() {
-                clearTimeout(notesAutoSaveTimeout);
-                notesAutoSaveTimeout = setTimeout(function() {
-                    saveReportNotes();
-                }, 1000); // Save 1 second after user stops typing
-            });
-            
-            notesLastSaved = textarea.value;
-        }
-    }
-});
 
 function setupFloatingWindowDrag() {
     const header = document.querySelector('.floating-window-header');
@@ -1960,7 +1963,10 @@ function openFloatingNotes() {
         notesWindow.style.display = 'flex';
         openButton.style.display = 'none';
         localStorage.setItem('notesWindowOpen', 'true');
-        document.getElementById('reportNotesTextarea').focus();
+        
+        // Focus editor
+        const editor = tinymce.get('reportNotesTextarea');
+        if (editor) editor.focus();
     }
 }
 
@@ -1974,21 +1980,16 @@ function closeFloatingNotes() {
     }
 }
 
-function saveReportNotes() {
-    const textarea = document.getElementById('reportNotesTextarea');
-    if (!textarea) return;
-    
-    const notesText = textarea.value;
-    
-    // Only save if changed
-    if (notesText === notesLastSaved) return;
+function saveReportNotes(editor) {
+    const notesContent = editor.getContent();
     
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '');
-    formData.append('report_notes_to_member', notesText);
+    formData.append('report_notes_to_member', notesContent);
     
     // Show saving indicator
-    textarea.classList.add('floating-notes-saving');
+    const editorContainer = document.querySelector('.tox-tinymce');
+    if (editorContainer) editorContainer.classList.add('floating-notes-saving');
     
     fetch(`/cases/{{ case.id }}/save-report-notes/`, {
         method: 'POST',
@@ -1997,17 +1998,18 @@ function saveReportNotes() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            notesLastSaved = notesText;
-            textarea.classList.remove('floating-notes-saving');
-            textarea.classList.add('floating-notes-saved');
-            setTimeout(() => {
-                textarea.classList.remove('floating-notes-saved');
-            }, 2000);
+            if (editorContainer) {
+                editorContainer.classList.remove('floating-notes-saving');
+                editorContainer.classList.add('floating-notes-saved');
+                setTimeout(() => {
+                    editorContainer.classList.remove('floating-notes-saved');
+                }, 2000);
+            }
         }
     })
     .catch(error => {
         console.error('Error saving notes:', error);
-        textarea.classList.remove('floating-notes-saving');
+        if (editorContainer) editorContainer.classList.remove('floating-notes-saving');
     });
 }
 </script>

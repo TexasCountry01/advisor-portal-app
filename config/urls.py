@@ -24,6 +24,7 @@ urlpatterns = [
     path('', include('core.urls')),
     path('cases/', include('cases.urls', namespace='cases')),
     path('accounts/', include('accounts.urls')),
+    path('tinymce/', include('tinymce.urls')),
 ]
 
 # Serve media files in development

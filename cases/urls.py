@@ -37,6 +37,7 @@ urlpatterns = [
     path('<int:case_id>/take-ownership/', views.take_case_ownership, name='take_case_ownership'),
     path('<int:case_id>/adjust-credit/', views.adjust_case_credit, name='adjust_case_credit'),
     path('<int:pk>/save-report-notes/', views.save_report_notes, name='save_report_notes'),
+    path('upload-image/', views.upload_image_for_notes, name='upload_image_for_notes'),
     path('credit-audit-trail/', views.credit_audit_trail, name='credit_audit_trail_report'),
     path('<int:case_id>/credit-audit-trail/', views.credit_audit_trail, name='credit_audit_trail'),
     path('<int:case_id>/submit-final/', views.submit_case_final, name='submit_case_final'),

@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Third-party apps
     'storages',
+    'tinymce',
     # Local apps
     'core',
     'accounts',
@@ -202,3 +203,22 @@ BENEFITS_SOFTWARE_API_URL = config('BENEFITS_SOFTWARE_API_URL', default='https:/
 BENEFITS_SOFTWARE_API_KEY = config('BENEFITS_SOFTWARE_API_KEY', default='placeholder-api-key-change-in-production')
 BENEFITS_SOFTWARE_API_TIMEOUT = config('BENEFITS_SOFTWARE_API_TIMEOUT', default=30, cast=int)
 BENEFITS_SOFTWARE_API_MAX_RETRIES = config('BENEFITS_SOFTWARE_API_MAX_RETRIES', default=3, cast=int)
+
+# TinyMCE Configuration for Rich Text Editing
+TINYMCE_DEFAULT_CONFIG = {
+    'height': 300,
+    'width': '100%',
+    'plugins': 'link image paste code table advlist lists autolink',
+    'toolbar': 'formatselect | bold italic underline forecolor | link image | numlist bullist | code',
+    'menubar': False,
+    'statusbar': True,
+    'paste_as_text': False,
+    'convert_urls': False,
+    'relative_urls': False,
+    'image_caption': True,
+    'image_title': True,
+    'automatic_uploads': True,
+    'images_upload_url': '/cases/upload-image/',
+    'file_picker_types': 'image',
+}
+
