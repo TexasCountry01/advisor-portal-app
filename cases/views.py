@@ -75,12 +75,14 @@ def member_dashboard(request):
         cases = cases.order_by(sort_by)
     
     # Calculate statistics
+    all_cases = Case.objects.filter(member=user)
     stats = {
-        'total_cases': Case.objects.filter(member=user).count(),
-        'draft': Case.objects.filter(member=user, status='draft').count(),
-        'submitted': Case.objects.filter(member=user, status='submitted').count(),
-        'accepted': Case.objects.filter(member=user, status='accepted').count(),
-        'completed': Case.objects.filter(member=user, status='completed', actual_release_date__isnull=False).count(),
+        'total_cases': all_cases.count(),
+        'draft': all_cases.filter(status='draft').count(),
+        'submitted': all_cases.filter(status='submitted').count(),
+        'accepted': all_cases.filter(status='accepted').count(),
+        'resubmitted': all_cases.filter(status='resubmitted').count(),
+        'completed': all_cases.filter(status='completed').count(),
     }
     
     # Get column visibility settings
