@@ -1742,7 +1742,7 @@ function releaseImmediately(caseId) {
 
 <!-- Floating Report Notes Window with Rich Text Editor -->
 {% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed' %}
-<div id="floatingNotesWindow" class="floating-window" style="display: none;">
+<div id="floatingNotesWindow" class="floating-window">
     <div class="floating-window-header">
         <span class="floating-window-title">
             <i class="bi bi-sticky"></i> Report Notes to Member
@@ -1763,9 +1763,9 @@ function releaseImmediately(caseId) {
     </div>
 </div>
 
-<!-- Button to Open Notes -->
-<button id="openNotesButton" class="btn btn-outline-primary" onclick="openFloatingNotes()" 
-    style="position: fixed; bottom: 20px; right: 20px; z-index: 999; display: none;">
+<!-- Button to Minimize Notes Window -->
+<button id="minimizeNotesButton" class="btn btn-outline-primary" onclick="minimizeFloatingNotes()" 
+    style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; display: none;">
     <i class="bi bi-sticky"></i> Notes
 </button>
 
@@ -1783,7 +1783,7 @@ function releaseImmediately(caseId) {
     border: 2px solid #007bff;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 1000;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
     cursor: move;
@@ -1893,11 +1893,14 @@ tinymce.init({
                 notesWindow.style.top = 'auto';
             }
             
-            // Restore saved open state
-            const wasOpen = localStorage.getItem('notesWindowOpen');
-            if (wasOpen === 'true') {
+            // Restore minimized state (default: SHOWN)
+            const wasMinimized = localStorage.getItem('notesWindowMinimized');
+            if (wasMinimized === 'true') {
+                minimizeFloatingNotes();
+            } else {
+                // Show window by default
                 notesWindow.style.display = 'flex';
-                document.getElementById('openNotesButton').style.display = 'none';
+                document.getElementById('minimizeNotesButton').style.display = 'none';
             }
         });
         
@@ -1958,11 +1961,11 @@ function setupFloatingWindowDrag() {
 
 function openFloatingNotes() {
     const notesWindow = document.getElementById('floatingNotesWindow');
-    const openButton = document.getElementById('openNotesButton');
+    const minimizeButton = document.getElementById('minimizeNotesButton');
     if (notesWindow) {
         notesWindow.style.display = 'flex';
-        openButton.style.display = 'none';
-        localStorage.setItem('notesWindowOpen', 'true');
+        minimizeButton.style.display = 'none';
+        localStorage.setItem('notesWindowMinimized', 'false');
         
         // Focus editor
         const editor = tinymce.get('reportNotesTextarea');
@@ -1971,12 +1974,17 @@ function openFloatingNotes() {
 }
 
 function closeFloatingNotes() {
+    // Minimize instead of close - make it minimal for user to restore
+    minimizeFloatingNotes();
+}
+
+function minimizeFloatingNotes() {
     const notesWindow = document.getElementById('floatingNotesWindow');
-    const openButton = document.getElementById('openNotesButton');
+    const minimizeButton = document.getElementById('minimizeNotesButton');
     if (notesWindow) {
         notesWindow.style.display = 'none';
-        openButton.style.display = 'block';
-        localStorage.setItem('notesWindowOpen', 'false');
+        minimizeButton.style.display = 'block';
+        localStorage.setItem('notesWindowMinimized', 'true');
     }
 }
 
