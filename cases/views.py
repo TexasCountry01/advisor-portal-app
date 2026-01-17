@@ -2861,90 +2861,23 @@ def save_column_preference(request):
 # QUALITY REVIEW SYSTEM VIEWS (Case Review Queue and Actions)
 # ============================================================================
 
-@login_required
+"""
+DEPRECATED: review_queue and review_case_detail views are no longer used.
+Quality review is now integrated directly into the case_detail view.
+Review actions are performed inline via modals in the case detail template.
+
+These views are kept for reference but no longer called.
+"""
+
 def review_queue(request):
-    """Display quality review queue for Level 2/3 technicians - cases pending review"""
-    from django.core.paginator import Paginator
-    
-    user = request.user
-    
-    # Permission check - only Level 2/3 technicians and admins can access review queue
-    if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
-        messages.error(request, 'You do not have permission to access the review queue.')
-        return redirect('cases:technician_dashboard')
-    elif user.role not in ['technician', 'administrator', 'manager']:
-        messages.error(request, 'You do not have permission to access the review queue.')
-        return redirect('accounts:home')
-    
-    # Get all cases pending review
-    pending_cases = Case.objects.filter(
-        status='pending_review'
-    ).select_related('assigned_to', 'member', 'created_by').order_by('-date_submitted')
-    
-    # For Level 2/3 techs, optionally filter to only their reviews
-    # (can view all or just assigned - depends on business rule)
-    # Currently showing all pending for transparency
-    
-    # Apply search/filter if provided
-    search_query = request.GET.get('search', '').strip()
-    if search_query:
-        from django.db.models import Q
-        pending_cases = pending_cases.filter(
-            Q(external_case_id__icontains=search_query) |
-            Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query) |
-            Q(member__first_name__icontains=search_query)
-        )
-    
-    # Pagination
-    paginator = Paginator(pending_cases, 20)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'page_obj': page_obj,
-        'cases': page_obj.object_list,
-        'search_query': search_query,
-        'total_pending': paginator.count,
-    }
-    
-    return render(request, 'cases/review_queue.html', context)
+    """DEPRECATED - Use technician_dashboard with pending_review filter instead"""
+    messages.info(request, 'Review functionality is now integrated into the case detail view.')
+    return redirect('cases:technician_dashboard')
 
 
-@login_required
 def review_case_detail(request, case_id):
-    """Display detailed review interface for a case pending quality review"""
-    
-    user = request.user
-    case = get_object_or_404(Case, id=case_id)
-    
-    # Permission check
-    if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
-        messages.error(request, 'You do not have permission to review cases.')
-        return redirect('cases:technician_dashboard')
-    elif user.role not in ['technician', 'administrator', 'manager']:
-        messages.error(request, 'You do not have permission to review cases.')
-        return redirect('accounts:home')
-    
-    # Check if case is actually pending review
-    if case.status != 'pending_review':
-        messages.warning(request, 'This case is not pending review.')
-        return redirect('cases:review_queue')
-    
-    # Get case documents and reports for review
-    documents = case.documents.all().order_by('-uploaded_at')
-    reports = case.reports.all().order_by('report_number')
-    review_history = case.review_history.all().order_by('-reviewed_at')
-    
-    context = {
-        'case': case,
-        'documents': documents,
-        'reports': reports,
-        'review_history': review_history,
-        'assigned_technician': case.assigned_to,
-    }
-    
-    return render(request, 'cases/review_case_detail.html', context)
+    """DEPRECATED - Use case_detail view instead"""
+    return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
@@ -2995,7 +2928,7 @@ def approve_case_review(request, case_id):
         return JsonResponse({
             'success': True,
             'message': f'Case approved successfully',
-            'redirect_url': str(reverse('cases:review_queue'))
+            'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
@@ -3049,7 +2982,7 @@ def request_case_revisions(request, case_id):
         return JsonResponse({
             'success': True,
             'message': f'Revisions requested - case returned to technician',
-            'redirect_url': str(reverse('cases:review_queue'))
+            'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
@@ -3106,7 +3039,7 @@ def correct_case_review(request, case_id):
         return JsonResponse({
             'success': True,
             'message': f'Corrections applied and case completed',
-            'redirect_url': str(reverse('cases:review_queue'))
+            'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)

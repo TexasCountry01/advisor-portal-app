@@ -949,7 +949,24 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            {% if case.assigned_to == user %}
+                            {% if case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' %}
+                                <!-- Quality Review Actions for Level 2/3 Technicians -->
+                                <div class="alert alert-info mb-3">
+                                    <strong><i class="bi bi-check-circle"></i> Quality Review Required</strong>
+                                    <p class="mb-0 small">Review and approve this case from Level 1 technician {{ case.assigned_to.first_name }} {{ case.assigned_to.last_name }}</p>
+                                </div>
+                                
+                                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#approveReviewModal">
+                                    <i class="bi bi-check-circle"></i> Approve Case
+                                </button>
+                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#revisionsModal">
+                                    <i class="bi bi-pencil"></i> Request Revisions
+                                </button>
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#correctionsModal">
+                                    <i class="bi bi-wrench"></i> Apply Corrections
+                                </button>
+                            {% elif case.assigned_to == user %}
+                                <!-- Standard Technician Actions -->
                                 {% if case.status == 'completed' %}
                                     <button type="button" class="btn btn-secondary" id="markCompletedBtn" onclick="markCaseIncomplete()">
                                         <i class="bi bi-arrow-counterclockwise"></i> Mark as Incomplete
@@ -2056,6 +2073,89 @@ function saveReportNotes(editor) {
 </script>
 
 {% include 'cases/edit_case_details_modal.html' %}
+
+<!-- Quality Review Modals -->
+{% if case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' %}
+
+<!-- Approve Review Modal -->
+<div class="modal fade" id="approveReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Approve Case Review</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'cases:approve_case_review' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Approving this case will mark it as <strong>Completed</strong> and release it to the member.</p>
+                    <div class="form-group">
+                        <label for="approveNotes" class="form-label">Review Notes (Optional)</label>
+                        <textarea class="form-control" id="approveNotes" name="review_notes" rows="3" placeholder="Add quality review notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle"></i> Approve & Complete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Request Revisions Modal -->
+<div class="modal fade" id="revisionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Request Revisions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'cases:request_case_revisions' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>This will return the case to the technician for revisions. They'll be notified with your feedback.</p>
+                    <div class="form-group">
+                        <label for="revisionFeedback" class="form-label">Revision Feedback <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="revisionFeedback" name="revision_feedback" rows="4" placeholder="Describe what needs to be revised..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning"><i class="bi bi-pencil"></i> Request Revisions</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Corrections Modal -->
+<div class="modal fade" id="correctionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Apply Corrections</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'cases:correct_case_review' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p>Applying corrections will complete this case with the corrections documented in the audit trail.</p>
+                    <div class="form-group">
+                        <label for="correctionNotes" class="form-label">Corrections Applied <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="correctionNotes" name="correction_notes" rows="4" placeholder="Document what corrections were applied..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-wrench"></i> Apply Corrections & Complete</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endif %}
 
 {% endif %}
 
