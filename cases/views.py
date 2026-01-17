@@ -498,7 +498,7 @@ def manager_dashboard(request):
         submitted_pct = pending_review_pct = completed_pct = hold_pct = 0
     
     # Calculate resubmitted count
-    resubmitted_count = cases_base.filter(status='resubmitted').count()
+    resubmitted_count = all_cases.filter(status='resubmitted').count()
     
     stats = {
         'total': total_count,
