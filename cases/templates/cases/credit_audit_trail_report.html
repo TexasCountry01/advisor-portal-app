@@ -10,9 +10,23 @@
             <p class="text-muted">Complete audit history of all credit value changes across cases</p>
         </div>
         <div class="col-auto">
-            <a href="{% url 'cases:case_list' %}" class="btn btn-outline-primary">
-                <i class="bi bi-arrow-left"></i> Back to Cases
-            </a>
+            {% if request.user.role == 'manager' %}
+                <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% elif request.user.role == 'administrator' or request.user.role == 'admin' %}
+                <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% elif request.user.role == 'technician' %}
+                <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% else %}
+                <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            {% endif %}
         </div>
     </div>
 
