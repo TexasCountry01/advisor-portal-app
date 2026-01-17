@@ -217,6 +217,20 @@
 - ✓ Assign based on expertise/urgency
 - ✓ Verify email notifications are scheduled correctly
 
+### 2A. **Column Visibility Management** (NEW)
+- ✓ **Customize dashboard view:**
+  - Click "Column Settings" button (gear icon)
+  - Toggle columns on/off to show/hide:
+    - Case ID, Member Name, Status, Created Date
+    - Assigned Technician, Tier, Credit Value, Documents Count
+    - Notes, Last Modified, Actions
+  - Collapsible filter section (saves vertical space)
+  - Filter counter showing active filters
+- ✓ Preferences auto-save to your account
+- ✓ Settings persist across login sessions
+- ✓ Reduces horizontal scrolling
+- ✓ Focus on relevant case information
+
 ### 3. **Monitor Case Progress**
 - ✓ Review case details (all cases)
 - ✓ See case timeline & history

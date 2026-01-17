@@ -355,6 +355,45 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 
 ## Key Features for Technicians
 
+### Column Visibility Management (NEW)
+**Customize your dashboard view to see only the columns you need:**
+
+```
+Dashboard Column Visibility:
+├─ Click "Column Settings" button (gear icon)
+├─ Toggle columns on/off:
+│  ├─ Case ID (always shown)
+│  ├─ Member Name
+│  ├─ Status
+│  ├─ Created Date
+│  ├─ Assigned Technician
+│  ├─ Tier
+│  ├─ Credit Value
+│  ├─ Documents Count
+│  ├─ Notes
+│  ├─ Last Modified
+│  └─ Actions
+├─ Collapsible filter section (saves vertical space)
+├─ Filter counter showing active filters
+└─ Preferences auto-save (no need to click "Save")
+```
+
+**How It Works:**
+1. Click **"Column Settings"** button in dashboard header
+2. Checkboxes appear for all available columns
+3. Check/uncheck to show/hide columns
+4. Preferences saved automatically to your account
+5. Next time you login: Your columns persist
+6. Filters can be collapsed to reduce visual clutter
+7. Active filter count displayed for quick reference
+
+**Benefits:**
+- ✓ Faster scanning of cases you care about
+- ✓ Reduce horizontal scrolling
+- ✓ Focus on relevant information
+- ✓ Personalized dashboard layout
+- ✓ Settings remember your preferences
+
 ### Case Queue Management
 ```
 My Dashboard shows:
@@ -420,6 +459,70 @@ My Dashboard shows:
 - Case status → "Needs Resubmission"
 - Member receives email with requirements
 
+### Workflow A1: "Member Profile Management" (NEW)
+*Available to Benefits Technicians with edit access to member profiles*
+
+#### Editing Member Profile
+1. Navigate to member profile section
+2. Click **"Edit Member Profile"** button
+3. Update member details:
+   - Personal information (name, contact, etc.)
+   - Work eligibility status
+   - Membership status
+   - Additional member attributes
+4. Review all changes
+5. Click **"Save Changes"**
+   - System creates audit log entry (WHO/WHAT/WHEN)
+   - Timestamp recorded with technician name
+   - Change description logged for compliance
+6. Confirmation: "Profile updated successfully"
+
+#### Managing Member Delegates
+1. In member profile section, click **"Manage Delegates"**
+2. View current delegates (if any) with dates active
+3. **Add New Delegate:**
+   - Click **"Add Delegate"**
+   - Search/select delegate from list
+   - Set delegate access type (full/limited)
+   - Set effective date and end date
+   - Click **"Add Delegate"**
+   - Audit log recorded with delegate info
+4. **Edit Existing Delegate:**
+   - Click **"Edit"** on delegate row
+   - Modify access level and dates
+   - Click **"Save Changes"**
+5. **Revoke Delegate Access:**
+   - Click **"Revoke"** on delegate row
+   - Confirm revocation
+   - Access removed, audit trail recorded
+
+#### Configuring Quarterly Credit Allowance
+1. In member profile, click **"Quarterly Credits"**
+2. View current credit configuration
+3. **Set or Update Credit Allowance:**
+   - Credit amount per quarter (typically $0-$500+)
+   - Effective quarter (Q1/Q2/Q3/Q4)
+   - Special notes or conditions
+4. **Set Usage Limits:**
+   - Monthly cap if applicable
+   - Rollover settings (yes/no)
+   - Restrictions or conditions
+5. Click **"Save Configuration"**
+   - System validates credit amounts
+   - Audit log records who set what amount when
+   - Member notified of new credit limits (optional)
+6. **Monitor Credit Usage:**
+   - View quarterly utilization
+   - See member's usage status
+   - Flag overages if applicable
+
+**All Member Profile Changes:**
+- ✓ Fully audited (AuditLog entry for each change)
+- ✓ Tracked by technician/admin name
+- ✓ Timestamped for compliance
+- ✓ Visible to managers and admins
+- ✓ No direct member access (technician-only feature)
+
 ### Workflow B: "Standard Case Processing"
 1. Case is Accepted and assigned to you
 2. Review fact-finder & documents
@@ -462,6 +565,48 @@ My Dashboard shows:
 ---
 
 ## Technician Tools & Features
+
+### Technician Tools & Features
+
+### Member Profile Management System (NEW)
+
+**Access Member Profile Features:**
+Navigate from case detail → "Member Profile" tab (if case is assigned to you)
+
+**What You Can Do:**
+1. **Edit Member Details:**
+   - Update personal information
+   - Modify work/membership status
+   - Change contact preferences
+   - All changes automatically audited
+
+2. **Manage Delegates:**
+   - Add delegates (family, power of attorney, representatives)
+   - Set delegate access levels
+   - Configure access dates (active date/end date)
+   - Revoke delegate access anytime
+   - Audit trail tracks all delegate changes
+
+3. **Configure Quarterly Credits:**
+   - Set annual or quarterly credit allowance
+   - Define credit usage limits
+   - Enable/disable rollover
+   - Set effective periods (Q1-Q4)
+   - Monitor member credit usage
+   - Flag overages or unusual patterns
+
+**Important Notes:**
+- ⚠️ Edits visible to managers and admins
+- ✓ All changes logged in audit trail
+- ✓ Compliance documentation created automatically
+- ✓ Member cannot edit own details through portal
+- ✓ Only assigned technician (or higher) can edit
+
+**Audit Trail Integration:**
+- Each edit recorded with: WHO (you), WHAT (field changed), WHEN (timestamp), WHY (optional notes)
+- Viewable by managers/admins for compliance
+- Never deleted, only updated (immutable records)
+- Searchable for compliance audits
 
 ### Internal Communication
 - **Internal Notes**: Only visible to tech, manager, admin (not member)

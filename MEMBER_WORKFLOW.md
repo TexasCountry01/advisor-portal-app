@@ -20,6 +20,20 @@
                   │ Dashboard           │
                   └────────┬────────────┘
                            │
+              ┌────────────┼────────────┐
+              │            │            │
+              ▼            ▼            ▼
+        ┌──────────┐  ┌──────────┐  ┌──────────────┐
+        │ Submit   │  │ View     │  │ Edit My      │
+        │ New Case │  │ Cases &  │  │ Profile      │
+        │          │  │ Reports  │  │              │
+        └────┬─────┘  └────┬─────┘  └────┬─────────┘
+             │             │             │
+             ▼             ▼             ▼
+        [Start New]   [Review Existing] [Update Info]
+             │             │             │
+             └─────────────┴─────────────┘
+                           │
                            ▼
                   ┌─────────────────────┐
                   │ Want to Submit      │
@@ -283,6 +297,15 @@
   - If scheduled release: Get email on release date
   - Email contains case link and key information
 
+### 6. **Edit Your Profile** (NEW)
+- ✓ Update your personal information
+- ✓ Change contact preferences
+- ✓ Update employment status
+- ✓ View your delegate assignments (if any)
+- ✓ See your quarterly credit allowance
+- ✗ Cannot add/remove delegates (done by technician)
+- ✗ Cannot change credit amounts (set by technician)
+
 ---
 
 ## Email Notification System
@@ -351,6 +374,160 @@ The staff team can see on the case detail page:
 | **Download Reports** | Case Detail (if released) → Download | Get completed reports |
 | **Add Comments** | Case Detail → Comments Section | Add notes/questions |
 | **Edit Draft** | Case Detail (Draft only) → Edit | Modify draft case |
+| **Edit Profile** | Dashboard → "My Profile" | Update your personal info |
+
+---
+
+## Member Dashboard Features
+
+### Column Visibility Management (NEW)
+**Customize your dashboard view to see only the case information you need:**
+
+```
+Dashboard Column Visibility:
+├─ Click "Column Settings" button (gear icon)
+├─ Toggle columns on/off:
+│  ├─ Case ID (always shown)
+│  ├─ Status
+│  ├─ Created Date
+│  ├─ Completion Date
+│  ├─ Documents Count
+│  ├─ Release Date
+│  ├─ Last Modified
+│  └─ Actions
+├─ Collapsible filter section (saves vertical space)
+├─ Filter counter showing active filters
+└─ Preferences auto-save (no need to click "Save")
+```
+
+**How It Works:**
+1. Click **"Column Settings"** button in dashboard header
+2. Checkboxes appear for all available columns
+3. Check/uncheck to show/hide columns
+4. Preferences saved automatically to your account
+5. Next time you login: Your columns persist
+6. Filters can be collapsed to reduce visual clutter
+7. Active filter count displayed for quick reference
+
+**Benefits:**
+- ✓ Faster scanning of your cases
+- ✓ Focus on what matters most to you
+- ✓ Reduce screen clutter
+- ✓ Personalized dashboard layout
+- ✓ Settings remember your preferences
+
+---
+
+## Member Profile Management (NEW)
+
+### Access Your Profile
+Navigate to Dashboard → **"My Profile"** tab
+
+### What You Can Edit
+1. **Personal Information:**
+   - First/Last name
+   - Contact information
+   - Mailing address
+   - Phone number
+   - Email address
+   - Employment status
+
+2. **View Your Delegate Information:**
+   - See who has access to your account (delegates)
+   - View effective dates for each delegate
+   - See delegate type (full/limited access)
+   - ⚠️ You cannot add/remove delegates - contact your benefits department
+   - To remove delegate: Contact administrator
+
+3. **Check Your Quarterly Credit Allowance:**
+   - See your current credit balance
+   - View quarterly limits
+   - See credit usage history
+   - View rollover settings
+   - ⚠️ You cannot change credit amounts - set by benefits team
+
+### Profile Update Process
+1. Click **"Edit Profile"** button
+2. Update any fields you need to change
+3. Review all changes before saving
+4. Click **"Save Changes"**
+5. Confirmation message: "Profile updated successfully"
+6. Changes take effect immediately
+7. Your updated info available to technicians/administrators
+
+### Who Can See Your Profile
+- ✓ You can see/edit your own profile
+- ✓ Your assigned technician can see it
+- ✓ Managers can see it
+- ✓ Administrators can see it
+- ✗ Other members cannot see your profile
+- ✗ Delegates can only see delegated information (limited access)
+
+---
+
+## Scenario: "I Need to Update My Contact Information"
+1. Go to Member Dashboard
+2. Click **"My Profile"** tab
+3. Update fields:
+   - Email: new.email@company.com
+   - Phone: 555-0123
+4. Click **"Save Changes"**
+5. Confirmation: "Profile updated successfully"
+6. Your new info available for communications
+7. Next case correspondence will use new contact info
+
+---
+
+## Scenario: "Why does my profile show a delegate?"
+- A delegate (family member, representative, etc.) has been assigned access to your account
+- This is set up by your benefits department/technician
+- You cannot remove this yourself
+- Contact your technician or call benefits support to request removal
+- You can view delegate effective dates on your profile
+
+---
+
+## Member Dashboard Features
+
+### Column Visibility Management (NEW)
+**Customize your dashboard view to see only the case information you need:**
+
+```
+Dashboard Column Visibility:
+├─ Click "Column Settings" button (gear icon)
+├─ Toggle columns on/off:
+│  ├─ Case ID (always shown)
+│  ├─ Status
+│  ├─ Created Date
+│  ├─ Completion Date
+│  ├─ Documents Count
+│  ├─ Release Date
+│  ├─ Last Modified
+│  └─ Actions
+├─ Collapsible filter section (saves vertical space)
+├─ Filter counter showing active filters
+└─ Preferences auto-save (no need to click "Save")
+```
+
+**How It Works:**
+1. Click **"Column Settings"** button in dashboard header
+2. Checkboxes appear for all available columns
+3. Check/uncheck to show/hide columns
+4. Preferences saved automatically to your account
+5. Next time you login: Your columns persist
+6. Filters can be collapsed to reduce visual clutter
+7. Active filter count displayed for quick reference
+
+**Benefits:**
+- ✓ Faster scanning of your cases
+- ✓ Focus on what matters most to you
+- ✓ Reduce screen clutter
+- ✓ Personalized dashboard layout
+- ✓ Settings remember your preferences
+
+---
+
+## Member Entry Points
 
 ---
 
@@ -358,6 +535,9 @@ The staff team can see on the case detail page:
 
 **Need Help?**
 - Dashboard has "Help" section with FAQ
+- **Profile Questions:** Contact your benefits technician
+- **Delegate Assigned:** Email your technician to request removal
+- **Credit Balance:** Check "My Profile" → "Quarterly Credits"
 - Email: member-support@company.com
 - Phone: [support number]
 - Hours: [business hours]
@@ -367,3 +547,6 @@ The staff team can see on the case detail page:
 - "Case not showing in dashboard" → Refresh page, try different browser
 - "Can't see report even though release date passed" → Contact support
 - "Forgot my password" → Use "Forgot Password" link on login
+- "Need to update my address" → Go to "My Profile" → Edit → Save
+- "How do I know who my delegate is?" → Check "My Profile" → Delegates section
+- "Can I remove a delegate myself?" → No, contact administrator

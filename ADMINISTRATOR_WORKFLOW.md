@@ -202,6 +202,23 @@
 - ✓ Set batch processing schedules
 - ✓ Configure email notifications
 - ✓ Manage database settings
+- ✓ **Column visibility settings (dashboard defaults)**
+  - Configure default column visibility for all dashboards
+  - Settings can be customized per-user (each user saves own preferences)
+  - Control which columns appear by role/level
+
+### 2A. **Column Visibility Management** (NEW - Admin Dashboard)
+- ✓ **Customize dashboard view:**
+  - Click "Column Settings" button (gear icon)
+  - Toggle columns on/off to show/hide:
+    - Case ID, Member Name, Status, Created Date
+    - Assigned Technician, Tier, Credit Value, Documents Count
+    - Notes, Last Modified, Actions
+  - Collapsible filter section (saves vertical space)
+  - Filter counter showing active filters
+- ✓ Preferences auto-save to your admin account
+- ✓ Settings persist across login sessions
+- ✓ System-wide oversight of all cases
 
 ### 3. **Case Management**
 - ✓ View all cases (unrestricted)
@@ -223,6 +240,12 @@
 - ✓ Generate compliance reports
 - ✓ Monitor access control
 - ✓ Review rejection analytics
+- ✓ **Track member profile changes** (NEW):
+  - All member profile edits logged (WHO/WHAT/WHEN/WHY)
+  - Member detail updates recorded by technician
+  - Delegate add/edit/revoke tracked with dates
+  - Quarterly credit allowance changes logged
+  - Full audit trail for compliance and verification
 
 ### 5. **System Maintenance**
 - ✓ Backup & restore database
@@ -478,6 +501,12 @@ Notify: Managers/technicians if relevant
 - ✓ Case releases and reassignments
 - ✓ Escalations and resolutions
 - ✓ Admin actions (any admin action)
+- ✓ **Member profile changes** (NEW):
+  - Profile edits (who edited, what changed, when)
+  - Delegate management (add, edit, revoke with dates)
+  - Quarterly credit allowance updates
+  - Credit configuration changes
+  - All changes traceable to specific technician/admin
 
 ### How to View Audit Trail
 ```
