@@ -129,7 +129,7 @@ def technician_dashboard(request):
     ).order_by('-date_submitted')
     
     # Apply filters
-    status_filter = request.GET.get('status')
+    status_filters = request.GET.getlist('status')  # Get list of selected statuses
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
     search_query = request.GET.get('search')
@@ -140,8 +140,9 @@ def technician_dashboard(request):
     if assigned_filter == 'mine':
         cases = cases.filter(assigned_to=user)
     
-    if status_filter:
-        cases = cases.filter(status=status_filter)
+    # Apply multi-status filter
+    if status_filters:
+        cases = cases.filter(status__in=status_filters)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
@@ -195,7 +196,7 @@ def technician_dashboard(request):
     context = {
         'cases': cases,
         'stats': stats,
-        'status_filter': status_filter,
+        'status_filters': status_filters,  # List of selected statuses
         'urgency_filter': urgency_filter,
         'tier_filter': tier_filter,
         'search_query': search_query,

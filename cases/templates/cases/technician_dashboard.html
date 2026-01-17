@@ -46,6 +46,10 @@
                     margin-top: 6px;
                 }
             </style>
+            <!-- Build query string for status filters -->
+            {% url 'cases:technician_dashboard' as base_url %}
+            {% with status_query=status_filters|join:"&status=" %}
+            
             <form method="get">
                 <!-- Row 1: View Options (Left) | Stats (Right) -->
                 <div class="row mb-3" id="top-row">
@@ -53,14 +57,14 @@
                     <div class="col-auto d-flex align-items-center gap-2">
                         <small class="text-muted">View:</small>
                         <div class="btn-group" role="group">
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
                                id="view-all-btn"
                                class="btn btn-sm btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
                                data-view-type="all"
                                onclick="saveViewPreference('all'); return true;">
                                 <i class="bi bi-list-ul"></i> All Cases
                             </a>
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% if status_filter %}&status={{ status_filter }}{% endif %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
                                id="view-mine-btn"
                                class="btn btn-sm btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
                                data-view-type="mine"
@@ -101,16 +105,46 @@
 
                 <!-- Row 2: Filter Dropdowns -->
                 <div class="row g-3" id="filter-row">
-                    <div class="col-md-2">
-                        <label for="status" class="form-label">Status</label>
-                        <select name="status" id="status" class="form-select">
-                            <option value="">All Statuses</option>
-                            <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
-                            <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
-                            <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Pending Review</option>
-                            <option value="hold" {% if status_filter == 'hold' %}selected{% endif %}>On Hold</option>
-                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-                        </select>
+                    <div class="col-md-3">
+                        <label class="form-label">Status (Multiple)</label>
+                        <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto; background-color: #f8f9fa;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="submitted" 
+                                       id="status_submitted" {% if 'submitted' in status_filters %}checked{% endif %}>
+                                <label class="form-check-label" for="status_submitted">
+                                    Submitted
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="accepted" 
+                                       id="status_accepted" {% if 'accepted' in status_filters %}checked{% endif %}>
+                                <label class="form-check-label" for="status_accepted">
+                                    Accepted
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="pending_review" 
+                                       id="status_pending" {% if 'pending_review' in status_filters %}checked{% endif %}>
+                                <label class="form-check-label" for="status_pending">
+                                    Pending Review
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="hold" 
+                                       id="status_hold" {% if 'hold' in status_filters %}checked{% endif %}>
+                                <label class="form-check-label" for="status_hold">
+                                    On Hold
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="completed" 
+                                       id="status_completed" {% if 'completed' in status_filters %}checked{% endif %}>
+                                <label class="form-check-label" for="status_completed">
+                                    Completed
+                                </label>
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1">Select multiple statuses</small>
                     </div>
                     <div class="col-md-2">
                         <label for="urgency" class="form-label">Urgency</label>
@@ -129,10 +163,10 @@
                             <option value="tier_3" {% if tier_filter == 'tier_3' %}selected{% endif %}>Tier 3</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="search" class="form-label">Search</label>
                         <input type="text" name="search" id="search" class="form-control" 
-                               placeholder="Case ID, Employee, Workshop..." 
+                               placeholder="Case ID, Employee..." 
                                value="{{ search_query|default:'' }}">
                     </div>
                     <div class="col-md-3 d-flex align-items-end gap-2">
@@ -141,6 +175,7 @@
                     </div>
                 </div>
             </form>
+            {% endwith %}
         </div>
     </div>
 
