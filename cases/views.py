@@ -2459,15 +2459,21 @@ def audit_log_dashboard(request):
     audit_logs = AuditLog.objects.select_related('user', 'case', 'document', 'related_user').order_by('-timestamp')
     
     # Apply filters
-    search_query = request.GET.get('search', '')
-    action_filter = request.GET.get('action', '')
-    user_filter = request.GET.get('user', '')
-    date_from = request.GET.get('date_from', '')
-    date_to = request.GET.get('date_to', '')
-    case_status = request.GET.get('case_status', '')
+    search_query = request.GET.get('search', '').strip()
+    action_filter = request.GET.get('action', '').strip()
+    user_filter = request.GET.get('user', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    case_status = request.GET.get('case_status', '').strip()
+    
+    # Remove 'None' string values that might come from the form
+    if search_query == 'None':
+        search_query = ''
+    if case_status == 'None':
+        case_status = ''
     
     # Search filter (case ID, employee name, case description)
-    if search_query:
+    if search_query and search_query != 'None':
         audit_logs = audit_logs.filter(
             Q(case__external_case_id__icontains=search_query) |
             Q(case__employee_first_name__icontains=search_query) |
@@ -2500,8 +2506,8 @@ def audit_log_dashboard(request):
         except ValueError:
             pass
     
-    # Case status filter
-    if case_status:
+    # Case status filter - only apply if value is valid
+    if case_status and case_status != 'None':
         audit_logs = audit_logs.filter(case__status=case_status)
     
     # Get all unique values for filter dropdowns
@@ -2510,10 +2516,14 @@ def audit_log_dashboard(request):
     available_actions = [(action, action_choices_dict.get(action, action)) for action in sorted(all_actions)]
     
     all_users = AuditLog.objects.filter(user__isnull=False).values_list('user', flat=True).distinct()
-    available_users = User.objects.filter(id__in=all_users).order_by('username')
+    # Filter out None values that might be in the list
+    valid_user_ids = [uid for uid in all_users if uid is not None]
+    available_users = User.objects.filter(id__in=valid_user_ids).order_by('username') if valid_user_ids else []
     
+    # Get case status choices from the Case model
+    case_status_choices = dict(Case._meta.get_field('status').choices)
     case_statuses = Case.objects.values_list('status', flat=True).distinct()
-    available_case_statuses = [(status, Case._meta.get_field('status').get_choices_dict().get(status, status)) for status in sorted(case_statuses)]
+    available_case_statuses = [(status, case_status_choices.get(status, status)) for status in sorted(case_statuses) if status]
     
     # Pagination
     paginator = Paginator(audit_logs, 50)
