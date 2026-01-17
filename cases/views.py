@@ -191,6 +191,7 @@ def technician_dashboard(request):
         'total': cases.count(),
         'submitted': cases.filter(status='submitted').count(),
         'accepted': cases.filter(status='accepted').count(),
+        'resubmitted': cases.filter(status='resubmitted').count(),
         'pending_review': cases.filter(status='pending_review').count(),
         'completed': cases.filter(status='completed').count(),
         'urgent': cases.filter(urgency='urgent').count(),
@@ -343,6 +344,7 @@ def admin_dashboard(request):
         'total': all_cases.count(),
         'submitted': all_cases.filter(status='submitted').count(),
         'accepted': all_cases.filter(status='accepted').count(),
+        'resubmitted': all_cases.filter(status='resubmitted').count(),
         'hold': all_cases.filter(status='hold').count(),
         'pending_review': all_cases.filter(status='pending_review').count(),
         'completed': all_cases.filter(status='completed').count(),
@@ -496,10 +498,14 @@ def manager_dashboard(request):
     else:
         submitted_pct = pending_review_pct = completed_pct = hold_pct = 0
     
+    # Calculate resubmitted count
+    resubmitted_count = cases_base.filter(status='resubmitted').count()
+    
     stats = {
         'total': total_count,
         'submitted': submitted_count,
         'accepted': accepted_count,
+        'resubmitted': resubmitted_count,
         'hold': hold_count,
         'pending_review': pending_review_count,
         'completed': completed_count,
