@@ -34,19 +34,32 @@ def view_audit_log(request):
     ).all()
     
     # Apply filters
-    user_filter = request.GET.get('user')
-    action_filter = request.GET.get('action')
-    date_from = request.GET.get('date_from')
-    date_to = request.GET.get('date_to')
-    case_id = request.GET.get('case_id')
-    search_query = request.GET.get('search')
+    user_filter = request.GET.get('user', '').strip()
+    action_filter = request.GET.get('action', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+    case_id = request.GET.get('case_id', '').strip()
+    search_query = request.GET.get('search', '').strip()
+    
+    # Remove 'None' string values
+    if case_id == 'None':
+        case_id = ''
+    if search_query == 'None':
+        search_query = ''
+    if user_filter == 'None':
+        user_filter = ''
+    if action_filter == 'None':
+        action_filter = ''
     
     # Filter by user
-    if user_filter:
-        audit_logs = audit_logs.filter(user_id=user_filter)
+    if user_filter and user_filter != 'None':
+        try:
+            audit_logs = audit_logs.filter(user_id=int(user_filter))
+        except (ValueError, TypeError):
+            pass
     
     # Filter by action type
-    if action_filter:
+    if action_filter and action_filter != 'None':
         audit_logs = audit_logs.filter(action_type=action_filter)
     
     # Filter by date range
@@ -68,12 +81,15 @@ def view_audit_log(request):
         except (ValueError, TypeError):
             pass
     
-    # Filter by case ID
-    if case_id:
-        audit_logs = audit_logs.filter(case_id=case_id)
+    # Filter by case ID (only if valid integer)
+    if case_id and case_id != 'None':
+        try:
+            audit_logs = audit_logs.filter(case_id=int(case_id))
+        except (ValueError, TypeError):
+            pass
     
     # Search by username, case number, or description
-    if search_query:
+    if search_query and search_query != 'None':
         audit_logs = audit_logs.filter(
             Q(user__username__icontains=search_query) |
             Q(case__id__icontains=search_query) |
