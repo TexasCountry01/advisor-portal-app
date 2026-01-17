@@ -1971,3 +1971,192 @@ def upload_image_for_notes(request):
     except Exception as e:
         logger.error(f'Error uploading image for notes: {str(e)}')
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def generate_report_notes_pdf(request, pk):
+    """
+    Generate and download report notes as PDF.
+    Converts HTML notes to formatted PDF with case details.
+    """
+    from django.http import HttpResponse
+    from weasyprint import HTML, CSS
+    from io import BytesIO
+    import base64
+    
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: User must be tech/admin/manager/or member (if released)
+    can_access = False
+    
+    if user.role in ['technician', 'administrator', 'manager']:
+        can_access = True
+    elif user.role == 'member' and case.member == user:
+        # Member can only access if case is completed and released
+        if case.status == 'completed' and case.actual_release_date is not None:
+            can_access = True
+    
+    if not can_access:
+        return HttpResponseForbidden('Access denied')
+    
+    # Check if notes exist
+    if not case.report_notes_to_member or case.report_notes_to_member.strip() == '':
+        messages.error(request, 'No notes available for this case')
+        return redirect('cases:case_detail', pk=pk)
+    
+    try:
+        # Prepare HTML content with professional styling
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+                body {{
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-size: 12pt;
+                    line-height: 1.6;
+                    color: #333;
+                    background-color: white;
+                }}
+                .header {{
+                    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                    color: white;
+                    padding: 30px;
+                    margin-bottom: 30px;
+                    border-radius: 4px;
+                }}
+                .header h1 {{
+                    font-size: 24pt;
+                    margin-bottom: 10px;
+                }}
+                .header p {{
+                    margin: 5px 0;
+                    font-size: 11pt;
+                }}
+                .meta-info {{
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 20px;
+                    margin-bottom: 20px;
+                    padding: 15px;
+                    background-color: #f8f9fa;
+                    border-left: 4px solid #007bff;
+                }}
+                .meta-item {{
+                    font-size: 11pt;
+                }}
+                .meta-label {{
+                    font-weight: bold;
+                    color: #0056b3;
+                    margin-bottom: 3px;
+                }}
+                .notes-section {{
+                    margin-top: 30px;
+                    padding: 20px;
+                    background-color: #ffffff;
+                    border: 1px solid #dee2e6;
+                    border-radius: 4px;
+                }}
+                .notes-section h2 {{
+                    font-size: 16pt;
+                    color: #0056b3;
+                    margin-bottom: 15px;
+                    padding-bottom: 10px;
+                    border-bottom: 2px solid #007bff;
+                }}
+                .notes-content {{
+                    font-size: 11pt;
+                    line-height: 1.8;
+                    color: #555;
+                }}
+                /* Preserve TinyMCE formatting */
+                .notes-content p {{ margin-bottom: 10px; }}
+                .notes-content strong {{ font-weight: bold; }}
+                .notes-content em {{ font-style: italic; }}
+                .notes-content u {{ text-decoration: underline; }}
+                .notes-content ul, .notes-content ol {{ margin-left: 20px; margin-bottom: 10px; }}
+                .notes-content li {{ margin-bottom: 5px; }}
+                .notes-content a {{ color: #007bff; text-decoration: underline; }}
+                .notes-content img {{ max-width: 100%; height: auto; margin: 15px 0; }}
+                .footer {{
+                    margin-top: 40px;
+                    padding-top: 20px;
+                    border-top: 1px solid #dee2e6;
+                    font-size: 10pt;
+                    color: #999;
+                    text-align: center;
+                }}
+                @page {{
+                    margin: 0.75in;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Case Notes & Advisor Information</h1>
+                <p>Generated on {timezone.now().strftime('%B %d, %Y at %I:%M %p')}</p>
+            </div>
+            
+            <div class="meta-info">
+                <div class="meta-item">
+                    <div class="meta-label">Case ID:</div>
+                    <div>{case.external_case_id}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Workshop Code:</div>
+                    <div>{case.workshop_code}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Employee Name:</div>
+                    <div>{case.employee_first_name} {case.employee_last_name}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Status:</div>
+                    <div>{case.get_status_display()}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Completion Date:</div>
+                    <div>{case.date_completed.strftime('%B %d, %Y') if case.date_completed else 'N/A'}</div>
+                </div>
+                <div class="meta-item">
+                    <div class="meta-label">Report Count:</div>
+                    <div>{case.num_reports_requested}</div>
+                </div>
+            </div>
+            
+            <div class="notes-section">
+                <h2>Technical Notes to Advisor</h2>
+                <div class="notes-content">
+                    {case.report_notes_to_member}
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p>These notes are confidential and intended for the case advisor only.</p>
+                <p>This document was automatically generated from the Advisor Portal.</p>
+            </div>
+        </body>
+        </html>
+        """
+        
+        # Generate PDF using weasyprint
+        pdf_file = BytesIO()
+        HTML(string=html_content).write_pdf(pdf_file)
+        pdf_file.seek(0)
+        
+        # Create response
+        response = HttpResponse(pdf_file.read(), content_type='application/pdf')
+        filename = f'Case_{case.external_case_id}_Notes_{timezone.now().strftime("%Y%m%d")}.pdf'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        logger.info(f'Report notes PDF generated for case {case.external_case_id} by {user.username}')
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f'Error generating notes PDF: {str(e)}')
+        messages.error(request, f'Error generating PDF: {str(e)}')
+        return redirect('cases:case_detail', pk=pk)
