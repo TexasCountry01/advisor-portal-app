@@ -2160,3 +2160,196 @@ def generate_report_notes_pdf(request, pk):
         logger.error(f'Error generating notes PDF: {str(e)}')
         messages.error(request, f'Error generating PDF: {str(e)}')
         return redirect('cases:case_detail', pk=pk)
+
+
+@login_required
+def edit_case_details(request, pk):
+    """
+    Edit basic case details (employee name, due date, assigned tech).
+    Requires tech/manager/admin role.
+    Creates audit trail for all changes.
+    Optional email notification to advisor.
+    """
+    from django.core.mail import send_mail
+    from core.models import AuditLog
+    
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check
+    can_edit = False
+    if user.role in ['administrator', 'manager']:
+        can_edit = True
+    elif user.role == 'technician':
+        # Tech can edit cases assigned to them or unassigned cases
+        if case.assigned_to == user or case.assigned_to is None:
+            can_edit = True
+    
+    if not can_edit:
+        return HttpResponseForbidden('Access denied')
+    
+    # Case must be in editable status
+    if case.status not in ['draft', 'submitted', 'accepted', 'pending_review']:
+        messages.error(request, 'Case cannot be edited in this status')
+        return redirect('cases:case_detail', pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            # Get form data
+            employee_first_name = request.POST.get('employee_first_name', '').strip()
+            employee_last_name = request.POST.get('employee_last_name', '').strip()
+            date_due_str = request.POST.get('date_due', '')
+            assigned_to_id = request.POST.get('assigned_to')
+            send_notification = request.POST.get('send_notification') == 'on'
+            edit_reason = request.POST.get('edit_reason', '').strip()
+            
+            # Validation
+            if not employee_first_name or not employee_last_name:
+                return JsonResponse({'error': 'Employee name is required'}, status=400)
+            
+            # Track changes for audit
+            changes = {}
+            old_values = {}
+            new_values = {}
+            
+            # Check employee first name
+            if employee_first_name != case.employee_first_name:
+                changes['employee_first_name'] = True
+                old_values['employee_first_name'] = case.employee_first_name
+                new_values['employee_first_name'] = employee_first_name
+                case.employee_first_name = employee_first_name
+            
+            # Check employee last name
+            if employee_last_name != case.employee_last_name:
+                changes['employee_last_name'] = True
+                old_values['employee_last_name'] = case.employee_last_name
+                new_values['employee_last_name'] = employee_last_name
+                case.employee_last_name = employee_last_name
+            
+            # Check due date
+            if date_due_str:
+                from datetime import datetime
+                try:
+                    date_due = datetime.strptime(date_due_str, '%Y-%m-%d').date()
+                    if date_due != case.date_due:
+                        changes['date_due'] = True
+                        old_values['date_due'] = str(case.date_due) if case.date_due else None
+                        new_values['date_due'] = str(date_due)
+                        case.date_due = date_due
+                except ValueError:
+                    return JsonResponse({'error': 'Invalid date format'}, status=400)
+            
+            # Check assigned technician (only if provided)
+            if assigned_to_id:
+                # Check if unassigning (value="0")
+                if assigned_to_id == '0':
+                    if case.assigned_to is not None:
+                        changes['assigned_to'] = True
+                        old_values['assigned_to'] = case.assigned_to.get_full_name()
+                        new_values['assigned_to'] = 'Unassigned'
+                        case.assigned_to = None
+                else:
+                    try:
+                        new_tech = User.objects.get(id=assigned_to_id, role='technician')
+                        if case.assigned_to != new_tech:
+                            changes['assigned_to'] = True
+                            old_tech_name = case.assigned_to.get_full_name() if case.assigned_to else 'Unassigned'
+                            new_tech_name = new_tech.get_full_name()
+                            old_values['assigned_to'] = old_tech_name
+                            new_values['assigned_to'] = new_tech_name
+                            case.assigned_to = new_tech
+                    except User.DoesNotExist:
+                        return JsonResponse({'error': 'Invalid technician'}, status=400)
+            
+            # If no changes, return early
+            if not changes:
+                messages.info(request, 'No changes were made')
+                return redirect('cases:case_detail', pk=pk)
+            
+            # Save case
+            case.save()
+            
+            # Create audit log entry
+            audit_details = {
+                'changes': changes,
+                'old_values': old_values,
+                'new_values': new_values,
+                'reason': edit_reason if edit_reason else 'Corrected case details',
+                'notification_sent': send_notification
+            }
+            
+            AuditLog.objects.create(
+                user=user,
+                action_type='case_details_edited',
+                case=case,
+                details=audit_details
+            )
+            
+            logger.info(f'Case {case.external_case_id} details edited by {user.username}. Changes: {changes}')
+            
+            # Send optional notification email
+            if send_notification and case.member:
+                try:
+                    subject = f'Case {case.external_case_id} Details Updated'
+                    
+                    # Build change summary
+                    change_list = []
+                    if 'employee_first_name' in changes:
+                        change_list.append(f"Employee First Name: '{old_values['employee_first_name']}' → '{new_values['employee_first_name']}'")
+                    if 'employee_last_name' in changes:
+                        change_list.append(f"Employee Last Name: '{old_values['employee_last_name']}' → '{new_values['employee_last_name']}'")
+                    if 'date_due' in changes:
+                        change_list.append(f"Due Date: {old_values['date_due']} → {new_values['date_due']}")
+                    if 'assigned_to' in changes:
+                        change_list.append(f"Assigned To: {old_values['assigned_to']} → {new_values['assigned_to']}")
+                    
+                    change_summary = '\n'.join([f"  • {item}" for item in change_list])
+                    
+                    message = f"""Dear {case.member.first_name},
+
+Your case {case.external_case_id} has been updated with the following corrections:
+
+{change_summary}
+
+Reason for Update: {edit_reason if edit_reason else 'Corrected case details'}
+
+Edited by: {user.get_full_name()}
+Date: {timezone.now().strftime('%B %d, %Y at %I:%M %p')}
+
+If you have any questions about these changes, please contact your benefits administrator.
+
+Best regards,
+Advisor Portal System"""
+                    
+                    send_mail(
+                        subject,
+                        message,
+                        'noreply@profeds.com',
+                        [case.member.email],
+                        fail_silently=False
+                    )
+                    
+                    logger.info(f'Case edit notification email sent to {case.member.email}')
+                    
+                except Exception as e:
+                    logger.error(f'Error sending case edit notification: {str(e)}')
+                    # Don't fail the operation if email fails
+                    messages.warning(request, 'Changes saved but notification email failed to send')
+            
+            messages.success(request, 'Case details updated successfully')
+            return redirect('cases:case_detail', pk=pk)
+            
+        except Exception as e:
+            logger.error(f'Error editing case details: {str(e)}')
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    # GET request - return form data for modal
+    available_techs = User.objects.filter(role='technician').order_by('first_name', 'last_name')
+    
+    context = {
+        'case': case,
+        'available_techs': available_techs,
+        'can_edit': can_edit,
+    }
+    
+    return render(request, 'cases/edit_case_details_modal.html', context)

@@ -1,0 +1,105 @@
+<!-- Edit Case Details Modal -->
+<div class="modal fade" id="editCaseDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title">Edit Case Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'cases:edit_case_details' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Employee Information Section -->
+                    <div class="mb-4">
+                        <h6 class="mb-3 text-muted"><i class="bi bi-person"></i> Employee Information</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="employeeFirstName" class="form-label">Employee First Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="employeeFirstName" name="employee_first_name" value="{{ case.employee_first_name }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="employeeLastName" class="form-label">Employee Last Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="employeeLastName" name="employee_last_name" value="{{ case.employee_last_name }}" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Case Details Section -->
+                    <div class="mb-4">
+                        <h6 class="mb-3 text-muted"><i class="bi bi-calendar"></i> Case Details</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="dateDue" class="form-label">Due Date (Optional)</label>
+                                    <input type="date" class="form-control" id="dateDue" name="date_due" value="{% if case.date_due %}{{ case.date_due|date:'Y-m-d' }}{% endif %}">
+                                    <small class="text-muted">Leave blank to keep current due date</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="assignedTo" class="form-label">Assigned Technician (Optional)</label>
+                                    <select class="form-select" id="assignedTo" name="assigned_to">
+                                        <option value="">-- No Change --</option>
+                                        <option value="0">-- Unassign --</option>
+                                        {% for tech in available_techs %}
+                                            <option value="{{ tech.id }}" {% if case.assigned_to and case.assigned_to.id == tech.id %}selected{% endif %}>
+                                                {{ tech.get_full_name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    <small class="text-muted">
+                                        {% if case.assigned_to %}
+                                            Current: {{ case.assigned_to.get_full_name }}
+                                        {% else %}
+                                            Current: Unassigned
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Edit Reason Section -->
+                    <div class="mb-4">
+                        <h6 class="mb-3 text-muted"><i class="bi bi-pencil-square"></i> Edit Reason</h6>
+                        <div class="mb-3">
+                            <label for="editReason" class="form-label">Reason for Changes (Optional)</label>
+                            <textarea class="form-control" id="editReason" name="edit_reason" rows="3" placeholder="Explain why these details are being corrected (e.g., 'Typo in first name', 'Adjusted due date for deadline')"></textarea>
+                            <small class="text-muted">This will be included in the audit trail and email notification</small>
+                        </div>
+                    </div>
+
+                    <!-- Notification Section -->
+                    <div class="mb-4">
+                        <h6 class="mb-3 text-muted"><i class="bi bi-bell"></i> Notification</h6>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sendNotification" name="send_notification">
+                            <label class="form-check-label" for="sendNotification">
+                                <strong>Send notification email to advisor</strong>
+                            </label>
+                            <div class="small text-muted d-block mt-2">
+                                <i class="bi bi-info-circle"></i> If checked, the advisor will receive an email summary of these changes. The audit trail is always created regardless of this setting.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Information Alert -->
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Important:</strong> All changes are automatically tracked in the audit log. Only leave fields blank if you don't want to change them.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

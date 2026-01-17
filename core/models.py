@@ -19,6 +19,7 @@ class AuditLog(models.Model):
         ('case_assigned', 'Case Assigned'),
         ('case_reassigned', 'Case Reassigned'),
         ('case_status_changed', 'Status Changed'),
+        ('case_details_edited', 'Case Details Edited'),
         ('document_uploaded', 'Document Uploaded'),
         ('document_viewed', 'Document Viewed'),
         ('document_downloaded', 'Document Downloaded'),

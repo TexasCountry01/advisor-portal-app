@@ -38,6 +38,7 @@ urlpatterns = [
     path('<int:case_id>/adjust-credit/', views.adjust_case_credit, name='adjust_case_credit'),
     path('<int:pk>/save-report-notes/', views.save_report_notes, name='save_report_notes'),
     path('<int:pk>/download-notes-pdf/', views.generate_report_notes_pdf, name='generate_report_notes_pdf'),
+    path('<int:pk>/edit-details/', views.edit_case_details, name='edit_case_details'),
     path('upload-image/', views.upload_image_for_notes, name='upload_image_for_notes'),
     path('credit-audit-trail/', views.credit_audit_trail, name='credit_audit_trail_report'),
     path('<int:case_id>/credit-audit-trail/', views.credit_audit_trail, name='credit_audit_trail'),
