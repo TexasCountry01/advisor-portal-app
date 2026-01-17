@@ -65,8 +65,7 @@ def member_dashboard(request):
         cases = cases.filter(
             Q(external_case_id__icontains=search_query) |
             Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query) |
-            Q(workshop_code__icontains=search_query)
+            Q(employee_last_name__icontains=search_query)
         )
     
     # Handle sorting
