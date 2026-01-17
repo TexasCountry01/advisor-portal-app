@@ -723,6 +723,11 @@
                 </div>
             </div>
 
+            <!-- Audit History Tab (Manager/Admin only) -->
+            {% if user.role in 'manager,administrator' and audit_logs %}
+                {% include 'cases/case_audit_history_tab.html' %}
+            {% endif %}
+
             <!-- Reports (Tech/Admin/Manager only OR Member if released) -->
             {% if can_view_report %}
             <div class="card mb-4">

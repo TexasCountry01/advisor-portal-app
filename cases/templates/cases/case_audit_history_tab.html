@@ -1,0 +1,81 @@
+<!-- Case Audit History Tab - shows in case_detail.html -->
+<div class="card mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h6 class="mb-0"><i class="bi bi-clock-history"></i> Audit History</h6>
+        <a href="{% url 'cases:case_audit_history' case.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+            <i class="bi bi-arrow-up-right"></i> View Full History
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if audit_logs %}
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Action</th>
+                            <th>User</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in audit_logs|slice:":10" %}
+                            <tr class="align-middle">
+                                <td>
+                                    <small class="text-muted">
+                                        {{ log.timestamp|date:"m/d/Y H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">{{ log.get_action_type_display }}</span>
+                                </td>
+                                <td>
+                                    <small>
+                                        {% if log.user %}
+                                            {{ log.user.get_full_name|default:log.user.username }}
+                                        {% else %}
+                                            <span class="text-muted">System</span>
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <small>
+                                        {% if log.action_type == 'case_details_edited' and log.changes.changes %}
+                                            {% if log.changes.changes.employee_first_name %}
+                                                First Name changed
+                                            {% endif %}
+                                            {% if log.changes.changes.employee_last_name %}
+                                                {% if log.changes.changes.employee_first_name %}<br>{% endif %}
+                                                Last Name changed
+                                            {% endif %}
+                                            {% if log.changes.changes.date_due %}
+                                                {% if log.changes.changes.employee_first_name or log.changes.changes.employee_last_name %}<br>{% endif %}
+                                                Due Date changed
+                                            {% endif %}
+                                            {% if log.changes.changes.assigned_to %}
+                                                {% if log.changes.changes.employee_first_name or log.changes.changes.employee_last_name or log.changes.changes.date_due %}<br>{% endif %}
+                                                Assignment changed
+                                            {% endif %}
+                                        {% else %}
+                                            {{ log.description|truncatewords:10 }}
+                                        {% endif %}
+                                    </small>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if audit_logs|length > 10 %}
+                <div class="p-3 text-center border-top">
+                    <small class="text-muted">Showing 10 of {{ audit_logs|length }} entries</small>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                <i class="bi bi-inbox"></i><br>
+                No audit history for this case
+            </div>
+        {% endif %}
+    </div>
+</div>

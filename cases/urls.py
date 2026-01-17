@@ -58,6 +58,10 @@ urlpatterns = [
     path('api/view-preference/save/<str:view_type>/', views.save_view_preference, name='save_view_preference'),
     path('api/view-preference/get/', views.get_view_preference, name='get_view_preference'),
     
+    # Audit trails
+    path('audit/', views.audit_log_dashboard, name='audit_log_dashboard'),
+    path('<int:case_id>/audit-history/', views.case_audit_history, name='case_audit_history'),
+    
     # Reference PDF template with document upload
     path('<int:case_id>/fact-finder-template/', views_pdf_template.fact_finder_template, name='case_fact_finder'),
     path('<int:case_id>/view-fact-finder-pdf/', views_pdf_template.view_fact_finder_pdf, name='view_fact_finder_pdf'),

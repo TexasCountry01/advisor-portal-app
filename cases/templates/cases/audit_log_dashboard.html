@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+
+{% block title %}Audit Log Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-clock-history"></i> Audit Log Dashboard</h2>
+            <p class="text-muted">System-wide audit trail for comprehensive case and activity analysis</p>
+        </div>
+    </div>
+
+    <!-- Advanced Filter Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="bi bi-funnel"></i> Advanced Filters
+                {% if active_filters %}
+                    <span class="badge bg-warning">{{ active_filters }} active</span>
+                {% endif %}
+            </h6>
+            {% if active_filters %}
+                <a href="{% url 'cases:audit_log_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-clockwise"></i> Clear All
+                </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row g-3 mb-3">
+                    <!-- Search -->
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" class="form-control" id="search" name="search" placeholder="Case ID, employee name..." value="{{ search_query }}">
+                        <small class="text-muted">Search by case ID or employee name</small>
+                    </div>
+
+                    <!-- Action Type -->
+                    <div class="col-md-4">
+                        <label for="action" class="form-label">Action Type</label>
+                        <select class="form-select" id="action" name="action">
+                            <option value="">-- All Actions --</option>
+                            {% for action_code, action_label in available_actions %}
+                                <option value="{{ action_code }}" {% if action_code == action_filter %}selected{% endif %}>
+                                    {{ action_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- User -->
+                    <div class="col-md-4">
+                        <label for="user" class="form-label">User</label>
+                        <select class="form-select" id="user" name="user">
+                            <option value="">-- All Users --</option>
+                            {% for user_obj in available_users %}
+                                <option value="{{ user_obj.username }}" {% if user_obj.username == user_filter %}selected{% endif %}>
+                                    {{ user_obj.get_full_name|default:user_obj.username }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <!-- Date From -->
+                    <div class="col-md-3">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                    </div>
+
+                    <!-- Date To -->
+                    <div class="col-md-3">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                    </div>
+
+                    <!-- Case Status -->
+                    <div class="col-md-3">
+                        <label for="case_status" class="form-label">Case Status</label>
+                        <select class="form-select" id="case_status" name="case_status">
+                            <option value="">-- All Statuses --</option>
+                            {% for status_code, status_label in available_case_statuses %}
+                                <option value="{{ status_code }}" {% if status_code == case_status %}selected{% endif %}>
+                                    {{ status_label }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="col-md-3 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-search"></i> Apply Filters
+                        </button>
+                        {% if active_filters %}
+                            <a href="{% url 'cases:audit_log_dashboard' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x"></i>
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Card -->
+    <div class="card mb-4 border-info">
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <p class="mb-0">
+                        <small class="text-muted">Total Entries</small><br>
+                        <strong class="fs-5">{{ total_entries }}</strong>
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <p class="mb-0">
+                        <small class="text-muted">Current Page</small><br>
+                        <strong class="fs-5">{{ audit_logs|length }} entries</strong>
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <p class="mb-0">
+                        <small class="text-muted">Page</small><br>
+                        <strong class="fs-5">{{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</strong>
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <p class="mb-0">
+                        <small class="text-muted">Active Filters</small><br>
+                        <strong class="fs-5">
+                            {% if active_filters %}
+                                <span class="badge bg-warning">{{ active_filters }}</span>
+                            {% else %}
+                                <span class="text-muted">None</span>
+                            {% endif %}
+                        </strong>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Entries Table -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h6 class="mb-0"><i class="bi bi-table"></i> Audit Entries</h6>
+        </div>
+        <div class="card-body p-0">
+            {% if audit_logs %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="12%">Date/Time</th>
+                                <th width="12%">Action</th>
+                                <th width="12%">User</th>
+                                <th width="13%">Case ID</th>
+                                <th width="51%">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in audit_logs %}
+                                <tr class="align-middle">
+                                    <td>
+                                        <small>
+                                            <strong>{{ log.timestamp|date:"m/d/Y" }}</strong><br>
+                                            <span class="text-muted">{{ log.timestamp|time:"H:i:s" }}</span>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if log.action_type == 'case_details_edited' %}
+                                            <span class="badge bg-warning text-dark">{{ log.get_action_type_display }}</span>
+                                        {% elif log.action_type == 'case_status_changed' %}
+                                            <span class="badge bg-info">{{ log.get_action_type_display }}</span>
+                                        {% elif log.action_type == 'case_assigned' or log.action_type == 'case_reassigned' %}
+                                            <span class="badge bg-primary">{{ log.get_action_type_display }}</span>
+                                        {% elif log.action_type == 'document_uploaded' %}
+                                            <span class="badge bg-success">{{ log.get_action_type_display }}</span>
+                                        {% elif log.action_type == 'document_deleted' %}
+                                            <span class="badge bg-danger">{{ log.get_action_type_display }}</span>
+                                        {% elif log.action_type == 'note_added' %}
+                                            <span class="badge bg-secondary">{{ log.get_action_type_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ log.get_action_type_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if log.user %}
+                                                <strong>{{ log.user.get_full_name|default:log.user.username }}</strong><br>
+                                                <span class="text-muted">@{{ log.user.username }}</span>
+                                            {% else %}
+                                                <span class="text-muted">System</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if log.case %}
+                                            <a href="{% url 'cases:case_audit_history' log.case.id %}" class="text-decoration-none">
+                                                <strong>{{ log.case.external_case_id }}</strong>
+                                            </a><br>
+                                            <small class="text-muted">{{ log.case.employee_first_name }} {{ log.case.employee_last_name }}</small>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if log.action_type == 'case_details_edited' %}
+                                            <small>
+                                                {% if log.changes.changes %}
+                                                    <strong>{{ log.changes.reason|default:"Case details corrected" }}</strong><br>
+                                                    {% if log.changes.changes.employee_first_name %}
+                                                        • First Name: <span class="text-danger">{{ log.changes.old_values.employee_first_name }}</span> → <span class="text-success">{{ log.changes.new_values.employee_first_name }}</span><br>
+                                                    {% endif %}
+                                                    {% if log.changes.changes.employee_last_name %}
+                                                        • Last Name: <span class="text-danger">{{ log.changes.old_values.employee_last_name }}</span> → <span class="text-success">{{ log.changes.new_values.employee_last_name }}</span><br>
+                                                    {% endif %}
+                                                    {% if log.changes.changes.date_due %}
+                                                        • Due Date: <span class="text-danger">{{ log.changes.old_values.date_due }}</span> → <span class="text-success">{{ log.changes.new_values.date_due }}</span><br>
+                                                    {% endif %}
+                                                    {% if log.changes.changes.assigned_to %}
+                                                        • Assigned To: <span class="text-danger">{{ log.changes.old_values.assigned_to }}</span> → <span class="text-success">{{ log.changes.new_values.assigned_to }}</span>
+                                                    {% endif %}
+                                                    {% if log.changes.notification_sent %}
+                                                        <br><span class="badge bg-info" style="font-size: 0.75rem;"><i class="bi bi-envelope"></i> Email Sent</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </small>
+                                        {% elif log.action_type == 'case_status_changed' %}
+                                            <small>
+                                                {% if log.changes.status %}
+                                                    Status changed from <strong>{{ log.changes.from }}</strong> to <strong>{{ log.changes.to }}</strong>
+                                                {% else %}
+                                                    {{ log.description }}
+                                                {% endif %}
+                                            </small>
+                                        {% else %}
+                                            <small>{{ log.description|truncatewords:15 }}</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Page navigation" class="p-3 border-top">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if case_status %}&case_status={{ case_status }}{% endif %}">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if case_status %}&case_status={{ case_status }}{% endif %}">← Previous</a>
+                                </li>
+                            {% endif %}
+
+                            <li class="page-item disabled">
+                                <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if case_status %}&case_status={{ case_status }}{% endif %}">Next →</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if action_filter %}&action={{ action_filter }}{% endif %}{% if user_filter %}&user={{ user_filter }}{% endif %}{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if case_status %}&case_status={{ case_status }}{% endif %}">Last</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="p-5 text-center text-muted">
+                    <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                    <p class="mt-3">No audit entries found matching your filters</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .badge {
+        font-size: 0.85rem;
+        padding: 0.35rem 0.65rem;
+    }
+    
+    table td {
+        vertical-align: top;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+</style>
+
+{% endblock %}

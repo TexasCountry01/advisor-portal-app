@@ -718,6 +718,15 @@ def case_detail(request, pk):
     # Get available technicians for reassignment dropdown
     available_techs = User.objects.filter(role='technician', is_active=True).order_by('first_name')
     
+    # Get audit history for this case (Manager/Admin only)
+    audit_logs = []
+    if user.role in ['manager', 'administrator']:
+        from core.models import AuditLog
+        from django.db.models import Q
+        audit_logs = AuditLog.objects.filter(
+            Q(case=case) | Q(document__case=case)
+        ).select_related('user', 'case', 'document').order_by('-timestamp')[:15]
+    
     context = {
         'case': case,
         'can_edit': can_edit,
@@ -730,6 +739,7 @@ def case_detail(request, pk):
         'case_notes': case_notes,
         'reports': reports,
         'available_techs': available_techs,
+        'audit_logs': audit_logs,
     }
     
     return render(request, 'cases/case_detail.html', context)
@@ -2353,3 +2363,187 @@ Advisor Portal System"""
     }
     
     return render(request, 'cases/edit_case_details_modal.html', context)
+
+
+@login_required
+def case_audit_history(request, case_id):
+    """
+    Display detailed audit history for a specific case.
+    Visible to managers and administrators only.
+    Shows all changes made to the case in chronological order.
+    """
+    from core.models import AuditLog
+    from django.db.models import Q
+    
+    user = request.user
+    case = get_object_or_404(Case, pk=case_id)
+    
+    # Permission check - Manager/Admin only
+    if user.role not in ['manager', 'administrator']:
+        return HttpResponseForbidden('Access denied. Managers and administrators only.')
+    
+    # Get all audit logs related to this case
+    audit_logs = AuditLog.objects.filter(
+        Q(case=case) | Q(document__case=case)
+    ).select_related('user', 'case', 'document', 'related_user').order_by('-timestamp')
+    
+    # Apply action type filter if provided
+    action_filter = request.GET.get('action', '')
+    if action_filter:
+        audit_logs = audit_logs.filter(action_type=action_filter)
+    
+    # Apply date range filter if provided
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    
+    if date_from:
+        try:
+            from datetime import datetime
+            from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+            audit_logs = audit_logs.filter(timestamp__date__gte=from_date)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            from datetime import datetime
+            to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
+            audit_logs = audit_logs.filter(timestamp__date__lte=to_date)
+        except ValueError:
+            pass
+    
+    # Get all unique action types for this case for the filter dropdown
+    case_action_types = AuditLog.objects.filter(
+        Q(case=case) | Q(document__case=case)
+    ).values_list('action_type', flat=True).distinct()
+    
+    action_choices = dict(AuditLog.ACTION_CHOICES)
+    available_actions = [(action, action_choices.get(action, action)) for action in sorted(case_action_types)]
+    
+    # Pagination
+    paginator = Paginator(audit_logs, 25)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'case': case,
+        'page_obj': page_obj,
+        'audit_logs': page_obj.object_list,
+        'available_actions': available_actions,
+        'action_filter': action_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'total_entries': paginator.count,
+    }
+    
+    return render(request, 'cases/case_audit_history.html', context)
+
+
+@login_required
+def audit_log_dashboard(request):
+    """
+    Global audit log dashboard for system-wide audit trail analysis.
+    Visible to managers and administrators only.
+    Provides comprehensive filtering by case, action, user, and date range.
+    """
+    from core.models import AuditLog
+    from django.db.models import Q
+    
+    user = request.user
+    
+    # Permission check - Manager/Admin only
+    if user.role not in ['manager', 'administrator']:
+        return HttpResponseForbidden('Access denied. Managers and administrators only.')
+    
+    # Start with all audit logs
+    audit_logs = AuditLog.objects.select_related('user', 'case', 'document', 'related_user').order_by('-timestamp')
+    
+    # Apply filters
+    search_query = request.GET.get('search', '')
+    action_filter = request.GET.get('action', '')
+    user_filter = request.GET.get('user', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    case_status = request.GET.get('case_status', '')
+    
+    # Search filter (case ID, employee name, case description)
+    if search_query:
+        audit_logs = audit_logs.filter(
+            Q(case__external_case_id__icontains=search_query) |
+            Q(case__employee_first_name__icontains=search_query) |
+            Q(case__employee_last_name__icontains=search_query) |
+            Q(description__icontains=search_query)
+        )
+    
+    # Action type filter
+    if action_filter:
+        audit_logs = audit_logs.filter(action_type=action_filter)
+    
+    # User filter
+    if user_filter:
+        audit_logs = audit_logs.filter(user__username__icontains=user_filter)
+    
+    # Date range filter
+    if date_from:
+        try:
+            from datetime import datetime
+            from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+            audit_logs = audit_logs.filter(timestamp__date__gte=from_date)
+        except ValueError:
+            pass
+    
+    if date_to:
+        try:
+            from datetime import datetime
+            to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
+            audit_logs = audit_logs.filter(timestamp__date__lte=to_date)
+        except ValueError:
+            pass
+    
+    # Case status filter
+    if case_status:
+        audit_logs = audit_logs.filter(case__status=case_status)
+    
+    # Get all unique values for filter dropdowns
+    action_choices_dict = dict(AuditLog.ACTION_CHOICES)
+    all_actions = AuditLog.objects.values_list('action_type', flat=True).distinct()
+    available_actions = [(action, action_choices_dict.get(action, action)) for action in sorted(all_actions)]
+    
+    all_users = AuditLog.objects.filter(user__isnull=False).values_list('user', flat=True).distinct()
+    available_users = User.objects.filter(id__in=all_users).order_by('username')
+    
+    case_statuses = Case.objects.values_list('status', flat=True).distinct()
+    available_case_statuses = [(status, Case._meta.get_field('status').get_choices_dict().get(status, status)) for status in sorted(case_statuses)]
+    
+    # Pagination
+    paginator = Paginator(audit_logs, 50)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get active filters count for display
+    active_filters = sum([
+        bool(search_query),
+        bool(action_filter),
+        bool(user_filter),
+        bool(date_from),
+        bool(date_to),
+        bool(case_status),
+    ])
+    
+    context = {
+        'page_obj': page_obj,
+        'audit_logs': page_obj.object_list,
+        'available_actions': available_actions,
+        'available_users': available_users,
+        'available_case_statuses': available_case_statuses,
+        'search_query': search_query,
+        'action_filter': action_filter,
+        'user_filter': user_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'case_status': case_status,
+        'active_filters': active_filters,
+        'total_entries': paginator.count,
+    }
+    
+    return render(request, 'cases/audit_log_dashboard.html', context)
