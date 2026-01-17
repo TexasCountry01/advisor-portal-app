@@ -1518,6 +1518,93 @@ def upload_member_document_to_completed_case(request, case_id):
     return redirect('cases:case_detail', pk=case_id)
 
 
+def detect_case_changes(case):
+    """
+    Detect if a case has changed since it was marked for resubmission.
+    
+    Returns: {
+        'has_changes': bool,
+        'changes': {
+            'new_documents': int (count of new documents),
+            'field_changes': dict (field name -> new value),
+            'description': str (human-readable summary)
+        }
+    }
+    """
+    changes = {
+        'has_changes': False,
+        'changes': {
+            'new_documents': 0,
+            'field_changes': {},
+            'description': ''
+        }
+    }
+    
+    # Get the date the case was marked for resubmission
+    # Look for the most recent audit log entry showing status change to 'needs_resubmission'
+    from core.models import AuditLog
+    try:
+        resubmission_audit = AuditLog.objects.filter(
+            case=case,
+            action__in=['case_rejected', 'status_changed'],
+            new_value__contains='needs_resubmission'
+        ).order_by('-timestamp').first()
+        
+        if resubmission_audit:
+            rejection_date = resubmission_audit.timestamp
+        else:
+            # Fallback: use date_rejected if available
+            rejection_date = case.date_rejected if case.date_rejected else timezone.now()
+    except:
+        rejection_date = case.date_rejected if case.date_rejected else timezone.now()
+    
+    # 1. Check for new documents uploaded since rejection
+    new_documents = CaseDocument.objects.filter(
+        case=case,
+        uploaded_at__gte=rejection_date
+    ).count()
+    
+    if new_documents > 0:
+        changes['has_changes'] = True
+        changes['changes']['new_documents'] = new_documents
+    
+    # 2. Check for changes to member-editable fields
+    # Member-editable fields: fact_finder_data, report_notes (member-visible)
+    # These would typically be modified in case_detail or update views
+    
+    # Check fact_finder_data for changes (would be captured in audit trail)
+    try:
+        fact_finder_audit = AuditLog.objects.filter(
+            case=case,
+            action='field_updated',
+            field_name='fact_finder_data',
+            timestamp__gte=rejection_date
+        ).exists()
+        
+        if fact_finder_audit:
+            changes['has_changes'] = True
+            changes['changes']['field_changes']['fact_finder_data'] = 'Updated'
+    except:
+        pass
+    
+    # Generate human-readable description
+    if changes['has_changes']:
+        desc_parts = []
+        if changes['changes']['new_documents'] > 0:
+            doc_word = 'document' if changes['changes']['new_documents'] == 1 else 'documents'
+            desc_parts.append(f"{changes['changes']['new_documents']} new {doc_word}")
+        if changes['changes']['field_changes']:
+            field_count = len(changes['changes']['field_changes'])
+            field_word = 'field' if field_count == 1 else 'fields'
+            desc_parts.append(f"{field_count} {field_word} updated")
+        
+        changes['changes']['description'] = 'Changes detected: ' + ', '.join(desc_parts)
+    else:
+        changes['changes']['description'] = 'No changes detected since case was rejected.'
+    
+    return changes
+
+
 @login_required
 def resubmit_case(request, case_id):
     """Allow members to resubmit completed cases with additional documentation"""
@@ -1536,6 +1623,17 @@ def resubmit_case(request, case_id):
     
     if request.method == 'POST':
         try:
+            # Check if case has actually changed
+            change_detection = detect_case_changes(case)
+            
+            if not change_detection['has_changes']:
+                messages.warning(
+                    request,
+                    f'Cannot resubmit case {case.external_case_id}: No changes have been made to the case. '
+                    f'Please upload additional documents or update case information before resubmitting.'
+                )
+                return redirect('cases:case_detail', pk=case_id)
+            
             resubmission_notes = request.POST.get('resubmission_notes', '').strip()
             
             # Store the old status before changing
@@ -1555,10 +1653,25 @@ def resubmit_case(request, case_id):
             
             case.save()
             
+            # Log the resubmission with details of changes
+            try:
+                from core.models import AuditLog
+                AuditLog.objects.create(
+                    user=user,
+                    case=case,
+                    action='case_resubmitted',
+                    description=f'Member resubmitted case. Changes: {change_detection["changes"]["description"]}',
+                    old_value=f'Status: completed, Resubmission count: {case.resubmission_count - 1}',
+                    new_value=f'Status: resubmitted, Resubmission count: {case.resubmission_count}'
+                )
+            except:
+                pass  # Audit logging is optional
+            
             messages.success(
                 request, 
                 f'Case {case.external_case_id} has been resubmitted successfully. '
-                f'The assigned technician will review your submitted documents and any supplementary files you have uploaded.'
+                f'The assigned technician will review your submitted documents and any supplementary files you have uploaded. '
+                f'{change_detection["changes"]["description"]}.'
             )
             return redirect('cases:member_dashboard')
         except Exception as e:
@@ -1566,7 +1679,8 @@ def resubmit_case(request, case_id):
             messages.error(request, 'An error occurred while resubmitting the case. Please try again.')
             return redirect('cases:case_detail', pk=case_id)
     
-    # GET request - show confirmation page
+    # GET request - show confirmation page with change detection
+    change_detection = detect_case_changes(case)
     # Get supplementary documents uploaded since completion
     from cases.models import CaseDocument
     supplementary_docs = CaseDocument.objects.filter(
@@ -1579,6 +1693,9 @@ def resubmit_case(request, case_id):
         'case': case,
         'supplementary_docs': supplementary_docs,
         'resubmission_count': case.resubmission_count + 1,
+        'change_detection': change_detection,
+        'has_changes': change_detection['has_changes'],
+        'change_summary': change_detection['changes']['description'],
     }
     
     return render(request, 'cases/confirm_resubmit_case.html', context)

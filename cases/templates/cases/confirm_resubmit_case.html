@@ -36,6 +36,32 @@
                 </div>
             </div>
 
+            <!-- Change Detection Alert -->
+            {% if not has_changes %}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-circle"></i>
+                <strong>No Changes Detected:</strong> {{ change_summary }}
+                <br><br>
+                <small>
+                    To resubmit this case, you must make at least one of the following changes:
+                    <ul class="mb-0 mt-2">
+                        <li>Upload additional documents or supporting files</li>
+                        <li>Update case information or fact finder details</li>
+                        <li>Add clarifications to previously submitted information</li>
+                    </ul>
+                </small>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% else %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i>
+                <strong>Changes Detected:</strong> {{ change_summary }}
+                <br>
+                <small>You may proceed with the resubmission.</small>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endif %}
+
             <!-- Case Summary -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -159,8 +185,14 @@
 
                         <!-- Action Buttons -->
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-warning btn-lg">
-                                <i class="bi bi-arrow-repeat"></i> Confirm Resubmission
+                            <button 
+                                type="submit" 
+                                class="btn btn-warning btn-lg" 
+                                {% if not has_changes %}disabled{% endif %}
+                                title="{% if not has_changes %}Please upload documents or make changes before resubmitting{% else %}Resubmit this case for further processing{% endif %}"
+                            >
+                                <i class="bi bi-arrow-repeat"></i> 
+                                {% if has_changes %}Confirm Resubmission{% else %}Cannot Resubmit - No Changes{% endif %}
                             </button>
                             <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-outline-secondary btn-lg">
                                 <i class="bi bi-x-circle"></i> Cancel
@@ -223,6 +255,27 @@
                         <small class="text-muted">Resubmission #</small>
                         <div class="mt-1">
                             <strong>{{ resubmission_count }}</strong>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Change Detection Status -->
+                    <div class="mb-3">
+                        <small class="text-muted">Changes Detected</small>
+                        <div class="mt-2">
+                            {% if has_changes %}
+                                <div class="alert alert-success py-2 px-3 mb-0">
+                                    <i class="bi bi-check-circle"></i> Yes
+                                    {% if change_detection.changes.new_documents > 0 %}
+                                    <br><small>{{ change_detection.changes.new_documents }} new document(s)</small>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-warning py-2 px-3 mb-0">
+                                    <i class="bi bi-x-circle"></i> No changes detected
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
 
