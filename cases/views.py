@@ -83,6 +83,9 @@ def member_dashboard(request):
         'completed': Case.objects.filter(member=user, status='completed', actual_release_date__isnull=False).count(),
     }
     
+    # Get column visibility settings
+    visible_columns = get_user_visible_columns(user, 'member_dashboard')
+    
     context = {
         'cases': cases,
         'stats': stats,
@@ -90,6 +93,8 @@ def member_dashboard(request):
         'urgency_filter': urgency_filter,
         'search_query': search_query,
         'sort_by': sort_by,
+        'visible_columns': visible_columns,
+        'all_columns': DASHBOARD_COLUMN_CONFIG['member_dashboard']['available_columns'],
     }
     
     return render(request, 'cases/member_dashboard.html', context)
@@ -362,6 +367,8 @@ def admin_dashboard(request):
         'search_query': search_query,
         'sort_by': sort_by,
         'dashboard_type': 'admin',
+        'visible_columns': get_user_visible_columns(user, 'admin_dashboard'),
+        'all_columns': DASHBOARD_COLUMN_CONFIG['admin_dashboard']['available_columns'],
     }
     
     return render(request, 'cases/admin_dashboard.html', context)
@@ -523,6 +530,8 @@ def manager_dashboard(request):
         'sort_by': sort_by,
         'dashboard_type': 'manager',
         'is_readonly': True,
+        'visible_columns': get_user_visible_columns(user, 'manager_dashboard'),
+        'all_columns': DASHBOARD_COLUMN_CONFIG['manager_dashboard']['available_columns'],
     }
     
     return render(request, 'cases/manager_dashboard.html', context)
@@ -2587,6 +2596,62 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'actions', 'label': 'Actions'},
         ],
         'default_hidden': ['reviewed_by', 'notes', 'tier', 'date_scheduled', 'reports']
+    },
+    'admin_dashboard': {
+        'available_columns': [
+            {'id': 'code', 'label': 'Code'},
+            {'id': 'member', 'label': 'Member'},
+            {'id': 'employee', 'label': 'Employee Name'},
+            {'id': 'submitted', 'label': 'Submitted'},
+            {'id': 'due', 'label': 'Due Date'},
+            {'id': 'urgency', 'label': 'Urgency'},
+            {'id': 'status', 'label': 'Status'},
+            {'id': 'release_date', 'label': 'Release Date'},
+            {'id': 'reports', 'label': 'Reports'},
+            {'id': 'assigned_to', 'label': 'Assigned To'},
+            {'id': 'date_scheduled', 'label': 'Date Scheduled'},
+            {'id': 'tier', 'label': 'Tier'},
+            {'id': 'reviewed_by', 'label': 'Reviewed By'},
+            {'id': 'notes', 'label': 'Notes'},
+            {'id': 'actions', 'label': 'Actions'},
+        ],
+        'default_hidden': ['reviewed_by', 'notes', 'tier', 'date_scheduled', 'reports']
+    },
+    'manager_dashboard': {
+        'available_columns': [
+            {'id': 'code', 'label': 'Code'},
+            {'id': 'member', 'label': 'Member'},
+            {'id': 'employee', 'label': 'Employee Name'},
+            {'id': 'submitted', 'label': 'Submitted'},
+            {'id': 'due', 'label': 'Due Date'},
+            {'id': 'urgency', 'label': 'Urgency'},
+            {'id': 'status', 'label': 'Status'},
+            {'id': 'release_date', 'label': 'Release Date'},
+            {'id': 'reports', 'label': 'Reports'},
+            {'id': 'assigned_to', 'label': 'Assigned To'},
+            {'id': 'date_scheduled', 'label': 'Date Scheduled'},
+            {'id': 'tier', 'label': 'Tier'},
+            {'id': 'reviewed_by', 'label': 'Reviewed By'},
+            {'id': 'notes', 'label': 'Notes'},
+            {'id': 'actions', 'label': 'Actions'},
+        ],
+        'default_hidden': ['notes', 'reviewed_by', 'tier']
+    },
+    'member_dashboard': {
+        'available_columns': [
+            {'id': 'workshop', 'label': 'Workshop'},
+            {'id': 'employee', 'label': 'Employee Name'},
+            {'id': 'reports', 'label': 'Reports'},
+            {'id': 'due_date', 'label': 'Due Date'},
+            {'id': 'urgency', 'label': 'Urgency'},
+            {'id': 'status', 'label': 'Status'},
+            {'id': 'credit', 'label': 'Credit'},
+            {'id': 'submitted', 'label': 'Submitted'},
+            {'id': 'accepted', 'label': 'Accepted'},
+            {'id': 'completed', 'label': 'Completed'},
+            {'id': 'actions', 'label': 'Actions'},
+        ],
+        'default_hidden': ['accepted', 'credit', 'submitted']
     }
 }
 
