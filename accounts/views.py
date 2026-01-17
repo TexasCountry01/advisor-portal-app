@@ -3,7 +3,14 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from .forms import UserCreationForm
+from .forms import (
+    UserCreationForm,
+    MemberProfileEditForm,
+    DelegateAccessForm,
+    MemberCreditAllowanceForm
+)
+from .models import DelegateAccess, MemberCreditAllowance
+from core.models import AuditLog
 
 User = get_user_model()
 
@@ -171,3 +178,459 @@ def reactivate_user(request, user_id):
     messages.success(request, f'User {username} has been reactivated.')
     
     return redirect('manage_users')
+
+
+# ============================================================================
+# MEMBER PROFILE MANAGEMENT VIEWS
+# ============================================================================
+# These views enable Benefits Technicians to edit member profiles post-creation.
+#
+# Key features:
+# - Edit member profile information (name, email, phone, workshop code, active status)
+# - Manage delegate access (who can submit cases on behalf of member)
+# - Configure quarterly credit allowances
+# - All changes are logged via AuditLog for compliance and debugging
+#
+# Permission model:
+# - Only Users with role='technician' (Benefits Technicians) can access these
+# - Technicians can edit any member profile
+#
+# WP FUSION INTEGRATION NOTES:
+# - The is_active field is manually toggled here (PLACEHOLDER)
+# - When WP Fusion is integrated, is_active will be synced from WP subscription status
+# - See model comments in accounts/models.py for additional WP Fusion integration points
+# ============================================================================
+
+
+def can_edit_member_profile(user):
+    """
+    Check if user can edit member profiles.
+    
+    Only Benefits Technicians (role='technician') can edit member profiles.
+    
+    Note: Future enhancement could add permission-based system:
+    - 'accounts.edit_member_profile' permission
+    - Role-based + permission checking
+    """
+    return user.is_authenticated and user.role == 'technician'
+
+
+@login_required
+def member_profile_edit(request, member_id):
+    """
+    Main view for editing a member (advisor) profile.
+    
+    Displays:
+    - Basic profile information (name, email, phone, workshop code, active status)
+    - Current delegates and ability to add/remove delegates
+    - Quarterly credit allowances (view/edit current and upcoming quarters)
+    - Audit trail of profile changes
+    
+    Only accessible by Benefits Technicians (role='technician').
+    
+    URL: /accounts/members/{member_id}/edit/
+    """
+    
+    current_user = request.user
+    member = get_object_or_404(User, id=member_id, role='member')
+    
+    # PERMISSION CHECK: Only technicians can edit member profiles
+    if not can_edit_member_profile(current_user):
+        messages.error(request, 'You do not have permission to edit member profiles.')
+        return redirect('home')
+    
+    # Handle profile edit form submission
+    if request.method == 'POST' and 'profile_form' in request.POST:
+        profile_form = MemberProfileEditForm(
+            request.POST,
+            instance=member,
+            changed_by_user=current_user
+        )
+        
+        if profile_form.is_valid():
+            try:
+                old_data = {
+                    'first_name': member.first_name,
+                    'last_name': member.last_name,
+                    'email': member.email,
+                    'phone': member.phone,
+                    'workshop_code': member.workshop_code,
+                    'is_active': member.is_active,
+                }
+                
+                updated_member = profile_form.save()
+                
+                new_data = {
+                    'first_name': updated_member.first_name,
+                    'last_name': updated_member.last_name,
+                    'email': updated_member.email,
+                    'phone': updated_member.phone,
+                    'workshop_code': updated_member.workshop_code,
+                    'is_active': updated_member.is_active,
+                }
+                
+                # LOG THE CHANGE
+                # Track what changed for audit trail
+                changes = {}
+                for key in old_data:
+                    if old_data[key] != new_data[key]:
+                        changes[key] = {
+                            'old': str(old_data[key]),
+                            'new': str(new_data[key])
+                        }
+                
+                # Create audit log entry
+                AuditLog.objects.create(
+                    user=current_user,
+                    action='member_profile_updated',
+                    resource_type='member',
+                    resource_id=member.id,
+                    details={
+                        'member_name': member.get_full_name(),
+                        'changes': changes,
+                        'edit_type': 'profile_information'
+                    }
+                )
+                
+                messages.success(
+                    request,
+                    f'Profile for {updated_member.get_full_name()} has been updated successfully.'
+                )
+                
+            except Exception as e:
+                messages.error(request, f'Error updating profile: {str(e)}')
+    else:
+        profile_form = MemberProfileEditForm(instance=member)
+    
+    # Get delegate access records
+    active_delegates = member.granted_delegate_access.filter(is_active=True)
+    inactive_delegates = member.granted_delegate_access.filter(is_active=False)
+    
+    # Get recent audit logs for this member
+    audit_logs = AuditLog.objects.filter(
+        resource_type='member',
+        resource_id=member.id
+    ).order_by('-created_at')[:20]
+    
+    # Get current quarter credit allowance
+    from datetime import datetime
+    current_year = datetime.now().year
+    current_quarter = (datetime.now().month - 1) // 3 + 1
+    
+    current_allowance = member.credit_allowances.filter(
+        fiscal_year=current_year,
+        quarter=current_quarter
+    ).first()
+    
+    # Get all quarters for credit editing (current + next 4 quarters)
+    quarters = []
+    temp_year = current_year
+    temp_quarter = current_quarter
+    for i in range(5):
+        quarters.append({
+            'year': temp_year,
+            'quarter': temp_quarter,
+            'display': f'FY{temp_year} Q{temp_quarter}',
+            'allowance': member.credit_allowances.filter(
+                fiscal_year=temp_year,
+                quarter=temp_quarter
+            ).first()
+        })
+        temp_quarter += 1
+        if temp_quarter > 4:
+            temp_quarter = 1
+            temp_year += 1
+    
+    context = {
+        'member': member,
+        'profile_form': profile_form,
+        'active_delegates': active_delegates,
+        'inactive_delegates': inactive_delegates,
+        'audit_logs': audit_logs,
+        'current_allowance': current_allowance,
+        'quarters': quarters,
+        'is_benefits_tech': can_edit_member_profile(current_user),
+    }
+    
+    return render(request, 'accounts/member_profile_edit.html', context)
+
+
+@login_required
+def member_delegate_add(request, member_id):
+    """
+    Add a new delegate for a member.
+    
+    Delegates are team members who can submit cases on behalf of the member.
+    Benefits Technicians control who has access and what permissions they have.
+    
+    URL: POST /accounts/members/{member_id}/delegate/add/
+    """
+    
+    current_user = request.user
+    member = get_object_or_404(User, id=member_id, role='member')
+    
+    # PERMISSION CHECK
+    if not can_edit_member_profile(current_user):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+    
+    if request.method == 'POST':
+        form = DelegateAccessForm(
+            member,
+            request.POST,
+            changed_by_user=current_user
+        )
+        
+        if form.is_valid():
+            try:
+                delegate_access = form.save()
+                
+                # LOG THE CHANGE
+                AuditLog.objects.create(
+                    user=current_user,
+                    action='delegate_access_granted',
+                    resource_type='member',
+                    resource_id=member.id,
+                    details={
+                        'member_name': member.get_full_name(),
+                        'delegate_name': delegate_access.delegate.get_full_name(),
+                        'permission_level': delegate_access.permission_level,
+                        'reason': delegate_access.grant_reason
+                    }
+                )
+                
+                messages.success(
+                    request,
+                    f'{delegate_access.delegate.get_full_name()} now has {delegate_access.permission_level} '
+                    f'access for {member.get_full_name()}'
+                )
+                
+                return redirect('member_profile_edit', member_id=member.id)
+                
+            except Exception as e:
+                messages.error(request, f'Error adding delegate: {str(e)}')
+                return redirect('member_profile_edit', member_id=member.id)
+    else:
+        form = DelegateAccessForm(member)
+    
+    context = {
+        'member': member,
+        'form': form,
+        'action': 'add'
+    }
+    return render(request, 'accounts/member_delegate_form.html', context)
+
+
+@login_required
+def member_delegate_edit(request, delegate_id):
+    """
+    Edit delegate access permissions.
+    
+    Allows Benefits Technicians to modify permission levels or revoke access.
+    
+    URL: /accounts/delegates/{delegate_id}/edit/
+    """
+    
+    current_user = request.user
+    delegate_access = get_object_or_404(DelegateAccess, id=delegate_id)
+    member = delegate_access.member
+    
+    # PERMISSION CHECK
+    if not can_edit_member_profile(current_user):
+        messages.error(request, 'Permission denied')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        old_permission = delegate_access.permission_level
+        old_active = delegate_access.is_active
+        
+        form = DelegateAccessForm(
+            member,
+            request.POST,
+            instance=delegate_access,
+            changed_by_user=current_user
+        )
+        
+        if form.is_valid():
+            try:
+                updated_access = form.save()
+                
+                # LOG THE CHANGE
+                changes = {}
+                if old_permission != updated_access.permission_level:
+                    changes['permission_level'] = {
+                        'old': old_permission,
+                        'new': updated_access.permission_level
+                    }
+                if old_active != updated_access.is_active:
+                    changes['is_active'] = {
+                        'old': old_active,
+                        'new': updated_access.is_active
+                    }
+                
+                AuditLog.objects.create(
+                    user=current_user,
+                    action='delegate_access_modified',
+                    resource_type='member',
+                    resource_id=member.id,
+                    details={
+                        'member_name': member.get_full_name(),
+                        'delegate_name': updated_access.delegate.get_full_name(),
+                        'changes': changes
+                    }
+                )
+                
+                messages.success(
+                    request,
+                    'Delegate access has been updated.'
+                )
+                
+                return redirect('member_profile_edit', member_id=member.id)
+                
+            except Exception as e:
+                messages.error(request, f'Error updating delegate: {str(e)}')
+    else:
+        form = DelegateAccessForm(member, instance=delegate_access)
+    
+    context = {
+        'member': member,
+        'delegate_access': delegate_access,
+        'form': form,
+        'action': 'edit'
+    }
+    return render(request, 'accounts/member_delegate_form.html', context)
+
+
+@login_required
+def member_delegate_revoke(request, delegate_id):
+    """
+    Revoke delegate access by marking it as inactive.
+    
+    This is a soft delete - the record is preserved for audit purposes.
+    
+    URL: POST /accounts/delegates/{delegate_id}/revoke/
+    """
+    
+    current_user = request.user
+    delegate_access = get_object_or_404(DelegateAccess, id=delegate_id)
+    member = delegate_access.member
+    
+    # PERMISSION CHECK
+    if not can_edit_member_profile(current_user):
+        messages.error(request, 'Permission denied')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        try:
+            delegate_name = delegate_access.delegate.get_full_name()
+            delegate_access.is_active = False
+            delegate_access.save()
+            
+            # LOG THE CHANGE
+            AuditLog.objects.create(
+                user=current_user,
+                action='delegate_access_revoked',
+                resource_type='member',
+                resource_id=member.id,
+                details={
+                    'member_name': member.get_full_name(),
+                    'delegate_name': delegate_name,
+                    'permission_level': delegate_access.permission_level
+                }
+            )
+            
+            messages.success(
+                request,
+                f'Access for {delegate_name} has been revoked.'
+            )
+            
+        except Exception as e:
+            messages.error(request, f'Error revoking access: {str(e)}')
+    
+    return redirect('member_profile_edit', member_id=member.id)
+
+
+@login_required
+def member_credit_allowance_edit(request, member_id, fiscal_year, quarter):
+    """
+    Edit quarterly credit allowance for a member.
+    
+    Allows Benefits Technicians to configure how many cases a member can submit
+    in a given quarter.
+    
+    Future enhancement: This could be synced from WP product/membership tier.
+    
+    URL: /accounts/members/{member_id}/credits/{fiscal_year}/q{quarter}/edit/
+    """
+    
+    current_user = request.user
+    member = get_object_or_404(User, id=member_id, role='member')
+    
+    # PERMISSION CHECK
+    if not can_edit_member_profile(current_user):
+        messages.error(request, 'Permission denied')
+        return redirect('home')
+    
+    # Get or create the credit allowance for this quarter
+    allowance, created = MemberCreditAllowance.objects.get_or_create(
+        member=member,
+        fiscal_year=fiscal_year,
+        quarter=quarter,
+        defaults={
+            'allowed_credits': 100,
+            'configured_by': current_user
+        }
+    )
+    
+    if request.method == 'POST':
+        old_credits = allowance.allowed_credits
+        
+        form = MemberCreditAllowanceForm(
+            member,
+            fiscal_year,
+            quarter,
+            request.POST,
+            instance=allowance,
+            changed_by_user=current_user
+        )
+        
+        if form.is_valid():
+            try:
+                updated_allowance = form.save()
+                
+                # LOG THE CHANGE
+                AuditLog.objects.create(
+                    user=current_user,
+                    action='credit_allowance_updated',
+                    resource_type='member',
+                    resource_id=member.id,
+                    details={
+                        'member_name': member.get_full_name(),
+                        'fiscal_year': fiscal_year,
+                        'quarter': quarter,
+                        'old_credits': old_credits,
+                        'new_credits': updated_allowance.allowed_credits,
+                        'notes': updated_allowance.notes
+                    }
+                )
+                
+                messages.success(
+                    request,
+                    f'Credit allowance for FY{fiscal_year} Q{quarter} has been updated.'
+                )
+                
+                return redirect('member_profile_edit', member_id=member.id)
+                
+            except Exception as e:
+                messages.error(request, f'Error updating credit allowance: {str(e)}')
+    else:
+        form = MemberCreditAllowanceForm(member, fiscal_year, quarter, instance=allowance)
+    
+    context = {
+        'member': member,
+        'allowance': allowance,
+        'form': form,
+        'fiscal_year': fiscal_year,
+        'quarter': quarter,
+    }
+    return render(request, 'accounts/member_credit_allowance_form.html', context)
+

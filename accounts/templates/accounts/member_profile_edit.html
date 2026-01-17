@@ -1,0 +1,477 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Member Profile - {{ member.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    {# ====================================================================== #}
+    {# MEMBER PROFILE EDIT PAGE #}
+    {# ====================================================================== #}
+    {# This template allows Benefits Technicians to edit member (advisor) profiles. #}
+    {# #}
+    {# Features: #}
+    {# - Edit basic profile information #}
+    {# - Manage delegates (add, edit, revoke) #}
+    {# - Configure quarterly credit allowances #}
+    {# - View audit trail of profile changes #}
+    {# #}
+    {# WP FUSION INTEGRATION NOTES: #}
+    {# - The 'is_active' checkbox is a MANUAL TOGGLE placeholder #}
+    {# - When WP Fusion is integrated, this will be synced from subscription status #}
+    {# - See the form field help text for more details #}
+    {# ====================================================================== #}
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Edit Member Profile</h1>
+            <p class="text-muted">
+                <strong>Member:</strong> {{ member.get_full_name }} ({{ member.username }})
+                <br />
+                <strong>Workshop Code:</strong> {{ member.workshop_code|default:"Not assigned" }}
+                <br />
+                <strong>Status:</strong> 
+                {% if member.is_active %}
+                    <span class="badge bg-success">Active</span>
+                {% else %}
+                    <span class="badge bg-danger">Inactive</span>
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'manage_users' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Members
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <!-- Main Content Column -->
+        <div class="col-lg-8">
+            <!-- ============================================================== -->
+            <!-- SECTION 1: PROFILE INFORMATION -->
+            <!-- ============================================================== -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person"></i> Profile Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" name="profile_form">
+                        {% csrf_token %}
+                        <input type="hidden" name="profile_form" value="1">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ profile_form.first_name.id_for_label }}" class="form-label">
+                                        First Name <span class="text-danger">*</span>
+                                    </label>
+                                    {{ profile_form.first_name }}
+                                    {% if profile_form.first_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ profile_form.first_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ profile_form.last_name.id_for_label }}" class="form-label">
+                                        Last Name <span class="text-danger">*</span>
+                                    </label>
+                                    {{ profile_form.last_name }}
+                                    {% if profile_form.last_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ profile_form.last_name.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ profile_form.email.id_for_label }}" class="form-label">
+                                        Email <span class="text-danger">*</span>
+                                    </label>
+                                    {{ profile_form.email }}
+                                    {% if profile_form.email.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ profile_form.email.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ profile_form.phone.id_for_label }}" class="form-label">
+                                        Phone
+                                    </label>
+                                    {{ profile_form.phone }}
+                                    {% if profile_form.phone.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ profile_form.phone.errors }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ profile_form.workshop_code.id_for_label }}" class="form-label">
+                                Workshop Code
+                            </label>
+                            {{ profile_form.workshop_code }}
+                            <small class="text-muted d-block mt-1">
+                                <strong>Note:</strong> Members with the same workshop code can see each other. 
+                                This affects member grouping and visibility in the system.
+                            </small>
+                            {% if profile_form.workshop_code.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ profile_form.workshop_code.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ profile_form.is_active }}
+                                <label for="{{ profile_form.is_active.id_for_label }}" class="form-check-label">
+                                    Member is Active
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                <strong>WP FUSION PLACEHOLDER:</strong> This is currently a manual toggle. 
+                                Once WP Fusion is integrated, this status will be automatically synced from 
+                                the member's WP subscription status. Unchecking this will deactivate the member 
+                                account without deleting their data.
+                            </small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Save Profile Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ============================================================== -->
+            <!-- SECTION 2: DELEGATE MANAGEMENT -->
+            <!-- ============================================================== -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-people"></i> Delegate Access
+                        </h5>
+                        <a href="{% url 'member_delegate_add' member.id %}" class="btn btn-sm btn-light">
+                            <i class="bi bi-plus-circle"></i> Add Delegate
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Active Delegates -->
+                    {% if active_delegates %}
+                        <h6 class="mb-3">Active Delegates ({{ active_delegates.count }})</h6>
+                        <div class="table-responsive mb-4">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Permission</th>
+                                        <th>Since</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for delegate in active_delegates %}
+                                        <tr>
+                                            <td>
+                                                {{ delegate.delegate.get_full_name }}
+                                                <br />
+                                                <small class="text-muted">{{ delegate.delegate.username }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">
+                                                    {{ delegate.get_permission_level_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ delegate.created_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'member_delegate_edit' delegate.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <form method="post" 
+                                                      action="{% url 'member_delegate_revoke' delegate.id %}"
+                                                      style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" 
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            onclick="return confirm('Revoke access for {{ delegate.delegate.get_full_name }}?')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info mb-3" role="alert">
+                            No active delegates assigned. 
+                            <a href="{% url 'member_delegate_add' member.id %}">Add a delegate</a>
+                        </div>
+                    {% endif %}
+
+                    <!-- Inactive Delegates -->
+                    {% if inactive_delegates %}
+                        <hr />
+                        <h6 class="mb-3">Inactive Delegates ({{ inactive_delegates.count }})</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Permission</th>
+                                        <th>Revoked</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for delegate in inactive_delegates %}
+                                        <tr class="text-muted">
+                                            <td>
+                                                {{ delegate.delegate.get_full_name }}
+                                                <br />
+                                                <small>{{ delegate.delegate.username }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {{ delegate.get_permission_level_display }}
+                                                </span>
+                                            </td>
+                                            <td>{{ delegate.updated_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'member_delegate_edit' delegate.id %}" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- ============================================================== -->
+            <!-- SECTION 3: QUARTERLY CREDIT ALLOWANCES -->
+            <!-- ============================================================== -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-credit-card"></i> Quarterly Credit Allowances
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Configure how many cases this member can submit each quarter.
+                    </p>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Allowed Credits</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quarter_info in quarters %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ quarter_info.display }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if quarter_info.allowance %}
+                                                {{ quarter_info.allowance.allowed_credits }} credits
+                                            {% else %}
+                                                <span class="text-muted">Not set</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if quarter_info.allowance %}
+                                                {% if quarter_info.year == current_year and quarter_info.quarter == current_quarter %}
+                                                    <span class="badge bg-primary">Current</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Configured</span>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-light text-dark">Default</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'member_credit_allowance_edit' member.id quarter_info.year quarter_info.quarter %}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="alert alert-info mt-3" role="alert">
+                        <strong>WP FUSION PLACEHOLDER:</strong> These credits are currently set manually by Benefits Technicians. 
+                        Future integration with WP Fusion can automatically sync credits from subscription tier or product selection.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Sidebar Column -->
+        <div class="col-lg-4">
+            <!-- ============================================================== -->
+            <!-- AUDIT TRAIL / CHANGE HISTORY -->
+            <!-- ============================================================== -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history"></i> Recent Changes
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if audit_logs %}
+                        <div class="list-group list-group-flush">
+                            {% for log in audit_logs %}
+                                <div class="list-group-item px-3 py-2 border-bottom">
+                                    <small>
+                                        <strong>
+                                            {% if log.action == 'member_profile_updated' %}
+                                                <i class="bi bi-person-check"></i> Profile Updated
+                                            {% elif log.action == 'delegate_access_granted' %}
+                                                <i class="bi bi-person-plus"></i> Delegate Added
+                                            {% elif log.action == 'delegate_access_modified' %}
+                                                <i class="bi bi-person-gear"></i> Delegate Modified
+                                            {% elif log.action == 'delegate_access_revoked' %}
+                                                <i class="bi bi-person-dash"></i> Delegate Revoked
+                                            {% elif log.action == 'credit_allowance_updated' %}
+                                                <i class="bi bi-credit-card"></i> Credits Updated
+                                            {% else %}
+                                                {{ log.action }}
+                                            {% endif %}
+                                        </strong>
+                                    </small>
+                                    <br />
+                                    <small class="text-muted">
+                                        {% if log.user %}
+                                            by {{ log.user.get_full_name }}
+                                        {% else %}
+                                            by System
+                                        {% endif %}
+                                    </small>
+                                    <br />
+                                    <small class="text-muted">
+                                        {{ log.created_at|date:"M d, Y H:i" }}
+                                    </small>
+                                    {% if log.details %}
+                                        <div class="mt-2 p-2 bg-light rounded small">
+                                            {% if log.details.changes %}
+                                                <strong>Changes:</strong><br />
+                                                {% for field, change in log.details.changes.items %}
+                                                    <code>{{ field }}</code>: 
+                                                    <span class="text-danger">{{ change.old }}</span> 
+                                                    → 
+                                                    <span class="text-success">{{ change.new }}</span>
+                                                    <br />
+                                                {% endfor %}
+                                            {% elif log.details.delegate_name %}
+                                                <strong>{{ log.details.delegate_name }}</strong> 
+                                                ({{ log.details.permission_level }})
+                                            {% elif log.details.quarter %}
+                                                <strong>FY{{ log.details.fiscal_year }} Q{{ log.details.quarter }}</strong><br />
+                                                Credits: {{ log.details.old_credits }} → {{ log.details.new_credits }}
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="p-3 text-muted">
+                            No changes recorded yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Help & Info -->
+            <div class="card mt-3">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Help</h6>
+                </div>
+                <div class="card-body small">
+                    <h6>Profile Information</h6>
+                    <p>Update the member's contact details and status. The <code>is_active</code> toggle 
+                       is currently manual but will be auto-controlled by WP Fusion.</p>
+                    
+                    <hr />
+                    
+                    <h6>Delegate Access</h6>
+                    <p>Grant other team members permission to submit cases on behalf of this member. 
+                       Delegates must be in the same office/workshop.</p>
+                    
+                    <hr />
+                    
+                    <h6>Credit Allowances</h6>
+                    <p>Set quarterly submission limits. A member can submit up to the allowed credits 
+                       per quarter. Resets automatically each quarter.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    {# Styling for member profile edit page #}
+    .table-responsive {
+        border-radius: 0.375rem;
+    }
+    
+    .badge {
+        font-size: 0.875rem;
+    }
+    
+    .list-group-item {
+        border-color: #dee2e6;
+    }
+    
+    .list-group-item:last-child {
+        border-bottom: none !important;
+    }
+</style>
+{% endblock %}

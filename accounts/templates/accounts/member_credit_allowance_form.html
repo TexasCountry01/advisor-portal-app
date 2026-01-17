@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Credit Allowance - {{ member.get_full_name }} - FY{{ fiscal_year }} Q{{ quarter }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    {# ====================================================================== #}
+    {# CREDIT ALLOWANCE FORM TEMPLATE #}
+    {# ====================================================================== #}
+    {# This template allows Benefits Technicians to set quarterly credit #}
+    {# allowances for members. #}
+    {# #}
+    {# Features: #}
+    {# - Set allowed credits for specific quarter #}
+    {# - Add notes explaining the adjustment #}
+    {# - View audit trail of credit changes #}
+    {# #}
+    {# WP FUSION PLACEHOLDER: #}
+    {# - Credits are currently set manually #}
+    {# - Future: Can be auto-synced from WP product tier #}
+    {# ====================================================================== #}
+
+    <div class="row mb-4">
+        <div class="col">
+            <h1>
+                <i class="bi bi-credit-card"></i> Edit Credit Allowance
+            </h1>
+            <p class="text-muted">
+                Member: <strong>{{ member.get_full_name }}</strong> ({{ member.username }})<br />
+                Period: <strong>FY{{ fiscal_year }} Q{{ quarter }}</strong>
+            </p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'member_profile_edit' member.id %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Profile
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">FY{{ fiscal_year }} Q{{ quarter }} - Credit Configuration</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="form">
+                        {% csrf_token %}
+
+                        <!-- Period Info -->
+                        <div class="alert alert-info" role="alert">
+                            <strong>Period:</strong> Fiscal Year {{ fiscal_year }}, Quarter {{ quarter }}<br />
+                            <strong>Member:</strong> {{ member.get_full_name }}<br />
+                            {% if allowance %}
+                                <strong>Last Updated:</strong> {{ allowance.updated_at|date:"M d, Y H:i" }}
+                                {% if allowance.configured_by %}
+                                    by {{ allowance.configured_by.get_full_name }}
+                                {% endif %}
+                            {% else %}
+                                <strong>Status:</strong> New allowance (will use system default)
+                            {% endif %}
+                        </div>
+
+                        <!-- Allowed Credits -->
+                        <div class="mb-3">
+                            <label for="{{ form.allowed_credits.id_for_label }}" class="form-label">
+                                {{ form.allowed_credits.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.allowed_credits }}
+                            <small class="text-muted d-block mt-1">
+                                Number of cases this member can submit in this quarter. 
+                                Typically ranges from 0-1000, but adjust based on member needs.
+                            </small>
+                            {% if form.allowed_credits.errors %}
+                                <div class="text-danger small mt-1">{{ form.allowed_credits.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label for="{{ form.notes.id_for_label }}" class="form-label">
+                                {{ form.notes.label }}
+                            </label>
+                            {{ form.notes }}
+                            <small class="text-muted d-block mt-1">
+                                Document why this credit level was set. For example:
+                                <ul>
+                                    <li>"Increased from 75 due to seasonal demand"</li>
+                                    <li>"New member - starting at base level"</li>
+                                    <li>"Reduced for Q3 - member on leave"</li>
+                                </ul>
+                            </small>
+                            {% if form.notes.errors %}
+                                <div class="text-danger small mt-1">{{ form.notes.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Form-Level Errors -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {% for error in form.non_field_errors %}
+                                    {{ error }}
+                                    <br />
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Current Value Display -->
+                        {% if allowance %}
+                            <div class="alert alert-secondary" role="alert">
+                                <strong>Current Allowance:</strong> {{ allowance.allowed_credits }} credits<br />
+                                {% if allowance.notes %}
+                                    <strong>Notes:</strong> {{ allowance.notes }}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-between mt-4">
+                            <a href="{% url 'member_profile_edit' member.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Save Credit Allowance
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Column -->
+        <div class="col-lg-6">
+            <div class="card bg-light">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="bi bi-info-circle"></i> Credit System Overview</h6>
+                </div>
+                <div class="card-body small">
+                    <h6>What are Credits?</h6>
+                    <p>Credits represent the number of cases a member is allowed to submit in a quarter. 
+                       This is a soft limit that helps manage workload and business rules.</p>
+
+                    <hr />
+
+                    <h6>Quarterly Reset</h6>
+                    <p>Credits are tracked per quarter (Q1, Q2, Q3, Q4). Each quarter starts fresh with 
+                       the configured allowance. The previous quarter's unused credits do not roll over.</p>
+
+                    <hr />
+
+                    <h6>Typical Values</h6>
+                    <ul>
+                        <li><strong>New Members:</strong> 50-75 credits</li>
+                        <li><strong>Experienced Members:</strong> 100-150 credits</li>
+                        <li><strong>High Volume:</strong> 200+ credits</li>
+                        <li><strong>Inactive/Leave:</strong> 0-25 credits</li>
+                    </ul>
+
+                    <hr />
+
+                    <h6>Setting Credits</h6>
+                    <p>Adjust credits based on:</p>
+                    <ul>
+                        <li>Member experience and performance</li>
+                        <li>Seasonal demand</li>
+                        <li>Member availability (part-time, leave)</li>
+                        <li>Geographic or demographic factors</li>
+                        <li>Business strategies or promotions</li>
+                    </ul>
+
+                    <hr />
+
+                    <h6>WP Fusion Integration (Future)</h6>
+                    <p>Eventually, credit allowances could be:</p>
+                    <ul>
+                        <li>Auto-calculated from WP subscription tier</li>
+                        <li>Synced from membership level or product</li>
+                        <li>Triggered on subscription changes</li>
+                    </ul>
+                    <p>For now, these are set manually for flexibility.</p>
+
+                    <hr />
+
+                    <h6>Audit Trail</h6>
+                    <p>All credit allowance changes are logged with who made the change and why. 
+                       This ensures full compliance tracking and makes it easy to understand 
+                       historical credit decisions.</p>
+                </div>
+            </div>
+
+            <!-- Member Overview Card -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Member Overview</h6>
+                </div>
+                <div class="card-body small">
+                    <dl class="row">
+                        <dt class="col-sm-5">Name:</dt>
+                        <dd class="col-sm-7">{{ member.get_full_name }}</dd>
+
+                        <dt class="col-sm-5">Username:</dt>
+                        <dd class="col-sm-7"><code>{{ member.username }}</code></dd>
+
+                        <dt class="col-sm-5">Email:</dt>
+                        <dd class="col-sm-7">{{ member.email }}</dd>
+
+                        <dt class="col-sm-5">Workshop:</dt>
+                        <dd class="col-sm-7">{{ member.workshop_code|default:"Not assigned" }}</dd>
+
+                        <dt class="col-sm-5">Status:</dt>
+                        <dd class="col-sm-7">
+                            {% if member.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-5">Joined:</dt>
+                        <dd class="col-sm-7">{{ member.created_at|date:"M d, Y" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
