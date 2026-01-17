@@ -108,7 +108,7 @@
                 </div>
 
                 <!-- Quality Review Queue Access (Level 2/3 Only) -->
-                {% if request.user.user_level in 'level_2,level_3'|split:"," %}
+                {% if request.user.user_level == 'level_2' or request.user.user_level == 'level_3' %}
                 <div class="row mt-3">
                     <div class="col-12">
                         <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
