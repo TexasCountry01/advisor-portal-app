@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Technician Dashboard - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Benefits Technician Dashboard</h2>
+            <p class="text-muted">View and manage all cases</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'logout' %}" class="btn btn-outline-danger">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Test: If this renders, the problem is in the old template file -->
+    <div class="card">
+        <div class="card-body">
+            <h5>Template Rendering Test - Success!</h5>
+            <p>If you can see this, the template syntax is working.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

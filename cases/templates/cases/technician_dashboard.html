@@ -103,11 +103,21 @@
                     </div>
                 </div>
 
-                <!-- Row 2: Filter Dropdowns -->
-                <div class="row g-3" id="filter-row">
+                <!-- Row 2: Filter Controls (Collapsible) -->
+                <div class="row g-3 mt-1 mb-2">
+                    <div class="col-12">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filter-row">
+                            <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Row 3: Filter Dropdowns (Collapsed by default) -->
+                <div class="collapse" id="filter-row">
+                <div class="row g-3 mt-0" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
                     <div class="col-md-3">
-                        <label class="form-label">Status (Multiple)</label>
-                        <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto; background-color: #f8f9fa;">
+                        <label class="form-label"><strong>Status (Multiple)</strong></label>
+                        <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto; background-color: white;">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="status" value="submitted" 
                                        id="status_submitted" {% if 'submitted' in status_filters %}checked{% endif %}>
@@ -147,7 +157,7 @@
                         <small class="text-muted d-block mt-1">Select multiple statuses</small>
                     </div>
                     <div class="col-md-2">
-                        <label for="urgency" class="form-label">Urgency</label>
+                        <label for="urgency" class="form-label"><strong>Urgency</strong></label>
                         <select name="urgency" id="urgency" class="form-select">
                             <option value="">All Urgencies</option>
                             <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Normal</option>
@@ -172,7 +182,26 @@
                     <div class="col-md-3 d-flex align-items-end gap-2">
                         <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
                         <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="columnButton" data-bs-toggle="dropdown" aria-expanded="false" title="Show/hide columns">
+                                <i class="bi bi-columns-gap"></i> Columns
+                                <span class="badge bg-warning ms-1" id="hidden-count" style="display:none;">0</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" id="columnMenu" style="max-height: 400px; overflow-y: auto;">
+                                {% for col in all_columns %}
+                                <li class="px-2 py-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input column-toggle" type="checkbox" data-column="{{ col.id }}" id="col_{{ col.id }}" {% if col.id in visible_columns %}checked{% endif %} data-label="{{ col.label }}">
+                                        <label class="form-check-label" for="col_{{ col.id }}">
+                                            {{ col.label }}
+                                        </label>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
+                </div>
                 </div>
             </form>
             {% endwith %}
@@ -231,43 +260,43 @@
                                 <a href="?{% if sort_by == 'external_case_id' %}sort=-external_case_id{% else %}sort=external_case_id{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">ID</a>
                             </th>
                             -->
-                            <th id="code-column">
+                            <th id="code-column" data-column-id="code" {% if 'code' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Code</a>
                             </th>
-                            <th>
+                            <th data-column-id="member" {% if 'member' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'member__first_name' %}sort=-member__first_name{% else %}sort=member__first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Member</a>
                             </th>
-                            <th>
+                            <th data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Employee Name</a>
                             </th>
-                            <th>
+                            <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Submitted</a>
                             </th>
-                            <th>
+                            <th data-column-id="due" {% if 'due' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Due Date</a>
                             </th>
-                            <th>
+                            <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Urgency</a>
                             </th>
-                            <th>
+                            <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Status</a>
                             </th>
-                            <th>Release Date</th>
-                            <th>Reports</th>
-                            <th>Assigned To</th>
-                            <th>
+                            <th data-column-id="release_date" {% if 'release_date' not in visible_columns %}class="column-hidden"{% endif %}>Release Date</th>
+                            <th data-column-id="reports" {% if 'reports' not in visible_columns %}class="column-hidden"{% endif %}>Reports</th>
+                            <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}>Assigned To</th>
+                            <th data-column-id="date_scheduled" {% if 'date_scheduled' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'date_scheduled' %}sort=-date_scheduled{% else %}sort=date_scheduled{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Date Scheduled</a>
                             </th>
-                            <th>
+                            <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Tier</a>
                             </th>
-                            <th>Reviewed By</th>
-                            <th>Notes</th>
+                            <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
+                            <th data-column-id="notes" {% if 'notes' not in visible_columns %}class="column-hidden"{% endif %}>Notes</th>
                             <!-- COMMENTED OUT: Completed Column Header - 01/11/2026
                                  Reason: Completed date removed from dashboard. Status column shows release status.
                             <th>Completed</th>
                             -->
-                            <th>Actions</th>
+                            <th data-column-id="actions" {% if 'actions' not in visible_columns %}class="column-hidden"{% endif %}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -281,31 +310,31 @@
                                 </a>
                             </td>
                             -->
-                            <td id="code-column">{{ case.workshop_code }}</td>
-                            <td>
+                            <td id="code-column" class="column-code {% if 'code' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
+                            <td class="column-member {% if 'member' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.member.get_full_name %}
                                     {{ case.member.get_full_name }}
                                 {% else %}
                                     {{ case.member.username }}
                                 {% endif %}
                             </td>
-                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
-                            <td>
+                            <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td class="column-submitted {% if 'submitted' not in visible_columns %}column-hidden{% endif %}">{{ case.date_submitted|date:"m/d/Y" }}</td>
+                            <td class="column-due {% if 'due' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_due %}
                                     {{ case.date_due|date:"m/d/Y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-urgency {% if 'urgency' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.urgency == 'urgent' %}
                                     <span class="badge bg-danger">Urgent</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Normal</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-status {% if 'status' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'submitted' %}
                                     <span class="badge bg-primary">Submitted</span>
                                 {% elif case.status == 'resubmitted' %}
@@ -326,7 +355,7 @@
                                     {% endif %}
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-release_date {% if 'release_date' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.scheduled_release_date %}
                                     <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/Y" }}</span>
                                 {% elif case.actual_release_date %}
@@ -335,8 +364,8 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td style="text-align: center;">{{ case.num_reports_requested }}</td>
-                            <td>
+                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: center;">{{ case.num_reports_requested }}</td>
+                            <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.assigned_to %}
                                     {% if case.assigned_to.first_name %}
                                         {{ case.assigned_to.first_name }}
@@ -359,21 +388,21 @@
                                     </button>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_scheduled %}
                                     {{ case.date_scheduled|date:"m/d/Y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-tier {% if 'tier' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.tier %}
                                     <span class="badge bg-info">{{ case.get_tier_display }}</span>
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-reviewed_by {% if 'reviewed_by' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.reviewed_by %}
                                     {% if case.reviewed_by.get_full_name %}
                                         {{ case.reviewed_by.get_full_name }}
@@ -384,7 +413,7 @@
                                     <span class="text-muted">None</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-notes {% if 'notes' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.report_notes %}
                                     <small>{{ case.report_notes|length }} note(s)</small>
                                 {% else %}
@@ -401,7 +430,7 @@
                                 {% endif %}
                             </td>
                             -->
-                            <td style="min-width: 200px;">
+                            <td class="column-actions" style="min-width: 200px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
@@ -708,6 +737,151 @@
         text-decoration: underline;
         color: #0d6efd;
     }
+    
+    /* Column visibility styles */
+    .column-hidden {
+        display: none !important;
+    }
+    
+    #columnMenu {
+        min-width: 180px;
+    }
+    
+    #columnMenu .form-check {
+        margin-bottom: 0.3rem;
+    }
+    
+    #hidden-count {
+        font-size: 0.75rem;
+    }
 </style>
+
+<script>
+// Column Visibility Management
+document.addEventListener('DOMContentLoaded', function() {
+    const columnToggles = document.querySelectorAll('.column-toggle');
+    
+    columnToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const colId = this.dataset.column;
+            const isChecked = this.checked;
+            
+            // Toggle all cells and headers for this column
+            const headers = document.querySelectorAll('th[data-column-id="' + colId + '"]');
+            const cells = document.querySelectorAll('td.column-' + colId);
+            
+            headers.forEach(header => {
+                if (isChecked) {
+                    header.classList.remove('column-hidden');
+                } else {
+                    header.classList.add('column-hidden');
+                }
+            });
+            
+            cells.forEach(cell => {
+                if (isChecked) {
+                    cell.classList.remove('column-hidden');
+                } else {
+                    cell.classList.add('column-hidden');
+                }
+            });
+            
+            // Save preference
+            saveColumnPreference();
+            
+            // Update badge
+            updateHiddenCountBadge();
+        });
+    });
+    
+    updateHiddenCountBadge();
+    updateFilterCount();
+});
+
+function updateFilterCount() {
+    // Count active filters
+    const statusFilters = document.querySelectorAll('input[name="status"]:checked').length;
+    const urgencyFilter = document.getElementById('urgency').value;
+    const tierFilter = document.getElementById('tier').value;
+    const searchFilter = document.getElementById('search').value;
+    
+    let filterCount = statusFilters;
+    if (urgencyFilter) filterCount++;
+    if (tierFilter) filterCount++;
+    if (searchFilter) filterCount++;
+    
+    const filterCountSpan = document.getElementById('filter-count');
+    if (filterCountSpan) {
+        filterCountSpan.textContent = '(' + filterCount + ')';
+    }
+}
+
+// Update filter count on input change
+document.addEventListener('DOMContentLoaded', function() {
+    const filterInputs = document.querySelectorAll('input[name="status"], #urgency, #tier, #search');
+    filterInputs.forEach(input => {
+        input.addEventListener('change', updateFilterCount);
+        input.addEventListener('keyup', updateFilterCount);
+    });
+});
+
+function saveColumnPreference() {
+    // Collect visible columns
+    const visibleColumns = [];
+    document.querySelectorAll('.column-toggle:checked').forEach(checkbox => {
+        visibleColumns.push(checkbox.dataset.column);
+    });
+    
+    // Send to server
+    fetch('{% url "cases:save_column_preference" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCsrfToken(),
+        },
+        body: JSON.stringify({
+            dashboard: 'technician_dashboard',
+            visible_columns: visibleColumns
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Column preferences saved');
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+function updateHiddenCountBadge() {
+    const totalColumns = document.querySelectorAll('.column-toggle').length;
+    const visibleColumns = document.querySelectorAll('.column-toggle:checked').length;
+    const hiddenCount = totalColumns - visibleColumns;
+    
+    const badge = document.getElementById('hidden-count');
+    if (hiddenCount > 0) {
+        badge.textContent = hiddenCount;
+        badge.style.display = 'inline-block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function getCsrfToken() {
+    const name = 'csrftoken';
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
 
 {% endblock %}

@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
 from django.core.paginator import Paginator
+from django.views.decorators.http import require_http_methods
 from accounts.models import User
 from .models import Case, CaseDocument
 import logging
@@ -205,6 +206,11 @@ def technician_dashboard(request):
         'technicians': technicians,
         'dashboard_type': 'technician',
     }
+    
+    # Add column visibility data
+    visible_columns = get_user_visible_columns(user, 'technician_dashboard')
+    context['visible_columns'] = visible_columns
+    context['all_columns'] = DASHBOARD_COLUMN_CONFIG['technician_dashboard']['available_columns']
     
     return render(request, 'cases/technician_dashboard.html', context)
 
@@ -2556,5 +2562,107 @@ def audit_log_dashboard(request):
         'active_filters': active_filters,
         'total_entries': paginator.count,
     }
-    
+
     return render(request, 'cases/audit_log_dashboard.html', context)
+
+
+# Column Visibility Configuration
+DASHBOARD_COLUMN_CONFIG = {
+    'technician_dashboard': {
+        'available_columns': [
+            {'id': 'code', 'label': 'Code'},
+            {'id': 'member', 'label': 'Member'},
+            {'id': 'employee', 'label': 'Employee Name'},
+            {'id': 'submitted', 'label': 'Submitted'},
+            {'id': 'due', 'label': 'Due Date'},
+            {'id': 'urgency', 'label': 'Urgency'},
+            {'id': 'status', 'label': 'Status'},
+            {'id': 'release_date', 'label': 'Release Date'},
+            {'id': 'reports', 'label': 'Reports'},
+            {'id': 'assigned_to', 'label': 'Assigned To'},
+            {'id': 'date_scheduled', 'label': 'Date Scheduled'},
+            {'id': 'tier', 'label': 'Tier'},
+            {'id': 'reviewed_by', 'label': 'Reviewed By'},
+            {'id': 'notes', 'label': 'Notes'},
+            {'id': 'actions', 'label': 'Actions'},
+        ],
+        'default_hidden': ['reviewed_by', 'notes', 'tier', 'date_scheduled', 'reports']
+    }
+}
+
+
+def get_user_visible_columns(user, dashboard_name):
+    """Get list of visible column IDs for the user on a specific dashboard"""
+    from accounts.models import UserPreference
+    
+    # Try to get saved user preference
+    try:
+        pref = UserPreference.objects.get(
+            user=user,
+            preference_key=f'{dashboard_name}_visible_columns'
+        )
+        return pref.preference_value.get('visible_columns', [])
+    except UserPreference.DoesNotExist:
+        pass
+    
+    # Return default visible columns
+    if dashboard_name in DASHBOARD_COLUMN_CONFIG:
+        config = DASHBOARD_COLUMN_CONFIG[dashboard_name]
+        all_ids = [col['id'] for col in config['available_columns']]
+        hidden = config.get('default_hidden', [])
+        return [col_id for col_id in all_ids if col_id not in hidden]
+    
+    # Fallback: all columns visible
+    if dashboard_name in DASHBOARD_COLUMN_CONFIG:
+        return [col['id'] for col in DASHBOARD_COLUMN_CONFIG[dashboard_name]['available_columns']]
+    return []
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_column_preference(request):
+    """Save user's column visibility preferences"""
+    from accounts.models import UserPreference
+    import json
+    
+    try:
+        data = json.loads(request.body)
+        dashboard = data.get('dashboard')
+        visible_columns = data.get('visible_columns', [])
+        
+        if not dashboard:
+            return JsonResponse({'success': False, 'error': 'Dashboard not specified'}, status=400)
+        
+        pref, created = UserPreference.objects.update_or_create(
+            user=request.user,
+            preference_key=f'{dashboard}_visible_columns',
+            defaults={'preference_value': {'visible_columns': visible_columns}}
+        )
+        
+        return JsonResponse({'success': True, 'message': 'Preferences saved'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@login_required
+def get_column_config(request, dashboard_name):
+    """Get column configuration for a dashboard"""
+    if dashboard_name not in DASHBOARD_COLUMN_CONFIG:
+        return JsonResponse({'error': 'Dashboard not found'}, status=404)
+    
+    config = DASHBOARD_COLUMN_CONFIG[dashboard_name]
+    visible_columns = get_user_visible_columns(request.user, dashboard_name)
+    
+    columns = []
+    for col in config['available_columns']:
+        columns.append({
+            'id': col['id'],
+            'label': col['label'],
+            'visible': col['id'] in visible_columns
+        })
+    
+    return JsonResponse({
+        'columns': columns,
+        'visible_count': len(visible_columns),
+        'hidden_count': len(config['available_columns']) - len(visible_columns)
+    })

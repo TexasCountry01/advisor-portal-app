@@ -58,6 +58,10 @@ urlpatterns = [
     path('api/view-preference/save/<str:view_type>/', views.save_view_preference, name='save_view_preference'),
     path('api/view-preference/get/', views.get_view_preference, name='get_view_preference'),
     
+    # Column visibility API
+    path('api/column-preference/save/', views.save_column_preference, name='save_column_preference'),
+    path('api/column-config/<str:dashboard_name>/', views.get_column_config, name='get_column_config'),
+    
     # Audit trails
     path('audit/', views.audit_log_dashboard, name='audit_log_dashboard'),
     path('<int:case_id>/audit-history/', views.case_audit_history, name='case_audit_history'),
