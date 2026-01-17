@@ -44,4 +44,41 @@ urlpatterns = [
         views.member_credit_allowance_edit,
         name='member_credit_allowance_edit'
     ),
+    
+    # ========================================================================
+    # WORKSHOP DELEGATE MANAGEMENT URLS (Tech/Admin only)
+    # ========================================================================
+    # These URLs are for Benefits Technicians/Admins to assign delegates
+    # to workshop codes for case submission authority.
+    #
+    # Pattern: /accounts/workshop-delegates/...
+    # ========================================================================
+    
+    # List all workshop delegates
+    path(
+        'workshop-delegates/',
+        views.workshop_delegate_list,
+        name='workshop_delegate_list'
+    ),
+    
+    # Add new workshop delegate
+    path(
+        'workshop-delegates/add/',
+        views.workshop_delegate_add,
+        name='workshop_delegate_add'
+    ),
+    
+    # Edit workshop delegate assignment
+    path(
+        'workshop-delegates/<int:delegate_id>/edit/',
+        views.workshop_delegate_edit,
+        name='workshop_delegate_edit'
+    ),
+    
+    # Revoke workshop delegate access
+    path(
+        'workshop-delegates/<int:delegate_id>/revoke/',
+        views.workshop_delegate_revoke,
+        name='workshop_delegate_revoke'
+    ),
 ]

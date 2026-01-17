@@ -300,6 +300,96 @@ class DelegateAccess(models.Model):
         return f"{self.delegate.get_full_name()} ({self.permission_level}) for {self.member.get_full_name()} [{status}]"
 
 
+class WorkshopDelegate(models.Model):
+    """
+    Assign delegates to workshop codes for case submission authority.
+    
+    This model enables:
+    - Technicians/Admins to assign delegates to workshop codes (not individual members)
+    - Delegates to submit cases on behalf of ANY member in that workshop
+    - Granular permission control (view, submit, edit, approve)
+    - Audit trail of all delegate assignments
+    
+    KEY DIFFERENCE from DelegateAccess:
+    - DelegateAccess: Member-centric (individual member controls delegates - DEPRECATED)
+    - WorkshopDelegate: Workshop-centric (Tech/Admin assigns delegates to workshop code)
+    
+    Workflow:
+    1. Benefits Tech/Admin goes to Delegate Management (dropdown menu on dashboard)
+    2. Selects a workshop code
+    3. Adds delegates who can submit cases for ANY member in that workshop
+    4. Delegate submits case via normal flow - created_by is the delegate, but they're authorized by workshop code
+    """
+    
+    # The workshop code this delegate is assigned to
+    workshop_code = models.CharField(
+        max_length=50,
+        db_index=True,
+        help_text='Workshop code this delegate has access to'
+    )
+    
+    # The delegate (staff member) receiving permissions
+    delegate = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='workshop_delegates',
+        help_text='Team member who can submit cases for this workshop'
+    )
+    
+    # Permission level controls what delegates can do
+    PERMISSION_CHOICES = [
+        ('view', 'View Only - Read workshop cases and documents'),
+        ('submit', 'Submit Cases - Can submit new cases for workshop members'),
+        ('edit', 'Edit Cases - Can submit and edit cases'),
+        ('approve', 'Approve Cases - Can submit, edit, and approve cases'),  # For future workflows
+    ]
+    
+    permission_level = models.CharField(
+        max_length=20,
+        choices=PERMISSION_CHOICES,
+        default='submit',
+        help_text='What actions the delegate can perform for this workshop'
+    )
+    
+    # Tracking who granted this access and when
+    granted_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='workshop_delegates_granted',
+        help_text='Tech/Admin who granted this access'
+    )
+    
+    is_active = models.BooleanField(
+        default=True,
+        help_text='Whether this delegate access is currently active'
+    )
+    
+    grant_reason = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Why this delegate was assigned to this workshop (optional)'
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('workshop_code', 'delegate')
+        verbose_name = 'Workshop Delegate'
+        verbose_name_plural = 'Workshop Delegates'
+        ordering = ['workshop_code', '-created_at']
+        indexes = [
+            models.Index(fields=['workshop_code', 'is_active']),
+            models.Index(fields=['delegate', 'is_active']),
+        ]
+    
+    def __str__(self):
+        status = "Active" if self.is_active else "Inactive"
+        return f"{self.delegate.get_full_name()} ({self.permission_level}) for workshop {self.workshop_code} [{status}]"
+
+
 # ============================================================================
 # WP FUSION PLACEHOLDER NOTES:
 # ============================================================================

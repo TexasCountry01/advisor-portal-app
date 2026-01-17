@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if action == 'add' %}Add Workshop Delegate{% else %}Edit Workshop Delegate{% endif %} - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'technician_dashboard' %}">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'workshop_delegate_list' %}">Workshop Delegates</a>
+                    </li>
+                    <li class="breadcrumb-item active">
+                        {% if action == 'add' %}Add Delegate{% else %}Edit Delegate{% endif %}
+                    </li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        {% if action == 'add' %}
+                            <i class="bi bi-plus-circle"></i> Add Workshop Delegate
+                        {% else %}
+                            <i class="bi bi-pencil"></i> Edit Workshop Delegate
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <!-- Workshop Code -->
+                        <div class="mb-3">
+                            <label for="{{ form.workshop_code.id_for_label }}" class="form-label">
+                                <strong>Workshop Code</strong>
+                            </label>
+                            {% if form.workshop_code.errors %}
+                                {{ form.workshop_code }}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.workshop_code.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.workshop_code }}
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.workshop_code.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- Delegate -->
+                        <div class="mb-3">
+                            <label for="{{ form.delegate.id_for_label }}" class="form-label">
+                                <strong>Delegate</strong>
+                            </label>
+                            {% if form.delegate.errors %}
+                                {{ form.delegate }}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.delegate.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.delegate }}
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.delegate.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- Permission Level -->
+                        <div class="mb-3">
+                            <label for="{{ form.permission_level.id_for_label }}" class="form-label">
+                                <strong>Permission Level</strong>
+                            </label>
+                            {% if form.permission_level.errors %}
+                                {{ form.permission_level }}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.permission_level.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.permission_level }}
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.permission_level.help_text }}
+                            </small>
+                            <div class="mt-2 p-2 bg-light rounded">
+                                <small>
+                                    <strong>Permission Levels:</strong><br>
+                                    • <strong>View Only:</strong> Read cases and documents<br>
+                                    • <strong>Submit Cases:</strong> Submit new cases (recommended)<br>
+                                    • <strong>Edit Cases:</strong> Submit and edit cases<br>
+                                    • <strong>Approve Cases:</strong> Submit, edit, and approve (admin use)
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Grant Reason -->
+                        <div class="mb-3">
+                            <label for="{{ form.grant_reason.id_for_label }}" class="form-label">
+                                Reason for Assignment
+                            </label>
+                            {% if form.grant_reason.errors %}
+                                {{ form.grant_reason }}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.grant_reason.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                {{ form.grant_reason }}
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                {{ form.grant_reason.help_text }}
+                            </small>
+                        </div>
+
+                        <!-- Active Status -->
+                        {% if action == 'edit' %}
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                    <strong>Active</strong> - Check to keep this delegate active
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                {{ form.is_active.help_text }}
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Form Errors (General) -->
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            <strong>Error:</strong>
+                            {% for error in form.non_field_errors %}
+                                <div>{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                {% if action == 'add' %}Add Delegate{% else %}Update Delegate{% endif %}
+                            </button>
+                            <a href="{% url 'workshop_delegate_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="card mt-4 bg-light">
+                <div class="card-body">
+                    <h6>About Workshop Delegates:</h6>
+                    <ul class="mb-0 small">
+                        <li>Workshop delegates are assigned to <strong>workshop codes</strong></li>
+                        <li>One delegate can serve multiple members in a workshop</li>
+                        <li>Delegates can submit cases on behalf of any member with that workshop code</li>
+                        <li>All delegate actions are audited for compliance</li>
+                        <li>You can edit or revoke access anytime from the Delegate Management page</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

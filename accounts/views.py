@@ -7,9 +7,10 @@ from .forms import (
     UserCreationForm,
     MemberProfileEditForm,
     DelegateAccessForm,
-    MemberCreditAllowanceForm
+    MemberCreditAllowanceForm,
+    WorkshopDelegateForm
 )
-from .models import DelegateAccess, MemberCreditAllowance
+from .models import DelegateAccess, MemberCreditAllowance, WorkshopDelegate
 from core.models import AuditLog
 
 User = get_user_model()
@@ -634,3 +635,244 @@ def member_credit_allowance_edit(request, member_id, fiscal_year, quarter):
     }
     return render(request, 'accounts/member_credit_allowance_form.html', context)
 
+
+# ============================================================================
+# WORKSHOP DELEGATE MANAGEMENT VIEWS
+# ============================================================================
+# These views allow Benefits Technicians and Admins to assign delegates to
+# workshop codes. Delegates can submit cases on behalf of ANY member in
+# that workshop.
+# ============================================================================
+
+
+def can_manage_workshop_delegates(user):
+    """Check if user can manage workshop delegates."""
+    return user.is_authenticated and user.role in ['technician', 'administrator']
+
+
+@login_required
+def workshop_delegate_list(request):
+    """
+    List all workshop delegate assignments.
+    
+    Technicians/Admins can view, edit, and revoke delegate assignments.
+    Supports filtering by workshop code and delegate status.
+    
+    URL: /accounts/workshop-delegates/
+    """
+    current_user = request.user
+    
+    # PERMISSION CHECK
+    if not can_manage_workshop_delegates(current_user):
+        messages.error(request, 'You do not have permission to manage workshop delegates.')
+        return redirect('home')
+    
+    # Get all active delegates
+    delegates = WorkshopDelegate.objects.filter(is_active=True).select_related('delegate', 'granted_by')
+    
+    # Optional filters
+    workshop_filter = request.GET.get('workshop_code', '').strip().upper()
+    status_filter = request.GET.get('status', 'active')
+    
+    if workshop_filter:
+        delegates = delegates.filter(workshop_code=workshop_filter)
+    
+    if status_filter == 'inactive':
+        delegates = WorkshopDelegate.objects.filter(is_active=False).select_related('delegate', 'granted_by')
+    elif status_filter == 'all':
+        delegates = WorkshopDelegate.objects.all().select_related('delegate', 'granted_by')
+    
+    # Get unique workshop codes for filter dropdown
+    workshop_codes = WorkshopDelegate.objects.filter(
+        is_active=True
+    ).values_list('workshop_code', flat=True).distinct().order_by('workshop_code')
+    
+    context = {
+        'delegates': delegates,
+        'workshop_codes': workshop_codes,
+        'workshop_filter': workshop_filter,
+        'status_filter': status_filter,
+        'can_manage': can_manage_workshop_delegates(current_user),
+    }
+    
+    return render(request, 'accounts/workshop_delegate_list.html', context)
+
+
+@login_required
+def workshop_delegate_add(request):
+    """
+    Add a new workshop delegate assignment.
+    
+    URL: /accounts/workshop-delegates/add/
+    """
+    current_user = request.user
+    
+    # PERMISSION CHECK
+    if not can_manage_workshop_delegates(current_user):
+        messages.error(request, 'You do not have permission to manage workshop delegates.')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        form = WorkshopDelegateForm(
+            request.POST,
+            changed_by_user=current_user
+        )
+        
+        if form.is_valid():
+            try:
+                delegate_access = form.save()
+                
+                # LOG THE CHANGE
+                AuditLog.objects.create(
+                    user=current_user,
+                    action='workshop_delegate_assigned',
+                    resource_type='workshop',
+                    resource_id=None,
+                    details={
+                        'workshop_code': delegate_access.workshop_code,
+                        'delegate_name': delegate_access.delegate.get_full_name(),
+                        'permission_level': delegate_access.permission_level,
+                        'reason': delegate_access.grant_reason
+                    }
+                )
+                
+                messages.success(
+                    request,
+                    f'{delegate_access.delegate.get_full_name()} has been assigned to workshop {delegate_access.workshop_code} '
+                    f'with {delegate_access.permission_level} access.'
+                )
+                
+                return redirect('workshop_delegate_list')
+                
+            except Exception as e:
+                messages.error(request, f'Error adding delegate: {str(e)}')
+    else:
+        form = WorkshopDelegateForm(changed_by_user=current_user)
+    
+    context = {
+        'form': form,
+        'action': 'add'
+    }
+    return render(request, 'accounts/workshop_delegate_form.html', context)
+
+
+@login_required
+def workshop_delegate_edit(request, delegate_id):
+    """
+    Edit workshop delegate assignment.
+    
+    URL: /accounts/workshop-delegates/{delegate_id}/edit/
+    """
+    current_user = request.user
+    delegate_access = get_object_or_404(WorkshopDelegate, id=delegate_id)
+    
+    # PERMISSION CHECK
+    if not can_manage_workshop_delegates(current_user):
+        messages.error(request, 'Permission denied')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        old_permission = delegate_access.permission_level
+        old_active = delegate_access.is_active
+        old_workshop = delegate_access.workshop_code
+        
+        form = WorkshopDelegateForm(
+            request.POST,
+            instance=delegate_access,
+            changed_by_user=current_user
+        )
+        
+        if form.is_valid():
+            try:
+                updated_access = form.save()
+                
+                # LOG THE CHANGE
+                changes = {}
+                if old_permission != updated_access.permission_level:
+                    changes['permission_level'] = {
+                        'old': old_permission,
+                        'new': updated_access.permission_level
+                    }
+                if old_active != updated_access.is_active:
+                    changes['is_active'] = {
+                        'old': old_active,
+                        'new': updated_access.is_active
+                    }
+                if old_workshop != updated_access.workshop_code:
+                    changes['workshop_code'] = {
+                        'old': old_workshop,
+                        'new': updated_access.workshop_code
+                    }
+                
+                AuditLog.objects.create(
+                    user=current_user,
+                    action='workshop_delegate_modified',
+                    resource_type='workshop',
+                    resource_id=None,
+                    details={
+                        'workshop_code': updated_access.workshop_code,
+                        'delegate_name': updated_access.delegate.get_full_name(),
+                        'changes': changes
+                    }
+                )
+                
+                messages.success(request, 'Workshop delegate assignment has been updated.')
+                return redirect('workshop_delegate_list')
+                
+            except Exception as e:
+                messages.error(request, f'Error updating delegate: {str(e)}')
+    else:
+        form = WorkshopDelegateForm(instance=delegate_access, changed_by_user=current_user)
+    
+    context = {
+        'delegate_access': delegate_access,
+        'form': form,
+        'action': 'edit'
+    }
+    return render(request, 'accounts/workshop_delegate_form.html', context)
+
+
+@login_required
+def workshop_delegate_revoke(request, delegate_id):
+    """
+    Revoke workshop delegate access.
+    
+    URL: POST /accounts/workshop-delegates/{delegate_id}/revoke/
+    """
+    current_user = request.user
+    delegate_access = get_object_or_404(WorkshopDelegate, id=delegate_id)
+    
+    # PERMISSION CHECK
+    if not can_manage_workshop_delegates(current_user):
+        messages.error(request, 'Permission denied')
+        return redirect('home')
+    
+    if request.method == 'POST':
+        try:
+            delegate_name = delegate_access.delegate.get_full_name()
+            workshop_code = delegate_access.workshop_code
+            delegate_access.is_active = False
+            delegate_access.save()
+            
+            # LOG THE CHANGE
+            AuditLog.objects.create(
+                user=current_user,
+                action='workshop_delegate_revoked',
+                resource_type='workshop',
+                resource_id=None,
+                details={
+                    'workshop_code': workshop_code,
+                    'delegate_name': delegate_name,
+                    'permission_level': delegate_access.permission_level
+                }
+            )
+            
+            messages.success(
+                request,
+                f'Access for {delegate_name} in workshop {workshop_code} has been revoked.'
+            )
+            
+        except Exception as e:
+            messages.error(request, f'Error revoking access: {str(e)}')
+    
+    return redirect('workshop_delegate_list')

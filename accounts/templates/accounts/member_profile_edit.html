@@ -172,117 +172,12 @@
             </div>
 
             <!-- ============================================================== -->
-            <!-- SECTION 2: DELEGATE MANAGEMENT -->
+            <!-- SECTION 2: DELEGATE MANAGEMENT - MOVED TO MANAGEMENT INTERFACE -->
             <!-- ============================================================== -->
-            <div class="card mb-4">
-                <div class="card-header bg-info text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">
-                            <i class="bi bi-people"></i> Delegate Access
-                        </h5>
-                        <a href="{% url 'member_delegate_add' member.id %}" class="btn btn-sm btn-light">
-                            <i class="bi bi-plus-circle"></i> Add Delegate
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <!-- Active Delegates -->
-                    {% if active_delegates %}
-                        <h6 class="mb-3">Active Delegates ({{ active_delegates.count }})</h6>
-                        <div class="table-responsive mb-4">
-                            <table class="table table-sm table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Permission</th>
-                                        <th>Since</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for delegate in active_delegates %}
-                                        <tr>
-                                            <td>
-                                                {{ delegate.delegate.get_full_name }}
-                                                <br />
-                                                <small class="text-muted">{{ delegate.delegate.username }}</small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-success">
-                                                    {{ delegate.get_permission_level_display }}
-                                                </span>
-                                            </td>
-                                            <td>{{ delegate.created_at|date:"M d, Y" }}</td>
-                                            <td>
-                                                <a href="{% url 'member_delegate_edit' delegate.id %}" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                                <form method="post" 
-                                                      action="{% url 'member_delegate_revoke' delegate.id %}"
-                                                      style="display: inline;">
-                                                    {% csrf_token %}
-                                                    <button type="submit" 
-                                                            class="btn btn-sm btn-outline-danger"
-                                                            onclick="return confirm('Revoke access for {{ delegate.delegate.get_full_name }}?')">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info mb-3" role="alert">
-                            No active delegates assigned. 
-                            <a href="{% url 'member_delegate_add' member.id %}">Add a delegate</a>
-                        </div>
-                    {% endif %}
-
-                    <!-- Inactive Delegates -->
-                    {% if inactive_delegates %}
-                        <hr />
-                        <h6 class="mb-3">Inactive Delegates ({{ inactive_delegates.count }})</h6>
-                        <div class="table-responsive">
-                            <table class="table table-sm table-hover">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Permission</th>
-                                        <th>Revoked</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for delegate in inactive_delegates %}
-                                        <tr class="text-muted">
-                                            <td>
-                                                {{ delegate.delegate.get_full_name }}
-                                                <br />
-                                                <small>{{ delegate.delegate.username }}</small>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-secondary">
-                                                    {{ delegate.get_permission_level_display }}
-                                                </span>
-                                            </td>
-                                            <td>{{ delegate.updated_at|date:"M d, Y" }}</td>
-                                            <td>
-                                                <a href="{% url 'member_delegate_edit' delegate.id %}" 
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+            <!-- NOTE: Delegate management has been moved to the Workshop Delegate -->
+            <!-- Management interface (accessible from the dashboard Management dropdown). -->
+            <!-- Delegates are now assigned to workshop codes, not individual members. -->
+            <!-- ============================================================== -->
 
             <!-- ============================================================== -->
             <!-- SECTION 3: QUARTERLY CREDIT ALLOWANCES -->

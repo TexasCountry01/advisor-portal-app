@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from .models import DelegateAccess, MemberCreditAllowance
+from .models import DelegateAccess, MemberCreditAllowance, WorkshopDelegate
 
 User = get_user_model()
 
@@ -443,5 +443,113 @@ class MemberCreditAllowanceForm(forms.ModelForm):
         if commit:
             instance.save()
             # Note: AuditLog entry created via signal in models.py
+        
+        return instance
+
+
+class WorkshopDelegateForm(forms.ModelForm):
+    """
+    Form for managing workshop-level delegates.
+    
+    Allows Benefits Technicians and Admins to assign delegates to workshop codes.
+    Unlike DelegateAccessForm (member-centric), this is workshop-centric:
+    - One delegate can serve multiple members in a workshop
+    - Assignment is by workshop code, not individual member
+    - Delegate can submit cases on behalf of ANY member in that workshop
+    """
+    
+    workshop_code = forms.CharField(
+        max_length=50,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter workshop code (e.g., WS-001, DENVER, etc.)',
+            'list': 'workshop_list'  # For autocomplete (optional)
+        }),
+        help_text='Workshop code this delegate has access to'
+    )
+    
+    class Meta:
+        model = WorkshopDelegate
+        fields = ['workshop_code', 'delegate', 'permission_level', 'grant_reason', 'is_active']
+        widgets = {
+            'delegate': forms.Select(attrs={
+                'class': 'form-select',
+                'placeholder': 'Select delegate'
+            }),
+            'permission_level': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'grant_reason': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Why is this delegate being assigned? (optional)',
+                'rows': 3
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'delegateActiveCheckbox'
+            }),
+        }
+    
+    def __init__(self, *args, **kwargs):
+        """Initialize form and set up delegate choices."""
+        self.changed_by_user = kwargs.pop('changed_by_user', None)
+        super().__init__(*args, **kwargs)
+        
+        # Filter delegate choices to only staff/technician users
+        # Exclude regular members (role='member')
+        self.fields['delegate'].queryset = User.objects.exclude(role='member')
+        self.fields['delegate'].help_text = (
+            'Select a staff member or technician to assign to this workshop. '
+            'They will be able to submit cases on behalf of workshop members.'
+        )
+    
+    def clean_workshop_code(self):
+        """Validate workshop code format."""
+        code = self.cleaned_data.get('workshop_code', '').strip().upper()
+        
+        if not code:
+            raise ValidationError('Workshop code is required')
+        
+        if len(code) < 2:
+            raise ValidationError('Workshop code must be at least 2 characters')
+        
+        if len(code) > 50:
+            raise ValidationError('Workshop code must be 50 characters or less')
+        
+        return code
+    
+    def clean(self):
+        """Check for duplicate workshop + delegate assignments."""
+        cleaned_data = super().clean()
+        workshop_code = cleaned_data.get('workshop_code', '').upper()
+        delegate = cleaned_data.get('delegate')
+        
+        if workshop_code and delegate:
+            # Check if this delegate is already assigned to this workshop
+            existing = WorkshopDelegate.objects.filter(
+                workshop_code=workshop_code,
+                delegate=delegate
+            )
+            
+            # Allow if editing existing assignment
+            if self.instance.pk:
+                existing = existing.exclude(pk=self.instance.pk)
+            
+            if existing.exists():
+                raise ValidationError(
+                    f'This delegate is already assigned to workshop {workshop_code}'
+                )
+        
+        return cleaned_data
+    
+    def save(self, commit=True):
+        """Save workshop delegate assignment."""
+        instance = super().save(commit=False)
+        instance.workshop_code = self.cleaned_data['workshop_code'].upper()
+        instance.granted_by = self.changed_by_user
+        
+        if commit:
+            instance.save()
         
         return instance

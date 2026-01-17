@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Workshop Delegate Management - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Workshop Delegate Management</h2>
+            <p class="text-muted">Assign delegates to workshop codes for case submission authority</p>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'workshop_delegate_add' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add Workshop Delegate
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="workshop_code" class="form-label">Workshop Code</label>
+                    <select name="workshop_code" id="workshop_code" class="form-select">
+                        <option value="">All Workshops</option>
+                        {% for code in workshop_codes %}
+                            <option value="{{ code }}" {% if workshop_filter == code %}selected{% endif %}>
+                                {{ code }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active Only</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive Only</option>
+                        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
+                    <a href="{% url 'workshop_delegate_list' %}" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delegates Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Workshop Delegates ({{ delegates.count }})</h5>
+        </div>
+        {% if delegates %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Workshop Code</th>
+                        <th>Delegate</th>
+                        <th>Permission Level</th>
+                        <th>Assigned By</th>
+                        <th>Assigned Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for delegate in delegates %}
+                    <tr>
+                        <td>
+                            <strong>{{ delegate.workshop_code }}</strong>
+                        </td>
+                        <td>
+                            <div>{{ delegate.delegate.get_full_name }}</div>
+                            <small class="text-muted">{{ delegate.delegate.username }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">{{ delegate.get_permission_level_display }}</span>
+                        </td>
+                        <td>
+                            {% if delegate.granted_by %}
+                                {{ delegate.granted_by.get_full_name }}
+                            {% else %}
+                                <span class="text-muted">System</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ delegate.created_at|date:"M d, Y" }}</td>
+                        <td>
+                            {% if delegate.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{% url 'workshop_delegate_edit' delegate.id %}" 
+                                   class="btn btn-outline-primary" 
+                                   title="Edit this delegate assignment">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" 
+                                      action="{% url 'workshop_delegate_revoke' delegate.id %}" 
+                                      style="display: inline;"
+                                      onsubmit="return confirm('Are you sure you want to revoke access for {{ delegate.delegate.get_full_name }} from workshop {{ delegate.workshop_code }}?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger" title="Revoke access">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="card-body text-center text-muted">
+            <p>No workshop delegates found.</p>
+            <a href="{% url 'workshop_delegate_add' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Add First Delegate
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Info Section -->
+    <div class="card mt-4 bg-light">
+        <div class="card-body">
+            <h6>How it works:</h6>
+            <ul class="mb-0">
+                <li>Assign delegates to <strong>workshop codes</strong> (not individual members)</li>
+                <li>Delegates can submit cases on behalf of <strong>ANY member</strong> in that workshop</li>
+                <li>Permission levels control what actions delegates can perform</li>
+                <li>All assignments are audited for compliance</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
