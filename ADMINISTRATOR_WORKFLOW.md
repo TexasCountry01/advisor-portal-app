@@ -220,7 +220,26 @@
 - ✓ Settings persist across login sessions
 - ✓ System-wide oversight of all cases
 
-### 3. **Case Management**
+### 3. **Workshop Delegate Management** (NEW)
+- ✓ Manage delegates assigned to workshop codes
+- ✓ Add delegates to specific workshops (like technicians)
+- ✓ Edit delegate information (name, contact info, dates)
+- ✓ Revoke delegate access to workshops
+- ✓ View all active delegates across workshops
+- ✓ Override/approve delegate assignments
+- ✓ Audit trail for all delegate changes
+- ✓ Manage delegates that technicians have added
+
+**Access Path:** Admin Console → Management → Workshop Delegates
+
+**Admin Permissions:**
+- Full visibility of ALL workshop delegates (system-wide)
+- Can manage delegates for any workshop
+- Can approve delegate additions made by technicians
+- Can override any delegate assignment
+- Can force-remove delegates if needed for compliance
+
+### 4. **Case Management**
 - ✓ View all cases (unrestricted)
 - ✓ Accept & Assign cases (Review & Accept workflow)
 - ✓ Reject cases if incomplete (Request More Info)
@@ -232,7 +251,7 @@
 - ✓ Monitor rejection rates and trends
 - ✓ Delete/archive cases (if needed)
 
-### 4. **Audit & Compliance**
+### 5. **Audit & Compliance**
 - ✓ View complete audit trail (including reassignments)
 - ✓ Track all user actions
 - ✓ Review case change history
@@ -247,7 +266,7 @@
   - Quarterly credit allowance changes logged
   - Full audit trail for compliance and verification
 
-### 5. **System Maintenance**
+### 6. **System Maintenance**
 - ✓ Backup & restore database
 - ✓ View system health status
 - ✓ Monitor performance metrics
@@ -407,6 +426,44 @@ Make changes:
 Save: Changes take effect immediately
 Log: Change recorded in audit trail
 Notify: Managers/technicians if relevant
+```
+
+### Action: Manage Workshop Delegates (NEW)
+```
+Navigate: Admin Console → Management → Workshop Delegates
+
+View all delegates:
+├─ See all workshop delegate assignments
+├─ Filter by workshop code
+├─ Filter by delegate name
+└─ View effective date range
+
+Add Delegate:
+├─ Click "Add Delegate"
+├─ Select workshop code
+├─ Enter delegate name
+├─ Enter delegate email/contact
+├─ Set effective date range (from/to)
+├─ Click "Save"
+├─ Delegate can now submit cases for that workshop
+
+Edit Delegate:
+├─ Click "Edit" on existing delegate
+├─ Update name, contact, or date range
+├─ Changes logged to audit trail
+├─ Delegate retains permissions unless dates expire
+
+Revoke Delegate:
+├─ Click "Revoke" on delegate
+├─ Option: Temporary (dates expire) or Immediate
+├─ Confirm revocation
+├─ Delegate access removed, audit logged
+
+Admin Override:
+├─ Can force-remove delegate if needed
+├─ Can override technician decisions
+├─ Full system-wide visibility and control
+```
 ```
 
 ---

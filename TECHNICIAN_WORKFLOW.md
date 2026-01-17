@@ -459,42 +459,78 @@ My Dashboard shows:
 - Case status → "Needs Resubmission"
 - Member receives email with requirements
 
-### Workflow A1: "Member Profile Management" (NEW)
-*Available to Benefits Technicians with edit access to member profiles*
+### Workflow A1: "Workshop Delegate Management" (NEW)
+*Available to Benefits Technicians and Administrators*
 
-#### Editing Member Profile
-1. Navigate to member profile section
-2. Click **"Edit Member Profile"** button
-3. Update member details:
-   - Personal information (name, contact, etc.)
-   - Work eligibility status
-   - Membership status
-   - Additional member attributes
-4. Review all changes
-5. Click **"Save Changes"**
-   - System creates audit log entry (WHO/WHAT/WHEN)
-   - Timestamp recorded with technician name
-   - Change description logged for compliance
-6. Confirmation: "Profile updated successfully"
+**Important:** Delegates are now assigned at the **workshop code level**, not individual members. One delegate can submit cases for ANY member in that workshop.
 
-#### Managing Member Delegates
-1. In member profile section, click **"Manage Delegates"**
-2. View current delegates (if any) with dates active
-3. **Add New Delegate:**
-   - Click **"Add Delegate"**
-   - Search/select delegate from list
-   - Set delegate access type (full/limited)
-   - Set effective date and end date
-   - Click **"Add Delegate"**
-   - Audit log recorded with delegate info
-4. **Edit Existing Delegate:**
-   - Click **"Edit"** on delegate row
-   - Modify access level and dates
-   - Click **"Save Changes"**
-5. **Revoke Delegate Access:**
-   - Click **"Revoke"** on delegate row
-   - Confirm revocation
-   - Access removed, audit trail recorded
+#### Accessing Workshop Delegate Management
+1. From Technician Dashboard, click **"Management"** (gear icon, top right)
+2. Click **"Workshop Delegates"**
+   - URL: `/accounts/workshop-delegates/`
+3. You'll see all active delegates assigned to workshop codes
+
+#### Viewing Workshop Delegates
+1. Use filters to find delegates:
+   - Filter by **Workshop Code** (optional)
+   - Filter by **Status** (Active/Inactive/All)
+2. Click **"Filter"** to apply
+3. See table with columns:
+   - Workshop Code
+   - Delegate Name
+   - Permission Level
+   - Assigned By
+   - Date Assigned
+   - Status
+
+#### Adding a New Workshop Delegate
+1. Click **"Add Workshop Delegate"** button (blue, top right)
+2. Fill in form:
+   - **Workshop Code:** e.g., "WS-001" or "DENVER" (uppercase)
+   - **Delegate:** Select staff member from dropdown
+   - **Permission Level:**
+     - **View Only** = read-only access
+     - **Submit Cases** = can submit for any member in workshop (recommended)
+     - **Edit Cases** = can submit and edit cases
+     - **Approve Cases** = full admin permissions
+   - **Reason for Assignment:** (optional notes about why)
+3. Check **"Active"** checkbox
+4. Click **"Add Delegate"**
+   - System confirms: "{Name} has been assigned to workshop {CODE}"
+   - Audit log records assignment with your name, date, reason
+5. Delegate can now submit cases for any member in that workshop
+
+#### Editing a Workshop Delegate
+1. From Workshop Delegates list, find the delegate row
+2. Click **"Edit"** button (pencil icon)
+3. Modify:
+   - Workshop Code (if needed)
+   - Delegate user
+   - Permission Level
+   - Reason
+   - Active status (check/uncheck)
+4. Click **"Update Delegate"**
+   - Changes logged in audit trail
+   - Records WHO changed it, WHAT was changed, WHEN
+
+#### Revoking Workshop Delegate Access
+1. From Workshop Delegates list, find delegate to revoke
+2. Click **"Revoke"** button (trash icon)
+3. Confirm revocation
+   - Access immediately removed
+   - Audit trail recorded
+   - Delegate can no longer submit for that workshop
+
+#### Member Profile Management (Basic Info Only)
+1. From a case detail view, click member name
+2. Or navigate directly to member profile
+3. As Benefits Technician, you can edit:
+   - Personal information (name, email, phone)
+   - Workshop code
+   - Active status
+4. **Note:** Delegate management is NO LONGER here
+   - Delegates are now managed via Workshop Delegates interface
+   - Members cannot assign their own delegates
 
 #### Configuring Quarterly Credit Allowance
 1. In member profile, click **"Quarterly Credits"**
@@ -647,6 +683,89 @@ Navigate from case detail → "Member Profile" tab (if case is assigned to you)
 - Set default delay (2 hours default)
 - Release scheduled cases immediately via "Release Now" button
 - Override delays if needed
+
+---
+
+## Quality Review Workflow (By Technician Level)
+
+### Understanding Technician Levels
+
+The system uses a **three-level technician hierarchy** to ensure quality and manage expertise:
+
+**Level 1 (New Technician):**
+- New or less experienced
+- Can complete standard cases (Tier 1, 2)
+- **Cases automatically require senior review** before release
+- Status changes to `pending_review` (not `completed`)
+- Must wait for Level 2/3 technician approval
+
+**Level 2 (Technician):**
+- Standard experience level
+- Can handle complex cases (all tiers)
+- **Can review and approve Level 1 technician work**
+- Can handle complex escalations
+- Cases release directly to member (no review needed)
+
+**Level 3 (Senior Technician):**
+- Advanced expertise
+- Can handle most complex cases
+- **Can review and approve Level 1 technician work**
+- Handles system-critical escalations
+- Cases release directly to member (no review needed)
+
+### Quality Review Process for Level 1 Technicians
+
+**When you (Level 1) complete a case:**
+
+1. **Investigation Complete:** Finish all work on the case
+2. **Mark Complete:** Click "Mark Complete" button
+3. **Select Release Delay:** Choose 1-4 hours CST
+4. **Submit:** Click "Submit"
+5. **Status Change:** System sets status to `pending_review` (NOT `completed`)
+6. **Case Entered Review Queue:** Level 2/3 techs can see it waiting for review
+7. **Waiting for Review:** Your case sits on the Level 2/3 technician's review dashboard
+8. **Level 2/3 Review Options:**
+   - ✓ **Approve** → Case moves to `completed` status, releases to member at scheduled time
+   - 🔄 **Request Revisions** → Case returns to you with feedback, you make changes and resubmit
+   - ✏️ **Apply Corrections** → Senior tech makes corrections, case releases to member as-is
+9. **After Approval/Correction:** Case is released to member according to your delay setting
+
+### Quality Review Process for Level 2/3 Technicians
+
+**When you receive Level 1 cases for review:**
+
+1. **Review Queue:** Dashboard shows "Cases Pending Review"
+2. **Select Case:** Click on a case to review
+3. **Review Details:**
+   - Read case investigation and notes
+   - Review attached documents
+   - Check work quality and completeness
+   - Verify credit value assignment
+4. **Take Action:**
+   - **Approve:** Case is good, mark for release
+     - Click "Approve" button
+     - Case moves to `completed` status
+     - Member sees case at scheduled release time
+   - **Request Revisions:** Changes needed
+     - Click "Request Revisions"
+     - Add detailed feedback
+     - Case returns to Level 1 tech for rework
+     - Level 1 tech can see feedback and notes
+     - Level 1 tech resubmits when ready for re-review
+   - **Correct Case:** Fix issues directly
+     - Click "Apply Corrections"
+     - Make edits to investigation, notes, credit value
+     - Case marked `completed` and released to member
+     - Your name added to audit trail as corrector
+
+### For Level 2/3 Cases (Your Own Work)
+
+**When you complete a case (Level 2 or 3):**
+
+1. Mark Complete → Select release delay
+2. Status → `completed` (no review needed)
+3. Case releases to member at scheduled time
+4. No additional approval required
 
 ---
 

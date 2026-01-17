@@ -246,11 +246,21 @@
 - ✓ Follow up with technician
 
 ### 5. **Quality Review**
-- ✓ Review completed cases
-- ✓ Check report quality
-- ✓ Verify member satisfaction
-- ✓ Identify training needs
-- ✓ Approve before release (if needed)
+- ✓ Review cases completed by Level 1 technicians
+- ✓ Check report quality and completeness
+- ✓ Identify training needs for junior technicians
+- ✓ Approve cases to release to members
+- ✓ Request revisions if needed
+- ✓ Monitoring team quality metrics
+
+**Your Quality Review Role:**
+While **technicians (Level 2/3)** perform technical case reviews, **managers** oversee quality trends:
+- Monitor rejection rates by technician
+- Identify common issues across team
+- Provide coaching feedback to Level 1 technicians
+- Approve escalations related to quality concerns
+- Track case revision rates
+- Assess training effectiveness
 
 ### 6. **Release Management**
 - ✓ See scheduled release dates

@@ -301,9 +301,7 @@
 - ✓ Update your personal information
 - ✓ Change contact preferences
 - ✓ Update employment status
-- ✓ View your delegate assignments (if any)
 - ✓ See your quarterly credit allowance
-- ✗ Cannot add/remove delegates (done by technician)
 - ✗ Cannot change credit amounts (set by technician)
 
 ---
@@ -418,10 +416,10 @@ Dashboard Column Visibility:
 
 ---
 
-## Member Profile Management (NEW)
+## Member Profile Management
 
 ### Access Your Profile
-Navigate to Dashboard → **"My Profile"** tab
+Navigate to Dashboard → **"My Profile"** tab or member dashboard
 
 ### What You Can Edit
 1. **Personal Information:**
@@ -432,12 +430,12 @@ Navigate to Dashboard → **"My Profile"** tab
    - Email address
    - Employment status
 
-2. **View Your Delegate Information:**
-   - See who has access to your account (delegates)
-   - View effective dates for each delegate
-   - See delegate type (full/limited access)
-   - ⚠️ You cannot add/remove delegates - contact your benefits department
-   - To remove delegate: Contact administrator
+2. **Delegate Information (View Only):**
+   - You can see if a delegate has been assigned to your workshop code
+   - Delegates are assigned by **Benefits Technicians** or **Administrators**
+   - Delegates can submit cases on behalf of any member in your workshop
+   - ⚠️ You cannot add/remove delegates yourself
+   - To request a delegate be added or removed: Contact your Benefits Technician
 
 3. **Check Your Quarterly Credit Allowance:**
    - See your current credit balance
@@ -478,12 +476,12 @@ Navigate to Dashboard → **"My Profile"** tab
 
 ---
 
-## Scenario: "Why does my profile show a delegate?"
-- A delegate (family member, representative, etc.) has been assigned access to your account
-- This is set up by your benefits department/technician
-- You cannot remove this yourself
-- Contact your technician or call benefits support to request removal
-- You can view delegate effective dates on your profile
+## Scenario: "I see a delegate assigned to my workshop"
+- A delegate has been assigned to your workshop code by your Benefits Technician
+- This means they can submit cases on behalf of any member in your workshop
+- This is normal and improves case processing efficiency
+- You cannot manage this yourself - it's administered at the workshop level
+- If you have concerns, contact your Benefits Technician directly
 
 ---
 
@@ -536,7 +534,6 @@ Dashboard Column Visibility:
 **Need Help?**
 - Dashboard has "Help" section with FAQ
 - **Profile Questions:** Contact your benefits technician
-- **Delegate Assigned:** Email your technician to request removal
 - **Credit Balance:** Check "My Profile" → "Quarterly Credits"
 - Email: member-support@company.com
 - Phone: [support number]
@@ -548,5 +545,4 @@ Dashboard Column Visibility:
 - "Can't see report even though release date passed" → Contact support
 - "Forgot my password" → Use "Forgot Password" link on login
 - "Need to update my address" → Go to "My Profile" → Edit → Save
-- "How do I know who my delegate is?" → Check "My Profile" → Delegates section
-- "Can I remove a delegate myself?" → No, contact administrator
+- "Someone is submitting cases on my behalf" → That's your workshop delegate - contact technician with concerns
