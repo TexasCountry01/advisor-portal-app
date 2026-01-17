@@ -1,0 +1,449 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Review Case: {{ case.external_case_id }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">
+                <i class="fas fa-magnifying-glass text-primary"></i>
+                Case Review: <span class="text-primary">{{ case.external_case_id }}</span>
+            </h1>
+            <p class="text-muted">Quality Review for {{ assigned_technician.get_user_level_display }} Technician</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'cases:review_queue' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Queue
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Case Details & Documents -->
+        <div class="col-lg-8">
+            <!-- Case Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Case Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted small mb-1">Employee Name</p>
+                            <p class="font-weight-bold">{{ case.employee_full_name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted small mb-1">Member (Advisor)</p>
+                            <p class="font-weight-bold">
+                                {% if case.member %}
+                                    {{ case.member.first_name }} {{ case.member.last_name }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted small mb-1">Assigned Technician</p>
+                            <p class="font-weight-bold">
+                                {{ assigned_technician.first_name }} {{ assigned_technician.last_name }}
+                                <span class="badge bg-secondary ms-2">{{ assigned_technician.get_user_level_display }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted small mb-1">Tier</p>
+                            <p class="font-weight-bold">
+                                {% if case.tier %}
+                                    <span class="badge bg-info">{{ case.get_tier_display }}</span>
+                                {% else %}
+                                    <span class="text-muted">Not Set</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted small mb-1">Date Submitted</p>
+                            <p class="font-weight-bold">{{ case.date_submitted|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="text-muted small mb-1">Reports Requested</p>
+                            <p class="font-weight-bold">{{ case.num_reports_requested }}</p>
+                        </div>
+                    </div>
+                    {% if case.special_notes %}
+                        <div class="alert alert-info mb-0">
+                            <strong>Special Notes:</strong>
+                            <p class="mb-0">{{ case.special_notes }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Documents Submitted -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file"></i>
+                        Documents ({{ documents.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                        <div class="list-group">
+                            {% for doc in documents %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">
+                                                <i class="fas fa-paperclip"></i>
+                                                {{ doc.original_filename }}
+                                            </h6>
+                                            <p class="mb-0 text-muted small">
+                                                <strong>Type:</strong> {{ doc.get_document_type_display }} |
+                                                <strong>Size:</strong> {{ doc.file_size|filesizeformat }} |
+                                                <strong>Uploaded:</strong> {{ doc.uploaded_at|date:"M d, Y H:i" }}
+                                            </p>
+                                            {% if doc.notes %}
+                                                <p class="mb-0 text-muted small mt-2">
+                                                    <strong>Notes:</strong> {{ doc.notes }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <a 
+                                            href="{% url 'cases:download_document' doc.id %}" 
+                                            class="btn btn-sm btn-outline-primary"
+                                            title="Download Document"
+                                        >
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No documents submitted yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Reports -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i>
+                        Reports ({{ reports.count }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if reports %}
+                        <div class="list-group">
+                            {% for report in reports %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">Report #{{ report.report_number }}</h6>
+                                            <p class="mb-0 text-muted small">
+                                                <strong>Status:</strong> <span class="badge bg-info">{{ report.get_status_display }}</span>
+                                                {% if report.completed_at %}
+                                                    | <strong>Completed:</strong> {{ report.completed_at|date:"M d, Y H:i" }}
+                                                {% endif %}
+                                            </p>
+                                            {% if report.notes %}
+                                                <p class="mb-0 text-muted small mt-2">
+                                                    <strong>Notes:</strong> {{ report.notes }}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        {% if report.report_file %}
+                                            <a 
+                                                href="{{ report.report_file.url }}" 
+                                                class="btn btn-sm btn-outline-primary"
+                                                target="_blank"
+                                                title="View Report"
+                                            >
+                                                <i class="fas fa-file-pdf"></i> View
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted mb-0">No reports uploaded yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Case Notes -->
+            {% if case.case_notes.all %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sticky-note"></i>
+                            Internal Notes ({{ case.case_notes.count }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for note in case.case_notes.all %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <h6 class="mb-1">{{ note.author.username }}</h6>
+                                            <p class="mb-1">{{ note.note }}</p>
+                                            <small class="text-muted">{{ note.created_at|date:"M d, Y H:i" }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Review History -->
+            {% if review_history %}
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history"></i>
+                            Review History ({{ review_history.count }})
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            {% for history in review_history %}
+                                <div class="timeline-item mb-3">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="mb-1">
+                                            <span class="badge bg-info">{{ history.get_review_action_display }}</span>
+                                            by {{ history.reviewed_by.username if history.reviewed_by else 'Unknown' }}
+                                        </h6>
+                                        {% if history.review_notes %}
+                                            <p class="mb-1">{{ history.review_notes }}</p>
+                                        {% endif %}
+                                        <small class="text-muted">{{ history.reviewed_at|date:"M d, Y H:i" }}</small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: Review Actions -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tasks"></i>
+                        Review Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-3">
+                        Select an action to process this case review.
+                    </p>
+
+                    <!-- Approve Button -->
+                    <button 
+                        type="button" 
+                        class="btn btn-success w-100 mb-2" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#approveModal"
+                    >
+                        <i class="fas fa-check-circle"></i> Approve Case
+                    </button>
+
+                    <!-- Request Revisions Button -->
+                    <button 
+                        type="button" 
+                        class="btn btn-warning w-100 mb-2" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#revisionsModal"
+                    >
+                        <i class="fas fa-edit"></i> Request Revisions
+                    </button>
+
+                    <!-- Request Corrections Button -->
+                    <button 
+                        type="button" 
+                        class="btn btn-danger w-100" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#correctionsModal"
+                    >
+                        <i class="fas fa-wrench"></i> Apply Corrections
+                    </button>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        Your review actions will be logged in the case audit trail.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Approve Case Review</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'cases:approve_case_review' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p class="text-muted mb-3">
+                        Approving this case will mark it as <strong>Completed</strong> and release it to the member immediately.
+                    </p>
+                    <div class="form-group">
+                        <label for="approveNotes" class="form-label">Review Notes (Optional)</label>
+                        <textarea 
+                            class="form-control" 
+                            id="approveNotes" 
+                            name="review_notes" 
+                            rows="4"
+                            placeholder="Add any notes about your approval..."
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check-circle"></i> Approve & Complete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Request Revisions Modal -->
+<div class="modal fade" id="revisionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">Request Revisions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'cases:request_case_revisions' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p class="text-muted mb-3">
+                        Requesting revisions will return this case to the technician in <strong>Accepted</strong> status.
+                    </p>
+                    <div class="form-group">
+                        <label for="revisionFeedback" class="form-label">Revision Feedback <span class="text-danger">*</span></label>
+                        <textarea 
+                            class="form-control" 
+                            id="revisionFeedback" 
+                            name="revision_feedback" 
+                            rows="5"
+                            placeholder="Describe what revisions are needed..."
+                            required
+                        ></textarea>
+                        <small class="form-text text-muted">This feedback will be sent to the technician.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Request Revisions
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Corrections Modal -->
+<div class="modal fade" id="correctionsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Apply Corrections</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{% url 'cases:correct_case_review' case.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p class="text-muted mb-3">
+                        Applying corrections will complete the case with corrections noted in the audit trail.
+                    </p>
+                    <div class="form-group">
+                        <label for="correctionNotes" class="form-label">Correction Details <span class="text-danger">*</span></label>
+                        <textarea 
+                            class="form-control" 
+                            id="correctionNotes" 
+                            name="correction_notes" 
+                            rows="5"
+                            placeholder="Describe the corrections applied..."
+                            required
+                        ></textarea>
+                        <small class="form-text text-muted">This will be documented in the case audit trail and sent to the technician.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-wrench"></i> Apply Corrections
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 15px;
+    }
+
+    .timeline-item:not(:last-child) {
+        border-left: 2px solid #dee2e6;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -38px;
+        top: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 3px solid white;
+    }
+
+    .timeline-content {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+    }
+
+    .sticky-top {
+        z-index: 1000;
+    }
+</style>
+{% endblock %}
+{% endblock %}

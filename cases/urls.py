@@ -62,6 +62,13 @@ urlpatterns = [
     path('api/column-preference/save/', views.save_column_preference, name='save_column_preference'),
     path('api/column-config/<str:dashboard_name>/', views.get_column_config, name='get_column_config'),
     
+    # Quality Review System
+    path('review/queue/', views.review_queue, name='review_queue'),
+    path('<int:case_id>/review/', views.review_case_detail, name='review_case_detail'),
+    path('<int:case_id>/review/approve/', views.approve_case_review, name='approve_case_review'),
+    path('<int:case_id>/review/request-revisions/', views.request_case_revisions, name='request_case_revisions'),
+    path('<int:case_id>/review/correct/', views.correct_case_review, name='correct_case_review'),
+    
     # Audit trails
     path('audit/', views.audit_log_dashboard, name='audit_log_dashboard'),
     path('<int:case_id>/audit-history/', views.case_audit_history, name='case_audit_history'),

@@ -1314,8 +1314,22 @@ def mark_case_completed(request, case_id):
             from datetime import timedelta, date
             from cases.services.timezone_service import calculate_release_time_cst, convert_to_scheduled_date_cst, get_delay_label
             from core.models import SystemSettings
+            from cases.models import CaseReviewHistory
             
-            case.status = 'completed'
+            # Determine if case requires review (Level 1 technician work)
+            if case.assigned_to and case.assigned_to.user_level == 'level_1':
+                # Level 1 technician work must go to pending_review status
+                case.status = 'pending_review'
+                # Log the submission for review in audit trail
+                CaseReviewHistory.objects.create(
+                    case=case,
+                    original_technician=case.assigned_to,
+                    review_action='submitted_for_review',
+                    review_notes=f'Case submitted by Level 1 technician {case.assigned_to.username} for quality review'
+                )
+            else:
+                # Level 2/3 technician work can go directly to completed
+                case.status = 'completed'
             
             # Get completion delay option (hours: 0-5, or use default from settings)
             completion_delay_hours = body_data.get('completion_delay_hours')
@@ -1332,24 +1346,34 @@ def mark_case_completed(request, case_id):
                 except (ValueError, TypeError):
                     completion_delay_hours = 0
             
-            if completion_delay_hours == 0:
-                # Immediate release and email
-                case.scheduled_release_date = None
-                case.actual_release_date = timezone.now()
-                case.scheduled_email_date = None
-                case.actual_email_sent_date = timezone.now()
-                case.date_completed = timezone.now()
-                release_msg = "released immediately"
+            # Only apply release scheduling if case is actually completed (not pending review)
+            if case.status == 'completed':
+                if completion_delay_hours == 0:
+                    # Immediate release and email
+                    case.scheduled_release_date = None
+                    case.actual_release_date = timezone.now()
+                    case.scheduled_email_date = None
+                    case.actual_email_sent_date = timezone.now()
+                    case.date_completed = timezone.now()
+                    release_msg = "released immediately"
+                else:
+                    # Calculate release time in CST with delay
+                    release_time_cst = calculate_release_time_cst(completion_delay_hours)
+                    case.scheduled_release_date = convert_to_scheduled_date_cst(release_time_cst)
+                    case.scheduled_email_date = convert_to_scheduled_date_cst(release_time_cst)  # Tied together
+                    case.actual_release_date = None
+                    case.actual_email_sent_date = None  # Keep empty until sent
+                    case.date_completed = None  # Keep empty until released
+                    delay_label = get_delay_label(completion_delay_hours)
+                    release_msg = f"scheduled for release in {delay_label} (CST)"
             else:
-                # Calculate release time in CST with delay
-                release_time_cst = calculate_release_time_cst(completion_delay_hours)
-                case.scheduled_release_date = convert_to_scheduled_date_cst(release_time_cst)
-                case.scheduled_email_date = convert_to_scheduled_date_cst(release_time_cst)  # Tied together
+                # Case is pending_review - don't set release/completion dates yet
+                case.scheduled_release_date = None
                 case.actual_release_date = None
-                case.actual_email_sent_date = None  # Keep empty until sent
-                case.date_completed = None  # Keep empty until released
-                delay_label = get_delay_label(completion_delay_hours)
-                release_msg = f"scheduled for release in {delay_label} (CST)"
+                case.scheduled_email_date = None
+                case.actual_email_sent_date = None
+                case.date_completed = None
+                release_msg = "submitted for quality review"
             
             case.save()
             
@@ -2831,6 +2855,261 @@ def save_column_preference(request):
         return JsonResponse({'success': True, 'message': 'Preferences saved'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+# ============================================================================
+# QUALITY REVIEW SYSTEM VIEWS (Case Review Queue and Actions)
+# ============================================================================
+
+@login_required
+def review_queue(request):
+    """Display quality review queue for Level 2/3 technicians - cases pending review"""
+    from django.core.paginator import Paginator
+    
+    user = request.user
+    
+    # Permission check - only Level 2/3 technicians and admins can access review queue
+    if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
+        messages.error(request, 'You do not have permission to access the review queue.')
+        return redirect('cases:technician_dashboard')
+    elif user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'You do not have permission to access the review queue.')
+        return redirect('accounts:home')
+    
+    # Get all cases pending review
+    pending_cases = Case.objects.filter(
+        status='pending_review'
+    ).select_related('assigned_to', 'member', 'created_by').order_by('-date_submitted')
+    
+    # For Level 2/3 techs, optionally filter to only their reviews
+    # (can view all or just assigned - depends on business rule)
+    # Currently showing all pending for transparency
+    
+    # Apply search/filter if provided
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        from django.db.models import Q
+        pending_cases = pending_cases.filter(
+            Q(external_case_id__icontains=search_query) |
+            Q(employee_first_name__icontains=search_query) |
+            Q(employee_last_name__icontains=search_query) |
+            Q(member__first_name__icontains=search_query)
+        )
+    
+    # Pagination
+    paginator = Paginator(pending_cases, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'page_obj': page_obj,
+        'cases': page_obj.object_list,
+        'search_query': search_query,
+        'total_pending': paginator.count,
+    }
+    
+    return render(request, 'cases/review_queue.html', context)
+
+
+@login_required
+def review_case_detail(request, case_id):
+    """Display detailed review interface for a case pending quality review"""
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check
+    if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
+        messages.error(request, 'You do not have permission to review cases.')
+        return redirect('cases:technician_dashboard')
+    elif user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'You do not have permission to review cases.')
+        return redirect('accounts:home')
+    
+    # Check if case is actually pending review
+    if case.status != 'pending_review':
+        messages.warning(request, 'This case is not pending review.')
+        return redirect('cases:review_queue')
+    
+    # Get case documents and reports for review
+    documents = case.documents.all().order_by('-uploaded_at')
+    reports = case.reports.all().order_by('report_number')
+    review_history = case.review_history.all().order_by('-reviewed_at')
+    
+    context = {
+        'case': case,
+        'documents': documents,
+        'reports': reports,
+        'review_history': review_history,
+        'assigned_technician': case.assigned_to,
+    }
+    
+    return render(request, 'cases/review_case_detail.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def approve_case_review(request, case_id):
+    """Approve a case pending quality review and mark as completed"""
+    from cases.models import CaseReviewHistory
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only Level 2/3 technicians and admins
+    if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to approve cases.'}, status=403)
+    elif user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to approve cases.'}, status=403)
+    
+    # Check if case is pending review
+    if case.status != 'pending_review':
+        return JsonResponse({'success': False, 'error': 'This case is not pending review.'}, status=400)
+    
+    try:
+        review_notes = request.POST.get('review_notes', '').strip()
+        
+        # Mark case as completed
+        case.status = 'completed'
+        case.reviewed_by = user
+        case.reviewed_at = timezone.now()
+        case.review_status = 'approved'
+        case.review_notes = review_notes
+        case.date_completed = timezone.now()
+        case.actual_release_date = timezone.now()
+        case.actual_email_sent_date = timezone.now()
+        case.save()
+        
+        # Create audit trail entry
+        CaseReviewHistory.objects.create(
+            case=case,
+            reviewed_by=user,
+            original_technician=case.assigned_to,
+            review_action='approved',
+            review_notes=review_notes
+        )
+        
+        # TODO: Send email notification to technician
+        messages.success(request, f'Case {case.external_case_id} approved and marked as completed.')
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Case approved successfully',
+            'redirect_url': str(reverse('cases:review_queue'))
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_case_revisions(request, case_id):
+    """Request revisions on a case pending quality review - returns case to assigned technician"""
+    from cases.models import CaseReviewHistory
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only Level 2/3 technicians and admins
+    if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to request revisions.'}, status=403)
+    elif user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to request revisions.'}, status=403)
+    
+    # Check if case is pending review
+    if case.status != 'pending_review':
+        return JsonResponse({'success': False, 'error': 'This case is not pending review.'}, status=400)
+    
+    try:
+        revision_feedback = request.POST.get('revision_feedback', '').strip()
+        
+        if not revision_feedback:
+            return JsonResponse({'success': False, 'error': 'Revision feedback is required.'}, status=400)
+        
+        # Return case to accepted status with feedback
+        case.status = 'accepted'
+        case.reviewed_by = user
+        case.reviewed_at = timezone.now()
+        case.review_status = 'revisions_requested'
+        case.review_notes = revision_feedback
+        case.save()
+        
+        # Create audit trail entry
+        CaseReviewHistory.objects.create(
+            case=case,
+            reviewed_by=user,
+            original_technician=case.assigned_to,
+            review_action='revisions_requested',
+            review_notes=revision_feedback
+        )
+        
+        # TODO: Send email notification to technician with feedback
+        messages.success(request, f'Revisions requested for case {case.external_case_id}.')
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Revisions requested - case returned to technician',
+            'redirect_url': str(reverse('cases:review_queue'))
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def correct_case_review(request, case_id):
+    """Apply corrections to a case during quality review - mark as completed with corrections noted"""
+    from cases.models import CaseReviewHistory
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only Level 2/3 technicians and admins
+    if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to correct cases.'}, status=403)
+    elif user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to correct cases.'}, status=403)
+    
+    # Check if case is pending review
+    if case.status != 'pending_review':
+        return JsonResponse({'success': False, 'error': 'This case is not pending review.'}, status=400)
+    
+    try:
+        correction_notes = request.POST.get('correction_notes', '').strip()
+        
+        if not correction_notes:
+            return JsonResponse({'success': False, 'error': 'Correction notes are required.'}, status=400)
+        
+        # Mark case as completed with corrections
+        case.status = 'completed'
+        case.reviewed_by = user
+        case.reviewed_at = timezone.now()
+        case.review_status = 'corrections_needed'
+        case.review_notes = correction_notes
+        case.date_completed = timezone.now()
+        case.actual_release_date = timezone.now()
+        case.actual_email_sent_date = timezone.now()
+        case.save()
+        
+        # Create audit trail entry
+        CaseReviewHistory.objects.create(
+            case=case,
+            reviewed_by=user,
+            original_technician=case.assigned_to,
+            review_action='corrections_needed',
+            review_notes=correction_notes
+        )
+        
+        # TODO: Send email notification to technician about corrections
+        messages.success(request, f'Corrections noted for case {case.external_case_id} - case marked as completed.')
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Corrections applied and case completed',
+            'redirect_url': str(reverse('cases:review_queue'))
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required

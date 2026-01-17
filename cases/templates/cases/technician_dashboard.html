@@ -107,7 +107,25 @@
                     </div>
                 </div>
 
-                <!-- Row 2: Filter Controls (Collapsible) -->
+                <!-- Quality Review Queue Access (Level 2/3 Only) -->
+                {% if request.user.user_level in 'level_2,level_3'|split:"," %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                            <div>
+                                <i class="bi bi-check-circle"></i>
+                                <strong>Quality Review Manager</strong>
+                                <p class="mb-0 small">Review and approve cases from Level 1 technicians</p>
+                            </div>
+                            <a href="{% url 'cases:review_queue' %}" class="btn btn-info btn-sm">
+                                <i class="bi bi-arrow-right-circle"></i> Open Review Queue
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+            <!-- Row 2: Filter Controls (Collapsible) -->
                 <div class="row g-3 mt-1 mb-2">
                     <div class="col-12">
                         <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filter-row">

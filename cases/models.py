@@ -130,6 +130,30 @@ class Case(models.Model):
         limit_choices_to={'role': 'technician', 'user_level__in': ['level_2', 'level_3']}
     )
     
+    # Quality Review Fields
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the case was reviewed by Level 2/3 technician'
+    )
+    
+    review_notes = models.TextField(
+        blank=True,
+        help_text='Notes from the reviewer on the case quality review'
+    )
+    
+    review_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('approved', 'Approved'),
+            ('revisions_requested', 'Revisions Requested'),
+            ('corrections_needed', 'Corrections Needed'),
+        ],
+        null=True,
+        blank=True,
+        help_text='Result of quality review: approved, revisions requested, or corrections needed'
+    )
+    
     # Field 12: Tier (visible to technicians/admins only)
     tier = models.CharField(
         max_length=10, 
@@ -552,6 +576,73 @@ class APICallLog(models.Model):
 
 # Import FederalFactFinder from separate module (defined in models_fact_finder.py)
 from .models_fact_finder import FederalFactFinder
+
+
+class CaseReviewHistory(models.Model):
+    """Audit trail for case quality reviews - tracks all review actions and decisions"""
+    
+    REVIEW_ACTION_CHOICES = [
+        ('submitted_for_review', 'Submitted for Review'),
+        ('approved', 'Approved'),
+        ('revisions_requested', 'Revisions Requested'),
+        ('corrections_needed', 'Corrections Needed'),
+        ('resubmitted', 'Resubmitted After Feedback'),
+        ('completed', 'Marked Complete'),
+    ]
+    
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='review_history',
+        help_text='Case being reviewed'
+    )
+    
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='case_reviews',
+        help_text='Level 2/3 technician performing the review'
+    )
+    
+    original_technician = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cases_reviewed_by_others',
+        help_text='Level 1 technician who completed the case'
+    )
+    
+    review_action = models.CharField(
+        max_length=30,
+        choices=REVIEW_ACTION_CHOICES,
+        help_text='What action was taken during this review'
+    )
+    
+    review_notes = models.TextField(
+        blank=True,
+        help_text='Detailed notes from the reviewer'
+    )
+    
+    reviewed_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='When this review action was taken'
+    )
+    
+    class Meta:
+        verbose_name = 'Case Review History'
+        verbose_name_plural = 'Case Review Histories'
+        ordering = ['-reviewed_at']
+        indexes = [
+            models.Index(fields=['case', '-reviewed_at']),
+            models.Index(fields=['reviewed_by', '-reviewed_at']),
+            models.Index(fields=['review_action', '-reviewed_at']),
+        ]
+    
+    def __str__(self):
+        return f"Review {self.review_action} - Case {self.case.external_case_id} by {self.reviewed_by.username if self.reviewed_by else 'Unknown'}"
 
 
 class CreditAuditLog(models.Model):

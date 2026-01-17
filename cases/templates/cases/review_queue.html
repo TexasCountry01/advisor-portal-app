@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Quality Review Queue{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-0">
+                <i class="fas fa-check-circle text-primary"></i>
+                Quality Review Queue
+            </h1>
+            <p class="text-muted">Review and approve cases from Level 1 technicians</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="alert alert-info mb-0">
+                <strong>Pending Reviews:</strong> <span class="badge bg-danger">{{ total_pending }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="d-flex gap-2">
+                <input 
+                    type="text" 
+                    name="search" 
+                    class="form-control" 
+                    placeholder="Search by Case ID, Employee Name, or Member..."
+                    value="{{ search_query }}"
+                >
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                {% if search_query %}
+                    <a href="{% url 'cases:review_queue' %}" class="btn btn-secondary">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Cases Table -->
+    {% if cases %}
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Employee</th>
+                            <th>Member (Advisor)</th>
+                            <th>Submitted By</th>
+                            <th>Tier</th>
+                            <th>Date Submitted</th>
+                            <th>Assigned To</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for case in cases %}
+                            <tr>
+                                <td>
+                                    <strong class="text-primary">{{ case.external_case_id }}</strong>
+                                </td>
+                                <td>{{ case.employee_full_name }}</td>
+                                <td>
+                                    {% if case.member %}
+                                        {{ case.member.first_name }} {{ case.member.last_name }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if case.created_by %}
+                                        <small>{{ case.created_by.username }}</small>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if case.tier %}
+                                        <span class="badge bg-info">{{ case.get_tier_display }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">
+                                        {{ case.date_submitted|date:"M d, Y H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {% if case.assigned_to %}
+                                        <small>
+                                            <span class="badge bg-secondary">{{ case.assigned_to.get_user_level_display }}</span>
+                                            {{ case.assigned_to.first_name }}
+                                        </small>
+                                    {% else %}
+                                        <span class="text-muted">Unassigned</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a 
+                                        href="{% url 'cases:review_case_detail' case.id %}" 
+                                        class="btn btn-sm btn-primary"
+                                        title="Review Case"
+                                    >
+                                        <i class="fas fa-eye"></i> Review
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Previous</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">Last</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-success" role="alert">
+            <i class="fas fa-check-circle"></i>
+            <strong>No cases pending review!</strong>
+            All cases have been reviewed or completed.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Auto-refresh page every 2 minutes to check for new cases
+    setTimeout(function() {
+        location.reload();
+    }, 120000);
+</script>
+{% endblock %}
