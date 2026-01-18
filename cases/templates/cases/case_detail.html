@@ -1942,6 +1942,62 @@ function releaseImmediately(caseId) {
     </div>
 </div>
 
+<script>
+// Handle reassign form submission
+document.getElementById('reassignForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Reassigning...';
+    
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle"></i> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('reassignModal'));
+            if (modal) modal.hide();
+            
+            // Reload page after 2 seconds to show updated assignment
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Show error message
+            alert('Error: ' + (data.error || 'Failed to reassign case'));
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-check"></i> Reassign';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while reassigning the case');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-check"></i> Reassign';
+    });
+});
+</script>
+
 <!-- Floating Report Notes Window with Rich Text Editor -->
 {% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed,hold' %}
 <div id="floatingNotesWindow" class="floating-window">
