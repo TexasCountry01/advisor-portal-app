@@ -91,11 +91,12 @@ class UserCreationForm(forms.Form):
         if current_user:
             if current_user.role == 'administrator':
                 # Admin can create admins, techs, managers, and members
+                # Member (Advisor) is default (first in list)
                 self.fields['role'].choices = [
-                    ('administrator', 'Administrator'),
+                    ('member', 'Member (Financial Advisor)'),
                     ('technician', 'Technician'),
                     ('manager', 'Manager'),
-                    ('member', 'Member (Financial Advisor)'),
+                    ('administrator', 'Administrator'),
                 ]
             elif current_user.role == 'technician':
                 # Tech can only create members
