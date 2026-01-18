@@ -157,7 +157,7 @@
                          │
     ┌────────┬──────────┬┴────────┬────────┐
     │        │          │         │        │
- URGENT  OVER-    SPECIALIST  ESCALATE  SWAP
+ RUSH    OVER-    SPECIALIST  ESCALATE  SWAP
   CASE   LOAD      NEEDED      TO ADMIN  LOAD
     │     │         │           │        │
     ▼     ▼         ▼           ▼        ▼
@@ -267,7 +267,7 @@ While **technicians (Level 2/3)** perform technical case reviews, **managers** o
 
 ### 6. **Release Management**
 - ✓ See scheduled release dates
-- ✓ Release immediately if needed (urgent)
+- ✓ Release immediately if needed (rush)
 - ✓ Approve delayed releases
 - ✓ Contact member if issues
 
@@ -294,7 +294,7 @@ Result: Case moves to Dennis, Alice notified
 ```
 Case: #1042
 Status: Completed, scheduled for release in 2 hours
-Issue: Member needs urgently (verified by tech)
+Issue: Member needs rush processing (verified by tech)
 
 Steps:
 1. Open case detail
@@ -486,7 +486,7 @@ CLOSED (Archived)
 - [ ] Review overnight escalations
 - [ ] Check team load distribution
 - [ ] Identify any overdue cases
-- [ ] Read urgent messages
+- [ ] Read rush/priority messages
 
 ### Mid-Day (Management)
 - [ ] Review escalated cases

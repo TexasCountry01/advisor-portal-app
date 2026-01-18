@@ -325,7 +325,7 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 - If delayed (1-24 hrs): System schedules both release AND email notification for same date/time
 - Cron job processes both release and email sending on scheduled date
 
-**Exception**: If case is already scheduled and member needs urgent access, you/admin can click "Release Immediately" to override the schedule and trigger email immediately.
+**Exception**: If case is already scheduled and member needs rush processing, you/admin can click "Release Immediately" to override the schedule and trigger email immediately.
 
 ---
 
@@ -672,7 +672,7 @@ Navigate from case detail → "Member Profile" tab (if case is assigned to you)
 
 ### Immediate Release (0 hours)
 - ✓ Member sees report now
-- ✓ Good for urgent cases
+- ✓ Good for rush cases
 - ✓ Good for simple cases
 - ✗ No quality review window
 

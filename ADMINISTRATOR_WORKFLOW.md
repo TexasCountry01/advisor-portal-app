@@ -72,7 +72,7 @@
 │ USER MANAGEMENT              ESCALATIONS               │
 │ ├─ Total Users: 142          ├─ Pending: 5            │
 │ ├─ Admins: 2                 ├─ Complex: 3            │
-│ ├─ Managers: 8               ├─ Urgent: 1             │
+│ ├─ Managers: 8               ├─ Rush: 1               │
 │ ├─ Technicians: 45           └─ Waiting Approval: 2   │
 │ └─ Members: 87                                         │
 │                                                          │
@@ -385,7 +385,7 @@ Status: Completed, scheduled for release in 2 hours
 
 Click: "Release Immediately"
 Options:
-├─ Reason: [Urgent request/Member request/etc]
+├─ Reason: [Rush request/Member request/etc]
 ├─ Notes: Add any notes
 └─ Send notification to member
 
@@ -482,7 +482,7 @@ Admin Override:
 6. Manager can now assign cases to Alice
 7. Alice appears in assignment dropdown
 
-### Scenario B: "Urgent case - release immediately"
+### Scenario B: "Rush case - release immediately"
 1. Tech calls: "Case #1234 needs immediate release (priority request)"
 2. Admin checks case #1234
 3. Status: Completed, scheduled for release in 2 hours

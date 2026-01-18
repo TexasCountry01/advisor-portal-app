@@ -154,7 +154,7 @@
                         │                     │
                         ▼                     ▼
                     GATHER DOCS         ┌─────────────────┐
-                    (Fact Finder,       │ Is this URGENT? │
+                    (Fact Finder,       │ Is this RUSH? │
                      Pay Stubs, etc)    └────────┬────────┘
                         │                        │
                         └────────┬───────────────┘
