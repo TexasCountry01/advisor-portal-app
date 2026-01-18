@@ -1371,8 +1371,14 @@ function showPutOnHoldModal() {
 }
 
 function showResumeFromHoldModal() {
-    const modal = new bootstrap.Modal(document.getElementById('resumeFromHoldModal'));
-    modal.show();
+    const modalElement = document.getElementById('resumeFromHoldModal');
+    if (modalElement && bootstrap) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
+    } else {
+        console.error('Resume modal element found:', !!modalElement, 'Bootstrap available:', !!bootstrap);
+        alert('Error: Could not open Resume from Hold modal');
+    }
 }
 
 function submitPutOnHold() {
@@ -1937,7 +1943,7 @@ function releaseImmediately(caseId) {
 </div>
 
 <!-- Floating Report Notes Window with Rich Text Editor -->
-{% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed' %}
+{% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed,hold' %}
 <div id="floatingNotesWindow" class="floating-window">
     <div class="floating-window-header">
         <span class="floating-window-title">
