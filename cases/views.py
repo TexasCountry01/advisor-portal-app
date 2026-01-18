@@ -1088,14 +1088,15 @@ def reassign_case(request, case_id):
             # Log to audit trail
             from core.models import AuditLog
             AuditLog.objects.create(
-                action='case_reassigned',
+                action_type='case_reassigned',
                 user=user,
                 case=case,
-                metadata={
+                description=f'Case reassigned from {old_technician.username if old_technician else "Unassigned"} to {new_technician.username}. Reason: {reason}',
+                changes={
                     'from_technician': old_technician.username if old_technician else 'Unassigned',
                     'to_technician': new_technician.username,
                     'reason': reason,
-                    'timestamp': timezone.now().isoformat()
+                    'reassigned_by': user.username
                 }
             )
             
