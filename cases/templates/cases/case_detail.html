@@ -2063,9 +2063,18 @@ function minimizeFloatingNotes() {
     const notesWindow = document.getElementById('floatingNotesWindow');
     const minimizeButton = document.getElementById('minimizeNotesButton');
     if (notesWindow) {
-        notesWindow.style.display = 'none';
-        minimizeButton.style.display = 'block';
-        localStorage.setItem('notesWindowMinimized', 'true');
+        // Toggle visibility
+        if (notesWindow.style.display === 'none') {
+            // Restore window
+            notesWindow.style.display = 'flex';
+            minimizeButton.style.display = 'none';
+            localStorage.setItem('notesWindowMinimized', 'false');
+        } else {
+            // Minimize window
+            notesWindow.style.display = 'none';
+            minimizeButton.style.display = 'block';
+            localStorage.setItem('notesWindowMinimized', 'true');
+        }
     }
 }
 
