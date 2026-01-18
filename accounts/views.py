@@ -114,8 +114,8 @@ def manage_users(request):
     
     # Get users based on current user's role
     if current_user.role == 'administrator':
-        # Admin sees all technicians and managers
-        users = User.objects.filter(role__in=['technician', 'manager']).order_by('-created_at')
+        # Admin sees all technicians, managers, and members
+        users = User.objects.filter(role__in=['technician', 'manager', 'member']).order_by('-created_at')
     elif current_user.role == 'technician':
         # Technician sees only members
         users = User.objects.filter(role='member').order_by('-created_at')
