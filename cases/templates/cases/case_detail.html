@@ -1797,9 +1797,14 @@ function releaseImmediately(caseId) {
         <span class="floating-window-title">
             <i class="bi bi-sticky"></i> Report Notes to Member
         </span>
-        <button type="button" class="floating-window-close" onclick="closeFloatingNotes()">
-            <i class="bi bi-x"></i>
-        </button>
+        <div class="floating-window-controls">
+            <button type="button" class="floating-window-btn" onclick="minimizeFloatingNotes()" title="Minimize">
+                <i class="bi bi-dash"></i>
+            </button>
+            <button type="button" class="floating-window-close" onclick="closeFloatingNotes()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
     </div>
     <div class="floating-window-body">
         <textarea 
@@ -1882,6 +1887,30 @@ function releaseImmediately(caseId) {
 }
 
 .floating-window-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.floating-window-controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.floating-window-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.floating-window-btn:hover {
     background: rgba(255, 255, 255, 0.3);
 }
 
