@@ -54,8 +54,8 @@ def can_edit_user(current_user, target_user):
     Determine if current user can edit target_user.
     
     Rules:
-    - Super Admin: Can edit Technician and Manager users
-    - Technician: Can edit Member users they created
+    - Administrator: Can edit Technician, Manager, and Member users
+    - Technician: Can edit Member users
     - Users can edit their own profile
     """
     if not current_user.is_authenticated:
@@ -66,8 +66,8 @@ def can_edit_user(current_user, target_user):
         return True
     
     if current_user.role == 'administrator':
-        # Admin can edit techs and managers
-        return target_user.role in ['technician', 'manager']
+        # Admin can edit techs, managers, and members
+        return target_user.role in ['technician', 'manager', 'member']
     
     if current_user.role == 'technician':
         # Tech can edit members
