@@ -803,6 +803,160 @@ def release_case_immediately(request, case_id):
 
 
 @login_required
+def put_case_on_hold(request, case_id):
+    """Put a case on hold - preserves ownership, only changes status"""
+    from django.http import JsonResponse
+    from cases.services.case_audit_service import hold_case
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only assigned technician, manager, or admin can hold
+    if user.role == 'technician' and case.assigned_to != user:
+        return JsonResponse({
+            'success': False,
+            'error': 'You can only put cases you are assigned to on hold.'
+        }, status=403)
+    
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({
+            'success': False,
+            'error': 'You do not have permission to put this case on hold.'
+        }, status=403)
+    
+    # Check if case is in 'accepted' status (can also be put on hold from other working statuses)
+    if case.status not in ['accepted']:
+        return JsonResponse({
+            'success': False,
+            'error': f'Only cases in "Accepted" status can be put on hold. Current status: {case.get_status_display()}'
+        }, status=400)
+    
+    if request.method == 'POST':
+        try:
+            body_data = json.loads(request.body) if request.body else {}
+            reason = body_data.get('reason', '').strip()
+            hold_duration = body_data.get('hold_duration', 'custom')
+            
+            if not reason:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please provide a reason for putting the case on hold.'
+                }, status=400)
+            
+            # Convert hold_duration to days
+            hold_duration_days = None
+            if hold_duration == '2_hours':
+                hold_duration_days = 0.083
+            elif hold_duration == '4_hours':
+                hold_duration_days = 0.167
+            elif hold_duration == '8_hours':
+                hold_duration_days = 0.333
+            elif hold_duration == '1_day':
+                hold_duration_days = 1
+            elif hold_duration == 'custom':
+                hold_duration_days = None
+            
+            # Use the service to hold the case
+            success = hold_case(
+                case=case,
+                user=user,
+                reason=reason,
+                hold_duration_days=hold_duration_days
+            )
+            
+            if success:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Case {case.external_case_id} has been placed on hold.',
+                    'new_status': case.status
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Failed to place case on hold. Please try again.'
+                }, status=500)
+        
+        except Exception as e:
+            logger.error(f'Error putting case {case_id} on hold: {str(e)}')
+            return JsonResponse({
+                'success': False,
+                'error': f'An error occurred: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+
+@login_required
+def resume_case_from_hold(request, case_id):
+    """Resume a case from hold - preserves ownership, returns to 'accepted' status"""
+    from django.http import JsonResponse
+    from cases.services.case_audit_service import resume_case
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only assigned technician, manager, or admin can resume
+    if user.role == 'technician' and case.assigned_to != user:
+        return JsonResponse({
+            'success': False,
+            'error': 'You can only resume cases you are assigned to.'
+        }, status=403)
+    
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({
+            'success': False,
+            'error': 'You do not have permission to resume this case.'
+        }, status=403)
+    
+    # Check if case is actually on hold
+    if case.status != 'hold':
+        return JsonResponse({
+            'success': False,
+            'error': f'This case is not on hold. Current status: {case.get_status_display()}'
+        }, status=400)
+    
+    if request.method == 'POST':
+        try:
+            body_data = json.loads(request.body) if request.body else {}
+            reason = body_data.get('reason', '').strip()
+            
+            if not reason:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please provide a reason for resuming the case.'
+                }, status=400)
+            
+            # Use the service to resume the case
+            success = resume_case(
+                case=case,
+                user=user,
+                reason=reason,
+                previous_status='accepted'
+            )
+            
+            if success:
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Case {case.external_case_id} has been resumed from hold.',
+                    'new_status': case.status
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Failed to resume case from hold. Please try again.'
+                }, status=500)
+        
+        except Exception as e:
+            logger.error(f'Error resuming case {case_id} from hold: {str(e)}')
+            return JsonResponse({
+                'success': False,
+                'error': f'An error occurred: {str(e)}'
+            }, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+
+@login_required
 def admin_take_ownership(request, case_id):
     """Allow admin to take ownership of a case (becomes the assigned technician)"""
     user = request.user

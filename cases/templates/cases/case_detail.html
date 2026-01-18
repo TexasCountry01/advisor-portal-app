@@ -974,11 +974,23 @@
                                     <p class="text-muted small mt-2 mb-0">
                                         <i class="bi bi-info-circle"></i> This case was completed on {{ case.date_completed|date:"m/d/Y H:i" }}
                                     </p>
+                                {% elif case.status == 'hold' %}
+                                    <!-- Case is on Hold - Show Resume and Mark Complete options -->
+                                    <button type="button" class="btn btn-info" onclick="showResumeFromHoldModal()">
+                                        <i class="bi bi-play-circle"></i> Resume from Hold
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="markCompletedBtn" onclick="markCaseCompleted()">
+                                        <i class="bi bi-check-circle"></i> Mark as Completed
+                                    </button>
+                                    <hr>
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle"></i> This case is currently on hold. You can resume processing or mark it as completed.
+                                    </small>
                                 {% else %}
                                     <button type="button" class="btn btn-success" id="markCompletedBtn" onclick="markCaseCompleted()">
                                         <i class="bi bi-check-circle"></i> Mark as Completed
                                     </button>
-                                    <button class="btn btn-warning" disabled>
+                                    <button type="button" class="btn btn-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
                                     <button class="btn btn-primary" disabled>
@@ -1351,6 +1363,140 @@ function markCaseIncomplete() {
             btn.innerHTML = '<i class="bi bi-arrow-counterclockwise"></i> Mark as Incomplete';
         });
     }
+}
+
+function showPutOnHoldModal() {
+    const modal = new bootstrap.Modal(document.getElementById('putOnHoldModal'));
+    modal.show();
+}
+
+function showResumeFromHoldModal() {
+    const modal = new bootstrap.Modal(document.getElementById('resumeFromHoldModal'));
+    modal.show();
+}
+
+function submitPutOnHold() {
+    const reason = document.getElementById('holdReason').value.trim();
+    const holdDuration = document.getElementById('holdDuration').value;
+    
+    if (!reason) {
+        alert('Please enter a reason for putting the case on hold.');
+        return;
+    }
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Placing on Hold...';
+    
+    fetch('{% url "cases:put_on_hold" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            reason: reason,
+            hold_duration: holdDuration
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle"></i> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            
+            // Close modal and reload after 2 seconds
+            bootstrap.Modal.getInstance(document.getElementById('putOnHoldModal')).hide();
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Show error message
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> ${data.error}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-pause-circle"></i> Place on Hold';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while placing the case on hold.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-pause-circle"></i> Place on Hold';
+    });
+}
+
+function submitResumeFromHold() {
+    const reason = document.getElementById('resumeReason').value.trim();
+    
+    if (!reason) {
+        alert('Please enter a reason for resuming the case.');
+        return;
+    }
+    
+    const btn = event.target;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Resuming...';
+    
+    fetch('{% url "cases:resume_from_hold" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            reason: reason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle"></i> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            
+            // Close modal and reload after 2 seconds
+            bootstrap.Modal.getInstance(document.getElementById('resumeFromHoldModal')).hide();
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            // Show error message
+            const alertHtml = `
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> ${data.error}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-play-circle"></i> Resume Processing';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while resuming the case.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-play-circle"></i> Resume Processing';
+    });
 }
 
 function deleteNote(noteId, caseId) {
@@ -2191,6 +2337,66 @@ function saveReportNotes(editor) {
                     <button type="submit" class="btn btn-danger"><i class="bi bi-wrench"></i> Apply Corrections & Complete</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Put on Hold Modal -->
+<div class="modal fade" id="putOnHoldModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="bi bi-pause-circle"></i> Put Case on Hold</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>The case will be placed on hold while maintaining your ownership. You can resume processing at any time.</p>
+                <div class="form-group mb-3">
+                    <label for="holdReason" class="form-label">Reason for Hold <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="holdReason" rows="3" placeholder="Why are you putting this case on hold? (e.g., 'Waiting for member clarification', 'Awaiting additional documents')" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="holdDuration" class="form-label">Expected Hold Duration</label>
+                    <select class="form-select" id="holdDuration">
+                        <option value="2_hours">2 Hours</option>
+                        <option value="4_hours">4 Hours</option>
+                        <option value="8_hours">8 Hours</option>
+                        <option value="1_day">1 Day</option>
+                        <option value="custom" selected>Unspecified</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="submitPutOnHold()">
+                    <i class="bi bi-pause-circle"></i> Place on Hold
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resume from Hold Modal -->
+<div class="modal fade" id="resumeFromHoldModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-play-circle"></i> Resume Case from Hold</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This case will be resumed from hold and returned to active processing status.</p>
+                <div class="form-group">
+                    <label for="resumeReason" class="form-label">Reason for Resuming <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="resumeReason" rows="3" placeholder="Why are you resuming this case? (e.g., 'Member provided clarification', 'Additional documents received')" required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info" onclick="submitResumeFromHold()">
+                    <i class="bi bi-play-circle"></i> Resume Processing
+                </button>
+            </div>
         </div>
     </div>
 </div>
