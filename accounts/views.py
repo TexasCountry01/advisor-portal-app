@@ -31,7 +31,7 @@ def can_create_user(current_user, target_role):
     Determine if current user can create a user with target_role.
     
     Rules:
-    - Administrator: Can create Technician, Manager, and Member users
+    - Administrator: Can create Administrator, Technician, Manager, and Member users
     - Technician: Can create Member users
     - Others: Cannot create users
     """
@@ -39,8 +39,8 @@ def can_create_user(current_user, target_role):
         return False
     
     if current_user.role == 'administrator':
-        # Admin can create techs, managers, and members
-        return target_role in ['technician', 'manager', 'member']
+        # Admin can create admins, techs, managers, and members
+        return target_role in ['administrator', 'technician', 'manager', 'member']
     
     if current_user.role == 'technician':
         # Tech can create members
@@ -54,7 +54,7 @@ def can_edit_user(current_user, target_user):
     Determine if current user can edit target_user.
     
     Rules:
-    - Administrator: Can edit Technician, Manager, and Member users
+    - Administrator: Can edit Administrator, Technician, Manager, and Member users
     - Technician: Can edit Member users
     - Users can edit their own profile
     """
@@ -66,8 +66,8 @@ def can_edit_user(current_user, target_user):
         return True
     
     if current_user.role == 'administrator':
-        # Admin can edit techs, managers, and members
-        return target_user.role in ['technician', 'manager', 'member']
+        # Admin can edit admins, techs, managers, and members
+        return target_user.role in ['administrator', 'technician', 'manager', 'member']
     
     if current_user.role == 'technician':
         # Tech can edit members
@@ -114,8 +114,8 @@ def manage_users(request):
     
     # Get users based on current user's role
     if current_user.role == 'administrator':
-        # Admin sees all technicians, managers, and members
-        users = User.objects.filter(role__in=['technician', 'manager', 'member']).order_by('-created_at')
+        # Admin sees all users (administrators, technicians, managers, and members)
+        users = User.objects.filter(role__in=['administrator', 'technician', 'manager', 'member']).order_by('-created_at')
     elif current_user.role == 'technician':
         # Technician sees only members
         users = User.objects.filter(role='member').order_by('-created_at')

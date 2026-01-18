@@ -90,8 +90,9 @@ class UserCreationForm(forms.Form):
         # Filter role choices based on current user's role
         if current_user:
             if current_user.role == 'administrator':
-                # Admin can create techs, managers, and members
+                # Admin can create admins, techs, managers, and members
                 self.fields['role'].choices = [
+                    ('administrator', 'Administrator'),
                     ('technician', 'Technician'),
                     ('manager', 'Manager'),
                     ('member', 'Member (Financial Advisor)'),
