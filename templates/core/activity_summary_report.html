@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Activity Summary Report - Audit Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">
+                <i class="fas fa-chart-bar"></i> Activity Summary Report
+            </h1>
+            <p class="text-muted">System-wide activity overview and statistics</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'view_audit_log' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Audit Log
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filter by Date Range</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                           value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                           value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-4">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Apply Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Statistics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Total Activities</h6>
+                    <h2 class="mb-0">{{ total_count }}</h2>
+                    <small>System-wide activities</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Case Activities</h6>
+                    <h2 class="mb-0">{{ case_count }}</h2>
+                    <small>Case-related operations</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">User Management</h6>
+                    <h2 class="mb-0">{{ user_count }}</h2>
+                    <small>User management actions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase">Quality Reviews</h6>
+                    <h2 class="mb-0">{{ review_count }}</h2>
+                    <small>Quality review submissions</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity by Type -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Activities by Type (Top 15)</h5>
+        </div>
+        <div class="card-body">
+            {% if activity_by_type %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Action Type</th>
+                                <th class="text-end">Count</th>
+                                <th class="text-end">Percentage</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in activity_by_type %}
+                                <tr>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ activity.action_type__get_action_type_display }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ activity.count }}</strong>
+                                    </td>
+                                    <td class="text-end">
+                                        {{ activity.percentage|floatformat:1 }}%
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" style="width: {{ activity.percentage }}%;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No activities found for the selected date range.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Most Active Users -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Top 10 Most Active Users</h5>
+        </div>
+        <div class="card-body">
+            {% if top_users %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th class="text-end">Activities</th>
+                                <th>Last Activity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user_stat in top_users %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ user_stat.user__get_full_name|default:user_stat.user__username }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ user_stat.user__email }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ user_stat.user__role }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary">{{ user_stat.count }}</span>
+                                    </td>
+                                    <td>
+                                        {% if user_stat.last_activity %}
+                                            {{ user_stat.last_activity|date:"M d, Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No user activity found for the selected date range.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Report Information -->
+    <div class="card bg-light">
+        <div class="card-body">
+            <p class="mb-0 text-muted">
+                <strong>Report Generated:</strong> 
+                {% now "M d, Y H:i:s" %} 
+                <br>
+                <strong>Date Range:</strong> 
+                {{ start_date|date:"M d, Y" }} to {{ end_date|date:"M d, Y" }}
+            </p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: 1px solid #ddd;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .progress {
+        background-color: #e9ecef;
+    }
+</style>
+{% endblock %}

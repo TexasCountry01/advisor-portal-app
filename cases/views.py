@@ -1684,19 +1684,24 @@ def resubmit_case(request, case_id):
             
             case.save()
             
-            # Log the resubmission with details of changes
-            try:
-                from core.models import AuditLog
-                AuditLog.objects.create(
-                    user=user,
-                    case=case,
-                    action='case_resubmitted',
-                    description=f'Member resubmitted case. Changes: {change_detection["changes"]["description"]}',
-                    old_value=f'Status: completed, Resubmission count: {case.resubmission_count - 1}',
-                    new_value=f'Status: resubmitted, Resubmission count: {case.resubmission_count}'
-                )
-            except:
-                pass  # Audit logging is optional
+            # Log the resubmission with audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=user,
+                action_type='case_resubmitted',
+                description=f'Case #{case.external_case_id} resubmitted by member. {change_detection["changes"]["description"]}',
+                case=case,
+                changes={
+                    'old_status': 'completed',
+                    'new_status': 'resubmitted',
+                    'resubmission_count': case.resubmission_count,
+                    'changes_made': change_detection['changes']
+                },
+                metadata={
+                    'resubmission_reason': resubmission_notes,
+                    'resubmission_sequence': case.resubmission_count
+                }
+            )
             
             messages.success(
                 request, 

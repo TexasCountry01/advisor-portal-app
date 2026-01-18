@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quality Review Audit Report - Audit Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">
+                <i class="fas fa-check-double"></i> Quality Review Audit Report
+            </h1>
+            <p class="text-muted">Quality review submissions and reviewer performance metrics</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'view_audit_log' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Audit Log
+            </a>
+        </div>
+    </div>
+
+    <!-- Review Status Filter -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filter by Review Status</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="review_status" class="form-label">Review Status</label>
+                    <select class="form-select" id="review_status" name="review_status">
+                        <option value="">-- All Reviews --</option>
+                        <option value="approved" {% if review_status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="revisions_requested" {% if review_status == 'revisions_requested' %}selected{% endif %}>Revisions Requested</option>
+                        <option value="corrections_needed" {% if review_status == 'corrections_needed' %}selected{% endif %}>Corrections Needed</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                           value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                           value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-2">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quality Review Statistics -->
+    {% if review_stats %}
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Reviews</h6>
+                        <h2 class="mb-0">{{ review_stats.total }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Approved</h6>
+                        <h2 class="mb-0">{{ review_stats.approved }}</h2>
+                        <small>{{ review_stats.approved_pct|floatformat:1 }}% of total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-dark">
+                    <div class="card-body">
+                        <h6 class="card-title">Revisions Requested</h6>
+                        <h2 class="mb-0">{{ review_stats.revisions }}</h2>
+                        <small>{{ review_stats.revisions_pct|floatformat:1 }}% of total</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <h6 class="card-title">Corrections Needed</h6>
+                        <h2 class="mb-0">{{ review_stats.corrections }}</h2>
+                        <small>{{ review_stats.corrections_pct|floatformat:1 }}% of total</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Reviewer Performance Statistics -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Reviewer Performance Metrics</h5>
+        </div>
+        <div class="card-body">
+            {% if reviewer_stats %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Reviewer</th>
+                                <th class="text-end">Total Reviews</th>
+                                <th class="text-end">Approved</th>
+                                <th class="text-end">Revisions</th>
+                                <th class="text-end">Corrections</th>
+                                <th class="text-end">Approval Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for reviewer in reviewer_stats %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ reviewer.reviewer_name|default:"System" }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ reviewer.reviewer_email|default:"-" }}</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-primary">{{ reviewer.total_reviews }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-success">{{ reviewer.approved_count }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-warning text-dark">{{ reviewer.revisions_count }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-danger">{{ reviewer.corrections_count }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <strong>{{ reviewer.approval_rate|floatformat:1 }}%</strong>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No reviewer data available.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quality Review Entries Table -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Quality Review Submissions</h5>
+        </div>
+        <div class="card-body">
+            {% if reviews %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Case ID</th>
+                                <th>Reviewer</th>
+                                <th>Status</th>
+                                <th>Score/Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for review in reviews %}
+                                <tr>
+                                    <td>
+                                        <small>{{ review.timestamp|date:"M d, Y H:i:s" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if review.case %}
+                                            <strong>
+                                                <a href="{% url 'view_case' review.case.id %}">
+                                                    {{ review.case.case_id }}
+                                                </a>
+                                            </strong>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if review.user %}
+                                            <small>
+                                                <strong>{{ review.user.get_full_name|default:review.user.username }}</strong>
+                                                <br>
+                                                <span class="text-muted">{{ review.user.email }}</span>
+                                            </small>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if 'approved' in review.action_type|lower %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif 'revisions' in review.action_type|lower %}
+                                            <span class="badge bg-warning text-dark">Revisions Requested</span>
+                                        {% elif 'corrections' in review.action_type|lower %}
+                                            <span class="badge bg-danger">Corrections Needed</span>
+                                        {% else %}
+                                            <span class="badge">{{ review.get_action_type_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <small>
+                                            {% if review.description %}
+                                                {{ review.description|truncatewords:20 }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if is_paginated %}
+                    <nav aria-label="Page navigation" class="mt-4">
+                        <ul class="pagination">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                </li>
+                            {% endif %}
+
+                            {% for num in page_obj.paginator.page_range %}
+                                <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endfor %}
+
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    <p class="text-center text-muted">
+                        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                        (Total: {{ page_obj.paginator.count }} reviews)
+                    </p>
+                {% endif %}
+            {% else %}
+                <p class="text-muted">No quality reviews found for the selected filters.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

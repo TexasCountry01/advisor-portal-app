@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}User Activity Report - Audit Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-3">
+                <i class="fas fa-user-chart"></i> User Activity Report
+            </h1>
+            <p class="text-muted">Detailed activity log for specific users</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'view_audit_log' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Audit Log
+            </a>
+        </div>
+    </div>
+
+    <!-- User and Date Filter -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Filter Criteria</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="target_user" class="form-label">Select User</label>
+                    <select class="form-select" id="target_user" name="target_user" required>
+                        <option value="">-- Choose a user --</option>
+                        {% for user in available_users %}
+                            <option value="{{ user.id }}" {% if user.id == selected_user_id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }} ({{ user.email }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                           value="{{ start_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                           value="{{ end_date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-2">
+                    <label>&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Summary (if selected) -->
+    {% if selected_user %}
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>{{ selected_user.get_full_name|default:selected_user.username }}</h5>
+                        <p class="text-muted mb-0">
+                            <strong>Email:</strong> {{ selected_user.email }}<br>
+                            <strong>Role:</strong> <span class="badge bg-info">{{ selected_user.role }}</span><br>
+                            <strong>Level:</strong> <span class="badge bg-secondary">{{ selected_user.level }}</span>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-muted">Total Activities</h6>
+                                    <h3 class="mb-0">{{ total_activities }}</h3>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-muted">Last Activity</h6>
+                                    <h6 class="mb-0">
+                                        {% if last_activity_date %}
+                                            {{ last_activity_date|date:"M d, Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Breakdown by Type -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Activity Breakdown by Type</h5>
+            </div>
+            <div class="card-body">
+                {% if activity_breakdown %}
+                    <div class="row">
+                        {% for breakdown in activity_breakdown %}
+                            <div class="col-md-6 mb-3">
+                                <div class="d-flex justify-content-between">
+                                    <span>{{ breakdown.action_type__get_action_type_display }}</span>
+                                    <span class="badge bg-primary">{{ breakdown.count }}</span>
+                                </div>
+                                <div class="progress mt-2" style="height: 5px;">
+                                    <div class="progress-bar" style="width: {% widthratio breakdown.count total_activities 100 %}%;">
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No activities found for this user in the selected date range.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Activity Log Table -->
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Detailed Activity Log</h5>
+            </div>
+            <div class="card-body">
+                {% if activities %}
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date/Time</th>
+                                    <th>Action</th>
+                                    <th>Object</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in activities %}
+                                    <tr>
+                                        <td>
+                                            <small>{{ activity.timestamp|date:"M d, Y H:i:s" }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">{{ activity.get_action_type_display }}</span>
+                                        </td>
+                                        <td>
+                                            {% if activity.case %}
+                                                <strong>Case #{{ activity.case.case_id }}</strong>
+                                            {% elif activity.object_id %}
+                                                <small class="text-muted">ID: {{ activity.object_id }}</small>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>
+                                                {% if activity.description %}
+                                                    {{ activity.description|truncatewords:20 }}
+                                                {% else %}
+                                                    <span class="text-muted">-</span>
+                                                {% endif %}
+                                            </small>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if is_paginated %}
+                        <nav aria-label="Page navigation" class="mt-4">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+
+                                {% for num in page_obj.paginator.page_range %}
+                                    <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                                        <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        <p class="text-center text-muted">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                            (Total: {{ page_obj.paginator.count }} activities)
+                        </p>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">No activities found for this user in the selected date range.</p>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Please select a user to view their activity report.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

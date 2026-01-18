@@ -331,14 +331,192 @@ def log_settings_update(sender, instance, created, **kwargs):
 
 
 # ============================================================================
-# Helper Functions
+# Member Profile Update Signals
 # ============================================================================
 
-def get_client_ip(request):
-    """Extract client IP address from request"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+@receiver(post_save, sender=User)
+def log_user_profile_changes(sender, instance, created, **kwargs):
+    """Log when a user updates their profile (NEW)"""
+    if created:
+        return  # Skip new user creation, handled separately
+    
+    # Get audit user from context
+    user = getattr(instance, '_audit_user', None)
+    if not user:
+        return
+    
+    # Check if this is a member profile edit
+    if instance.role == 'member':
+        old_values = getattr(instance, '_old_profile_values', {})
+        if old_values:
+            changed_fields = [
+                field for field in ['first_name', 'last_name', 'email', 'phone_number']
+                if old_values.get(field) != getattr(instance, field, None)
+            ]
+            
+            if changed_fields:
+                AuditLog.log_activity(
+                    user=user if user.id != instance.id else instance,
+                    action_type='member_profile_updated',
+                    description=f'Profile updated: {", ".join(changed_fields)}',
+                    related_user=instance,
+                    changes={
+                        field: {
+                            'from': old_values.get(field),
+                            'to': getattr(instance, field, None)
+                        }
+                        for field in changed_fields
+                    },
+                    metadata={'edited_by': user.username if user else 'self'}
+                )
+
+
+# ============================================================================
+# Case Hold/Resume Signals
+# ============================================================================
+
+@receiver(pre_save, sender=Case)
+def track_case_hold_status(sender, instance, **kwargs):
+    """Track case hold/resume status changes"""
+    if instance.pk:
+        try:
+            old_instance = Case.objects.get(pk=instance.pk)
+            instance._old_hold_status = old_instance.status
+        except Case.DoesNotExist:
+            instance._old_hold_status = None
+
+
+@receiver(post_save, sender=Case)
+def log_case_hold_resume(sender, instance, created, **kwargs):
+    """Log when a case is placed on hold or resumed (NEW)"""
+    if created:
+        return
+    
+    user = getattr(instance, '_audit_user', None)
+    if not user:
+        return
+    
+    old_status = getattr(instance, '_old_hold_status', None)
+    
+    # Log case hold
+    if old_status != 'hold' and instance.status == 'hold':
+        reason = getattr(instance, '_hold_reason', 'Case placed on hold')
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_held',
+            description=f'Case #{instance.external_case_id} placed on hold',
+            case=instance,
+            metadata={'reason': reason, 'held_at': timezone.now().isoformat()}
+        )
+    
+    # Log case resume
+    elif old_status == 'hold' and instance.status != 'hold':
+        reason = getattr(instance, '_resume_reason', 'Case resumed')
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_resumed',
+            description=f'Case #{instance.external_case_id} resumed from hold',
+            case=instance,
+            metadata={
+                'reason': reason,
+                'resumed_at': timezone.now().isoformat(),
+                'hold_duration': getattr(instance, '_hold_duration', 'unknown')
+            }
+        )
+
+
+# ============================================================================
+# Case Tier Change Signals
+# ============================================================================
+
+@receiver(pre_save, sender=Case)
+def track_case_tier_changes(sender, instance, **kwargs):
+    """Track case tier changes"""
+    if instance.pk:
+        try:
+            old_instance = Case.objects.get(pk=instance.pk)
+            instance._old_tier = old_instance.tier
+        except Case.DoesNotExist:
+            instance._old_tier = None
+
+
+@receiver(post_save, sender=Case)
+def log_case_tier_change(sender, instance, created, **kwargs):
+    """Log when case tier is changed (NEW)"""
+    if created:
+        return
+    
+    user = getattr(instance, '_audit_user', None)
+    if not user:
+        return
+    
+    old_tier = getattr(instance, '_old_tier', None)
+    
+    if old_tier and old_tier != instance.tier:
+        reason = getattr(instance, '_tier_change_reason', 'Complexity assessment')
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_tier_changed',
+            description=f'Case tier adjusted: Tier {old_tier} → Tier {instance.tier}',
+            case=instance,
+            changes={'tier': {'from': old_tier, 'to': instance.tier}},
+            metadata={'reason': reason}
+        )
+
+
+# ============================================================================
+# Role Change Signals
+# ============================================================================
+
+@receiver(pre_save, sender=User)
+def track_user_role_changes(sender, instance, **kwargs):
+    """Track user role and level changes"""
+    if instance.pk:
+        try:
+            old_instance = User.objects.get(pk=instance.pk)
+            instance._old_role = old_instance.role
+            instance._old_level = old_instance.user_level
+        except User.DoesNotExist:
+            instance._old_role = None
+            instance._old_level = None
+
+
+@receiver(post_save, sender=User)
+def log_user_role_change(sender, instance, created, **kwargs):
+    """Log when user role or level is changed (NEW)"""
+    if created:
+        return
+    
+    user = getattr(instance, '_audit_user', None)
+    if not user:
+        return
+    
+    old_role = getattr(instance, '_old_role', None)
+    old_level = getattr(instance, '_old_level', None)
+    
+    role_changed = old_role and old_role != instance.role
+    level_changed = old_level and old_level != instance.user_level
+    
+    if role_changed or level_changed:
+        changes = {}
+        description_parts = []
+        
+        if role_changed:
+            changes['role'] = {'from': old_role, 'to': instance.role}
+            description_parts.append(f'role {old_role} → {instance.role}')
+        
+        if level_changed:
+            changes['user_level'] = {'from': old_level, 'to': instance.user_level}
+            description_parts.append(f'level {old_level} → {instance.user_level}')
+        
+        AuditLog.log_activity(
+            user=user,
+            action_type='user_role_changed',
+            description=f'User {instance.username} access changed: {", ".join(description_parts)}',
+            related_user=instance,
+            changes=changes,
+            metadata={'changed_by': user.username}
+        )
+
+
+# ============================================================================
