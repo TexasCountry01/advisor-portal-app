@@ -253,6 +253,15 @@
 - ✓ View reassignment history for each case
 - ✓ Monitor rejection rates and trends
 - ✓ Delete/archive cases (if needed)
+- ✓ **Manage Case Holds** (NEW):
+  - View all cases on hold with hold reasons and duration
+  - Put cases on hold (if technician hasn't)
+  - Resume cases from hold
+  - Monitor hold duration and end dates
+  - View hold audit trail (reason, start, end, duration)
+  - Override hold decisions if needed
+  - Access hold metadata for all cases
+  - Force-resume holds if needed for system management
 
 ### 5. **Audit & Compliance**
 - ✓ View complete audit trail (including reassignments)
@@ -410,6 +419,44 @@ Decision options:
 Click: "Resolve Escalation"
 Notify: Tech and manager of decision
 Result: Escalation closed, action item created
+```
+
+### Action: Manage Case Holds (NEW)
+```
+Navigate: Admin Console → Case Management → On Hold Cases
+
+View all holds:
+├─ Filter by: tech, duration, start date
+├─ See hold reason and start date
+├─ View hold end date (if timed duration)
+└─ View hold duration remaining
+
+Put Case on Hold:
+├─ Open case detail
+├─ Click "Put on Hold" button
+├─ Select reason: "Waiting for Member", "Technical Issue", etc
+├─ Select duration: Immediate, 2h, 4h, 8h, 1 day, custom
+├─ Click "Confirm"
+Result: Status → 'hold'
+        Technician ownership preserved
+        Hold timestamp recorded
+        Audit trail updated
+
+Resume Case from Hold:
+├─ Open case on hold
+├─ Click "Resume from Hold" button
+├─ Add reason: "Member sent docs", etc
+├─ Click "Confirm"
+Result: Status → 'accepted'
+        Case returns to tech's active queue
+        Resume timestamp recorded
+        Audit trail updated
+
+Monitor Holds:
+├─ Dashboard shows: "Cases on Hold: X"
+├─ Alert if hold duration exceeded
+├─ View hold audit trail for compliance
+└─ Export hold reports for analysis
 ```
 
 ### Action: Configure System Settings

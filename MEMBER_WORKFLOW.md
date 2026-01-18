@@ -201,33 +201,43 @@
                 │ Check Case Status        │
                 └────────┬─────────────────┘
                          │
-    ┌────────────────────┼────────────────────┐
-    │                    │                    │
- DRAFT            SUBMITTED            COMPLETED
-    │                    │                    │
-    ▼                    ▼                    ▼
-┌────────┐         ┌──────────┐        ┌──────────────┐
-│ Can    │         │ Assigned │        │ Released?    │
-│ Edit   │         │ to Tech  │        │              │
-└────────┘         │ Status   │        └────┬─────────┘
-    │              │ Visible  │             │
-    │              │ Only     │    ┌────────┴────────┐
-    │              │ to You   │    │                 │
-    │              └──────────┘    │                 │
-    │                              │                │
-    │                              ▼                ▼
-    │                          ┌────────┐    ┌──────────┐
-    │                          │ In     │    │ Available│
-    │                          │ Progress│   │ Now!     │
-    │                          │ Msg    │    │          │
-    │                          └────────┘    └──────────┘
-    │                              │              │
-    │                              ▼              ▼
-    │                          ┌────────┐    ┌───────────┐
-    │                          │ Check  │    │ Download  │
-    │                          │ Release│    │ Reports & │
-    │                          │ Date   │    │ Documents │
-    │                          └────────┘    └───────────┘
+    ┌────────┬──────────┬┴──────┬────────┬──────────┐
+    │        │          │       │        │          │
+ DRAFT  SUBMITTED   ACCEPTED  HOLD  COMPLETED  RESUBMIT
+    │        │          │       │        │          │
+    ▼        ▼          ▼       ▼        ▼          ▼
+┌────┐  ┌──────┐   ┌───────┐┌──────┐┌──────────┐┌────────┐
+│Edit│  │Viewing│  │In     ││Paused││Released?││Submit  │
+│    │  │Only   │  │Prog   ││      ││         ││Updated │
+└────┘  │       │  │(New)  ││(Hold)││         ││(Reject)│
+    │   │Status:│  │Status:││      ││         ││Status  │
+    │   │Pending││       ││(NEW) ││         ││        │
+    │   │       │  │       ││      ││         ││        │
+    │   └───┬───┘  └────┬──┘└──┬──┘└────┬────┘└───┬────┘
+    │       │           │      │        │         │
+    │       ▼           ▼      ▼        ▼         ▼
+    │   ┌────────┐ ┌────────┐┌────────┐┌───────┐┌────────┐
+    │   │Checking│ │Check   ││See     ││Sched. ││Check  │
+    │   │for     │ │for     ││Hold    ││Release││Notes  │
+    │   │Release │ │Release ││Reason  ││Date   ││Apply  │
+    │   │Date    │ │Date    ││Expected││       ││Changes│
+    │   │(Pending││ (In    ││Resume  ││       ││       │
+    │   │Release)││ Progres│ │Date    ││       ││       │
+    │   │        │ │s)     ││        ││       ││       │
+    │   └────────┘ └───┬───┘└────────┘└───────┘└────┬───┘
+    │                  │                             │
+    │                  ▼                             ▼
+    │           ┌────────────┐              ┌──────────────┐
+    │           │ Not Yet    │              │ Available    │
+    │           │ Available  │              │ Now! Download│
+    │           │ Check Back │              │ Reports      │
+    │           │ Later      │              └──────────────┘
+    │           └────────────┘                     │
+    │                  │                           ▼
+    │                  │                    ┌──────────────┐
+    │                  │                    │ Download &   │
+    │                  │                    │ Review       │
+    │                  │                    └──────────────┘
     │
     ▼
 ┌──────────────────┐
@@ -265,6 +275,22 @@
 - ✗ Cannot edit main case fields
 - ✗ Cannot see final reports (not released yet)
 
+### 3A. **Hold Status** (NEW - Case Paused)
+- ℹ️ Case has been **placed on hold** temporarily
+- ✓ View hold reason (e.g., "Waiting for Member Documents")
+- ✓ View expected resume date (if duration was set)
+- ✓ Still see assigned technician name
+- ✓ Can add comments while on hold
+- ✗ Case is not actively being worked on
+- ✗ No progress updates until resumed
+- **What this means:**
+  - Your case is not forgotten - just paused temporarily
+  - Technician may need: more documents, clarification, admin decision, etc.
+  - Your case will resume when issue is resolved
+  - Technician's ownership is preserved
+  - Case will be completed when ready
+  - You'll be notified when it resumes
+
 ### 4. **Needs Resubmission Status** (NEW)
 - ⚠️ Case was **rejected** by technician/admin
 - ✓ View rejection reason (why case wasn't accepted)
@@ -283,7 +309,7 @@
   - Activity shows: Who resubmitted, when, and metadata about changes
 
 
-### 4. **Completed Status - Pending Release**
+### 5. **Completed Status - Pending Release**
 - ✓ See "Available on [DATE]" message
 - ✓ View case timeline
 - ✓ Add comments
@@ -291,7 +317,7 @@
 - ✗ Cannot download documents (not released yet)
 - ⏳ Must wait for release date
 
-### 5. **Completed Status - Released**
+### 6. **Completed Status - Released**
 - ✓ Download all reports
 - ✓ Download supporting documents
 - ✓ View complete case analysis
@@ -307,7 +333,7 @@
   - `email_notification_sent` - Logged when release email is sent
   - `document_downloaded` - Logged if reports are downloaded (optional)
 
-### 6. **Edit Your Profile** (NEW)
+### 7. **Edit Your Profile** (NEW)
 - ✓ Update your personal information
 - ✓ Change contact preferences
 - ✓ Update employment status

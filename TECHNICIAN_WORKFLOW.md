@@ -242,19 +242,134 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
                               NO         YES
                                │          │
                                ▼          ▼
-                        ┌─────────┐  ┌──────────────┐
-                        │ Request │  │ Ready to     │
-                        │ More    │  │ Complete!    │
-                        │ Docs    │  │              │
-                        │ First   │  └────┬─────────┘
+                        ┌─────────┐  ┌──────────────────┐
+                        │ Request │  │ Do I need to     │
+                        │ More    │  │ pause work on    │
+                        │ Docs    │  │ this case?       │
+                        │ First   │  └────┬─────────────┘
                         └─────────┘       │
-                                          ▼
+                                     ┌────┴────┐
+                                     │          │
+                                    NO         YES
+                                     │          │
+                                     ▼          ▼
+                               ┌────────┐  ┌──────────────┐
+                               │Complete│  │ Put Case on  │
+                               │ Case   │  │ Hold         │
+                               │ Now    │  │              │
+                               └────┬───┘  └────┬─────────┘
+                                    │           │
+                                    │    ┌──────┴──────┐
+                                    │    │             │
+                                    │    ▼             ▼
+                                    │ SELECT:      SELECT:
+                                    │ • Reason    • Duration
+                                    │ • Notes     (Immediate
+                                    │              2h, 4h, 8h,
+                                    │              1 day, custom)
+                                    │    │             │
+                                    │    └──────┬──────┘
+                                    │           │
+                                    │           ▼
+                                    │    Case Placed
+                                    │    on Hold
+                                    │    (Status = hold)
+                                    │           │
+                                    │    ┌──────┴──────┐
+                                    │    │             │
+                                    │    ▼             ▼
+                                    │  Continue   Resume Later
+                                    │  When Ready (When time
+                                    │  (Click     comes)
+                                    │  "Resume")
+                                    │    │             │
+                                    └────┴─────────────┘
+                                         │
+                                         ▼
                                   ┌──────────────────┐
                                   │ Select Release   │
                                   │ Timing:          │
                                   │ • 0 hrs: Now     │
                                   │ • 1-5 hrs: Later │
                                   └──────────────────┘
+```
+
+---
+
+## Decision Tree: "Should I Put This Case on Hold?"
+
+```
+                START: Need to pause work on case?
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ Why pause work?          │
+                └────────┬─────────────────┘
+                         │
+    ┌─────────┬──────────┬┴──────────┬──────────┐
+    │         │          │           │          │
+WAITING   AWAITING   TECHNICAL   MEMBER      ESCALATION
+MEMBER    DECISION   ISSUE       INFO        PENDING
+DOCS      FROM ADMIN             PENDING
+    │         │          │           │          │
+    ▼         ▼          ▼           ▼          ▼
+ SELECT:  SELECT:    SELECT:     SELECT:    SELECT:
+ "Waiting "Awaiting  "Technical  "Waiting "Escalation
+ for      Decision"  Issue"      for      Pending"
+ Member"                         Member"
+    │         │          │           │          │
+    └─────────┴──────────┴───────────┴──────────┘
+                    │
+                    ▼
+        ┌───────────────────────────┐
+        │ SELECT Hold Duration:     │
+        ├───────────────────────────┤
+        │ • Immediate (No Duration) │
+        │   (hold indefinitely)     │
+        │                           │
+        │ • 2 Hours                 │
+        │   (auto-resume in 2h)     │
+        │                           │
+        │ • 4 Hours                 │
+        │   (auto-resume in 4h)     │
+        │                           │
+        │ • 8 Hours                 │
+        │   (auto-resume in 8h)     │
+        │                           │
+        │ • 1 Day                   │
+        │   (auto-resume tomorrow)  │
+        │                           │
+        │ • Custom Duration         │
+        │   (future: specify days)  │
+        └───────┬───────────────────┘
+                │
+                ▼
+    ┌───────────────────────────┐
+    │ Click "Put on Hold"       │
+    │ • Case ownership preserved│
+    │ • Status changes to 'hold'│
+    │ • Duration tracked       │
+    │ • Reason logged          │
+    └───────┬───────────────────┘
+            │
+            ▼
+    ┌───────────────────────────┐
+    │ Case is Now on Hold       │
+    │ • Resume button appears   │
+    │ • Your ownership stays    │
+    │ • Notes still accessible  │
+    │ • Hold timestamp set      │
+    └───────┬───────────────────┘
+            │
+            ▼
+    ┌───────────────────────────┐
+    │ When Ready to Resume:     │
+    │ • Click "Resume from Hold"│
+    │ • Add resume reason       │
+    │ • Status changes to       │
+    │   'accepted'              │
+    │ • Continue with case      │
+    └───────────────────────────┘
 ```
 
 ---
@@ -299,6 +414,22 @@ SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
 - ✓ Review new submissions
 - ✓ Incorporate into investigation
 - ✓ Then proceed to completion
+
+### 4A. **Hold Status** (Case Paused)
+- ✓ Your ownership is **preserved**
+- ✓ Can still view all case documents
+- ✓ Can still add internal notes
+- ✓ Cannot edit other case fields while on hold
+- ✓ **Resume from Hold** button available:
+  - Click to resume investigation
+  - Add reason for resuming
+  - Status changes back to 'accepted'
+  - Case returns to your active queue
+- ℹ️ Hold duration is **tracked**:
+  - If immediate: No end date (indefinite pause)
+  - If timed (2h, 4h, 8h, 1d): System tracks end date
+  - Audit trail shows hold start, reason, and duration
+- ✓ Can be placed on hold again after resuming
 
 ### 5. **Completing Case**
 - ✓ Mark as "Completed"

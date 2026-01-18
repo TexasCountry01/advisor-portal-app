@@ -271,9 +271,53 @@ While **technicians (Level 2/3)** perform technical case reviews, **managers** o
 - ✓ Approve delayed releases
 - ✓ Contact member if issues
 
+### 7. **Hold Management** (NEW)
+- ✓ View cases placed on hold
+- ✓ See hold reason and duration
+- ✓ Monitor hold duration tracking
+- ✓ **Put Case on Hold** (if technician hasn't):
+  - Click "Put on Hold" button
+  - Select reason (member docs waiting, technical issue, etc)
+  - Select duration (immediate, 2h, 4h, 8h, 1 day, custom)
+  - Case ownership preserved
+  - Status changes to 'hold'
+- ✓ **Resume Case from Hold**:
+  - Click "Resume from Hold" button
+  - Add reason for resuming
+  - Status changes back to 'accepted'
+  - Case returns to technician's active queue
+- ✓ Audit trail tracks all hold actions
+- ✓ Hold duration dates are calculated and stored
+
 ---
 
 ## Manager Case Actions
+
+### Action: Put Case on Hold
+```
+Case: #1045
+Tech: Alice (working on case)
+Issue: Waiting for member to provide additional documents
+Decision: Pause Alice's work temporarily
+
+Steps:
+1. Open case detail
+2. Click "Put Case on Hold" button
+3. Select reason: "Waiting for Member Documents"
+4. Select duration: "4 Hours" (or custom)
+5. Click "Confirm Put on Hold"
+Result: Case status → 'hold'
+        Alice's ownership preserved
+        Hold timestamp recorded
+        Duration set: 4 hours
+        Audit log updated
+
+6. When ready to resume:
+   Click "Resume from Hold"
+   Add reason: "Member sent documents"
+   Status → 'accepted'
+   Alice can continue work
+```
 
 ### Action: Reassign Case
 ```
