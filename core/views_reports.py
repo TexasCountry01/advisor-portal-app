@@ -116,13 +116,14 @@ def get_all_reports_data(date_from=None, date_to=None):
     ).values('member_id').distinct().count()
     
     # === FINANCIAL REPORTS ===
-    # Credits analysis
-    total_credits_issued = cases_qs.exclude(credit_value__isnull=True).aggregate(
+    # Credits analysis - only count credits from completed or accepted cases
+    financial_cases = cases_qs.filter(status__in=['accepted', 'completed'])
+    total_credits_issued = financial_cases.exclude(credit_value__isnull=True).aggregate(
         total=Sum(F('credit_value'), output_field=FloatField())
     )['total'] or 0
     
-    # Credits by workshop code
-    credits_by_workshop = cases_qs.exclude(credit_value__isnull=True).values(
+    # Credits by workshop code - only from completed/accepted cases
+    credits_by_workshop = financial_cases.exclude(credit_value__isnull=True).values(
         'workshop_code'
     ).annotate(
         total_credits=Sum(F('credit_value'), output_field=FloatField()),
