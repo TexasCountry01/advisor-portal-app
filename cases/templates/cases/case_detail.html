@@ -2000,7 +2000,7 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
 
 <!-- Floating Report Notes Window with Rich Text Editor -->
 {% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed,hold' %}
-<div id="floatingNotesWindow" class="floating-window">
+<div id="floatingNotesWindow" class="floating-window" style="display: none;">
     <div class="floating-window-header">
         <span class="floating-window-title">
             <i class="bi bi-sticky"></i> Report Notes to Member
