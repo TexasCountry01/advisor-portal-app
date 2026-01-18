@@ -281,9 +281,9 @@
                             <td id="code-column">{{ case.workshop_code }}</td>
                             <td>
                                 {% if case.member.get_full_name %}
-                                    <span class="badge bg-primary">{{ case.member.get_full_name }}</span>
+                                    {{ case.member.get_full_name }}
                                 {% else %}
-                                    <span class="badge bg-primary">{{ case.member.username }}</span>
+                                    {{ case.member.username }}
                                 {% endif %}
                             </td>
                             <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
@@ -297,35 +297,35 @@
                             </td>
                             <td>
                                 {% if case.urgency == 'rush' %}
-                                    <span class="badge">Rush</span>
+                                    Rush
                                 {% else %}
-                                    <span class="badge bg-secondary">Normal</span>
+                                    Normal
                                 {% endif %}
                             </td>
                             <td>
                                 {% if case.status == 'submitted' %}
-                                    <span class="badge bg-primary">Submitted</span>
+                                    Submitted
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-success">Accepted</span>
+                                    Accepted
                                 {% elif case.status == 'pending_review' %}
-                                    <span class="badge bg-warning text-dark">Pending Review</span>
+                                    Pending Review
                                 {% elif case.status == 'hold' %}
-                                    <span class="badge bg-danger">On Hold</span>
+                                    On Hold
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
-                                        <span class="badge bg-success">Completed</span>
+                                        Completed
                                     {% elif case.scheduled_release_date %}
-                                        <span class="badge bg-warning">Scheduled for Release</span>
+                                        Scheduled for Release
                                     {% else %}
-                                        <span class="badge bg-info">Working</span>
+                                        Working
                                     {% endif %}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if case.scheduled_release_date %}
-                                    <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/Y" }}</span>
+                                    {{ case.scheduled_release_date|date:"m/d/Y" }}
                                 {% elif case.actual_release_date %}
-                                    <small class="text-muted">Released</small>
+                                    Released
                                 {% else %}
                                     —
                                 {% endif %}
@@ -333,11 +333,9 @@
                             <td style="text-align: center;">{{ case.num_reports_requested }}</td>
                             <td>
                                 {% if case.assigned_to %}
-                                    <span class="badge bg-info">
-                                        {{ case.assigned_to.first_name }}
-                                    </span>
+                                    {{ case.assigned_to.first_name }}
                                 {% else %}
-                                    <span class="badge bg-light text-dark">Unassigned</span>
+                                    Unassigned
                                 {% endif %}
                             </td>
                             <td>
@@ -349,20 +347,18 @@
                             </td>
                             <td>
                                 {% if case.tier %}
-                                    <span class="badge bg-dark">{{ case.get_tier_display }}</span>
+                                    {{ case.get_tier_display }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
                             <td>
                                 {% if case.reviewed_by %}
-                                    <span class="badge bg-secondary">
-                                        {% if case.reviewed_by.get_full_name %}
-                                            {{ case.reviewed_by.get_full_name }}
-                                        {% else %}
-                                            {{ case.reviewed_by.username }}
-                                        {% endif %}
-                                    </span>
+                                    {% if case.reviewed_by.get_full_name %}
+                                        {{ case.reviewed_by.get_full_name }}
+                                    {% else %}
+                                        {{ case.reviewed_by.username }}
+                                    {% endif %}
                                 {% else %}
                                     —
                                 {% endif %}
