@@ -1009,9 +1009,21 @@
                                         <i class="bi bi-info-circle"></i> At least one report must be uploaded before marking as completed.
                                     </small>
                                 {% endif %}
+                            {% elif not case.assigned_to or case.assigned_to != user %}
+                                <!-- Case is unassigned or assigned to someone else - Show Take Ownership button -->
+                                <button type="button" class="btn btn-outline-success btn-lg" onclick="takeOwnership({{ case.id }})">
+                                    <i class="bi bi-hand-thumbs-up"></i> Take Ownership
+                                </button>
+                                <p class="text-muted small mt-3 mb-0">
+                                    <i class="bi bi-info-circle"></i> Click to take ownership of this case and begin processing.
+                                </p>
+                                <p class="text-muted small mt-3 mb-0">
+                                    <i class="bi bi-info-circle"></i> Click to take ownership of this case and begin processing.
+                                </p>
                             {% else %}
+                                <!-- Fallback - should not normally reach here -->
                                 <div class="alert alert-info mb-0">
-                                    <i class="bi bi-info-circle"></i> You have not taken ownership of this case. Case actions are only available to the assigned technician.
+                                    <i class="bi bi-info-circle"></i> No actions available at this time.
                                 </div>
                             {% endif %}
                         </div>
