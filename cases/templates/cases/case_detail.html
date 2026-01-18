@@ -2341,7 +2341,9 @@ function saveReportNotes(editor) {
     </div>
 </div>
 
-<!-- Put on Hold Modal -->
+{% endif %}
+
+<!-- Put on Hold Modal (Outside conditional - available for all cases) -->
 <div class="modal fade" id="putOnHoldModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -2376,7 +2378,7 @@ function saveReportNotes(editor) {
     </div>
 </div>
 
-<!-- Resume from Hold Modal -->
+<!-- Resume from Hold Modal (Outside conditional - available for all cases) -->
 <div class="modal fade" id="resumeFromHoldModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -2400,8 +2402,6 @@ function saveReportNotes(editor) {
         </div>
     </div>
 </div>
-
-{% endif %}
 
 {% endif %}
 
