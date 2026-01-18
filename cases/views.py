@@ -1067,12 +1067,13 @@ def reassign_case(request, case_id):
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - only techs and admins can reassign
-    if user.role not in ['technician', 'administrator', 'manager']:
+    # Permission check - only managers and admins can reassign
+    if user.role not in ['administrator', 'manager']:
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     
     if request.method == 'POST':
         new_technician_id = request.POST.get('technician_id')
+        reason = request.POST.get('reason', 'Manual reassignment')
         
         if not new_technician_id:
             return JsonResponse({'success': False, 'error': 'No technician selected'}, status=400)
@@ -1083,9 +1084,26 @@ def reassign_case(request, case_id):
             case.assigned_to = new_technician
             case.save()
             
+            # Log to audit trail
+            from core.models import AuditLog
+            AuditLog.objects.create(
+                action='case_reassigned',
+                user=user,
+                case=case,
+                metadata={
+                    'from_technician': old_technician.username if old_technician else 'Unassigned',
+                    'to_technician': new_technician.username,
+                    'reason': reason,
+                    'timestamp': timezone.now().isoformat()
+                }
+            )
+            
+            logger.info(f'Case {case.id} reassigned from {old_technician.username if old_technician else "Unassigned"} '
+                       f'to {new_technician.username} by {user.username}. Reason: {reason}')
+            
             return JsonResponse({
                 'success': True, 
-                'message': f'Case reassigned from {old_technician.username if old_technician else "Unassigned"} to {new_technician.username}',
+                'message': f'Case reassigned to {new_technician.get_full_name() or new_technician.username}',
                 'new_assignee': new_technician.get_full_name() or new_technician.username
             })
         except User.DoesNotExist:
@@ -2152,61 +2170,6 @@ def reject_case(request, pk):
         logger.error(f'Error rejecting case: {str(e)}')
         messages.error(request, f'Error: {str(e)}')
         return redirect('case_review_for_acceptance', pk=case.id)
-
-
-@login_required
-def reassign_case(request, pk):
-    """
-    Reassign an accepted case to a different technician.
-    Maintains audit trail of all reassignments.
-    """
-    if request.method != 'POST':
-        return HttpResponseForbidden('POST required.')
-    
-    case = get_object_or_404(Case, pk=pk)
-    user = request.user
-    
-    # Permission check: Only admin/manager can reassign
-    if user.role not in ['administrator', 'manager']:
-        return JsonResponse({'error': 'Access denied. Admin/Manager only.'}, status=403)
-    
-    try:
-        new_tech_id = request.POST.get('assigned_to')
-        reason = request.POST.get('reason', 'Manual reassignment')
-        
-        if not new_tech_id:
-            return JsonResponse({'error': 'Missing technician selection'}, status=400)
-        
-        new_tech = get_object_or_404(User, pk=new_tech_id, role='technician')
-        old_tech = case.assigned_to
-        
-        # Record in audit trail
-        if not isinstance(case.reassignment_history, list):
-            case.reassignment_history = []
-        
-        case.reassignment_history.append({
-            'from_tech': old_tech.username if old_tech else 'Unassigned',
-            'to_tech': new_tech.username,
-            'date': timezone.now().isoformat(),
-            'reason': reason,
-            'by_user': user.username,
-        })
-        
-        # Update assignment
-        case.assigned_to = new_tech
-        case.save()
-        
-        logger.info(f'Case {case.external_case_id} reassigned from {old_tech.username if old_tech else "Unassigned"} '
-                   f'to {new_tech.username} by {user.username}. Reason: {reason}')
-        
-        messages.success(request, f'✓ Case reassigned to {new_tech.get_full_name()}')
-        return JsonResponse({'success': True, 'redirect': f'/cases/{case.id}/'})
-        
-    except User.DoesNotExist:
-        return JsonResponse({'error': 'Technician not found'}, status=404)
-    except Exception as e:
-        logger.error(f'Error reassigning case: {str(e)}')
-        return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
