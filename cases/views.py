@@ -82,6 +82,7 @@ def member_dashboard(request):
         'accepted': all_cases.filter(status='accepted').count(),
         'resubmitted': all_cases.filter(status='resubmitted').count(),
         'completed': all_cases.filter(status='completed').count(),
+        'rush': all_cases.filter(urgency='rush').count(),
     }
     
     # Get column visibility settings

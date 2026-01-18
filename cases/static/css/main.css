@@ -66,3 +66,14 @@ td[style*="min-width"] .btn {
     white-space: normal !important;
     overflow: visible !important;
 }
+
+/* Left-justify Member column across all dashboards */
+/* Admin Dashboard */
+.table td:nth-child(2):not(.column-hidden) {
+    text-align: left !important;
+}
+
+/* Technician & Manager Dashboard - explicit column class */
+.column-member {
+    text-align: left !important;
+}
