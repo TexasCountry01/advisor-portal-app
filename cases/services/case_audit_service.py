@@ -24,9 +24,22 @@ def hold_case(case, user, reason='', hold_duration_days=None):
     Returns:
         Boolean indicating success
     """
+    from django.utils import timezone
+    from datetime import timedelta
+    
     try:
         old_status = case.status
         case.status = 'hold'
+        case.hold_reason = reason or 'Case placed on hold'
+        case.hold_start_date = timezone.now()
+        case.hold_duration_days = hold_duration_days
+        
+        # Calculate hold_end_date if duration is specified
+        if hold_duration_days:
+            case.hold_end_date = case.hold_start_date + timedelta(days=float(hold_duration_days))
+        else:
+            case.hold_end_date = None
+        
         case._audit_user = user
         case._hold_reason = reason or 'Case placed on hold'
         case._hold_duration_days = hold_duration_days
@@ -42,7 +55,8 @@ def hold_case(case, user, reason='', hold_duration_days=None):
             metadata={
                 'reason': reason or 'No reason provided',
                 'held_at': timezone.now().isoformat(),
-                'duration_days': hold_duration_days
+                'duration_days': hold_duration_days,
+                'hold_end_date': case.hold_end_date.isoformat() if case.hold_end_date else None
             }
         )
         logger.info(f'Case {case.id} held by {user.username}. Reason: {reason}')

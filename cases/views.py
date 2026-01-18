@@ -853,7 +853,7 @@ def put_case_on_hold(request, case_id):
                 hold_duration_days = 0.333
             elif hold_duration == '1_day':
                 hold_duration_days = 1
-            elif hold_duration == 'custom':
+            elif hold_duration in ['custom', 'immediate']:
                 hold_duration_days = None
             
             # Use the service to hold the case

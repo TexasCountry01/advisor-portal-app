@@ -110,6 +110,32 @@ class Case(models.Model):
     # Field 9: Status
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='submitted')
     
+    # Hold Status Fields
+    hold_reason = models.TextField(
+        blank=True,
+        help_text='Reason why case is on hold'
+    )
+    
+    hold_start_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the case was placed on hold'
+    )
+    
+    hold_end_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Expected end date of hold (null if unspecified)'
+    )
+    
+    hold_duration_days = models.DecimalField(
+        max_digits=5,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text='Expected duration of hold in days (e.g., 0.083 for 2 hours, 1 for 1 day)'
+    )
+
     # Field 10: Assigned To (Technician)
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,

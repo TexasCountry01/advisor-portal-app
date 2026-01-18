@@ -2366,11 +2366,12 @@ function saveReportNotes(editor) {
                 <div class="form-group">
                     <label for="holdDuration" class="form-label">Expected Hold Duration</label>
                     <select class="form-select" id="holdDuration">
+                        <option value="immediate" selected>Immediate (No Duration Specified)</option>
                         <option value="2_hours">2 Hours</option>
                         <option value="4_hours">4 Hours</option>
                         <option value="8_hours">8 Hours</option>
                         <option value="1_day">1 Day</option>
-                        <option value="custom" selected>Unspecified</option>
+                        <option value="custom">Custom Duration</option>
                     </select>
                 </div>
             </div>
