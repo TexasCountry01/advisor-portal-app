@@ -2182,16 +2182,21 @@ tinymce.init({
                 notesWindow.style.top = 'auto';
             }
             
-            // Restore minimized state (default: HIDDEN)
+            // Restore minimized state (default: HIDDEN on first visit)
             const wasMinimized = localStorage.getItem('notesWindowMinimized');
+            // Only show if explicitly saved as 'false' (user opened it before)
+            // Default is to hide (null or 'true' means hidden)
             if (wasMinimized === 'false') {
-                // Window was previously open, restore it
+                // User had notes open in previous session, restore that state
                 notesWindow.style.display = 'flex';
                 document.getElementById('minimizeNotesButton').style.display = 'none';
+                // Set to 'true' so next time it starts hidden
+                localStorage.setItem('notesWindowMinimized', 'true');
             } else {
-                // Hide window by default, show the toggle button
+                // Default: hide window, show the toggle button
                 notesWindow.style.display = 'none';
                 document.getElementById('minimizeNotesButton').style.display = 'block';
+                localStorage.setItem('notesWindowMinimized', 'true');
             }
         });
         
