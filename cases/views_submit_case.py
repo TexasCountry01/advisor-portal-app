@@ -136,7 +136,7 @@ def submit_case(request):
             
             # Get urgency from form (member selection)
             urgency = request.POST.get('urgency', 'normal')
-            if urgency not in ['normal', 'urgent']:
+            if urgency not in ['normal', 'rush']:
                 urgency = 'normal'
             
             # Validate num_reports
@@ -209,7 +209,7 @@ def submit_case(request):
             doc_count_msg = get_document_count_message(case, include_breakdown=True)
             
             # Determine if this is rushed
-            if urgency == 'urgent':
+            if urgency == 'rush':
                 messages.warning(
                     request,
                     f'WARNING: This report has been marked as RUSHED (due date less than 7 days). '

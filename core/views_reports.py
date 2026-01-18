@@ -72,7 +72,7 @@ def get_all_reports_data(date_from=None, date_to=None):
         avg_processing_time = avg_processing_time.days
     
     # Rush vs Standard cases
-    rush_cases = cases_qs.filter(urgency='urgent').count()
+    rush_cases = cases_qs.filter(urgency='rush').count()
     standard_cases = cases_qs.filter(urgency='normal').count()
     
     # Cases by urgency level

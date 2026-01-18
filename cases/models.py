@@ -53,7 +53,7 @@ class Case(models.Model):
     
     URGENCY_CHOICES = [
         ('normal', 'Normal'),
-        ('urgent', 'Urgent'),
+        ('rush', 'Rush'),
     ]
     
     TIER_CHOICES = [

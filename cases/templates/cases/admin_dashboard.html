@@ -74,8 +74,8 @@
                         <div class="stat-mini-label">Unassigned</div>
                     </div>
                     <div class="stat-mini" style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);">
-                        <div class="stat-mini-value">{{ stats.urgent }}</div>
-                        <div class="stat-mini-label">Urgent</div>
+                        <div class="stat-mini-value">{{ stats.rush }}</div>
+                        <div class="stat-mini-label">Rush</div>
                     </div>
                 </div>
             </div>
@@ -98,7 +98,7 @@
                     <select name="urgency" id="urgency" class="form-select">
                         <option value="">All Urgencies</option>
                         <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Normal</option>
-                        <option value="urgent" {% if urgency_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+                        <option value="rush" {% if urgency_filter == 'rush' %}selected{% endif %}>Rush</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -297,8 +297,8 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if case.urgency == 'urgent' %}
-                                    <span class="badge bg-danger">Urgent</span>
+                                {% if case.urgency == 'rush' %}
+                                    <span class="badge">Rush</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Normal</span>
                                 {% endif %}

@@ -174,7 +174,7 @@
         sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
         
         if (dueDate < sevenDaysFromNow) {
-            urgencyInput.value = 'urgent';
+            urgencyInput.value = 'rush';
             if (container) container.style.maxHeight = '500px';
         } else {
             urgencyInput.value = 'normal';

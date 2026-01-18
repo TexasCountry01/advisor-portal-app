@@ -193,7 +193,7 @@ def technician_dashboard(request):
         'resubmitted': cases.filter(status='resubmitted').count(),
         'pending_review': cases.filter(status='pending_review').count(),
         'completed': cases.filter(status='completed').count(),
-        'urgent': cases.filter(urgency='urgent').count(),
+        'rush': cases.filter(urgency='rush').count(),
     }
     
     # Get available technicians and administrators for assignment dropdown
@@ -347,7 +347,7 @@ def admin_dashboard(request):
         'hold': all_cases.filter(status='hold').count(),
         'pending_review': all_cases.filter(status='pending_review').count(),
         'completed': all_cases.filter(status='completed').count(),
-        'urgent': all_cases.filter(urgency='urgent').count(),
+        'rush': all_cases.filter(urgency='rush').count(),
         'total_members': active_members,
         'total_technicians': active_technicians,
         'unassigned': all_cases.filter(assigned_to__isnull=True).count(),
@@ -485,7 +485,7 @@ def manager_dashboard(request):
     hold_count = all_cases.filter(status='hold').count()
     pending_review_count = all_cases.filter(status='pending_review').count()
     completed_count = completed_cases.count()
-    urgent_count = all_cases.filter(urgency='urgent').count()
+    rush_count = all_cases.filter(urgency='rush').count()
     total_count = all_cases.count()
     
     # Calculate percentages for progress bars
@@ -509,8 +509,8 @@ def manager_dashboard(request):
         'pending_review': pending_review_count,
         'completed': completed_count,
         'completion_rate': round((completed_count / total_count * 100) if total_count > 0 else 0, 1),
-        'urgent': urgent_count,
-        'normal': max(0, total_count - urgent_count),
+        'rush': rush_count,
+        'normal': max(0, total_count - rush_count),
         'total_members': User.objects.filter(role='member', is_active=True).count(),
         'total_technicians': User.objects.filter(role='technician', is_active=True).count(),
         'avg_processing_time': 'N/A',  # Would require more complex calculation
@@ -885,7 +885,7 @@ def edit_case(request, pk):
             num_reports = case.num_reports_requested
         
         # Validate urgency
-        if urgency not in ['normal', 'urgent']:
+        if urgency not in ['normal', 'rush']:
             urgency = case.urgency
         
         # Update case

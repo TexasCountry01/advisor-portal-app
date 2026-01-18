@@ -116,7 +116,7 @@
                     <select name="urgency" id="urgency" class="form-select">
                         <option value="">All Urgencies</option>
                         <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Standard</option>
-                        <option value="urgent" {% if urgency_filter == 'urgent' %}selected{% endif %}>Rush</option>
+                        <option value="rush" {% if urgency_filter == 'rush' %}selected{% endif %}>Rush</option>
                     </select>
                 </div>
                 <div class="col-md-4">
@@ -196,8 +196,8 @@
                                 {% endif %}
                             </td>
                             <td class="column-urgency {% if 'urgency' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.urgency == 'urgent' %}
-                                    <span class="badge bg-danger">Urgent</span>
+                                {% if case.urgency == 'rush' %}
+                                    <span class="badge">Rush</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Normal</span>
                                 {% endif %}

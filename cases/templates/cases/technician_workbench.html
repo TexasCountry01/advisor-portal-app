@@ -158,8 +158,8 @@
                             <td>{{ case.email|truncatechars:30 }}</td>
                             <td>{{ case.num_reports_requested }}</td>
                             <td>
-                                {% if case.urgency == 'urgent' %}
-                                    <span class="badge bg-warning">Urgent</span>
+                                {% if case.urgency == 'rush' %}
+                                    <span class="badge">Rush</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Normal</span>
                                 {% endif %}

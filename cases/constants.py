@@ -52,11 +52,11 @@ FINAL_STATUSES = [CASE_STATUS_COMPLETED]
 # URGENCY CONSTANTS
 # ============================================================================
 URGENCY_NORMAL = 'normal'
-URGENCY_URGENT = 'urgent'
+URGENCY_RUSH = 'rush'
 
 URGENCY_CHOICES = [
     (URGENCY_NORMAL, 'Normal'),
-    (URGENCY_URGENT, 'Urgent'),
+    (URGENCY_RUSH, 'Rush'),
 ]
 
 # ============================================================================

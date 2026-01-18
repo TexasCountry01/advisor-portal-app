@@ -46,7 +46,7 @@ try:
         employee_last_name='Smith',
         client_email='jane.smith@example.com',
         num_reports_requested=2,
-        urgency='urgent',
+        urgency='rush',
         status='accepted',
         assigned_to=ben1,
         tier='tier_1'
