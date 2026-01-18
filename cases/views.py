@@ -1067,10 +1067,17 @@ def reassign_case(request, case_id):
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - only managers and admins can reassign
-    if user.role not in ['administrator', 'manager']:
+    # Permission check - technicians can reassign only if they own the case, managers and admins can always reassign
+    if user.role == 'technician':
+        if case.assigned_to != user:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'You can only reassign cases you own'}, status=403)
+            messages.error(request, 'You can only reassign cases you own')
+            return redirect('cases:case_detail', pk=case_id)
+    elif user.role not in ['administrator', 'manager']:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        messages.error(request, 'Permission denied')
         return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':

@@ -110,6 +110,11 @@
                 <span class="badge bg-success">
                     <i class="bi bi-check-circle"></i> You own this case
                 </span>
+                {% if case.status == 'accepted' %}
+                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
+                        <i class="bi bi-arrow-repeat"></i> Reassign
+                    </button>
+                {% endif %}
                 {% endif %}
             {% elif user.role == 'manager' %}
                 <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
