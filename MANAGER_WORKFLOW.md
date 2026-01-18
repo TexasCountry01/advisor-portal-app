@@ -3,6 +3,9 @@
 ## Role Overview
 **Managers** oversee technician operations, manage case assignments, handle escalations, and ensure quality. They provide a middle layer between technicians and administrators, managing workload and performance.
 
+> **📊 AUDIT TRAIL TRACKING NOTE:**  
+> All manager activities are automatically tracked in the audit trail system, including case assignments, holds/resumes, tier changes, and access to audit reports. Managers have access to comprehensive audit reports showing team performance, case workflows, and quality metrics. Administrator can view manager actions for oversight and compliance.
+
 ---
 
 ## Manager Workflow Overview
@@ -518,10 +521,68 @@ CLOSED (Archived)
 
 ---
 
+## 📊 Audit Trail Activities (Manager Role)
+
+All manager activities are automatically tracked in the system's audit trail. Here's what gets logged:
+
+| Activity | Audit Code | When Logged | Details Captured |
+|----------|-----------|-------------|------------------|
+| **Login** | `login` | Immediate | Session start, manager ID, timestamp |
+| **Logout** | `logout` | Immediate | Session end, duration |
+| **Assign Case to Tech** | `case_assigned` | On assignment | Case ID, technician assigned, reason, manager ID |
+| **Reassign Case** | `case_reassigned` | On reassignment | From tech, to tech, reason, manager authorization |
+| **Place Case on Hold** | `case_held` | On hold | Case ID, reason, hold duration, manager ID |
+| **Resume Case** | `case_resumed` | On resumption | Case ID, reason, who resumed, timestamp |
+| **Change Case Tier** | `case_tier_changed` | On change | Previous/new tier, case ID, reason, manager ID |
+| **Force Release Case** | `case_status_changed` | On release | Case ID, release time, member notified, manager ID |
+| **Escalate to Admin** | `case_updated` | On escalation | Case ID, escalation reason, admin destination |
+| **Review Member Profile** | `member_profile_updated` | Optional | Member ID, fields reviewed (no changes logged) |
+| **Access Audit Reports** | `audit_log_accessed` | On access | Report type, filters used, data range, manager ID |
+| **Generate Performance Report** | `report_generated` | On generation | Report type, team scope, date range, manager ID |
+| **Add Team Note** | `note_added` | On post | Note text, visibility, team members affected |
+| **Delegate to Technician** | `user_role_changed` | On delegation | Tech granted powers, scope, duration, manager ID |
+| **Approve Quality Review** | `review_submitted` | On approval | Case ID, reviewed by tech, approved by manager, score |
+| **Request Case Revision** | `case_updated` | On request | Case ID, revision reason, tech assigned |
+
+### Key Audit Activities
+
+**Team Management Tracking:**
+- All case assignments and reassignments logged with manager authority
+- Hold/resume decisions tracked with business justification
+- Escalations to admin include reasoning for audit trail
+- Tier changes visible to administrators for oversight
+
+**Performance Oversight:**
+- Manager access to audit reports is itself logged (meta-audit)
+- Report generation tracked for compliance verification
+- Analytics access shows when managers reviewed data
+- Performance trends documented in audit trail
+
+**Case Quality Assurance:**
+- Quality review approvals/rejections captured
+- Manager overrides logged with justification
+- Early release decisions documented
+- Case revision requests traceable
+
+### Audit Trail Uses for Managers
+- **Accountability:** All decisions documented for audit trail compliance
+- **Team Performance:** Analytics show which techs are productive
+- **Case Status:** Quick access to case history and decision trail
+- **Disputes:** Evidence of how cases were managed
+- **Compliance:** Demonstrate proper case management procedures
+
+### Access Audit Information
+- Managers can view team activity through dedicated audit reports
+- Activity Summary Report - system-wide overview
+- User Activity Report - individual tech tracking
+- Case Change History - modification timeline
+- All reports accessible via "Audit & Compliance" menu
+
+---
+
 ## Manager Support Resources
 
-**Need Help?**
-- Admin on-call for escalations
+**Need Help?**\n- Admin on-call for escalations
 - Email: manager-support@company.com
 - Monthly manager meetings
 - Training docs in knowledge base

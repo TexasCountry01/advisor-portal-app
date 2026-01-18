@@ -3,6 +3,9 @@
 ## Role Overview
 **Members** are employees who submit cases for benefits verification and receive completed reports. Their workflow is straightforward and primarily involves case submission and review.
 
+> **📊 AUDIT TRAIL TRACKING NOTE:**  
+> All member activities are automatically tracked and logged in the audit trail system. Key activities include logins, case submissions, profile updates, and document uploads. Managers and administrators can access detailed activity reports at any time.
+
 ---
 
 ## Member Workflow Overview
@@ -17,8 +20,7 @@
                             ▼
                   ┌─────────────────────┐
                   │ Access Member       │
-                  │ Dashboard           │
-                  └────────┬────────────┘
+                  │ Dashboard           │                  │ [AUDIT: login]      │                  └────────┬────────────┘
                            │
               ┌────────────┼────────────┐
               │            │            │
@@ -275,6 +277,10 @@
   - Confirm all items from rejection notes are addressed
 - ✓ Submit again for tech review
 - Case re-enters review workflow
+- **📊 AUDIT TRACKING:**  
+  - `case_resubmitted` - Logged each time case is resubmitted
+  - `document_uploaded` - Logged for each new document
+  - Activity shows: Who resubmitted, when, and metadata about changes
 
 
 ### 4. **Completed Status - Pending Release**
@@ -296,6 +302,10 @@
   - If released immediately: Get email right away
   - If scheduled release: Get email on release date
   - Email contains case link and key information
+- **📊 AUDIT TRACKING:**  
+  - `case_status_changed` - Logged when case moves to released status
+  - `email_notification_sent` - Logged when release email is sent
+  - `document_downloaded` - Logged if reports are downloaded (optional)
 
 ### 6. **Edit Your Profile** (NEW)
 - ✓ Update your personal information
@@ -529,10 +539,13 @@ Dashboard Column Visibility:
 
 ---
 
-## Member Support Resources
+## 📊 Audit Trail Activities (Member Role)
 
-**Need Help?**
-- Dashboard has "Help" section with FAQ
+All member activities are automatically tracked in the system's audit trail. Here's what gets logged:
+
+| Activity | Audit Code | When Logged | Details Captured |
+|----------|-----------|-------------|------------------|
+| **Login** | `login` | Immediate | Session start, IP address, browser |\n| **Logout** | `logout` | Immediate | Session end, duration |\n| **Submit New Case** | `case_created` | On submission | Case ID, document count, urgency level |\n| **Upload Document** | `document_uploaded` | On upload | File name, size, case reference, document type |\n| **Resubmit Case** | `case_resubmitted` | On resubmission | Resubmission count, reason if provided, case changes |\n| **Update Profile** | `member_profile_updated` | On save | Which fields changed (name, email, phone), old/new values |\n| **Download Document** | `document_downloaded` | On download | File name, case reference, reason (if tracking enabled) |\n| **Add Comment** | `note_added` | On post | Comment text, case reference, timestamp |\n| **View Case** | `case_viewed` | Optional | Case ID, time viewed (if tracking enabled) |\n| **Receive Email** | `email_notification_sent` | When sent | Case link, release date, recipient email |\n\n### What This Means for You\n- **Transparency:** Your actions are tracked for compliance and dispute resolution\n- **Security:** Unusual activity (multiple logins, bulk downloads) can be identified\n- **Support:** If there's a discrepancy, staff can review your exact actions\n- **Privacy:** Only your authorized actions are logged; your actual documents aren't monitored\n\n### Access Your Activity\n- Members can view personal activity summary on \"My Dashboard\"\n- Managers/Admins can access detailed reports in the \"Audit Reports\" section\n- For detailed activity: Log in → Dashboard → Activity tab (if available)\n\n---\n\n## Member Support Resources\n\n**Need Help?**\n- Dashboard has \"Help\" section with FAQ
 - **Profile Questions:** Contact your benefits technician
 - **Credit Balance:** Check "My Profile" → "Quarterly Credits"
 - Email: member-support@company.com

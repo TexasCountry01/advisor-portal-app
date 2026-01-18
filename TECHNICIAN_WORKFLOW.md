@@ -3,6 +3,9 @@
 ## Role Overview
 **Technicians** (Benefits-Technicians) are the core workforce processing cases. They accept cases from the queue, perform investigations, complete fact-finding, upload reports, and manage case workflow from submission through completion and release.
 
+> **📊 AUDIT TRAIL TRACKING NOTE:**  
+> All technician activities are automatically tracked in the audit trail system, including case assignments, status changes, holds/resumes, tier changes, and quality reviews. Managers can access detailed reports showing technician productivity, case workflows, and quality metrics. Technicians can view their personal activity history in the Performance dashboard.
+
 ---
 
 ## Technician Workflow Overview
@@ -796,6 +799,61 @@ The system uses a **three-level technician hierarchy** to ensure quality and man
 | Forgot to mark complete | Find case, click "Mark as Complete" |
 | Want to release earlier than scheduled | Contact admin or wait for "Release Immediately" feature |
 | Case was resubmitted | Review new docs, incorporate, mark complete again |
+
+---
+
+## 📊 Audit Trail Activities (Technician Role)
+
+All technician activities are automatically tracked in the system's audit trail. Here's what gets logged:
+
+| Activity | Audit Code | When Logged | Details Captured |
+|----------|-----------|-------------|------------------|
+| **Login** | `login` | Immediate | Session start, technician ID, timestamp |
+| **Logout** | `logout` | Immediate | Session end, duration, last action |
+| **Accept Case** | `case_assigned` | On assignment | Case ID, reason if provided, assignment time |
+| **Reassign Case** | `case_reassigned` | On reassignment | From tech, to tech, reason, case ID |
+| **Change Case Status** | `case_status_changed` | On status update | Previous status, new status, case ID, timestamp |
+| **Upload Report** | `document_uploaded` | On upload | Report file name, case ID, document type |
+| **Mark Case Complete** | `case_updated` | On completion | Completion time, release date, delay duration |
+| **Request Member Upload** | `case_details_edited` | When requesting | Case ID, member notified, document types requested |
+| **Add Case Notes** | `note_added` | On post | Note text, case ID, visibility level (tech/all) |
+| **Place Case on Hold** | `case_held` | Immediate | Case ID, reason, hold duration, release date |
+| **Resume from Hold** | `case_resumed` | Immediate | Case ID, hold duration, reason for resumption |
+| **Change Case Tier** | `case_tier_changed` | On change | Previous tier, new tier, case ID, reason |
+| **Submit Quality Review** | `review_submitted` | On submission | Case ID, review status, quality score, reviewer |
+| **Profile Update** | `member_profile_updated` | On save | Which fields changed, old/new values (if applicable) |
+| **Role/Level Change** | `user_role_changed` | On promotion/demotion | Previous role, new role, admin who made change |
+
+### Key Audit Activities
+
+**Case Workflow Tracking:**
+- Every case assignment, reassignment, and completion is logged
+- Status changes show who made the change and when
+- Hold/resume events include reason and duration
+- Tier changes track complexity assessments
+
+**Quality Assurance:**
+- Quality review submissions are tagged with reviewer ID
+- Manager/Admin can see which tech submitted which review
+- Approval/rejection reasoning is captured in audit trail
+
+**Performance Metrics:**
+- Audit trail enables tracking of tech productivity
+- Case completion times automatically calculated
+- Hold patterns and reasons can be analyzed
+- Quality review trends visible to managers
+
+### Audit Trail Uses for Technicians
+- **Self-Review:** Check your own activity history
+- **Performance:** See your completion times and quality scores
+- **Compliance:** Verify all your actions are documented
+- **Disputes:** If questioned about a case, audit trail proves your actions
+- **Training:** See best practices from top-performing technicians
+
+### Access Your Audit Info
+- Technicians can view personal activity in "My Performance" dashboard
+- Managers can see team activity in "Team Analytics" and audit reports
+- Admins can export complete audit trails for compliance
 
 ---
 
