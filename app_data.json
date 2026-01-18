@@ -191,7 +191,7 @@
     "employee_last_name": "Miller",
     "client_email": "MillerBilly@noblah.com",
     "num_reports_requested": 2,
-    "urgency": "urgent",
+    "urgency": "rush",
     "status": "completed",
     "assigned_to": 5,
     "reviewed_by": null,
