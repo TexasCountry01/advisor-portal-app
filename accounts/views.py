@@ -31,7 +31,7 @@ def can_create_user(current_user, target_role):
     Determine if current user can create a user with target_role.
     
     Rules:
-    - Super Admin: Can create Technician and Manager users
+    - Administrator: Can create Technician, Manager, and Member users
     - Technician: Can create Member users
     - Others: Cannot create users
     """
@@ -39,8 +39,8 @@ def can_create_user(current_user, target_role):
         return False
     
     if current_user.role == 'administrator':
-        # Admin can create techs and managers
-        return target_role in ['technician', 'manager']
+        # Admin can create techs, managers, and members
+        return target_role in ['technician', 'manager', 'member']
     
     if current_user.role == 'technician':
         # Tech can create members
