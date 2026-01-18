@@ -1071,7 +1071,7 @@ def reassign_case(request, case_id):
     if user.role not in ['administrator', 'manager']:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
-        return redirect('case_detail', pk=case_id)
+        return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
         # Form sends 'assigned_to' parameter with technician ID
@@ -1082,7 +1082,7 @@ def reassign_case(request, case_id):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': 'No technician selected'}, status=400)
             messages.error(request, 'No technician selected')
-            return redirect('case_detail', pk=case_id)
+            return redirect('cases:case_detail', pk=case_id)
         
         try:
             new_technician = User.objects.get(id=new_technician_id, role='technician')
@@ -1117,15 +1117,15 @@ def reassign_case(request, case_id):
                 })
             else:
                 messages.success(request, f'Case reassigned to {new_technician.get_full_name() or new_technician.username}')
-                return redirect('case_detail', pk=case_id)
+                return redirect('cases:case_detail', pk=case_id)
                 
         except User.DoesNotExist:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': 'Technician not found'}, status=404)
             messages.error(request, 'Technician not found')
-            return redirect('case_detail', pk=case_id)
+            return redirect('cases:case_detail', pk=case_id)
     
-    return redirect('case_detail', pk=case_id)
+    return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
