@@ -1072,7 +1072,8 @@ def reassign_case(request, case_id):
         return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     
     if request.method == 'POST':
-        new_technician_id = request.POST.get('technician_id')
+        # Form sends 'assigned_to' parameter with technician ID
+        new_technician_id = request.POST.get('assigned_to')
         reason = request.POST.get('reason', 'Manual reassignment')
         
         if not new_technician_id:
