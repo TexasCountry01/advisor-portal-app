@@ -2126,14 +2126,16 @@ tinymce.init({
                 notesWindow.style.top = 'auto';
             }
             
-            // Restore minimized state (default: SHOWN)
+            // Restore minimized state (default: HIDDEN)
             const wasMinimized = localStorage.getItem('notesWindowMinimized');
-            if (wasMinimized === 'true') {
-                minimizeFloatingNotes();
-            } else {
-                // Show window by default
+            if (wasMinimized === 'false') {
+                // Window was previously open, restore it
                 notesWindow.style.display = 'flex';
                 document.getElementById('minimizeNotesButton').style.display = 'none';
+            } else {
+                // Hide window by default, show the toggle button
+                notesWindow.style.display = 'none';
+                document.getElementById('minimizeNotesButton').style.display = 'block';
             }
         });
         
