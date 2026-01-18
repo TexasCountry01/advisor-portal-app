@@ -1069,7 +1069,9 @@ def reassign_case(request, case_id):
     
     # Permission check - only managers and admins can reassign
     if user.role not in ['administrator', 'manager']:
-        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        return redirect('case_detail', pk=case_id)
     
     if request.method == 'POST':
         # Form sends 'assigned_to' parameter with technician ID
@@ -1077,7 +1079,10 @@ def reassign_case(request, case_id):
         reason = request.POST.get('reason', 'Manual reassignment')
         
         if not new_technician_id:
-            return JsonResponse({'success': False, 'error': 'No technician selected'}, status=400)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'No technician selected'}, status=400)
+            messages.error(request, 'No technician selected')
+            return redirect('case_detail', pk=case_id)
         
         try:
             new_technician = User.objects.get(id=new_technician_id, role='technician')
@@ -1103,15 +1108,24 @@ def reassign_case(request, case_id):
             logger.info(f'Case {case.id} reassigned from {old_technician.username if old_technician else "Unassigned"} '
                        f'to {new_technician.username} by {user.username}. Reason: {reason}')
             
-            return JsonResponse({
-                'success': True, 
-                'message': f'Case reassigned to {new_technician.get_full_name() or new_technician.username}',
-                'new_assignee': new_technician.get_full_name() or new_technician.username
-            })
+            # Return JSON for AJAX requests, redirect for traditional form submissions
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True, 
+                    'message': f'Case reassigned to {new_technician.get_full_name() or new_technician.username}',
+                    'new_assignee': new_technician.get_full_name() or new_technician.username
+                })
+            else:
+                messages.success(request, f'Case reassigned to {new_technician.get_full_name() or new_technician.username}')
+                return redirect('case_detail', pk=case_id)
+                
         except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'Technician not found'}, status=404)
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': False, 'error': 'Technician not found'}, status=404)
+            messages.error(request, 'Technician not found')
+            return redirect('case_detail', pk=case_id)
     
-    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+    return redirect('case_detail', pk=case_id)
 
 
 @login_required
