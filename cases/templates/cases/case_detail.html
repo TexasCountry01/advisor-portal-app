@@ -98,23 +98,25 @@
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
-                {% if case.status in 'submitted,resubmitted' %}
-                    <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
-                        <i class="bi bi-clipboard-check"></i> Review & Accept
-                    </a>
-                {% elif not case.assigned_to or case.assigned_to != user %}
-                <button type="button" class="btn btn-outline-success" onclick="takeOwnership({{ case.id }})">
-                    <i class="bi bi-hand-thumbs-up"></i> Take Ownership
-                </button>
-                {% else %}
-                <span class="badge bg-success">
-                    <i class="bi bi-check-circle"></i> You own this case
-                </span>
-                {% if case.status in 'accepted,hold' %}
-                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
-                        <i class="bi bi-arrow-repeat"></i> Reassign
+                {% if not case.assigned_to or case.assigned_to != user %}
+                    <!-- Technician can take ownership on any status, or review if submitted/resubmitted -->
+                    {% if case.status in 'submitted,resubmitted' %}
+                        <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
+                            <i class="bi bi-clipboard-check"></i> Review & Accept
+                        </a>
+                    {% endif %}
+                    <button type="button" class="btn btn-outline-success" onclick="takeOwnership({{ case.id }})">
+                        <i class="bi bi-hand-thumbs-up"></i> Take Ownership
                     </button>
-                {% endif %}
+                {% else %}
+                    <span class="badge bg-success">
+                        <i class="bi bi-check-circle"></i> You own this case
+                    </span>
+                    {% if case.status in 'accepted,hold' %}
+                        <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
+                            <i class="bi bi-arrow-repeat"></i> Reassign
+                        </button>
+                    {% endif %}
                 {% endif %}
             {% elif user.role == 'manager' %}
                 <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
