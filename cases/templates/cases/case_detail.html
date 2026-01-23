@@ -890,6 +890,26 @@
                     </div>
                 </div>
 
+                <!-- Member Update Notification -->
+                {% if case.member_last_update_date %}
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning bg-opacity-10">
+                        <h5 class="mb-0 text-warning">
+                            <i class="bi bi-exclamation-circle"></i> Member Update
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-2">Member has provided new information or documents.</p>
+                        <small class="text-muted d-block">
+                            <i class="bi bi-calendar-event"></i> {{ case.member_last_update_date|date:"M d, Y \a\t g:i A" }}
+                        </small>
+                        <small class="text-muted d-block">
+                            <i class="bi bi-person"></i> {{ case.member.first_name }} {{ case.member.last_name }}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Member Notification Status -->
                 {% if case.status == 'completed' %}
                 <div class="card mb-4">
@@ -1014,9 +1034,6 @@
                                 <button type="button" class="btn btn-outline-success btn-lg" onclick="takeOwnership({{ case.id }})">
                                     <i class="bi bi-hand-thumbs-up"></i> Take Ownership
                                 </button>
-                                <p class="text-muted small mt-3 mb-0">
-                                    <i class="bi bi-info-circle"></i> Click to take ownership of this case and begin processing.
-                                </p>
                                 <p class="text-muted small mt-3 mb-0">
                                     <i class="bi bi-info-circle"></i> Click to take ownership of this case and begin processing.
                                 </p>

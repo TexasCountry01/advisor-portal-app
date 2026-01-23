@@ -39,6 +39,22 @@
                         <!-- Urgency is automatically determined by due date -->
                         <input type="hidden" id="urgency" name="urgency" value="{{ case.urgency }}">
 
+                        <!-- Employee Name Fields -->
+                        <div class="alert alert-info mb-3">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> These fields can only be edited if there are corrections needed to the employee information.
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="employee_first_name" class="form-label">Employee First Name</label>
+                                <input type="text" id="employee_first_name" name="employee_first_name" class="form-control" value="{{ case.employee_first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="employee_last_name" class="form-label">Employee Last Name</label>
+                                <input type="text" id="employee_last_name" name="employee_last_name" class="form-control" value="{{ case.employee_last_name }}">
+                            </div>
+                        </div>
+
                         <!-- Due Date -->
                         <div class="mb-3">
                             <label for="date_due" class="form-label">Due Date <span class="text-danger">*</span></label>
@@ -74,11 +90,17 @@
                             <small class="form-text text-muted">How many retirement benefit reports are needed for this employee</small>
                         </div>
 
-                        <!-- Member Notes -->
+                        <!-- Member Notes (Add New Notes Only) -->
                         <div class="mb-3">
-                            <label for="special_notes" class="form-label">Member Notes</label>
-                            <textarea id="special_notes" name="special_notes" class="form-control" rows="4" placeholder="Any additional notes or context about this case">{{ case.special_notes }}</textarea>
-                            <small class="form-text text-muted">Internal notes visible only to the benefits team</small>
+                            <label for="special_notes" class="form-label">Add Additional Notes</label>
+                            {% if case.special_notes %}
+                                <div class="bg-light p-2 rounded mb-2" style="border: 1px solid #dee2e6;">
+                                    <small class="text-muted d-block mb-2"><strong>Previous Notes:</strong></small>
+                                    <div style="font-size: 0.9rem; white-space: pre-wrap;">{{ case.special_notes }}</div>
+                                </div>
+                            {% endif %}
+                            <textarea id="special_notes" name="special_notes" class="form-control" rows="4" placeholder="Add any additional notes or information for the benefits team..."></textarea>
+                            <small class="form-text text-muted">New notes will be appended with timestamp. Previous notes cannot be edited for audit trail purposes.</small>
                         </div>
 
                         <!-- Buttons -->

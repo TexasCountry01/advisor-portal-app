@@ -671,6 +671,22 @@ def case_detail(request, pk):
         messages.error(request, 'You do not have permission to view this case.')
         return redirect('home')
     
+    # Reset has_member_updates flag when technician/admin views the case detail
+    # This happens only when technician starts working on it (opens the case detail page)
+    if user.role in ['technician', 'administrator'] and case.has_member_updates:
+        case.has_member_updates = False
+        case.save(update_fields=['has_member_updates'])
+        # Log this action
+        from core.models import AuditLog
+        AuditLog.objects.create(
+            user=user,
+            action_type='member_updates_viewed',
+            case=case,
+            details={
+                'message': 'Technician/Admin viewed case with member updates, flag reset'
+            }
+        )
+    
     # Handle draft edit POST requests
     if request.method == 'POST' and request.POST.get('edit_draft'):
         if case.status == 'draft' and user.role == 'member' and case.member == user:
@@ -1010,7 +1026,10 @@ def admin_take_ownership(request, case_id):
 
 @login_required
 def edit_case(request, pk):
-    """Edit case details (members only, before submission)"""
+    """Edit case details (members can edit before or after submission)"""
+    from django.utils import timezone
+    from core.models import AuditLog
+    
     user = request.user
     case = get_object_or_404(Case, pk=pk)
     
@@ -1019,17 +1038,25 @@ def edit_case(request, pk):
         messages.error(request, 'You do not have permission to edit this case.')
         return redirect('cases:case_detail', pk=pk)
     
-    # Check if case can be edited
-    if case.status == 'submitted':
-        messages.error(request, 'Cannot edit a submitted case.')
+    # Members can edit before submission OR after submission (collaborative workflow)
+    # Restriction: cannot edit after case is completed
+    if case.status in ['completed', 'hold']:
+        messages.error(request, 'Cannot edit a case in this status.')
         return redirect('cases:case_detail', pk=pk)
     
     if request.method == 'POST':
+        # Track changes for audit log
+        changes = []
+        old_values = {}
+        new_values = {}
+        
         # Get form data
         urgency = request.POST.get('urgency', case.urgency)
         num_reports = request.POST.get('num_reports_requested', case.num_reports_requested)
         due_date = request.POST.get('date_due', case.date_due)
-        special_notes = request.POST.get('special_notes', case.special_notes)
+        special_notes_new = request.POST.get('special_notes', '')  # New notes only
+        employee_first_name = request.POST.get('employee_first_name', case.employee_first_name)
+        employee_last_name = request.POST.get('employee_last_name', case.employee_last_name)
         
         # Validate data
         try:
@@ -1043,13 +1070,69 @@ def edit_case(request, pk):
         if urgency not in ['normal', 'rush']:
             urgency = case.urgency
         
+        # Track changes
+        if urgency != case.urgency:
+            changes.append('urgency')
+            old_values['urgency'] = case.urgency
+            new_values['urgency'] = urgency
+        
+        if num_reports != case.num_reports_requested:
+            changes.append('num_reports_requested')
+            old_values['num_reports_requested'] = case.num_reports_requested
+            new_values['num_reports_requested'] = num_reports
+        
+        if due_date != case.date_due:
+            changes.append('date_due')
+            old_values['date_due'] = str(case.date_due)
+            new_values['date_due'] = str(due_date)
+        
+        if employee_first_name != case.employee_first_name:
+            changes.append('employee_first_name')
+            old_values['employee_first_name'] = case.employee_first_name
+            new_values['employee_first_name'] = employee_first_name
+        
+        if employee_last_name != case.employee_last_name:
+            changes.append('employee_last_name')
+            old_values['employee_last_name'] = case.employee_last_name
+            new_values['employee_last_name'] = employee_last_name
+        
+        if special_notes_new:
+            changes.append('special_notes_added')
+            old_values['special_notes_added'] = None
+            new_values['special_notes_added'] = special_notes_new
+        
         # Update case
         case.urgency = urgency
         case.num_reports_requested = num_reports
         if due_date:
             case.date_due = due_date
-        case.special_notes = special_notes
+        # Append new notes to existing notes (don't overwrite)
+        if special_notes_new:
+            separator = '\n---\n' if case.special_notes else ''
+            case.special_notes = f"{case.special_notes}{separator}[{timezone.now().strftime('%m/%d/%Y %I:%M %p')}] {special_notes_new}"
+        
+        # Set member updates flag if case is submitted/accepted/pending_review (after submission)
+        if case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted']:
+            case.has_member_updates = True
+            case.member_last_update_date = timezone.now()
+        
         case.save()
+        
+        # Create audit log entry
+        if changes:
+            audit_details = {
+                'changes': changes,
+                'old_values': old_values,
+                'new_values': new_values,
+                'case_status': case.status,
+                'is_post_submission': case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted']
+            }
+            AuditLog.objects.create(
+                user=user,
+                action_type='case_edited_by_member',
+                case=case,
+                details=audit_details
+            )
         
         messages.success(request, 'Case details updated successfully.')
         return redirect('cases:case_detail', pk=pk)
@@ -1692,6 +1775,8 @@ def get_view_preference(request):
 def upload_member_document_to_completed_case(request, case_id):
     """Allow members to upload supplementary documents to their cases"""
     from cases.models import CaseDocument
+    from django.utils import timezone
+    from core.models import AuditLog
     import os
     
     user = request.user
@@ -1703,8 +1788,8 @@ def upload_member_document_to_completed_case(request, case_id):
         return redirect('cases:case_detail', pk=case_id)
     
     # Check if case is in an appropriate status for member document upload
-    # Allow uploads for: completed (resubmission), pending_review, accepted, and draft statuses
-    allowed_statuses = ['draft', 'completed', 'pending_review', 'accepted']
+    # Allow uploads for: draft, submitted, accepted, pending_review, completed (resubmission)
+    allowed_statuses = ['draft', 'submitted', 'completed', 'pending_review', 'accepted', 'resubmitted']
     if case.status not in allowed_statuses:
         messages.error(request, f'You cannot upload documents to cases in {case.get_status_display()} status.')
         return redirect('cases:case_detail', pk=case_id)
@@ -1727,7 +1812,7 @@ def upload_member_document_to_completed_case(request, case_id):
         filename_with_employee = f"{fed_last_name}_{document_file.name}"
         
         # Create document with 'supporting' type
-        CaseDocument.objects.create(
+        doc = CaseDocument.objects.create(
             case=case,
             document_type='supporting',  # Using 'supporting' type for member supplements
             original_filename=filename_with_employee,
@@ -1736,6 +1821,26 @@ def upload_member_document_to_completed_case(request, case_id):
             file=document_file,
             notes=document_notes if document_notes else 'Member supplementary document',
         )
+        
+        # Set member updates flag if case is after submission (submitted, accepted, pending_review, resubmitted, completed)
+        if case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted', 'completed']:
+            case.has_member_updates = True
+            case.member_last_update_date = timezone.now()
+            case.save(update_fields=['has_member_updates', 'member_last_update_date'])
+            
+            # Create audit log entry
+            AuditLog.objects.create(
+                user=user,
+                action_type='member_document_uploaded',
+                case=case,
+                details={
+                    'filename': filename_with_employee,
+                    'file_size': document_file.size,
+                    'document_notes': document_notes,
+                    'case_status': case.status,
+                    'message': 'Member uploaded supplementary document'
+                }
+            )
         
         # Show updated document count
         from cases.services.document_count_service import get_document_count_message

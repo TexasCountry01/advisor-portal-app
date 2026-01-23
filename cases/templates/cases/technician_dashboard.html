@@ -276,6 +276,27 @@
                 #id-column { min-width: 40px; text-align: center; }
                 #code-column { min-width: 80px; text-align: left; }
             </style>
+
+            <!-- Status Legend -->
+            <div class="mb-3 p-2" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; border-radius: 0.25rem;">
+                <div class="d-flex align-items-start gap-2">
+                    <i class="bi bi-info-circle" style="color: #0d6efd; margin-top: 2px;"></i>
+                    <div>
+                        <strong>Status Legend:</strong>
+                        <div style="font-size: 0.9rem; margin-top: 4px;">
+                            <span class="badge bg-secondary">Submitted</span> - Case received and waiting for technician to start
+                            <span class="badge bg-info ms-2">Resubmitted</span> - Case re-submitted after member revisions
+                            <span class="badge bg-primary ms-2">Accepted</span> - Case accepted by technician
+                            <span class="badge bg-info ms-2">Pending Review</span> - Awaiting quality review
+                            <span class="badge bg-danger ms-2">On Hold</span> - Case temporarily paused
+                            <span class="badge bg-success ms-2">Completed</span> - Case completed and ready for release
+                            <span class="badge bg-warning ms-2">Scheduled</span> - Scheduled for release on future date
+                            <span class="badge bg-info ms-2">Working</span> - Currently being worked on
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover table-sm">
                     <thead>
@@ -319,10 +340,9 @@
                             <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
                             <th data-column-id="notes" {% if 'notes' not in visible_columns %}class="column-hidden"{% endif %}>Notes</th>
                             <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
-                            <!-- COMMENTED OUT: Completed Column Header - 01/11/2026
-                                 Reason: Completed date removed from dashboard. Status column shows release status.
-                            <th>Completed</th>
-                            -->
+                            <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}>
+                                <a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Completed</a>
+                            </th>
                             <th data-column-id="actions" {% if 'actions' not in visible_columns %}class="column-hidden"{% endif %}>Actions</th>
                         </tr>
                     </thead>
@@ -337,7 +357,16 @@
                                 </a>
                             </td>
                             -->
-                            <td id="code-column" class="column-code {% if 'code' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
+                            <td id="code-column" class="column-code {% if 'code' not in visible_columns %}column-hidden{% endif %}">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span>{{ case.workshop_code }}</span>
+                                    {% if case.has_member_updates %}
+                                    <span class="badge bg-warning text-dark" title="Member has provided new information">
+                                        <i class="bi bi-info-circle"></i> New Info
+                                    </span>
+                                    {% endif %}
+                                </div>
+                            </td>
                             <td class="column-member {% if 'member' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.member.get_full_name %}
                                     {{ case.member.get_full_name }}
@@ -458,16 +487,13 @@
                                     —
                                 {% endif %}
                             </td>
-                            <!-- COMMENTED OUT: Completed Column Cell - 01/11/2026
-                                 Reason: Completed date removed from dashboard.
-                            <td>
+                            <td class="column-date_completed {% if 'date_completed' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_completed %}
                                     {{ case.date_completed|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            -->
                             <td class="column-actions" style="min-width: 200px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View

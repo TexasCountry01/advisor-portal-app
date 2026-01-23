@@ -399,6 +399,18 @@ class Case(models.Model):
         help_text='Notes from member explaining why the case is being resubmitted'
     )
     
+    # Member Updates Tracking (for post-submission edits/uploads)
+    has_member_updates = models.BooleanField(
+        default=False,
+        help_text='Flag indicating member has provided new information/documents after submission'
+    )
+    
+    member_last_update_date = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When the member last updated the case (after initial submission)'
+    )
+    
     # Additional fields for internal tracking
     notes = models.TextField(blank=True, help_text='Internal notes not visible to member')
     created_at = models.DateTimeField(auto_now_add=True)
