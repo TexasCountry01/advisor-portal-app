@@ -223,8 +223,8 @@
                             <th data-column-id="credit" {% if 'credit' not in visible_columns %}class="column-hidden"{% endif %}>Credit</th>
                             <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}>Submitted</th>
                             <th data-column-id="accepted" {% if 'accepted' not in visible_columns %}class="column-hidden"{% endif %}>Accepted</th>
-                            <th>Completed</th>
-                            <th>Actions</th>
+                            <th data-column-id="completed" {% if 'completed' not in visible_columns %}class="column-hidden"{% endif %}>Completed</th>
+                            <th data-column-id="actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -285,7 +285,7 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-completed {% if 'completed' not in visible_columns %}column-hidden"{% endif %}">
+                            <td class="column-completed {% if 'completed' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'completed' and case.actual_release_date %}
                                     <span class="badge bg-success">✓ Ready</span>
                                 {% elif case.status == 'completed' and case.scheduled_release_date and not case.actual_release_date %}
