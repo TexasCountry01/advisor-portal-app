@@ -249,24 +249,24 @@
                             </td>
                             <td class="column-status {% if 'status' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'pending_review' %}
-                                    <span class="badge bg-info">Pending Review</span>
+                                    <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'submitted' %}
-                                    <span class="badge bg-secondary">Submitted</span>
+                                    <span class="badge bg-secondary" title="Case received and waiting for technician to start">Submitted</span>
                                 {% elif case.status == 'resubmitted' %}
-                                    <span class="badge bg-info">Resubmitted</span>
+                                    <span class="badge bg-info" title="Case re-submitted after member revisions">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-primary">Accepted</span>
+                                    <span class="badge bg-primary" title="Case accepted by technician">Accepted</span>
                                 {% elif case.status == 'hold' %}
-                                    <span class="badge bg-danger">On Hold</span>
+                                    <span class="badge bg-danger" title="Case temporarily paused">On Hold</span>
                                 {% elif case.status == 'draft' %}
-                                    <span class="badge bg-danger">Draft</span>
+                                    <span class="badge bg-danger" title="Draft case not yet submitted">Draft</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
-                                        <span class="badge bg-success" title="Report is ready to download">✓ Ready</span>
+                                        <span class="badge bg-success" title="Case released - report is ready to download">✓ Released</span>
                                     {% elif case.scheduled_release_date %}
-                                        <span class="badge bg-warning" title="Available on {{ case.scheduled_release_date|date:'M j, Y' }}">⏳ Available {{ case.scheduled_release_date|date:"m/d" }}</span>
+                                        <span class="badge bg-warning" title="Case complete but scheduled for release on {{ case.scheduled_release_date|date:'M j, Y' }}">⏳ Scheduled {{ case.scheduled_release_date|date:"m/d" }}</span>
                                     {% else %}
-                                        <span class="badge bg-info">In Progress</span>
+                                        <span class="badge bg-info" title="Currently being worked on">In Progress</span>
                                     {% endif %}
                                 {% endif %}
                             </td>
@@ -285,7 +285,25 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-completed {% if 'completed' not in visible_columns %}column-hidden"{% endif %} style="min-width: 250px;">
+                            <td class="column-completed {% if 'completed' not in visible_columns %}column-hidden"{% endif %}">
+                                {% if case.status == 'completed' and case.actual_release_date %}
+                                    <span class="badge bg-success">✓ Ready</span>
+                                {% elif case.status == 'completed' and case.scheduled_release_date and not case.actual_release_date %}
+                                    <span class="badge bg-warning" title="Available on {{ case.scheduled_release_date|date:'M j, Y' }}">⏳ Scheduled</span>
+                                {% elif case.status == 'completed' %}
+                                    <span class="badge bg-info">In Progress</span>
+                                {% elif case.status == 'draft' %}
+                                    <span class="badge bg-warning">Draft</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">—</span>
+                                {% endif %}
+                                {% if case.status == 'completed' and case.is_resubmitted %}
+                                <br><span class="badge bg-info" title="This case has been resubmitted" style="margin-top: 0.25rem;">
+                                    <i class="bi bi-arrow-repeat"></i> Resubmitted #{{ case.resubmission_count }}
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td style="min-width: 280px; white-space: nowrap;">
                                 {% if case.status == 'completed' and case.actual_release_date %}
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-success" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible; font-weight: 500;" title="Your report is ready to download!">
                                     <i class="bi bi-download"></i> Download
@@ -298,18 +316,6 @@
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
-                                {% endif %}
-                                <!-- COMMENTED OUT: PDF Button - 01/11/2026
-                                     Reason: PDF viewer moved to Case Details page. Users can access PDF from there.
-                                     Link: {% url 'cases:view_fact_finder_pdf' case.id %}
-                                <a href="{% url 'cases:view_fact_finder_pdf' case.id %}" target="_blank" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
-                                    <i class="bi bi-file-pdf"></i> PDF
-                                </a>
-                                -->
-                                {% if case.status == 'completed' and case.is_resubmitted %}
-                                <span class="badge bg-info" title="This case has been resubmitted">
-                                    <i class="bi bi-arrow-repeat"></i> Resubmitted #{{ case.resubmission_count }}
-                                </span>
                                 {% endif %}
                                 {% if case.status == 'draft' %}
                                 <button class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" onclick="submitCaseFinal({{ case.id }})">

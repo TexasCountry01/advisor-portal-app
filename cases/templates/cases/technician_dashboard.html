@@ -277,26 +277,6 @@
                 #code-column { min-width: 80px; text-align: left; }
             </style>
 
-            <!-- Status Legend -->
-            <div class="mb-3 p-2" style="background-color: #f8f9fa; border-left: 4px solid #0d6efd; border-radius: 0.25rem;">
-                <div class="d-flex align-items-start gap-2">
-                    <i class="bi bi-info-circle" style="color: #0d6efd; margin-top: 2px;"></i>
-                    <div>
-                        <strong>Status Legend:</strong>
-                        <div style="font-size: 0.9rem; margin-top: 4px;">
-                            <span class="badge bg-secondary">Submitted</span> - Case received and waiting for technician to start
-                            <span class="badge bg-info ms-2">Resubmitted</span> - Case re-submitted after member revisions
-                            <span class="badge bg-primary ms-2">Accepted</span> - Case accepted by technician
-                            <span class="badge bg-info ms-2">Pending Review</span> - Awaiting quality review
-                            <span class="badge bg-danger ms-2">On Hold</span> - Case temporarily paused
-                            <span class="badge bg-success ms-2">Completed</span> - Case completed and ready for release
-                            <span class="badge bg-warning ms-2">Scheduled</span> - Scheduled for release on future date
-                            <span class="badge bg-info ms-2">Working</span> - Currently being worked on
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <div class="table-responsive">
                 <table class="table table-hover table-sm">
                     <thead>
@@ -390,22 +370,22 @@
                             </td>
                             <td class="column-status {% if 'status' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'submitted' %}
-                                    <span class="badge bg-secondary">Submitted</span>
+                                    <span class="badge bg-secondary" title="Case received and waiting for technician to start">Submitted</span>
                                 {% elif case.status == 'resubmitted' %}
-                                    <span class="badge bg-info">Resubmitted</span>
+                                    <span class="badge bg-info" title="Case re-submitted after member revisions">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-primary">Accepted</span>
+                                    <span class="badge bg-primary" title="Case accepted by technician">Accepted</span>
                                 {% elif case.status == 'pending_review' %}
-                                    <span class="badge bg-info">Pending Review</span>
+                                    <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'hold' %}
-                                    <span class="badge bg-danger">On Hold</span>
+                                    <span class="badge bg-danger" title="Case temporarily paused">On Hold</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
-                                        <span class="badge bg-success">Completed</span>
+                                        <span class="badge bg-success" title="Case completed and released to member">Completed</span>
                                     {% elif case.scheduled_release_date %}
-                                        <span class="badge bg-warning">Scheduled for Release</span>
+                                        <span class="badge bg-warning" title="Completed but scheduled for future release">Scheduled for Release</span>
                                     {% else %}
-                                        <span class="badge bg-info">Working</span>
+                                        <span class="badge bg-info" title="Currently being worked on">Working</span>
                                     {% endif %}
                                 {% endif %}
                             </td>
