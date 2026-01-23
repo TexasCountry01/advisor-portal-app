@@ -338,12 +338,10 @@
                                 <a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Tier</a>
                             </th>
                             <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
-                            <th data-column-id="notes" {% if 'notes' not in visible_columns %}class="column-hidden"{% endif %}>Notes</th>
                             <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
                             <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Completed</a>
                             </th>
-                            <th data-column-id="actions" {% if 'actions' not in visible_columns %}class="column-hidden"{% endif %}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -436,10 +434,7 @@
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 {% else %}
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="takeOwnership({{ case.id }})">
-                                        <i class="bi bi-hand-thumbs-up"></i> Take
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}">
+                                    <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 {% endif %}
@@ -469,13 +464,6 @@
                                     <span class="text-muted">None</span>
                                 {% endif %}
                             </td>
-                            <td class="column-notes {% if 'notes' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.report_notes %}
-                                    <small>{{ case.report_notes|length }} note(s)</small>
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
                             <td class="column-on_time {% if 'on_time' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'completed' and case.date_completed and case.date_due %}
                                     {% if case.date_completed|date:"Y-m-d" <= case.date_due|date:"Y-m-d" %}
@@ -493,18 +481,6 @@
                                 {% else %}
                                     —
                                 {% endif %}
-                            </td>
-                            <td class="column-actions" style="min-width: 200px;">
-                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
-                                    <i class="bi bi-eye"></i> View
-                                </a>
-                                <!-- COMMENTED OUT: PDF Button - 01/11/2026
-                                     Reason: PDF viewer moved to Case Details page. Users can access PDF from there.
-                                     Link: {% url 'cases:view_fact_finder_pdf' case.id %}
-                                    <a href="{% url 'cases:view_fact_finder_pdf' case.id %}" target="_blank" class="btn btn-sm btn-outline-success" style="display: inline-block; min-width: 55px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
-                                    <i class="bi bi-file-pdf"></i> PDF
-                                </a>
-                                -->
                             </td>
                         </tr>
                         {% endfor %}
@@ -553,43 +529,6 @@
 </div>
 
 <script>
-    function takeOwnership(caseId) {
-        if (!confirm('Take ownership of this case?')) {
-            return;
-        }
-        
-        const formData = new FormData();
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
-        
-        fetch(`/cases/${caseId}/take-ownership/`, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': csrfToken
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.error || `HTTP ${response.status}`);
-                });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || 'Failed to take ownership'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error: ' + error.message);
-        });
-    }
-    
     function reassignCase(caseId) {
         const selectId = `technician${caseId}`;
         const technicianId = document.getElementById(selectId).value;

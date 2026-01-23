@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #dc3545;
+            color: white;
+            padding: 20px;
+            border-radius: 5px 5px 0 0;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .content {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 0 0 5px 5px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section h2 {
+            color: #dc3545;
+            font-size: 18px;
+            margin-top: 0;
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+        }
+        .reason-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        .case-details {
+            background-color: white;
+            padding: 15px;
+            border-left: 4px solid #0d6efd;
+            margin: 15px 0;
+            border-radius: 3px;
+        }
+        .case-details p {
+            margin: 8px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #dc3545;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        .cta-button:hover {
+            background-color: #c82333;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .alert {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>⚠️ Your Case Requires Action</h1>
+            <p style="margin: 10px 0 0 0; font-size: 14px;">Case ID: {{ case_id }}</p>
+        </div>
+        
+        <div class="content">
+            <p>Hello {{ member_name }},</p>
+            
+            <div class="alert">
+                <strong>Your case {{ case_id }} (for {{ employee_name }}) has been placed on hold and requires your attention.</strong>
+            </div>
+            
+            <div class="section">
+                <h2>📋 Why Your Case Is on Hold</h2>
+                <div class="reason-box">
+                    {{ hold_reason }}
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>📝 Case Information</h2>
+                <div class="case-details">
+                    <p><strong>Case ID:</strong> {{ case_id }}</p>
+                    <p><strong>Employee:</strong> {{ employee_name }}</p>
+                    <p><strong>Current Status:</strong> <span style="color: #dc3545; font-weight: bold;">On Hold - Action Required</span></p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>📤 Next Steps</h2>
+                <p>Please log into your account and visit your case to:</p>
+                <ul>
+                    <li>Review the reason for hold</li>
+                    <li>Upload any additional documents or information requested</li>
+                    <li>Add notes if needed</li>
+                </ul>
+                
+                <center>
+                    <a href="{{ case_detail_url }}" class="cta-button">View & Update Your Case</a>
+                </center>
+            </div>
+            
+            <div class="section">
+                <h2>❓ Questions?</h2>
+                <p>If you have any questions or need assistance uploading documents, please contact our support team.</p>
+            </div>
+            
+            <div class="footer">
+                <p>This is an automated message from {{ app_name }}. Please do not reply to this email.</p>
+                <p>© 2026 {{ app_name }}. All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

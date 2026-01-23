@@ -56,6 +56,12 @@ urlpatterns = [
     path('<int:case_id>/put-on-hold/', views.put_case_on_hold, name='put_on_hold'),
     path('<int:case_id>/resume-from-hold/', views.resume_case_from_hold, name='resume_from_hold'),
     
+    # Notification Management Views - Option 3 Premium Features
+    path('api/notifications/', views.get_member_notifications, name='get_member_notifications'),
+    path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
+    path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
+    path('api/hold-cases/', views.get_hold_cases, name='get_hold_cases'),
+    
     # View preference API
     path('api/view-preference/save/<str:view_type>/', views.save_view_preference, name='save_view_preference'),
     path('api/view-preference/get/', views.get_view_preference, name='get_view_preference'),

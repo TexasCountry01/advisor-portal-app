@@ -1,0 +1,25 @@
+Case {{ case_id }} - On Hold Notification
+
+Hello {{ member_name }},
+
+Your case {{ case_id }} (for {{ employee_name }}) has been placed on hold and requires your attention.
+
+REASON FOR HOLD:
+{{ hold_reason }}
+
+NEXT STEPS:
+Please log into your account and visit your case to upload any additional documents or information requested.
+
+CASE DETAILS:
+- Case ID: {{ case_id }}
+- Employee: {{ employee_name }}
+- Status: On Hold - Action Required
+
+UPLOAD DOCUMENTS:
+You can upload additional documents by visiting your case at the link below:
+{{ case_detail_url }}
+
+If you have any questions or need assistance, please contact our support team.
+
+Best regards,
+{{ app_name }} Team

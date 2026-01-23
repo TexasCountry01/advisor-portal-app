@@ -22,9 +22,50 @@
             <a href="{% url 'cases:case_submit' %}" class="btn btn-primary me-2">
                 <i class="bi bi-plus-circle"></i> Submit New Case
             </a>
+            <button type="button" class="btn btn-outline-info me-2" data-bs-toggle="offcanvas" data-bs-target="#notificationOffcanvas" id="notification-toggle">
+                <i class="bi bi-bell"></i> Notifications
+                <span class="badge bg-danger" id="unread-badge" style="display:none;"></span>
+            </button>
             <a href="{% url 'logout' %}" class="btn btn-outline-danger">
                 <i class="bi bi-box-arrow-right"></i> Logout
             </a>
+        </div>
+    </div>
+
+    <!-- Cases on Hold Alert Section -->
+    <div id="hold-cases-section" style="display:none;">
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <div class="d-flex align-items-center">
+                <div class="flex-grow-1">
+                    <h5 class="alert-heading mb-2"><i class="bi bi-exclamation-triangle-fill"></i> You Have Cases on Hold</h5>
+                    <p id="hold-cases-list" class="mb-0"></p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    </div>
+
+    <!-- Notification Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="notificationOffcanvas" aria-labelledby="notificationOffcanvasLabel">
+        <div class="offcanvas-header bg-info text-white">
+            <h5 class="offcanvas-title" id="notificationOffcanvasLabel">
+                <i class="bi bi-bell"></i> Notifications
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div id="notifications-container" style="max-height: calc(100vh - 120px); overflow-y: auto;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-info" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="border-top p-3 mt-auto">
+                <button type="button" class="btn btn-sm btn-outline-info w-100" id="mark-all-read-btn">
+                    Mark All as Read
+                </button>
+            </div>
         </div>
     </div>
 
@@ -603,6 +644,186 @@ function submitCaseFinal(caseId) {
         }
         return cookieValue;
     }
+
+    // ========================================================================
+    // NOTIFICATION CENTER - OPTION 3 PREMIUM FEATURES
+    // ========================================================================
+    
+    /**
+     * Load and display member notifications
+     * - Fetches all notifications from get_member_notifications API
+     * - Displays unread notifications first
+     * - Shows hold reason in notification details
+     */
+    function loadNotifications() {
+        fetch('{% url "cases:get_member_notifications" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayNotifications(data);
+                    updateNotificationBadge(data.unread_count);
+                    
+                    // Load and display hold cases
+                    loadHoldCases();
+                }
+            })
+            .catch(error => console.error('Error loading notifications:', error));
+    }
+    
+    /**
+     * Display notifications in offcanvas sidebar
+     * - Shows notification title, message, and hold reason
+     * - Different styling for unread vs read
+     * - Click to mark as read
+     */
+    function displayNotifications(data) {
+        const container = document.getElementById('notifications-container');
+        
+        if (data.notifications.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">No notifications</div>';
+            return;
+        }
+        
+        let html = '';
+        data.notifications.forEach(notif => {
+            const badgeClass = notif.is_read ? 'bg-light text-dark' : 'bg-warning text-dark';
+            const icon = notif.notification_type.includes('hold') ? 'exclamation-triangle' : 'info-circle';
+            
+            html += `
+                <div class="notification-item p-3 border-bottom" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f8f9fa;'}">
+                    <div class="d-flex gap-2">
+                        <i class="bi bi-${icon} flex-shrink-0 mt-1"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">${notif.title}</h6>
+                            <p class="text-muted small mb-1">${notif.message}</p>
+                            ${notif.hold_reason ? `<div class="alert alert-light border-left-warning p-2 small mb-2"><strong>Reason:</strong> ${notif.hold_reason}</div>` : ''}
+                            <div class="d-flex gap-2">
+                                <small class="text-muted">${notif.created_at}</small>
+                                ${!notif.is_read ? `<button class="btn btn-link btn-sm p-0" onclick="markNotificationRead(${notif.id})">Mark as read</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
+    
+    /**
+     * Mark single notification as read
+     * - Updates UI immediately
+     * - Calls API endpoint
+     * - Reloads notification display
+     */
+    function markNotificationRead(notificationId) {
+        fetch(`{% url "cases:mark_notification_read" 0 %}`.replace('0', notificationId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadNotifications();
+            }
+        })
+        .catch(error => console.error('Error marking notification as read:', error));
+    }
+    
+    /**
+     * Mark all notifications as read
+     * - Bulk operation
+     * - Reloads notification display
+     */
+    function markAllNotificationsRead() {
+        fetch('{% url "cases:mark_all_notifications_read" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCsrfToken()
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                loadNotifications();
+            }
+        })
+        .catch(error => console.error('Error marking all as read:', error));
+    }
+    
+    /**
+     * Update unread notification badge
+     * - Shows red badge with unread count
+     * - Hides if no unread notifications
+     */
+    function updateNotificationBadge(count) {
+        const badge = document.getElementById('unread-badge');
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Load and display cases on hold
+     * - Fetches all cases with status='hold'
+     * - Shows in alert section at top of dashboard
+     * - Includes hold reason and link to case
+     */
+    function loadHoldCases() {
+        fetch('{% url "cases:get_hold_cases" %}')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.total_count > 0) {
+                    displayHoldCases(data.cases);
+                }
+            })
+            .catch(error => console.error('Error loading hold cases:', error));
+    }
+    
+    /**
+     * Display hold cases alert
+     * - Shows in prominent alert at top of dashboard
+     * - Lists each case with reason
+     * - Quick link to upload documents
+     */
+    function displayHoldCases(cases) {
+        const section = document.getElementById('hold-cases-section');
+        const list = document.getElementById('hold-cases-list');
+        
+        let html = `<strong>${cases.length} case(s) on hold - Action Required:</strong><ul class="mt-2 mb-0">`;
+        cases.forEach(caseObj => {
+            html += `
+                <li>
+                    <strong>${caseObj.case_id}</strong> (${caseObj.employee})
+                    <br><small class="text-muted">Reason: ${caseObj.hold_reason}</small>
+                    <br><a href="${caseObj.case_detail_url}" class="btn btn-sm btn-warning mt-1">Upload Documents</a>
+                </li>
+            `;
+        });
+        html += '</ul>';
+        
+        list.innerHTML = html;
+        section.style.display = 'block';
+    }
+    
+    // Initialize notifications on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadNotifications();
+        
+        // Set up Mark All Read button
+        document.getElementById('mark-all-read-btn').addEventListener('click', markAllNotificationsRead);
+        
+        // Reload notifications when offcanvas is shown
+        const notificationOffcanvas = document.getElementById('notificationOffcanvas');
+        if (notificationOffcanvas) {
+            notificationOffcanvas.addEventListener('show.bs.offcanvas', loadNotifications);
+        }
+    });
 </script>
 
 <style>
@@ -616,6 +837,20 @@ function submitCaseFinal(caseId) {
     
     #hidden-count {
         font-size: 0.75rem;
+    }
+    
+    /* Notification Center Styles */
+    .notification-item {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .notification-item:hover {
+        background-color: #e9ecef !important;
+    }
+    
+    .border-left-warning {
+        border-left: 4px solid #ffc107 !important;
     }
 </style>
 

@@ -749,3 +749,106 @@ def delete_case_report_file(sender, instance, **kwargs):
     if instance.report_file:
         if os.path.isfile(instance.report_file.path):
             os.remove(instance.report_file.path)
+
+class CaseNotification(models.Model):
+    """
+    In-app notification system for case events (put on hold, updates, etc.)
+    
+    This model tracks:
+    - When members are notified about case status changes
+    - Notification content and metadata
+    - Read/unread status for UI display
+    - Hold reasons and other context
+    
+    Audit Trail: All notifications logged in AuditLog with action_type='notification_created'
+    
+    Fields:
+        case: The case this notification relates to
+        member: The member who receives this notification
+        notification_type: Type of event (e.g., 'case_put_on_hold', 'member_update', 'case_released')
+        title: Notification title (e.g., "Your case has been placed on hold")
+        message: Detailed notification message
+        hold_reason: If notification_type is 'case_put_on_hold', explains why case is on hold
+        is_read: Whether member has viewed this notification
+        created_at: When notification was created
+        read_at: When member viewed the notification (None if unread)
+    """
+    
+    NOTIFICATION_TYPE_CHOICES = [
+        ('case_put_on_hold', 'Case Put on Hold'),
+        ('member_update_received', 'Member Update Received'),
+        ('case_released', 'Case Released'),
+        ('documents_needed', 'Documents Needed'),
+    ]
+    
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        help_text='The case this notification relates to'
+    )
+    
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='case_notifications',
+        limit_choices_to={'role': 'member'},
+        help_text='Member receiving this notification'
+    )
+    
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NOTIFICATION_TYPE_CHOICES,
+        default='case_put_on_hold',
+        help_text='Type of notification event'
+    )
+    
+    title = models.CharField(
+        max_length=255,
+        help_text='Notification title shown to member'
+    )
+    
+    message = models.TextField(
+        help_text='Detailed notification message'
+    )
+    
+    hold_reason = models.TextField(
+        null=True,
+        blank=True,
+        help_text='If case put on hold, the reason why (captured from technician)'
+    )
+    
+    is_read = models.BooleanField(
+        default=False,
+        help_text='Whether member has viewed this notification'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='When notification was created'
+    )
+    
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When member viewed this notification'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['member', '-created_at']),
+            models.Index(fields=['member', 'is_read']),
+            models.Index(fields=['case', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Notification for {self.member} - {self.get_notification_type_display()}"
+    
+    def mark_as_read(self):
+        """Mark notification as read and set read_at timestamp"""
+        from django.utils import timezone
+        if not self.is_read:
+            self.is_read = True
+            self.read_at = timezone.now()
+            self.save()

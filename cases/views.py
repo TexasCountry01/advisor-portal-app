@@ -821,27 +821,69 @@ def release_case_immediately(request, case_id):
 
 @login_required
 def put_case_on_hold(request, case_id):
-    """Put a case on hold - preserves ownership, only changes status"""
+    """
+    Put a case on hold with comprehensive notification system.
+    
+    FUNCTIONALITY:
+    - Changes case status from 'accepted' to 'hold'
+    - Preserves case ownership (assigned_to unchanged)
+    - Sends email to member with hold reason
+    - Creates in-app notification for member
+    - Captures technician-provided reason for hold
+    - Full audit trail of all actions
+    - Enables member document uploads while on hold
+    
+    AUDIT TRAIL:
+    - Logs action in AuditLog with action_type='case_held'
+    - Records hold reason provided by technician
+    - Tracks who initiated hold (user initiating action)
+    - Creates CaseNotification record (also audited)
+    
+    MEMBER NOTIFICATION:
+    - Email sent with case link and hold reason
+    - In-app notification with reason
+    - Member can upload documents while case is on hold
+    - Notification marked as unread until member views dashboard
+    
+    SECURITY:
+    - Requires permission: assigned technician, manager, or admin
+    - Only cases in 'accepted' status can be placed on hold
+    - Member email validation (case must have member)
+    
+    PARAMETERS (POST JSON):
+    - reason (required): Why case is on hold (e.g., "More documents needed", "Awaiting client response")
+    - hold_duration: Duration code (2_hours, 4_hours, 8_hours, 1_day, custom, immediate)
+    """
     from django.http import JsonResponse
     from cases.services.case_audit_service import hold_case
+    from cases.models import CaseNotification
+    from core.models import AuditLog
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils import timezone
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - only assigned technician, manager, or admin can hold
+    # ============================================================================
+    # PERMISSION CHECKS
+    # ============================================================================
+    
+    # Technicians can only hold their own assigned cases
     if user.role == 'technician' and case.assigned_to != user:
         return JsonResponse({
             'success': False,
             'error': 'You can only put cases you are assigned to on hold.'
         }, status=403)
     
+    # Only technician, manager, or admin roles can put cases on hold
     if user.role not in ['technician', 'administrator', 'manager']:
         return JsonResponse({
             'success': False,
             'error': 'You do not have permission to put this case on hold.'
         }, status=403)
     
-    # Check if case is in 'accepted' status (can also be put on hold from other working statuses)
+    # Only cases in 'accepted' status can be placed on hold
     if case.status not in ['accepted']:
         return JsonResponse({
             'success': False,
@@ -850,17 +892,21 @@ def put_case_on_hold(request, case_id):
     
     if request.method == 'POST':
         try:
+            # ====================================================================
+            # PARSE REQUEST DATA
+            # ====================================================================
             body_data = json.loads(request.body) if request.body else {}
             reason = body_data.get('reason', '').strip()
             hold_duration = body_data.get('hold_duration', 'custom')
             
+            # Validate hold reason provided by technician
             if not reason:
                 return JsonResponse({
                     'success': False,
                     'error': 'Please provide a reason for putting the case on hold.'
                 }, status=400)
             
-            # Convert hold_duration to days
+            # Convert hold_duration to days for database storage
             hold_duration_days = None
             if hold_duration == '2_hours':
                 hold_duration_days = 0.083
@@ -873,7 +919,11 @@ def put_case_on_hold(request, case_id):
             elif hold_duration in ['custom', 'immediate']:
                 hold_duration_days = None
             
-            # Use the service to hold the case
+            # ====================================================================
+            # UPDATE CASE STATUS AND LOG IN AUDIT TRAIL
+            # ====================================================================
+            
+            # Use the service to hold the case (this creates primary audit log entry)
             success = hold_case(
                 case=case,
                 user=user,
@@ -881,20 +931,128 @@ def put_case_on_hold(request, case_id):
                 hold_duration_days=hold_duration_days
             )
             
-            if success:
-                return JsonResponse({
-                    'success': True,
-                    'message': f'Case {case.external_case_id} has been placed on hold.',
-                    'new_status': case.status
-                })
-            else:
+            if not success:
                 return JsonResponse({
                     'success': False,
                     'error': 'Failed to place case on hold. Please try again.'
                 }, status=500)
+            
+            # ====================================================================
+            # CREATE IN-APP NOTIFICATION
+            # ====================================================================
+            
+            # Only create notification if case has a member
+            if case.member:
+                notification = CaseNotification.objects.create(
+                    case=case,
+                    member=case.member,
+                    notification_type='case_put_on_hold',
+                    title=f'Your case {case.external_case_id} has been placed on hold',
+                    message=f'Your case requires additional attention. Please see the hold reason below for details.',
+                    hold_reason=reason,
+                    is_read=False,
+                    created_at=timezone.now()
+                )
+                
+                # Log notification creation in audit trail
+                AuditLog.objects.create(
+                    case=case,
+                    user=user,
+                    action_type='notification_created',
+                    status='case_put_on_hold',
+                    description=f'In-app notification created for member ({case.member.email})',
+                    details={
+                        'notification_id': notification.id,
+                        'notification_type': 'case_put_on_hold',
+                        'hold_reason': reason,
+                        'recipient': case.member.email,
+                        'message': notification.message
+                    }
+                )
+                
+                # ================================================================
+                # SEND EMAIL TO MEMBER
+                # ================================================================
+                
+                try:
+                    # Build absolute case detail URL
+                    from django.urls import reverse
+                    from django.contrib.sites.shortcuts import get_current_site
+                    
+                    protocol = 'https' if request.is_secure() else 'http'
+                    domain = get_current_site(request).domain
+                    case_detail_url = f"{protocol}://{domain}{reverse('cases:case_detail', args=[case.id])}"
+                    
+                    # Prepare email context
+                    email_context = {
+                        'member_name': case.member.get_full_name() or case.member.username,
+                        'case_id': case.external_case_id,
+                        'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
+                        'hold_reason': reason,
+                        'case_detail_url': case_detail_url,
+                        'app_name': 'Advisor Portal'
+                    }
+                    
+                    # Render email content (both text and HTML)
+                    email_subject = f'Action Required: Your Case {case.external_case_id} Requires Additional Information'
+                    text_message = render_to_string('cases/emails/case_on_hold.txt', email_context)
+                    html_message = render_to_string('cases/emails/case_on_hold.html', email_context)
+                    
+                    # Send email with both text and HTML versions
+                    send_mail(
+                        subject=email_subject,
+                        message=text_message,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[case.member.email],
+                        html_message=html_message,
+                        fail_silently=False
+                    )
+                    
+                    # Log successful email send in audit trail
+                    AuditLog.objects.create(
+                        case=case,
+                        user=user,
+                        action_type='email_sent',
+                        status='case_put_on_hold',
+                        description=f'Member notification email sent to {case.member.email}',
+                        details={
+                            'email_to': case.member.email,
+                            'email_subject': email_subject,
+                            'hold_reason': reason,
+                            'notification_id': notification.id
+                        }
+                    )
+                    
+                except Exception as email_error:
+                    # Log email failure but don't fail the entire operation
+                    logger.error(f'Failed to send hold notification email for case {case_id}: {str(email_error)}')
+                    
+                    AuditLog.objects.create(
+                        case=case,
+                        user=user,
+                        action_type='email_failed',
+                        status='case_put_on_hold',
+                        description=f'Failed to send member notification email to {case.member.email}',
+                        details={
+                            'email_to': case.member.email,
+                            'error': str(email_error),
+                            'notification_id': notification.id
+                        }
+                    )
+            
+            # ====================================================================
+            # RETURN SUCCESS RESPONSE
+            # ====================================================================
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Case {case.external_case_id} has been placed on hold. Member has been notified.',
+                'new_status': case.status,
+                'notification_sent': case.member is not None
+            })
         
         except Exception as e:
-            logger.error(f'Error putting case {case_id} on hold: {str(e)}')
+            logger.error(f'Error putting case {case_id} on hold: {str(e)}', exc_info=True)
             return JsonResponse({
                 'success': False,
                 'error': f'An error occurred: {str(e)}'
@@ -1788,8 +1946,8 @@ def upload_member_document_to_completed_case(request, case_id):
         return redirect('cases:case_detail', pk=case_id)
     
     # Check if case is in an appropriate status for member document upload
-    # Allow uploads for: draft, submitted, accepted, pending_review, completed (resubmission)
-    allowed_statuses = ['draft', 'submitted', 'completed', 'pending_review', 'accepted', 'resubmitted']
+    # Allow uploads for: draft, submitted, accepted, pending_review, completed (resubmission), hold (member providing requested docs)
+    allowed_statuses = ['draft', 'submitted', 'completed', 'pending_review', 'accepted', 'resubmitted', 'hold']
     if case.status not in allowed_statuses:
         messages.error(request, f'You cannot upload documents to cases in {case.get_status_display()} status.')
         return redirect('cases:case_detail', pk=case_id)
@@ -3318,3 +3476,297 @@ def get_column_config(request, dashboard_name):
         'visible_count': len(visible_columns),
         'hidden_count': len(config['available_columns']) - len(visible_columns)
     })
+
+
+# ============================================================================
+# NOTIFICATION MANAGEMENT VIEWS - Option 3 Premium Features
+# ============================================================================
+
+@login_required
+@require_http_methods(["GET"])
+def get_member_notifications(request):
+    """
+    Get all notifications for the logged-in member.
+    
+    DOCUMENTATION:
+    - Returns paginated list of CaseNotification records
+    - Includes both read and unread notifications
+    - Ordered by most recent first
+    - Used for notification center on member dashboard
+    - Full audit trail maintained via AuditLog
+    
+    SECURITY:
+    - Members can only view their own notifications
+    
+    RESPONSE:
+    - JSON with: notifications (list), total_count, unread_count, pages
+    """
+    from cases.models import CaseNotification
+    from core.models import AuditLog
+    
+    user = request.user
+    
+    # Only members can view notifications
+    if user.role != 'member':
+        return JsonResponse({
+            'success': False,
+            'error': 'Only members can view notifications'
+        }, status=403)
+    
+    try:
+        # Get all notifications for this member
+        notifications = CaseNotification.objects.filter(
+            member=user
+        ).select_related(
+            'case'
+        ).order_by('-created_at')
+        
+        # Get pagination
+        page_num = request.GET.get('page', 1)
+        paginator = Paginator(notifications, 10)  # 10 per page
+        page_obj = paginator.get_page(page_num)
+        
+        # Count unread notifications
+        unread_count = notifications.filter(is_read=False).count()
+        
+        # Format response
+        notification_list = []
+        for notif in page_obj.object_list:
+            notification_list.append({
+                'id': notif.id,
+                'case_id': notif.case.id,
+                'case_code': notif.case.external_case_id,
+                'notification_type': notif.get_notification_type_display(),
+                'title': notif.title,
+                'message': notif.message,
+                'hold_reason': notif.hold_reason,
+                'is_read': notif.is_read,
+                'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
+                'read_at': notif.read_at.strftime('%b %d, %Y %I:%M %p') if notif.read_at else None
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'notifications': notification_list,
+            'total_count': notifications.count(),
+            'unread_count': unread_count,
+            'current_page': page_num,
+            'total_pages': paginator.num_pages
+        })
+    
+    except Exception as e:
+        logger.error(f'Error fetching notifications for member {user.id}: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def mark_notification_read(request, notification_id):
+    """
+    Mark a single notification as read.
+    
+    DOCUMENTATION:
+    - Updates notification.is_read = True
+    - Sets notification.read_at timestamp
+    - Logs action in AuditLog for audit trail
+    - Called when member clicks on notification or views case
+    
+    SECURITY:
+    - Members can only mark their own notifications as read
+    
+    AUDIT TRAIL:
+    - Logs action with action_type='notification_viewed'
+    - Records notification_id and case_id
+    """
+    from cases.models import CaseNotification
+    from core.models import AuditLog
+    
+    user = request.user
+    
+    # Only members can mark notifications as read
+    if user.role != 'member':
+        return JsonResponse({
+            'success': False,
+            'error': 'Only members can mark notifications as read'
+        }, status=403)
+    
+    try:
+        notification = get_object_or_404(CaseNotification, id=notification_id, member=user)
+        
+        # Mark as read if not already
+        was_unread = not notification.is_read
+        notification.mark_as_read()
+        
+        # Log in audit trail
+        if was_unread:
+            AuditLog.objects.create(
+                case=notification.case,
+                user=user,
+                action_type='notification_viewed',
+                status=notification.case.status,
+                description=f'Member viewed notification for case {notification.case.external_case_id}',
+                details={
+                    'notification_id': notification.id,
+                    'notification_type': notification.notification_type,
+                    'read_at': notification.read_at.isoformat()
+                }
+            )
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Notification marked as read',
+            'notification_id': notification.id,
+            'read_at': notification.read_at.strftime('%b %d, %Y %I:%M %p')
+        })
+    
+    except Exception as e:
+        logger.error(f'Error marking notification {notification_id} as read: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def mark_all_notifications_read(request):
+    """
+    Mark all unread notifications as read for member.
+    
+    DOCUMENTATION:
+    - Bulk update of all unread notifications for member
+    - Sets is_read=True and read_at timestamp
+    - Logs action in AuditLog for each notification
+    - Called from notification center "Mark All Read" button
+    
+    SECURITY:
+    - Members can only mark their own notifications as read
+    
+    AUDIT TRAIL:
+    - Logs bulk action with action_type='all_notifications_viewed'
+    - Records count of notifications marked as read
+    """
+    from cases.models import CaseNotification
+    from core.models import AuditLog
+    
+    user = request.user
+    
+    # Only members can mark notifications as read
+    if user.role != 'member':
+        return JsonResponse({
+            'success': False,
+            'error': 'Only members can mark notifications as read'
+        }, status=403)
+    
+    try:
+        # Get all unread notifications for this member
+        unread_notifications = CaseNotification.objects.filter(
+            member=user,
+            is_read=False
+        )
+        
+        count = unread_notifications.count()
+        
+        # Mark all as read
+        for notif in unread_notifications:
+            notif.mark_as_read()
+        
+        # Log bulk action in audit trail
+        if count > 0:
+            AuditLog.objects.create(
+                case=None,  # Bulk action - no specific case
+                user=user,
+                action_type='all_notifications_viewed',
+                status='bulk',
+                description=f'Member marked all {count} notifications as read',
+                details={
+                    'notifications_marked_read': count,
+                    'timestamp': timezone.now().isoformat()
+                }
+            )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Marked {count} notification(s) as read',
+            'notifications_updated': count
+        })
+    
+    except Exception as e:
+        logger.error(f'Error marking all notifications as read for member {user.id}: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_hold_cases(request):
+    """
+    Get all cases currently on hold for the logged-in member.
+    
+    DOCUMENTATION:
+    - Returns list of cases with status='hold'
+    - Includes case details, hold reason, and assigned technician
+    - Used for "Cases on Hold" section in member dashboard
+    - Allows quick navigation to upload documents
+    
+    SECURITY:
+    - Members can only view their own cases
+    
+    RESPONSE:
+    - JSON with: cases (list), total_count
+    """
+    from cases.models import CaseNotification
+    
+    user = request.user
+    
+    # Only members can view their cases
+    if user.role != 'member':
+        return JsonResponse({
+            'success': False,
+            'error': 'Only members can view their cases'
+        }, status=403)
+    
+    try:
+        # Get all cases on hold for this member
+        hold_cases = Case.objects.filter(
+            member=user,
+            status='hold'
+        ).select_related(
+            'assigned_to'
+        ).order_by('-date_submitted')
+        
+        # Get latest notification for each case (contains hold reason)
+        case_list = []
+        for case in hold_cases:
+            latest_notification = CaseNotification.objects.filter(
+                case=case,
+                notification_type='case_put_on_hold'
+            ).order_by('-created_at').first()
+            
+            case_list.append({
+                'id': case.id,
+                'case_id': case.external_case_id,
+                'employee': f"{case.employee_first_name} {case.employee_last_name}",
+                'assigned_to': case.assigned_to.get_full_name() if case.assigned_to else 'Unassigned',
+                'hold_reason': latest_notification.hold_reason if latest_notification else case.hold_reason or 'No reason provided',
+                'hold_date': case.date_submitted.strftime('%b %d, %Y'),
+                'case_detail_url': reverse('cases:case_detail', args=[case.id])
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'cases': case_list,
+            'total_count': hold_cases.count()
+        })
+    
+    except Exception as e:
+        logger.error(f'Error fetching hold cases for member {user.id}: {str(e)}', exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': f'An error occurred: {str(e)}'
+        }, status=500)

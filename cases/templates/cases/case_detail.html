@@ -406,7 +406,7 @@
             {% if user.role == 'member' and case.status == 'completed' and case.actual_release_date is None %}
                 <div class="alert alert-info mb-4">
                     <i class="bi bi-clock-history"></i>
-                    <strong>This case is complete and will be available for review on {{ case.scheduled_release_date|date:"F j, Y" }}</strong>
+                    <strong>This case is complete and will be released on {{ case.scheduled_release_date|date:"F j, Y" }}</strong>
                     <p class="mt-2 mb-0">The report and supporting documents will be displayed once the release date arrives.</p>
                 </div>
             {% endif %}
@@ -429,7 +429,7 @@
                         {% elif case.scheduled_release_date %}
                             <div class="alert alert-info" role="alert">
                                 <i class="bi bi-calendar-event"></i>
-                                <strong>This case is scheduled to be released on:</strong><br>
+                                <strong>This case will be released on:</strong><br>
                                 {{ case.scheduled_release_date|date:"F j, Y" }}
                                 {% if can_release_immediately %}
                                     <br><br>
@@ -906,6 +906,45 @@
                         <small class="text-muted d-block">
                             <i class="bi bi-person"></i> {{ case.member.first_name }} {{ case.member.last_name }}
                         </small>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Case on Hold - Hold Reason & Member Call-to-Action (Option 3 Premium) -->
+                {% if case.status == 'hold' %}
+                <div class="card mb-4 border-left-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Your Case Is on Hold
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if case.hold_reason %}
+                        <div class="alert alert-light border-left p-3 mb-3" style="border-left: 4px solid #ffc107;">
+                            <h6 class="mb-2"><strong>Reason for Hold:</strong></h6>
+                            <p class="mb-0">{{ case.hold_reason }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Call-to-Action for Members -->
+                        {% if user.role == 'member' %}
+                        <div class="alert alert-info" role="alert">
+                            <h6 class="alert-heading"><i class="bi bi-info-circle"></i> What You Can Do</h6>
+                            <p class="mb-2">Your case requires additional information or documents. Please:</p>
+                            <ul class="mb-0">
+                                <li>Review the reason above</li>
+                                <li>Upload any requested documents or information</li>
+                                <li>Add notes if needed</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-light border-left" style="border-left: 4px solid #0d6efd;">
+                            <p class="mb-0">
+                                <i class="bi bi-file-arrow-up"></i> 
+                                <strong>Ready to upload?</strong> Scroll down to the "Documents" section to add files.
+                            </p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
