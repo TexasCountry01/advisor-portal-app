@@ -363,7 +363,7 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-reviewed_by {% if 'reviewed_by' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.reviewed_by %}
                                     <span class="badge bg-secondary">
                                         {% if case.reviewed_by.get_full_name %}
@@ -376,14 +376,14 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-report_notes {% if 'report_notes' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.report_notes %}
                                     <small>{{ case.report_notes|length }} note(s)</small>
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-on_time {% if 'on_time' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'completed' and case.date_completed and case.date_due %}
                                     {% if case.date_completed|date:"Y-m-d" <= case.date_due|date:"Y-m-d" %}
                                         <span class="badge bg-success">On-Time</span>
