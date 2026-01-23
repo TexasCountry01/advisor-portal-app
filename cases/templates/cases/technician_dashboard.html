@@ -318,6 +318,7 @@
                             </th>
                             <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
                             <th data-column-id="notes" {% if 'notes' not in visible_columns %}class="column-hidden"{% endif %}>Notes</th>
+                            <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
                             <!-- COMMENTED OUT: Completed Column Header - 01/11/2026
                                  Reason: Completed date removed from dashboard. Status column shows release status.
                             <th>Completed</th>
@@ -345,10 +346,10 @@
                                 {% endif %}
                             </td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td class="column-submitted {% if 'submitted' not in visible_columns %}column-hidden{% endif %}">{{ case.date_submitted|date:"m/d/Y" }}</td>
+                            <td class="column-submitted {% if 'submitted' not in visible_columns %}column-hidden{% endif %}">{{ case.date_submitted|date:"m/d/y" }}</td>
                             <td class="column-due {% if 'due' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_due %}
-                                    {{ case.date_due|date:"m/d/Y" }}
+                                    {{ case.date_due|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -362,15 +363,15 @@
                             </td>
                             <td class="column-status {% if 'status' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'submitted' %}
-                                    <span class="badge bg-primary">Submitted</span>
+                                    <span class="badge bg-secondary">Submitted</span>
                                 {% elif case.status == 'resubmitted' %}
                                     <span class="badge bg-info">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-success">Accepted</span>
+                                    <span class="badge bg-primary">Accepted</span>
                                 {% elif case.status == 'pending_review' %}
                                     <span class="badge bg-info">Pending Review</span>
                                 {% elif case.status == 'hold' %}
-                                    <span class="badge bg-warning">On Hold</span>
+                                    <span class="badge bg-danger">On Hold</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
                                         <span class="badge bg-success">Completed</span>
@@ -383,14 +384,14 @@
                             </td>
                             <td class="column-release_date {% if 'release_date' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.scheduled_release_date %}
-                                    <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/Y" }}</span>
+                                    <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/y" }}</span>
                                 {% elif case.actual_release_date %}
                                     <small class="text-muted">Released</small>
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: center;">{{ case.num_reports_requested }}</td>
+                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.assigned_to %}
                                     {% if case.assigned_to.first_name %}
@@ -416,7 +417,7 @@
                             </td>
                             <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_scheduled %}
-                                    {{ case.date_scheduled|date:"m/d/Y" }}
+                                    {{ case.date_scheduled|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -446,11 +447,22 @@
                                     —
                                 {% endif %}
                             </td>
+                            <td class="column-on_time {% if 'on_time' not in visible_columns %}column-hidden{% endif %}">
+                                {% if case.status == 'completed' and case.date_completed and case.date_due %}
+                                    {% if case.date_completed|date:"Y-m-d" <= case.date_due|date:"Y-m-d" %}
+                                        <span class="badge bg-success">On-Time</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Late</span>
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
                             <!-- COMMENTED OUT: Completed Column Cell - 01/11/2026
                                  Reason: Completed date removed from dashboard.
                             <td>
                                 {% if case.date_completed %}
-                                    {{ case.date_completed|date:"m/d/Y" }}
+                                    {{ case.date_completed|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -722,12 +734,12 @@
     table th:nth-child(2),
     table td:nth-child(2) {
         min-width: 80px;
-        text-align: center;
+        text-align: left;
         padding-right: 5px;
     }
 
     table th:nth-child(2) {
-        text-align: center;
+        text-align: left;
     }
 
     /* Tighten table spacing */
@@ -766,7 +778,10 @@
     
     /* Column visibility styles */
     .column-hidden {
-        display: none !important;
+        visibility: hidden !important;
+        width: 0;
+        padding: 0 !important;
+        margin: 0 !important;
     }
     
     #columnMenu {

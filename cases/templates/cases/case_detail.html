@@ -25,13 +25,13 @@
         <div class="col-auto d-flex align-items-center gap-2">
             {% if user.role == 'member' %}
                 {% if case.status == 'draft' %}
-                    <span class="badge bg-secondary fs-5">Draft</span>
+                    <span class="badge bg-danger fs-5">Draft</span>
                 {% elif case.status == 'submitted' %}
-                    <span class="badge bg-primary fs-5">Submitted</span>
+                    <span class="badge bg-secondary fs-5">Submitted</span>
                 {% elif case.status == 'resubmitted' %}
                     <span class="badge bg-info fs-5">Resubmitted</span>
                 {% elif case.status == 'accepted' %}
-                    <span class="badge bg-success fs-5">Accepted</span>
+                    <span class="badge bg-primary fs-5">Accepted</span>
                 {% elif case.status == 'pending_review' %}
                     <span class="badge bg-warning fs-5">Pending Review</span>
                 {% elif case.status == 'completed' %}
@@ -41,13 +41,13 @@
                 {% endif %}
             {% elif user.role == 'technician' %}
                 {% if case.status == 'draft' %}
-                    <span class="badge bg-secondary fs-5">Draft</span>
+                    <span class="badge bg-danger fs-5">Draft</span>
                 {% elif case.status == 'submitted' %}
-                    <span class="badge bg-primary fs-5">Submitted</span>
+                    <span class="badge bg-secondary fs-5">Submitted</span>
                 {% elif case.status == 'resubmitted' %}
                     <span class="badge bg-info fs-5">Resubmitted</span>
                 {% elif case.status == 'accepted' %}
-                    <span class="badge bg-success fs-5">Accepted</span>
+                    <span class="badge bg-primary fs-5">Accepted</span>
                 {% elif case.status == 'pending_review' %}
                     <span class="badge bg-warning fs-5">Pending Review</span>
                 {% elif case.status == 'completed' %}
@@ -57,13 +57,13 @@
                 {% endif %}
             {% else %}
                 {% if case.status == 'draft' %}
-                    <span class="badge bg-secondary fs-5">Draft</span>
+                    <span class="badge bg-danger fs-5">Draft</span>
                 {% elif case.status == 'submitted' %}
-                    <span class="badge bg-primary fs-5">Submitted</span>
+                    <span class="badge bg-secondary fs-5">Submitted</span>
                 {% elif case.status == 'resubmitted' %}
                     <span class="badge bg-info fs-5">Resubmitted</span>
                 {% elif case.status == 'accepted' %}
-                    <span class="badge bg-success fs-5">Accepted</span>
+                    <span class="badge bg-primary fs-5">Accepted</span>
                 {% elif case.status == 'pending_review' %}
                     <span class="badge bg-warning fs-5">Pending Review</span>
                 {% elif case.status == 'completed' %}

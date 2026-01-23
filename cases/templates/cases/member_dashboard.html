@@ -191,10 +191,10 @@
                         <tr>
                             <td class="column-workshop {% if 'workshop' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: center;">{{ case.num_reports_requested }}</td>
+                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-due_date {% if 'due_date' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_due %}
-                                    {{ case.date_due|date:"m/d/Y" }}
+                                    {{ case.date_due|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -210,15 +210,15 @@
                                 {% if case.status == 'pending_review' %}
                                     <span class="badge bg-info">Pending Review</span>
                                 {% elif case.status == 'submitted' %}
-                                    <span class="badge bg-primary">Submitted</span>
+                                    <span class="badge bg-secondary">Submitted</span>
                                 {% elif case.status == 'resubmitted' %}
                                     <span class="badge bg-info">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-success">Accepted</span>
+                                    <span class="badge bg-primary">Accepted</span>
                                 {% elif case.status == 'hold' %}
-                                    <span class="badge bg-warning">On Hold</span>
+                                    <span class="badge bg-danger">On Hold</span>
                                 {% elif case.status == 'draft' %}
-                                    <span class="badge bg-secondary">Draft</span>
+                                    <span class="badge bg-danger">Draft</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
                                         <span class="badge bg-success" title="Report is ready to download">✓ Ready</span>
@@ -236,10 +236,10 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-submitted {% if 'submitted' not in visible_columns %}column-hidden{% endif %}">{{ case.date_submitted|date:"m/d/Y" }}</td>
+                            <td class="column-submitted {% if 'submitted' not in visible_columns %}column-hidden{% endif %}">{{ case.date_submitted|date:"m/d/y" }}</td>
                             <td class="column-accepted {% if 'accepted' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_accepted %}
-                                    {{ case.date_accepted|date:"m/d/Y" }}
+                                    {{ case.date_accepted|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -381,12 +381,12 @@ function submitCaseFinal(caseId) {
     table th:nth-child(2),
     table td:nth-child(2) {
         min-width: 80px;
-        text-align: center;
+        text-align: left;
         padding-right: 5px;
     }
 
     table th:nth-child(2) {
-        text-align: center;
+        text-align: left;
     }
 
     /* Tighten table spacing */

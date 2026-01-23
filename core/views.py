@@ -42,7 +42,7 @@ def login_view(request):
         
         if user is not None:
             login(request, user)
-            messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
+            # messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
             
             # Get next URL or redirect based on role
             next_url = request.GET.get('next')

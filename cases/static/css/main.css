@@ -54,6 +54,32 @@ body {
     background-color: #6c757d;
 }
 
+/* Status badge colors - standardized */
+.badge-draft {
+    background-color: #dc3545 !important;
+}
+
+.badge-submitted {
+    background-color: #6c757d !important;
+}
+
+.badge-accepted {
+    background-color: #0d6efd !important;
+}
+
+.badge-hold {
+    background-color: #dc3545 !important;
+}
+
+.badge-completed {
+    background-color: #198754 !important;
+}
+
+.badge-pending_review {
+    background-color: #ffc107 !important;
+    color: #000 !important;
+}
+
 .btn-group-sm .btn {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;

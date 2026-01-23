@@ -265,6 +265,7 @@
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Tier</a></th>
                             <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
                             <th data-column-id="notes" {% if 'notes' not in visible_columns %}class="column-hidden"{% endif %}>Notes</th>
+                            <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
                             <!-- COMMENTED OUT: Completed Column Header - 01/11/2026
                                  Reason: Completed date removed from dashboard. Status column shows release status.
                             <th><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">Completed</a></th>
@@ -288,10 +289,10 @@
                                 {% endif %}
                             </td>
                             <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
+                            <td>{{ case.date_submitted|date:"m/d/y" }}</td>
                             <td>
                                 {% if case.date_due %}
-                                    {{ case.date_due|date:"m/d/Y" }}
+                                    {{ case.date_due|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -305,9 +306,9 @@
                             </td>
                             <td>
                                 {% if case.status == 'submitted' %}
-                                    <span class="badge bg-primary">Submitted</span>
+                                    <span class="badge bg-secondary">Submitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-success">Accepted</span>
+                                    <span class="badge bg-primary">Accepted</span>
                                 {% elif case.status == 'pending_review' %}
                                     <span class="badge bg-warning text-dark">Pending Review</span>
                                 {% elif case.status == 'hold' %}
@@ -324,14 +325,14 @@
                             </td>
                             <td>
                                 {% if case.scheduled_release_date %}
-                                    <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/Y" }}</span>
+                                    <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/y" }}</span>
                                 {% elif case.actual_release_date %}
                                     <small class="text-muted">Released</small>
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td style="text-align: center;">{{ case.num_reports_requested }}</td>
+                            <td style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td>
                                 {% if case.assigned_to %}
                                     <span class="badge bg-info">
@@ -343,7 +344,7 @@
                             </td>
                             <td>
                                 {% if case.date_scheduled %}
-                                    {{ case.date_scheduled|date:"m/d/Y" }}
+                                    {{ case.date_scheduled|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -375,11 +376,22 @@
                                     —
                                 {% endif %}
                             </td>
+                            <td>
+                                {% if case.status == 'completed' and case.date_completed and case.date_due %}
+                                    {% if case.date_completed|date:"Y-m-d" <= case.date_due|date:"Y-m-d" %}
+                                        <span class="badge bg-success">On-Time</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Late</span>
+                                    {% endif %}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
                             <!-- COMMENTED OUT: Completed Column Cell - 01/11/2026
                                  Reason: Completed date removed from dashboard.
                             <td>
                                 {% if case.date_completed %}
-                                    {{ case.date_completed|date:"m/d/Y" }}
+                                    {{ case.date_completed|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
@@ -478,12 +490,12 @@
     table th:nth-child(2),
     table td:nth-child(2) {
         min-width: 80px;
-        text-align: center;
+        text-align: left;
         padding-right: 5px;
     }
 
     table th:nth-child(2) {
-        text-align: center;
+        text-align: left;
     }
 
     /* Tighten table spacing */
@@ -641,7 +653,10 @@
 
 <style>
     .column-hidden {
-        display: none !important;
+        visibility: hidden !important;
+        width: 0;
+        padding: 0 !important;
+        margin: 0 !important;
     }
     
     #columnMenu .form-check {
