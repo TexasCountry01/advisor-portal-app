@@ -259,15 +259,25 @@
 - ✗ Cannot resubmit (need to submit fresh)
 - ✗ Cannot see tech notes
 
-### 2. **Submitted Status**
+### 2. **Submitted Status - Collaboration Features (NEW)**
 - ✓ View case details (limited)
 - ✓ See status updates
-- ✗ Cannot edit case details
-- ✗ Cannot upload documents (until tech requests)
+- ✓ **Add new documents/information** - Provide additional info during submission review
+- ✓ **"New Info" badge** - Shows technician when member adds updates
+- ✓ **Member update timestamps** - Track when member provided new information
 - ✓ Can see general timeline
 - ✗ Cannot see reports yet
+- **What this means:**
+  - You don't have to wait for technician to ask for changes
+  - Add supporting documents or clarifications proactively
+  - Technician sees immediate notification when you add info
+  - Helps speed up case processing
+- **📊 AUDIT TRACKING:**  
+  - `document_uploaded` - Logged when member adds new document during submission
+  - `member_case_updated` - Logged when member provides additional information
+  - Full timestamps preserved for compliance
 
-### 3. **Accepted/In Progress Status**
+### 2B. **Accepted/In Progress Status**
 - ✓ View assigned technician
 - ✓ See case progress updates
 - ✓ Upload documents if tech requests
@@ -277,19 +287,28 @@
 
 ### 3A. **Hold Status** (NEW - Case Paused)
 - ℹ️ Case has been **placed on hold** temporarily
-- ✓ View hold reason (e.g., "Waiting for Member Documents")
+- ✓ **Email notification received** - Technician explains hold reason and what's needed
+- ✓ **In-app notification badge** - See notification bell on dashboard with hold alert
+- ✓ View hold reason (e.g., "Waiting for Member Documents", "Awaiting Admin Decision")
 - ✓ View expected resume date (if duration was set)
 - ✓ Still see assigned technician name
+- ✓ **Can upload/add documents** - Provide requested information while on hold
 - ✓ Can add comments while on hold
 - ✗ Case is not actively being worked on
 - ✗ No progress updates until resumed
 - **What this means:**
   - Your case is not forgotten - just paused temporarily
   - Technician may need: more documents, clarification, admin decision, etc.
+  - You can provide missing info by uploading documents
   - Your case will resume when issue is resolved
   - Technician's ownership is preserved
   - Case will be completed when ready
   - You'll be notified when it resumes
+- **📊 AUDIT TRACKING:**  
+  - `case_held` - Logged when case put on hold with reason
+  - `notification_created` - In-app notification created
+  - `email_sent` - Email notification sent to member
+  - `document_uploaded` - Logged for each document member uploads while on hold
 
 ### 4. **Needs Resubmission Status** (NEW)
 - ⚠️ Case was **rejected** by technician/admin

@@ -288,6 +288,43 @@
 
 ---
 
+### 6. **Member Collaboration & Notification System** (NEW - Jan 2026)
+- ✓ **Member Post-Submission Edits:**
+  - Members can add new documents/information even after case is submitted
+  - Technician receives "New Info" badge on dashboard when member updates
+  - `has_member_updates` flag tracks if member provided additional info
+  - `member_last_update_date` timestamp records when member added updates
+  - Speeds up case processing and reduces back-and-forth
+  - Audit trail logs all member additions with exact timestamps
+- ✓ **Hold Notification System (CaseNotification Model):**
+  - When technician puts case on hold:
+    - Member automatically receives email with hold reason and case link
+    - In-app notification created with hold reason (stored in CaseNotification table)
+    - "Cases on Hold" alert appears on member dashboard
+    - Member can upload documents while case is on hold
+  - CaseNotification model tracks:
+    - notification_type (case_put_on_hold, member_update_received, case_released, documents_needed)
+    - hold_reason (captured from technician when putting on hold)
+    - is_read flag for UI tracking
+    - created_at and read_at timestamps
+  - ✓ View notification logs for compliance and audit purposes
+  - ✓ Track notification delivery status (sent/failed/read)
+  - ✓ Monitor member engagement with notifications
+- ✓ **Audit Trail Integration:**
+  - `document_uploaded` - Logged when member adds document post-submission
+  - `member_case_updated` - Logged for member updates during submission
+  - `case_held` - Logged with hold reason when case put on hold
+  - `notification_created` - Logged when in-app notification created
+  - `email_sent` / `email_failed` - Logged for hold notification delivery
+  - Full timestamps and user tracking for compliance
+- **📊 AUDIT TRACKING:**
+  - CaseNotification table maintains all notification history
+  - Member collaboration timeline visible to admins/managers
+  - Hold decisions and member responses tracked and auditable
+  - Email delivery logs preserved for compliance
+
+---
+
 ## Role-Based User Creation & Management
 
 ✅ **Admin Controls Who Can Create & Manage What:**

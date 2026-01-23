@@ -220,7 +220,26 @@
 - ✓ Assign based on expertise/urgency
 - ✓ Verify email notifications are scheduled correctly
 
-### 2A. **Column Visibility Management** (NEW)
+### 2A. **Dashboard Status Improvements** (NEW - Jan 2026)
+- ✓ **Status badge hover tooltips:**
+  - Hover over any status badge to see detailed description
+  - Examples:
+    - "Submitted" → "Case received and waiting for technician to start"
+    - "On Hold" → "Case temporarily paused"
+    - "Completed" → "Case completed and released to member" (if actual_release_date set)
+    - "Scheduled for Release" → "Completed but scheduled for future release" (if scheduled_release_date set)
+  - Helps clarify case state without needing legend
+- ✓ **Delayed release system understanding:**
+  - Cases with `actual_release_date`: Case is released (member can see reports)
+  - Cases with `scheduled_release_date` (no actual_release_date): Awaiting release date
+  - If case is completed but neither date set: Still in progress on technician's end
+- ✓ **Clean dashboard layout:**
+  - Status legend removed (replaced with hover tooltips)
+  - Actions column properly populated with View, Edit, Release buttons
+  - Column alignment standardized for better readability
+  - On-Time/Late metrics visible for completed cases
+
+### 2B. **Column Visibility Management**
 - ✓ **Customize dashboard view:**
   - Click "Column Settings" button (gear icon)
   - Toggle columns on/off to show/hide:

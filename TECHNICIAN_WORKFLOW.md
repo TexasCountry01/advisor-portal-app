@@ -415,8 +415,18 @@ DOCS      FROM ADMIN             PENDING
 - ✓ Incorporate into investigation
 - ✓ Then proceed to completion
 
-### 4A. **Hold Status** (Case Paused)
+### 4A. **Hold Status** (Case Paused - Enhanced Notification System)
 - ✓ Your ownership is **preserved**
+- ✓ **Provide hold reason** (Required) - Explain why case is on hold:
+  - Examples: "Waiting for Member Documents", "Awaiting Admin Decision", "Technical Issue", etc.
+- ✓ **Member notification system** (Automatic):
+  - Email sent to member with hold reason and case link
+  - In-app notification badge appears on member dashboard
+  - "Cases on Hold" alert appears on member dashboard with count
+- ✓ **Member can respond** while on hold:
+  - Upload additional documents or information
+  - Add comments/questions
+  - See the hold reason you provided
 - ✓ Can still view all case documents
 - ✓ Can still add internal notes
 - ✓ Cannot edit other case fields while on hold
@@ -425,11 +435,18 @@ DOCS      FROM ADMIN             PENDING
   - Add reason for resuming
   - Status changes back to 'accepted'
   - Case returns to your active queue
+  - Member gets notification that case is resuming
 - ℹ️ Hold duration is **tracked**:
   - If immediate: No end date (indefinite pause)
   - If timed (2h, 4h, 8h, 1d): System tracks end date
-  - Audit trail shows hold start, reason, and duration
+  - Audit trail shows hold start, reason, duration, and who initiated
 - ✓ Can be placed on hold again after resuming
+- **📊 AUDIT TRACKING:**  
+  - `case_held` - Logged with hold reason, duration, technician
+  - `notification_created` - In-app notification created for member
+  - `email_sent` - Confirmation that hold notification emailed to member
+  - `document_uploaded` - Tracked if member uploads docs while on hold
+  - `case_resumed` - Logged when hold is lifted with resume reason
 
 ### 5. **Completing Case**
 - ✓ Mark as "Completed"
