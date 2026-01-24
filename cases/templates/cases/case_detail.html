@@ -916,15 +916,32 @@
                             <select class="form-select form-select-sm" id="assignTechInit" name="assign_tech_init">
                                 <option value="">-- Leave Unassigned --</option>
                                 {% for tech in available_techs %}
-                                    <option value="{{ tech.id }}">{{ tech.first_name }} {{ tech.last_name }} ({{ tech.user_level }})</option>
+                                    <option value="{{ tech.id }}" data-tech-level="{{ tech.user_level }}" data-tech-name="{{ tech.first_name }} {{ tech.last_name }}">{{ tech.first_name }} {{ tech.last_name }} ({{ tech.user_level }})</option>
                                 {% endfor %}
                             </select>
+                            <small class="text-muted d-block mt-1">
+                                <i class="bi bi-info-circle"></i> Technician level must meet tier requirements
+                                {% if user.role == 'administrator' %}
+                                    <span class="text-primary">(Admin can override)</span>
+                                {% endif %}
+                            </small>
                         </div>
                         
                         <!-- Override Notes -->
                         <div class="mb-3">
                             <label for="acceptanceNotes" class="form-label small">Notes (if overriding checks):</label>
                             <textarea class="form-control form-control-sm" id="acceptanceNotes" name="acceptance_notes" rows="2" placeholder="Add notes if accepting without all documents..."></textarea>
+                            <small class="form-text text-muted">Include reasons for any tech level overrides</small>
+                        </div>
+                        
+                        <!-- Override Reason Section (Admin Only) -->
+                        <div class="mb-3" id="techOverrideContainer" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+                            <div class="alert alert-warning alert-sm mb-2" role="alert">
+                                <i class="bi bi-exclamation-triangle"></i> <strong id="overrideWarningText"></strong>
+                            </div>
+                            <label for="techOverrideReason" class="form-label small">Override Reason (Required):</label>
+                            <textarea class="form-control form-control-sm" id="techOverrideReason" name="tech_override_reason" rows="2" placeholder="Explain why this technician is being assigned despite tier level mismatch..."></textarea>
+                            <small class="form-text text-muted">Admin override: explaining the business reason is required for audit trail</small>
                         </div>
                         
                         <!-- Buttons -->
@@ -2497,6 +2514,98 @@ document.addEventListener('DOMContentLoaded', function() {
     const assignTierSelect = document.getElementById('assignTier');
     const assignTechSelect = document.getElementById('assignTechInit');
     const acceptBtn = document.getElementById('acceptCaseBtn');
+    const techOverrideContainer = document.getElementById('techOverrideContainer');
+    const techOverrideReason = document.getElementById('techOverrideReason');
+    const overrideWarningText = document.getElementById('overrideWarningText');
+    
+    // Get user role from template context
+    const userRole = '{{ user.role }}';
+    const isAdmin = userRole === 'administrator';
+    
+    // Tier requirements mapping
+    const tierRequirements = {
+        '1': { name: 'Tier 1 (Simple)', minLevel: 'level_1' },
+        '2': { name: 'Tier 2 (Moderate)', minLevel: 'level_2' },
+        '3': { name: 'Tier 3 (Complex)', minLevel: 'level_3' }
+    };
+    
+    const levelHierarchy = { 'level_1': 1, 'level_2': 2, 'level_3': 3 };
+    
+    function getTechLevel(techOption) {
+        return techOption.getAttribute('data-tech-level');
+    }
+    
+    function getTechName(techOption) {
+        return techOption.getAttribute('data-tech-name');
+    }
+    
+    function getLevelNumber(level) {
+        return levelHierarchy[level] || 0;
+    }
+    
+    function getLevelName(level) {
+        return level.replace('_', ' ').replace('level ', 'Level ').toUpperCase();
+    }
+    
+    function checkTierTechCompatibility() {
+        const selectedTier = assignTierSelect.value;
+        const selectedTechOption = assignTechSelect.options[assignTechSelect.selectedIndex];
+        
+        // Clear override container
+        techOverrideContainer.style.display = 'none';
+        techOverrideReason.value = '';
+        techOverrideReason.required = false;
+        
+        if (!selectedTier || !selectedTechOption || !selectedTechOption.value) {
+            // No tech selected or no tier selected, nothing to check
+            return true;
+        }
+        
+        const techLevel = getTechLevel(selectedTechOption);
+        const tierMinLevel = tierRequirements[selectedTier].minLevel;
+        
+        const techLevelNum = getLevelNumber(techLevel);
+        const requiredLevelNum = getLevelNumber(tierMinLevel);
+        
+        // Tech level must meet or exceed tier requirement
+        if (techLevelNum < requiredLevelNum) {
+            // Mismatch detected
+            const techName = getTechName(selectedTechOption);
+            const tierName = tierRequirements[selectedTier].name;
+            const tierMinLevelName = getLevelName(tierMinLevel);
+            const techLevelName = getLevelName(techLevel);
+            
+            if (isAdmin) {
+                // Show override container for admin
+                const warningMsg = `${techName} is ${techLevelName} but ${tierName} requires minimum ${tierMinLevelName}`;
+                overrideWarningText.textContent = warningMsg;
+                techOverrideContainer.style.display = 'block';
+                techOverrideReason.required = true;
+                return false; // Validation will require override reason
+            } else {
+                // Block non-admin
+                alert(`${techName} is ${techLevelName} but ${tierName} requires minimum ${tierMinLevelName}. Only administrators can override this restriction.`);
+                assignTechSelect.value = ''; // Reset selection
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
+    // Add change listener to tier dropdown
+    if (assignTierSelect) {
+        assignTierSelect.addEventListener('change', function() {
+            checkTierTechCompatibility();
+        });
+    }
+    
+    // Add change listener to tech dropdown
+    if (assignTechSelect) {
+        assignTechSelect.addEventListener('change', function() {
+            checkTierTechCompatibility();
+        });
+    }
     
     // Show warning if not all documents checked
     function checkDocuments() {
@@ -2521,11 +2630,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const tech = assignTechSelect.value;
             const notes = document.getElementById('acceptanceNotes').value;
             const docsAllChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
+            const overrideReason = techOverrideReason.value.trim();
             
             // Validation
             if (!tier) {
                 alert('Please select a tier level.');
                 return;
+            }
+            
+            // Validate tech/tier compatibility
+            if (tech) {
+                const selectedTechOption = assignTechSelect.options[assignTechSelect.selectedIndex];
+                const techLevel = getTechLevel(selectedTechOption);
+                const tierMinLevel = tierRequirements[tier].minLevel;
+                
+                const techLevelNum = getLevelNumber(techLevel);
+                const requiredLevelNum = getLevelNumber(tierMinLevel);
+                
+                if (techLevelNum < requiredLevelNum) {
+                    // Mismatch - admin needs to provide override reason
+                    if (!overrideReason) {
+                        alert('Please provide an override reason explaining why this technician is assigned despite tier level mismatch.');
+                        return;
+                    }
+                }
             }
             
             // Warning if docs not all checked but no note
@@ -2540,7 +2668,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'tier': tier,
                 'assigned_to': tech || null,
                 'acceptance_notes': notes,
-                'docs_verified': docsAllChecked ? 'yes' : 'no'
+                'docs_verified': docsAllChecked ? 'yes' : 'no',
+                'tech_override_reason': overrideReason || null
             };
             
             fetch(`/cases/${caseId}/accept/`, {

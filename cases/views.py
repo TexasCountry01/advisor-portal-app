@@ -675,6 +675,7 @@ def accept_case(request, case_id):
             assigned_to_id = body_data.get('assigned_to')
             acceptance_notes = body_data.get('acceptance_notes', '').strip()
             docs_verified = body_data.get('docs_verified', 'no')
+            tech_override_reason = body_data.get('tech_override_reason', '').strip()
             
             # Validation
             if not tier:
@@ -683,7 +684,7 @@ def accept_case(request, case_id):
                     'error': 'Tier must be specified.'
                 }, status=400)
             
-            # Tier validation - check if tech level matches tier capability
+            # Tier validation - check if accepting tech level matches tier capability
             if user.role == 'technician':
                 # Tier 1 can be handled by any tech
                 # Tier 2 requires level 2+ 
@@ -699,21 +700,51 @@ def accept_case(request, case_id):
                         'error': f'Your technician level ({user.user_level.replace("_", " ").title()}) cannot handle Tier 3 cases. Can be overridden with a note.'
                     }, status=400)
             
+            # Tier validation - check if assigned tech level matches tier capability
+            assigned_tech = None
+            if assigned_to_id:
+                try:
+                    assigned_tech = User.objects.get(id=assigned_to_id, role='technician')
+                except User.DoesNotExist:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Invalid technician selected.'
+                    }, status=400)
+                
+                # Check tech level against tier
+                tech_level_num = {
+                    'level_1': 1,
+                    'level_2': 2,
+                    'level_3': 3
+                }.get(assigned_tech.user_level, 0)
+                
+                tier_num = int(tier)
+                required_level_num = tier_num
+                
+                if tech_level_num < required_level_num:
+                    # Tech level doesn't meet tier requirement
+                    # Only admin can override
+                    if user.role != 'administrator':
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'{assigned_tech.first_name} {assigned_tech.last_name} is Level {tech_level_num} but Tier {tier} requires Level {required_level_num}. Only administrators can override this.'
+                        }, status=400)
+                    
+                    # Admin override: require reason
+                    if not tech_override_reason:
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Override reason is required when assigning tech with insufficient level.'
+                        }, status=400)
+            
             # Update case
             case.status = 'accepted'
             case.tier = tier
             case.date_accepted = timezone.now()
             case.accepted_by = user
             
-            if assigned_to_id:
-                try:
-                    tech = get_object_or_404(User, id=assigned_to_id, role='technician')
-                    case.assigned_to = tech
-                except:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Invalid technician selected.'
-                    }, status=400)
+            if assigned_tech:
+                case.assigned_to = assigned_tech
             
             case.save()
             
@@ -725,10 +756,21 @@ def accept_case(request, case_id):
             description = f"Case accepted as Tier {tier}"
             if case.assigned_to:
                 description += f", assigned to {case.assigned_to.get_full_name() or case.assigned_to.username}"
+            if tech_override_reason:
+                description += f" (OVERRIDE: {tech_override_reason[:50]}...)"
             if not docs_verified or docs_verified == 'no':
                 description += " (docs not verified)"
             if acceptance_notes:
                 description += f" - Notes: {acceptance_notes[:100]}"
+            
+            # Build metadata with override info
+            metadata = {
+                'docs_verified': docs_verified,
+                'acceptance_notes': acceptance_notes
+            }
+            
+            if tech_override_reason:
+                metadata['tech_override_reason'] = tech_override_reason
             
             AuditLog.log_activity(
                 user=user,
@@ -743,10 +785,7 @@ def accept_case(request, case_id):
                     'assigned_to': (None, case.assigned_to.username if case.assigned_to else None)
                 },
                 ip_address=ip_address,
-                metadata={
-                    'docs_verified': docs_verified,
-                    'acceptance_notes': acceptance_notes
-                }
+                metadata=metadata
             )
             
             # Send notification to assigned technician (if any and different from accepter)
@@ -954,6 +993,7 @@ def case_detail(request, pk):
         'reports': reports,
         'available_techs': available_techs,
         'audit_logs': audit_logs,
+        'user': user,
     }
     
     return render(request, 'cases/case_detail.html', context)
