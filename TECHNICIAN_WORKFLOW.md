@@ -24,12 +24,13 @@ Technicians process cases through acceptance, investigation, and completion:
 
 ### 1. **Submitted Status** (Unassigned)
 - ✓ View case summary (not detailed)
-- ✓ **Review & Accept** button (NEW):
+- ✓ **Review & Accept** button:
   - Review Federal Fact Finder completeness
   - Review supporting documents
   - Adjust credit value (0.5 to 3.0)
   - Assign case tier (Tier 1, 2, or 3)
   - Select technician for assignment
+  - Assign delegates for member (if applicable)
   - Complete pre-acceptance checklist
   - ⚠️ Tier Warning if tier > your level (can override)
 - ✓ **Request More Info** (Reject):
@@ -152,7 +153,7 @@ Technicians process cases through acceptance, investigation, and completion:
 
 ## Key Features for Technicians
 
-### Column Visibility Management (NEW)
+### Column Visibility Management 
 **Customize your dashboard view to see only the columns you need:**
 
 ```
@@ -256,7 +257,7 @@ My Dashboard shows:
 - Case status → "Needs Resubmission"
 - Member receives email with requirements
 
-### Workflow A1: "Workshop Delegate Management" (NEW)
+### Workflow A1: "Workshop Delegate Management" 
 *Available to Benefits Technicians and Administrators*
 
 **Important:** Delegates are now assigned at the **workshop code level**, not individual members. One delegate can submit cases for ANY member in that workshop.
@@ -401,7 +402,7 @@ My Dashboard shows:
 
 ### Technician Tools & Features
 
-### Member Profile Management System (NEW)
+### Member Profile Management System 
 
 **Access Member Profile Features:**
 Navigate from case detail → "Member Profile" tab (if case is assigned to you)
@@ -1059,7 +1060,7 @@ Technicians process cases through acceptance, investigation, and completion:
 
 ### 1. **Submitted Status** (Unassigned)
 - ✓ View case summary (not detailed)
-- ✓ **Review & Accept** button (NEW):
+- ✓ **Review & Accept** button :
   - Review Federal Fact Finder completeness
   - Review supporting documents
   - Adjust credit value (0.5 to 3.0)
@@ -1187,7 +1188,7 @@ Technicians process cases through acceptance, investigation, and completion:
 
 ## Key Features for Technicians
 
-### Column Visibility Management (NEW)
+### Column Visibility Management 
 **Customize your dashboard view to see only the columns you need:**
 
 ```
@@ -1291,7 +1292,7 @@ My Dashboard shows:
 - Case status → "Needs Resubmission"
 - Member receives email with requirements
 
-### Workflow A1: "Workshop Delegate Management" (NEW)
+### Workflow A1: "Workshop Delegate Management" 
 *Available to Benefits Technicians and Administrators*
 
 **Important:** Delegates are now assigned at the **workshop code level**, not individual members. One delegate can submit cases for ANY member in that workshop.
@@ -1436,7 +1437,7 @@ My Dashboard shows:
 
 ### Technician Tools & Features
 
-### Member Profile Management System (NEW)
+### Member Profile Management System 
 
 **Access Member Profile Features:**
 Navigate from case detail → "Member Profile" tab (if case is assigned to you)
