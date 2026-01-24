@@ -660,6 +660,7 @@ function handleMemberDocumentUpload(caseId) {
     const uploadAlertMessage = document.getElementById(`uploadAlertMessage${caseId}`);
     const uploadCountDisplay = document.getElementById(`uploadCount${caseId}`);
     const uploadModal = document.getElementById(`uploadDocumentsModal${caseId}`);
+    const uploadForm = document.getElementById(`uploadForm${caseId}`);
     
     if (!fileInput.files.length) {
         alert('Please select a file to upload');
@@ -668,13 +669,15 @@ function handleMemberDocumentUpload(caseId) {
     
     console.log('DEBUG: File selected:', fileInput.files[0].name);
     
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
-    console.log('DEBUG: CSRF token:', csrfToken ? 'found' : 'NOT FOUND');
+    // Get CSRF token from the upload form itself
+    const csrfTokenInput = uploadForm.querySelector('[name=csrfmiddlewaretoken]');
+    const csrfToken = csrfTokenInput ? csrfTokenInput.value : getCookie('csrftoken');
+    console.log('DEBUG: CSRF token:', csrfToken ? 'found (' + csrfToken.substring(0, 10) + '...)' : 'NOT FOUND');
     
     const formData = new FormData();
     formData.append('document_file', fileInput.files[0]);
     formData.append('document_notes', notesInput.value);
-    formData.append('csrfmiddlewaretoken', csrfToken);  // Add CSRF to body too
+    formData.append('csrfmiddlewaretoken', csrfToken);  // Add CSRF to body
     
     // Add event listener to detect if modal tries to hide
     uploadModal.addEventListener('hide.bs.modal', (e) => {
