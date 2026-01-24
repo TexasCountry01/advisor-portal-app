@@ -46,7 +46,6 @@ Technicians process cases through acceptance, investigation, and completion:
 - ✓ Request more documents from member
 - ✓ Add internal comments (not visible to member)
 - ✓ Update case status/progress
-- ℹ️ Reassignment: Manager/Admin can reassign to another tech
 
 ### 3. **In Progress Status**
 - ✓ Continue investigation
@@ -1081,7 +1080,6 @@ Technicians process cases through acceptance, investigation, and completion:
 - ✓ Request more documents from member
 - ✓ Add internal comments (not visible to member)
 - ✓ Update case status/progress
-- ℹ️ Reassignment: Manager/Admin can reassign to another tech
 
 ### 3. **In Progress Status**
 - ✓ Continue investigation
