@@ -80,17 +80,18 @@ Technicians process cases through acceptance, investigation, and completion:
   - Status changes back to 'accepted'
   - Case returns to your active queue
   - Member gets notification that case is resuming
-- ℹ️ Hold duration is **tracked**:
-  - If immediate: No end date (indefinite pause)
-  - If timed (2h, 4h, 8h, 1d): System tracks end date
-  - Audit trail shows hold start, reason, duration, and who initiated
+- ℹ️ Hold duration:
+  - Case stays on hold **indefinitely** until member provides needed information
+  - No automatic time-based release
+  - If member doesn't respond and sits too long → Technician manually rejects case
+  - Audit trail shows hold start, reason, and who initiated
 - ✓ Can be placed on hold again after resuming
 - **📊 AUDIT TRACKING:**  
-  - `case_held` - Logged with hold reason, duration, technician
+  - `case_held` - Logged with hold reason and technician who initiated
   - `notification_created` - In-app notification created for member
   - `email_sent` - Confirmation that hold notification emailed to member
   - `document_uploaded` - Tracked if member uploads docs while on hold
-  - `case_resumed` - Logged when hold is lifted with resume reason
+  - `case_resumed` - Logged when hold is lifted with reason for resuming
 
 ### 5. **Completing Case**
 - ✓ Mark as "Completed"
