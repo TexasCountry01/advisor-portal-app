@@ -794,6 +794,14 @@
         const form = document.getElementById('submitCaseForm');
         if (form) {
             form.addEventListener('submit', function(e) {
+                // Check if user is trying to SUBMIT (not save draft) and has no documents
+                const submitAction = e.submitter?.value;
+                if (submitAction === 'submit' && documentFiles.length === 0) {
+                    e.preventDefault();
+                    alert('Please attach at least one document (Federal Fact Finder form and supporting documents) before submitting your case.');
+                    return false;
+                }
+                
                 const dataTransfer = new DataTransfer();
                 documentFiles.forEach(file => {
                     dataTransfer.items.add(file);
