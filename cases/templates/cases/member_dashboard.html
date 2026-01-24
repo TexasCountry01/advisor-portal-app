@@ -689,15 +689,14 @@ function handleMemberDocumentUpload(caseId) {
                 uploadCountDisplay.innerHTML = `<strong style="color: #28a745;">Documents: ${data.document_count} new</strong>`;
             }
             
-            // Clear file input
+            // Clear file input and notes
             fileInput.value = '';
             notesInput.value = '';
             
-            // Auto-close upload modal after 1.5 seconds
+            // Auto-hide success alert after 3 seconds (but keep modal open)
             setTimeout(() => {
-                const uploadModal = bootstrap.Modal.getInstance(document.getElementById(`uploadDocumentsModal${caseId}`));
-                if (uploadModal) uploadModal.hide();
-            }, 1500);
+                uploadAlert.style.display = 'none';
+            }, 3000);
         } else {
             alert('Error: ' + data.error);
         }
