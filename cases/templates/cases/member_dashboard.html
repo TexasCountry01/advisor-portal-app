@@ -367,12 +367,49 @@ function getCookie(name) {
 
 // Submit a draft case - transition from draft to submitted
 function submitCaseFinal(caseId) {
-    if (!confirm('Are you sure you want to submit this case? It will be sent to the technician queue.')) {
-        return;
-    }
-    
+    // OPTION 2: Check if urgency has changed before submission
     const formData = new FormData();
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+    
+    // First, check if urgency has changed
+    formData.append('check_only', 'true');
+    
+    fetch(`/cases/${caseId}/submit-final/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(checkData => {
+        if (checkData.urgency_changed) {
+            // Urgency changed from normal to rush - show warning modal
+            const message = `⚠️ RUSH ALERT\n\nThis case is now marked as RUSH. Your due date is within 7 days.\n\nYou can proceed with submission or cancel to revise the due date.`;
+            
+            if (confirm(message)) {
+                // User confirmed - proceed with actual submission
+                performActualSubmission(caseId, csrfToken);
+            }
+            // If user cancels, do nothing
+        } else {
+            // Urgency hasn't changed - proceed with submission
+            performActualSubmission(caseId, csrfToken);
+        }
+    })
+    .catch(error => {
+        console.error('Error checking urgency:', error);
+        // Fallback to original behavior with simple confirmation
+        if (!confirm('Are you sure you want to submit this case? It will be sent to the technician queue.')) {
+            return;
+        }
+        performActualSubmission(caseId, csrfToken);
+    });
+}
+
+// Actual submission after urgency check
+function performActualSubmission(caseId, csrfToken) {
+    const formData = new FormData();
     
     fetch(`/cases/${caseId}/submit-final/`, {
         method: 'POST',

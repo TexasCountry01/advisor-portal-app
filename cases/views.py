@@ -1613,6 +1613,34 @@ def submit_case_final(request, case_id):
                     'error': f'Only draft cases can be submitted. This case is {case.get_status_display()}'
                 }, status=400)
             
+            # OPTION 2: Check if urgency has changed since draft was created
+            # Calculate current urgency based on today's date
+            from datetime import timedelta, date
+            today = date.today()
+            default_due_date = today + timedelta(days=7)
+            
+            # Calculate what the urgency should be based on current date
+            current_urgency = 'rush' if case.date_due < default_due_date else 'normal'
+            stored_urgency = case.urgency
+            
+            # Check if urgency changed from normal to rush
+            urgency_changed = (stored_urgency == 'normal' and current_urgency == 'rush')
+            
+            # If this is a check-only request (from frontend), return urgency status
+            check_only = request.POST.get('check_only') == 'true'
+            if check_only:
+                return JsonResponse({
+                    'success': True,
+                    'urgency_changed': urgency_changed,
+                    'stored_urgency': stored_urgency,
+                    'current_urgency': current_urgency,
+                    'message': 'This case is now marked as RUSH. Your due date is within 7 days. Continue?'
+                })
+            
+            # Update case urgency to current value
+            if current_urgency != stored_urgency:
+                case.urgency = current_urgency
+            
             # Update case status to submitted
             case.status = 'submitted'
             case.date_submitted = timezone.now()
@@ -1621,7 +1649,8 @@ def submit_case_final(request, case_id):
             return JsonResponse({
                 'success': True,
                 'message': f'Case {case.external_case_id} has been submitted successfully',
-                'redirect': reverse('cases:member_dashboard')
+                'redirect': reverse('cases:member_dashboard'),
+                'urgency_updated': (current_urgency != stored_urgency)
             })
         except Case.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Case not found'}, status=404)
