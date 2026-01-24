@@ -148,229 +148,16 @@
 
 ---
 
-## Decision Tree: "What Should I Do Next?"
 
-```
-              START: I have a case assigned to me
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ What's the case status?  │
-                └────────┬─────────────────┘
-                         │
-    ┌────────┬───────────┼───────────┬────────┐
-    │        │           │           │        │
-SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
-    │        │           │           │        │
-    ▼        ▼           ▼           ▼        ▼
-  NEW     REVIEW    CONTINUE    REVIEW   NEW
-  CASE    PROGRESS  WORK        FOR      UPLOADS
-          NOTES                 ISSUES
-    │        │           │           │        │
-    ├────────┴───────────┴───────────┴────────┤
-    │                                          │
-    ▼                                          ▼
- INVESTIGATE                            ┌──────────┐
- CASE                                   │ Has new  │
-                                        │ docs     │
-                                        │ from     │
-                                        │ member?  │
-                                        └────┬─────┘
-                                             │
-                                    ┌────────┴────────┐
-                                    │                 │
-                                   YES               NO
-                                    │                 │
-                                    ▼                 ▼
-                            ┌────────────┐    ┌──────────────┐
-                            │ Review New │    │ Complete Case│
-                            │ Docs       │    │ Now (Select  │
-                            │            │    │ Release Time)│
-                            └────┬───────┘    └──────────────┘
-                                 │
-                                 ▼
-                        ┌──────────────────┐
-                        │ Use Docs in      │
-                        │ Investigation    │
-                        └────┬─────────────┘
-                             │
-                             ▼
-                        ┌──────────────────┐
-                        │ Complete Case    │
-                        │ (Select Release  │
-                        │ Time)            │
-                        └──────────────────┘
-```
+## Core Technician Actions
 
----
+Technicians process cases through acceptance, investigation, and completion:
 
-## Decision Tree: "Is This Case Ready to Complete?"
-
-```
-                START: Ready to mark case complete?
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ Have I completed all     │
-                │ required investigation?  │
-                └────────┬─────────────────┘
-                         │
-                    ┌────┴────┐
-                    │          │
-                   NO         YES
-                    │          │
-                    ▼          ▼
-              ┌────────┐  ┌──────────────┐
-              │ Keep   │  │ Is report    │
-              │ Working│  │ written &    │
-              │        │  │ uploaded?    │
-              └────────┘  └────┬─────────┘
-                               │
-                          ┌────┴────┐
-                          │          │
-                         NO         YES
-                          │          │
-                          ▼          ▼
-                    ┌────────┐  ┌──────────────┐
-                    │ Upload │  │ Has member   │
-                    │ Report │  │ received     │
-                    │ First  │  │ everything?  │
-                    └────────┘  └────┬─────────┘
-                                    │
-                               ┌────┴────┐
-                               │          │
-                              NO         YES
-                               │          │
-                               ▼          ▼
-                        ┌─────────┐  ┌──────────────────┐
-                        │ Request │  │ Do I need to     │
-                        │ More    │  │ pause work on    │
-                        │ Docs    │  │ this case?       │
-                        │ First   │  └────┬─────────────┘
-                        └─────────┘       │
-                                     ┌────┴────┐
-                                     │          │
-                                    NO         YES
-                                     │          │
-                                     ▼          ▼
-                               ┌────────┐  ┌──────────────┐
-                               │Complete│  │ Put Case on  │
-                               │ Case   │  │ Hold         │
-                               │ Now    │  │              │
-                               └────┬───┘  └────┬─────────┘
-                                    │           │
-                                    │    ┌──────┴──────┐
-                                    │    │             │
-                                    │    ▼             ▼
-                                    │ SELECT:      SELECT:
-                                    │ • Reason    • Duration
-                                    │ • Notes     (Immediate
-                                    │              2h, 4h, 8h,
-                                    │              1 day, custom)
-                                    │    │             │
-                                    │    └──────┬──────┘
-                                    │           │
-                                    │           ▼
-                                    │    Case Placed
-                                    │    on Hold
-                                    │    (Status = hold)
-                                    │           │
-                                    │    ┌──────┴──────┐
-                                    │    │             │
-                                    │    ▼             ▼
-                                    │  Continue   Resume Later
-                                    │  When Ready (When time
-                                    │  (Click     comes)
-                                    │  "Resume")
-                                    │    │             │
-                                    └────┴─────────────┘
-                                         │
-                                         ▼
-                                  ┌──────────────────┐
-                                  │ Select Release   │
-                                  │ Timing:          │
-                                  │ • 0 hrs: Now     │
-                                  │ • 1-5 hrs: Later │
-                                  └──────────────────┘
-```
-
----
-
-## Decision Tree: "Should I Put This Case on Hold?"
-
-```
-                START: Need to pause work on case?
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ Why pause work?          │
-                └────────┬─────────────────┘
-                         │
-    ┌─────────┬──────────┬┴──────────┬──────────┐
-    │         │          │           │          │
-WAITING   AWAITING   TECHNICAL   MEMBER      ESCALATION
-MEMBER    DECISION   ISSUE       INFO        PENDING
-DOCS      FROM ADMIN             PENDING
-    │         │          │           │          │
-    ▼         ▼          ▼           ▼          ▼
- SELECT:  SELECT:    SELECT:     SELECT:    SELECT:
- "Waiting "Awaiting  "Technical  "Waiting "Escalation
- for      Decision"  Issue"      for      Pending"
- Member"                         Member"
-    │         │          │           │          │
-    └─────────┴──────────┴───────────┴──────────┘
-                    │
-                    ▼
-        ┌───────────────────────────┐
-        │ SELECT Hold Duration:     │
-        ├───────────────────────────┤
-        │ • Immediate (No Duration) │
-        │   (hold indefinitely)     │
-        │                           │
-        │ • 2 Hours                 │
-        │   (auto-resume in 2h)     │
-        │                           │
-        │ • 4 Hours                 │
-        │   (auto-resume in 4h)     │
-        │                           │
-        │ • 8 Hours                 │
-        │   (auto-resume in 8h)     │
-        │                           │
-        │ • 1 Day                   │
-        │   (auto-resume tomorrow)  │
-        │                           │
-        │ • Custom Duration         │
-        │   (future: specify days)  │
-        └───────┬───────────────────┘
-                │
-                ▼
-    ┌───────────────────────────┐
-    │ Click "Put on Hold"       │
-    │ • Case ownership preserved│
-    │ • Status changes to 'hold'│
-    │ • Duration tracked       │
-    │ • Reason logged          │
-    └───────┬───────────────────┘
-            │
-            ▼
-    ┌───────────────────────────┐
-    │ Case is Now on Hold       │
-    │ • Resume button appears   │
-    │ • Your ownership stays    │
-    │ • Notes still accessible  │
-    │ • Hold timestamp set      │
-    └───────┬───────────────────┘
-            │
-            ▼
-    ┌───────────────────────────┐
-    │ When Ready to Resume:     │
-    │ • Click "Resume from Hold"│
-    │ • Add resume reason       │
-    │ • Status changes to       │
-    │   'accepted'              │
-    │ • Continue with case      │
-    └───────────────────────────┘
-```
+- **Accept Cases** - Take ownership from case queue
+- **Investigate** - Perform research and documentation
+- **Hold/Pause** - Temporarily pause with hold reasons
+- **Complete** - Mark done with release timing
+- **Quality Review** - Level 1 cases require Level 2/3 approval
 
 ---
 
@@ -1020,3 +807,234 @@ All technician activities are automatically tracked in the system's audit trail.
 - Member communication standards
 - Case completion process
 - Quality standards & expectations
+
+---
+
+## Reference Diagrams
+
+## Decision Tree: "What Should I Do Next?"
+
+```
+              START: I have a case assigned to me
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ What's the case status?  │
+                └────────┬─────────────────┘
+                         │
+    ┌────────┬───────────┼───────────┬────────┐
+    │        │           │           │        │
+SUBMITTED ACCEPTED  IN-PROGRESS COMPLETED RESUBMITTED
+    │        │           │           │        │
+    ▼        ▼           ▼           ▼        ▼
+  NEW     REVIEW    CONTINUE    REVIEW   NEW
+  CASE    PROGRESS  WORK        FOR      UPLOADS
+          NOTES                 ISSUES
+    │        │           │           │        │
+    ├────────┴───────────┴───────────┴────────┤
+    │                                          │
+    ▼                                          ▼
+ INVESTIGATE                            ┌──────────┐
+ CASE                                   │ Has new  │
+                                        │ docs     │
+                                        │ from     │
+                                        │ member?  │
+                                        └────┬─────┘
+                                             │
+                                    ┌────────┴────────┐
+                                    │                 │
+                                   YES               NO
+                                    │                 │
+                                    ▼                 ▼
+                            ┌────────────┐    ┌──────────────┐
+                            │ Review New │    │ Complete Case│
+                            │ Docs       │    │ Now (Select  │
+                            │            │    │ Release Time)│
+                            └────┬───────┘    └──────────────┘
+                                 │
+                                 ▼
+                        ┌──────────────────┐
+                        │ Use Docs in      │
+                        │ Investigation    │
+                        └────┬─────────────┘
+                             │
+                             ▼
+                        ┌──────────────────┐
+                        │ Complete Case    │
+                        │ (Select Release  │
+                        │ Time)            │
+                        └──────────────────┘
+```
+
+---
+
+## Decision Tree: "Is This Case Ready to Complete?"
+
+```
+                START: Ready to mark case complete?
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ Have I completed all     │
+                │ required investigation?  │
+                └────────┬─────────────────┘
+                         │
+                    ┌────┴────┐
+                    │          │
+                   NO         YES
+                    │          │
+                    ▼          ▼
+              ┌────────┐  ┌──────────────┐
+              │ Keep   │  │ Is report    │
+              │ Working│  │ written &    │
+              │        │  │ uploaded?    │
+              └────────┘  └────┬─────────┘
+                               │
+                          ┌────┴────┐
+                          │          │
+                         NO         YES
+                          │          │
+                          ▼          ▼
+                    ┌────────┐  ┌──────────────┐
+                    │ Upload │  │ Has member   │
+                    │ Report │  │ received     │
+                    │ First  │  │ everything?  │
+                    └────────┘  └────┬─────────┘
+                                    │
+                               ┌────┴────┐
+                               │          │
+                              NO         YES
+                               │          │
+                               ▼          ▼
+                        ┌─────────┐  ┌──────────────────┐
+                        │ Request │  │ Do I need to     │
+                        │ More    │  │ pause work on    │
+                        │ Docs    │  │ this case?       │
+                        │ First   │  └────┬─────────────┘
+                        └─────────┘       │
+                                     ┌────┴────┐
+                                     │          │
+                                    NO         YES
+                                     │          │
+                                     ▼          ▼
+                               ┌────────┐  ┌──────────────┐
+                               │Complete│  │ Put Case on  │
+                               │ Case   │  │ Hold         │
+                               │ Now    │  │              │
+                               └────┬───┘  └────┬─────────┘
+                                    │           │
+                                    │    ┌──────┴──────┐
+                                    │    │             │
+                                    │    ▼             ▼
+                                    │ SELECT:      SELECT:
+                                    │ • Reason    • Duration
+                                    │ • Notes     (Immediate
+                                    │              2h, 4h, 8h,
+                                    │              1 day, custom)
+                                    │    │             │
+                                    │    └──────┬──────┘
+                                    │           │
+                                    │           ▼
+                                    │    Case Placed
+                                    │    on Hold
+                                    │    (Status = hold)
+                                    │           │
+                                    │    ┌──────┴──────┐
+                                    │    │             │
+                                    │    ▼             ▼
+                                    │  Continue   Resume Later
+                                    │  When Ready (When time
+                                    │  (Click     comes)
+                                    │  "Resume")
+                                    │    │             │
+                                    └────┴─────────────┘
+                                         │
+                                         ▼
+                                  ┌──────────────────┐
+                                  │ Select Release   │
+                                  │ Timing:          │
+                                  │ • 0 hrs: Now     │
+                                  │ • 1-5 hrs: Later │
+                                  └──────────────────┘
+```
+
+---
+
+## Decision Tree: "Should I Put This Case on Hold?"
+
+```
+                START: Need to pause work on case?
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ Why pause work?          │
+                └────────┬─────────────────┘
+                         │
+    ┌─────────┬──────────┬┴──────────┬──────────┐
+    │         │          │           │          │
+WAITING   AWAITING   TECHNICAL   MEMBER      ESCALATION
+MEMBER    DECISION   ISSUE       INFO        PENDING
+DOCS      FROM ADMIN             PENDING
+    │         │          │           │          │
+    ▼         ▼          ▼           ▼          ▼
+ SELECT:  SELECT:    SELECT:     SELECT:    SELECT:
+ "Waiting "Awaiting  "Technical  "Waiting "Escalation
+ for      Decision"  Issue"      for      Pending"
+ Member"                         Member"
+    │         │          │           │          │
+    └─────────┴──────────┴───────────┴──────────┘
+                    │
+                    ▼
+        ┌───────────────────────────┐
+        │ SELECT Hold Duration:     │
+        ├───────────────────────────┤
+        │ • Immediate (No Duration) │
+        │   (hold indefinitely)     │
+        │                           │
+        │ • 2 Hours                 │
+        │   (auto-resume in 2h)     │
+        │                           │
+        │ • 4 Hours                 │
+        │   (auto-resume in 4h)     │
+        │                           │
+        │ • 8 Hours                 │
+        │   (auto-resume in 8h)     │
+        │                           │
+        │ • 1 Day                   │
+        │   (auto-resume tomorrow)  │
+        │                           │
+        │ • Custom Duration         │
+        │   (future: specify days)  │
+        └───────┬───────────────────┘
+                │
+                ▼
+    ┌───────────────────────────┐
+    │ Click "Put on Hold"       │
+    │ • Case ownership preserved│
+    │ • Status changes to 'hold'│
+    │ • Duration tracked       │
+    │ • Reason logged          │
+    └───────┬───────────────────┘
+            │
+            ▼
+    ┌───────────────────────────┐
+    │ Case is Now on Hold       │
+    │ • Resume button appears   │
+    │ • Your ownership stays    │
+    │ • Notes still accessible  │
+    │ • Hold timestamp set      │
+    └───────┬───────────────────┘
+            │
+            ▼
+    ┌───────────────────────────┐
+    │ When Ready to Resume:     │
+    │ • Click "Resume from Hold"│
+    │ • Add resume reason       │
+    │ • Status changes to       │
+    │   'accepted'              │
+    │ • Continue with case      │
+    └───────────────────────────┘
+```
+
+---
+
