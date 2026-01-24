@@ -4099,7 +4099,12 @@ def create_case_change_request(request, case_id):
             user=user,
             action_type='member_change_request_created',
             case=case,
-            details=f'{request_type}: {member_notes[:100] if member_notes else "No notes"}'
+            description=f'Member requested {request_type.replace("_", " ")}',
+            metadata={
+                'request_type': request_type,
+                'member_notes': member_notes,
+                'requested_due_date': str(requested_due_date) if requested_due_date else None
+            }
         )
         
         logger.info(f'Member {user.id} created {request_type} request for case {case_id}')
@@ -4181,7 +4186,11 @@ def approve_case_change_request(request, request_id):
             user=user,
             action_type='member_change_request_approved',
             case=case,
-            details=f'{change_req.get_request_type_display()} approved: {tech_response_notes[:100]}'
+            description=f'{change_req.get_request_type_display()} request approved',
+            metadata={
+                'request_type': change_req.request_type,
+                'tech_response': tech_response_notes
+            }
         )
         
         return JsonResponse({
@@ -4237,7 +4246,11 @@ def deny_case_change_request(request, request_id):
             user=user,
             action_type='member_change_request_denied',
             case=case,
-            details=f'{change_req.get_request_type_display()} denied: {tech_response_notes[:100]}'
+            description=f'{change_req.get_request_type_display()} request denied',
+            metadata={
+                'request_type': change_req.request_type,
+                'denial_reason': tech_response_notes
+            }
         )
         
         logger.info(f'Tech {user.id} denied {change_req.request_type} for case {case.id}')
