@@ -312,20 +312,20 @@
                             </td>
                             <td>
                                 {% if case.status == 'submitted' %}
-                                    <span title="Case received and waiting for technician to start" style="cursor: help; border-bottom: 1px dotted #999;">Submitted</span>
+                                    <span class="badge bg-secondary" title="Case received and waiting for technician to start">Submitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span title="Case accepted by technician" style="cursor: help; border-bottom: 1px dotted #999;">Accepted</span>
+                                    <span class="badge bg-primary" title="Case accepted by technician">Accepted</span>
                                 {% elif case.status == 'pending_review' %}
-                                    <span title="Awaiting quality review" style="cursor: help; border-bottom: 1px dotted #999;">Pending Review</span>
+                                    <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'hold' %}
-                                    <span title="Case temporarily paused" style="cursor: help; border-bottom: 1px dotted #999;">On Hold</span>
+                                    <span class="badge bg-danger" title="Case temporarily paused">On Hold</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
-                                        <span title="Case completed and released to member" style="cursor: help; border-bottom: 1px dotted #999;">Completed</span>
+                                        <span class="badge bg-success" title="Case completed and released to member">Completed</span>
                                     {% elif case.scheduled_release_date %}
-                                        <span title="Completed but scheduled for future release" style="cursor: help; border-bottom: 1px dotted #999;">Scheduled for Release</span>
+                                        <span class="badge bg-danger" title="Completed but scheduled for future release">Scheduled</span>
                                     {% else %}
-                                        <span title="Currently being worked on" style="cursor: help; border-bottom: 1px dotted #999;">Working</span>
+                                        <span class="badge bg-info" title="Currently being worked on">Working</span>
                                     {% endif %}
                                 {% endif %}
                             </td>
