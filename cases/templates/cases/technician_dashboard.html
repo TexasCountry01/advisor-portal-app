@@ -375,20 +375,20 @@
                             </td>
                             <td class="column-status {% if 'status' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'submitted' %}
-                                    <span class="badge bg-secondary" title="Case received and waiting for technician to start">Submitted</span>
+                                    <span class="badge bg-secondary" title="Case received and waiting for technician to start"><strong>S</strong></span>
                                 {% elif case.status == 'resubmitted' %}
                                     <span class="badge bg-info" title="Case re-submitted after member revisions">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-primary" title="Case accepted by technician">Accepted</span>
+                                    <span class="badge bg-primary" title="Case accepted by technician"><strong>A</strong></span>
                                 {% elif case.status == 'pending_review' %}
                                     <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'hold' %}
-                                    <span class="badge bg-danger" title="Case temporarily paused">On Hold</span>
+                                    <span class="badge bg-danger" title="Case temporarily paused"><strong>H</strong></span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
-                                        <span class="badge bg-success" title="Case completed and released to member">Completed</span>
+                                        <span class="badge bg-success" title="Case completed and released to member"><strong>C</strong></span>
                                     {% elif case.scheduled_release_date %}
-                                        <span class="badge bg-warning" title="Completed but scheduled for future release">Scheduled for Release</span>
+                                        <span class="badge bg-danger" title="Completed but scheduled for future release"><strong>C</strong></span>
                                     {% else %}
                                         <span class="badge bg-info" title="Currently being worked on">Working</span>
                                     {% endif %}
@@ -396,33 +396,29 @@
                             </td>
                             <td class="column-release_date {% if 'release_date' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.scheduled_release_date %}
-                                    <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/y" }}</span>
+                                    <span class="badge bg-danger">Scheduled {{ case.scheduled_release_date|date:"m/d/y" }}</span>
                                 {% elif case.actual_release_date %}
-                                    <small class="text-muted">Released</small>
+                                    <span class="text-muted">{{ case.actual_release_date|date:"m/d/y" }}</span>
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.assigned_to %}
-                                    {% if case.assigned_to.first_name %}
-                                        {{ case.assigned_to.first_name }}
-                                    {% else %}
-                                        {{ case.assigned_to.username }}
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    {% if case.assigned_to %}
+                                        <small style="flex-grow: 1;">
+                                            {% if case.assigned_to.first_name %}
+                                                {{ case.assigned_to.first_name }}
+                                            {% else %}
+                                                {{ case.assigned_to.username }}
+                                            {% endif %}
+                                        </small>
                                     {% endif %}
-                                {% else %}
-                                    <span class="text-muted">Unassigned</span>
-                                {% endif %}
-                                {% if case.assigned_to %}
-                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
-                                        <i class="bi bi-pencil"></i>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Assign or reassign case technician" style="min-width: 60px; font-size: 0.8rem;">
+                                        <i class="bi bi-person-check"></i> Assign
                                     </button>
-                                {% else %}
-                                    <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                {% endif %}
+                                </div>
                             </td>
                             <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_scheduled %}
