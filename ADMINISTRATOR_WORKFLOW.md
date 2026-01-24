@@ -772,6 +772,143 @@ Export: PDF or CSV
 
 ---
 
+## Email System Administration
+
+### Email Configuration Settings
+
+Administrators control all email functionality through SystemSettings model:
+
+**Setting 1: Enable/Disable Email Notifications**
+- **Field:** `enable_delayed_email_notifications`
+- **Type:** Boolean (true/false)
+- **Purpose:** Master switch for email notification feature
+- **Default:** true (enabled)
+- **Effect:** When false, no release/hold emails sent
+
+**Setting 2: Email Delay Duration**
+- **Field:** `default_email_delay_hours`
+- **Type:** Integer (0-24)
+- **Purpose:** Hours to delay sending release emails after case completion
+- **Default:** 0 (immediate)
+- **Examples:** 0=immediate, 1=next hour, 24=next day
+
+**Setting 3: Batch Processing**
+- **Field:** `batch_email_enabled`
+- **Type:** Boolean (true/false)
+- **Purpose:** Enable/disable background email job
+- **Default:** true (enabled)
+
+**How to Modify:** Admin Dashboard → System Settings → Email Section → Save
+
+### Email Audit Trail Access
+
+Administrators have full access to all email-related audit entries:
+
+**Finding Email History:**
+1. Case Detail → Audit Trail tab
+2. Filter by action_type='email_sent', 'email_failed', 'email_notification_sent'
+3. View complete email metadata: recipient, subject, timestamp, status
+
+**Email Actions Logged:**
+- `email_sent` = Email successfully delivered
+- `email_failed` = Email delivery failed
+- `email_notification_sent` = Scheduled release email sent
+- `notification_created` = In-app notification + email created
+
+### Background Email Job Management
+
+**Command:** `python manage.py send_scheduled_emails`
+
+**How It Works:**
+1. Finds all completed cases where scheduled_email_date <= today
+2. Checks if actual_email_sent_date IS NULL (not yet sent)
+3. Sends email to member
+4. Records actual_email_sent_date = NOW
+5. Logs action in audit trail
+
+**Running Manually:**
+```bash
+# Dry run (preview, no emails sent)
+python manage.py send_scheduled_emails --dry-run
+
+# Live execution (sends emails)
+python manage.py send_scheduled_emails
+```
+
+**Cron Job Setup (Recommended):**
+
+Add one of these to your server crontab:
+
+```bash
+# Daily at midnight (UTC)
+0 0 * * * cd /path/to/advisor-portal-app && python manage.py send_scheduled_emails >> /var/log/emails.log 2>&1
+
+# Or Hourly
+0 * * * * cd /path/to/advisor-portal-app && python manage.py send_scheduled_emails >> /var/log/emails.log 2>&1
+```
+
+### Email Troubleshooting & Recovery
+
+**Problem: Email Not Received**
+1. Check audit trail for `email_failed` entries
+2. Verify member email address correct in User profile
+3. Check SystemSettings email configuration
+4. Run: `python manage.py send_scheduled_emails --dry-run`
+
+**Problem: Scheduled Email Not Sent**
+1. Verify case status = 'completed'
+2. Check scheduled_email_date is in past or today
+3. Verify batch_email_enabled = true in SystemSettings
+4. Check if cron job is running
+
+**Recovery Options:**
+- Cannot currently resend individual failed emails
+- Must manually edit case.actual_email_sent_date = NULL and rerun job
+- Or create custom admin command to resend specific emails
+
+### Email Template Management
+
+**Email Templates Location:** `cases/templates/emails/`
+
+**Available Templates:**
+- case_on_hold.html / .txt (member hold notification)
+- case_released_notification.html / .txt (member release)
+- case_rejection_notification.html / .txt (member rejection)
+- case_accepted.html (tech assignment)
+- case_accepted_member.html (member accepted)
+- case_approved_notification.html (QR approved)
+- case_revisions_needed_notification.html (QR revisions)
+- case_corrections_notification.html (QR corrections)
+
+**Modifying Templates:**
+1. Edit .html or .txt file in cases/templates/emails/
+2. Changes take effect immediately
+3. Variables available: case, member, tech, reason, etc.
+4. Keep HTML responsive for mobile
+
+### System Maintenance & Email
+
+**During Maintenance:**
+- Set `batch_email_enabled = false` to prevent sending during downtime
+- Set `enable_delayed_email_notifications = false` if critical issues
+- Restore settings when maintenance complete
+
+### Email Compliance & Audit
+
+**Compliance Features:**
+- All emails logged in audit trail
+- Timestamps recorded for all send attempts
+- Failed emails tracked with error reasons
+- Email content archived in audit trail
+
+**Audit Reports:**
+- All emails sent to specific member (date range)
+- All emails sent on specific date range
+- Email delivery failure report
+- Email delay compliance report
+
+---
+
 ## 📊 Audit Trail Activities (Administrator Role)
 
 All administrator activities are automatically tracked in the system's audit trail. Here's what gets logged:

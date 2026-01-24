@@ -584,6 +584,66 @@ CLOSED (Archived)
 
 ---
 
+## Email Notifications & Visibility
+
+### What Emails Managers Receive
+
+**Managers receive NO direct case emails.**
+
+Instead, managers have visibility into email notifications through:
+- Case dashboard email status fields
+- Audit trail email action logs
+- Email delivery monitoring
+
+### Email Status on Dashboard
+
+When viewing cases in dashboard, managers can see email-related information:
+
+| Field | Shows | Purpose |
+|-------|-------|---------|
+| Hold Email Status | ✓ Sent / ✗ Failed | Verify member received hold notification |
+| Release Email Scheduled | Date scheduled | When member will get release email |
+| Release Email Sent | Timestamp | When release email was delivered |
+| Email Delivery Status | Success/Failed/Pending | Email delivery confirmation |
+| Member Notifications | Unread/Read count | In-app notification status |
+
+### Email Monitoring for Escalations
+
+**When case has issues, check email status:**
+
+| Scenario | Check | Action |
+|----------|-------|--------|
+| Case put on hold | Audit trail for email_sent | Verify member notified |
+| Case completed | Scheduled_email_date | Verify release email scheduled |
+| Resubmitted case | Audit trail for email_sent | Verify tech was notified |
+| Failed communication | Email_failed in audit trail | Troubleshoot delivery issue |
+
+### Email Tracking Audit Trail
+
+**To view email history for any case:**
+
+1. Navigate to case detail
+2. Click "Audit Trail" tab
+3. Filter by action_type='email_sent' OR 'email_failed'
+4. View: Timestamp, recipient email, email type, delivery status
+
+**Email Actions in Audit Trail:**
+- `email_sent` = Email successfully delivered
+- `email_failed` = Email delivery failed
+- `email_notification_sent` = Scheduled release email sent
+- `notification_created` = In-app notification + email created
+
+### Manager's Email Responsibilities
+
+**Managers should monitor emails when:**
+
+1. **Placing case on hold:** Verify member received hold email → Check audit trail
+2. **Managing case completion:** Verify release email scheduled → Check dashboard date
+3. **Handling resubmissions:** Verify assigned tech received alert → Audit trail check
+4. **Escalating to admin:** Use email failures as evidence → Email_failed entries
+
+---
+
 ## 📊 Audit Trail Activities (Manager Role)
 
 All manager activities are automatically tracked in the system's audit trail. Here's what gets logged:

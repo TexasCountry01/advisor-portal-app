@@ -584,6 +584,53 @@ Dashboard Column Visibility:
 
 ---
 
+## Member Email Notifications
+
+Members automatically receive email notifications at key points in their case journey. All emails are sent to their registered email address and tracked in the audit trail.
+
+### Emails Members Receive
+
+#### 1. **Case Accepted Email** ✅
+- **When Sent:** Immediately when technician accepts a submitted case
+- **Subject:** "Your Case [ID] - Your Case Has Been Accepted"
+- **Content:** Confirmation that case received and accepted, tier level assigned, next steps
+- **Action:** Member can log in to view case status and progress
+- **Audit Trail:** Logged as email_sent action
+
+#### 2. **Case On Hold Email** ✅
+- **When Sent:** Immediately when technician puts case on hold
+- **Subject:** "Action Required: Your Case [ID] Requires Additional Information"
+- **Content:** Explanation of hold reason, documents/information needed, link to upload
+- **Action:** Member should upload requested documents while case is on hold
+- **Important:** Members CAN upload documents while case is on hold
+- **Audit Trail:** Logged as email_sent with hold reason
+
+#### 3. **Case Rejected - Needs Changes Email** ✅
+- **When Sent:** Immediately when technician rejects case
+- **Subject:** "Case [ID] - Additional Information Needed"
+- **Content:** Rejection reason, detailed notes explaining what's needed, resubmission instructions
+- **Action:** Member should resubmit case with corrected/additional information
+- **Status Change:** Case status becomes 'needs_resubmission'
+- **Audit Trail:** Logged with rejection details
+
+#### 4. **Case Released - Available for Review Email** ✅
+- **When Sent:** When scheduled release date arrives (can be delayed per system settings)
+- **Subject:** "Your Case [ID] is Now Available"
+- **Content:** Case is complete and ready for review, link to view completed case
+- **Scheduling:** Can be delayed 0-24 hours based on system configuration
+- **Delivery:** Via background job `python manage.py send_scheduled_emails`
+- **Audit Trail:** Logged as email_notification_sent when delivered
+
+### Email Scheduling & Configuration
+
+- Release emails scheduled automatically when case marked completed
+- Delay calculated from case completion + configured delay hours
+- Batch job sends emails when date arrives (daily/hourly via cron)
+- Email status tracking: Audit trail shows scheduled date, actual sent date, delivery status
+- Failed emails logged with error details
+
+---
+
 ## 📊 Audit Trail Activities (Member Role)
 
 All member activities are automatically tracked in the system's audit trail. Here's what gets logged:

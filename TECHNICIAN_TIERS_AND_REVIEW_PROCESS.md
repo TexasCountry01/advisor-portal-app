@@ -711,6 +711,87 @@ Based on the client meeting agenda, several decisions about the review process a
 
 ---
 
+## 9. Quality Review Email Notifications
+
+### Overview
+
+All Level 1 technicians receive email notifications when their completed cases are reviewed by Level 2 or Level 3 technicians. These emails serve as the primary communication mechanism for quality review decisions and are logged in the audit trail.
+
+### Emails Level 1 Technicians Receive
+
+#### Email #1: **Case Approved** ✅
+- **When Sent:** Immediately when Level 2/3 tech approves a Level 1 case
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review Complete: Your Case [ID] APPROVED"
+- **Template:** case_approved_notification.html
+- **Content:**
+  - Approval confirmation
+  - Reviewer name and tier level (Level 2 or 3)
+  - Approval timestamp
+  - Case proceeds to completion
+- **Action:** No action needed; case automatically completed
+- **Case Status:** Changes to 'completed'
+- **Audit Trail:** Logged as email_sent with reviewer info
+
+#### Email #2: **Revisions Requested** ✅
+- **When Sent:** Immediately when Level 2/3 tech requests revisions
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review: Revisions Requested for Case [ID]"
+- **Template:** case_revisions_needed_notification.html
+- **Content:**
+  - What revisions are needed (specific sections)
+  - Reviewer name and tier level
+  - Detailed feedback and comments
+  - Deadline for revision completion
+  - Instructions on how to resubmit
+- **Action:** Level 1 tech must review feedback and make necessary revisions
+- **Case Status:** Remains 'pending_review'
+- **Audit Trail:** Logged with revision details and reviewer feedback
+
+#### Email #3: **Corrections Required** ✅
+- **When Sent:** Immediately when Level 2/3 tech requires corrections
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review: Corrections Required for Case [ID]"
+- **Template:** case_corrections_notification.html
+- **Content:**
+  - What corrections are needed
+  - Severity level (minor, moderate, critical)
+  - Detailed explanation of issues
+  - Reviewer name and tier level
+  - Deadline for correction
+- **Action:** Level 1 tech must correct errors and resubmit
+- **Case Status:** Remains 'pending_review'
+- **Audit Trail:** Logged with correction details and severity
+
+#### Email #4: **Case Resubmitted Alert** ✅
+- **When Sent:** Immediately when member resubmits a completed case
+- **Recipient:** Technician currently assigned to case
+- **Subject:** "Alert: Case [ID] Resubmitted by Member"
+- **Content:**
+  - Case has been resubmitted
+  - Count of resubmissions
+  - List of new documents uploaded
+  - Member's resubmission reason/notes
+- **Action:** Review member's new documents and assess changes
+- **Case Status:** Changes to 'resubmitted'
+- **Audit Trail:** Logged with resubmission count and member notes
+
+### Email Delivery & Audit Trail
+
+**All Quality Review Emails:**
+- Sent immediately (not scheduled)
+- Logged in audit trail with action_type='email_sent'
+- Include reviewer identification for accountability
+- Track delivery status (success/failed)
+- Failed emails logged as 'email_failed' for admin recovery
+
+**Finding Email History:**
+1. View case detail → Audit Trail tab
+2. Filter by action_type='email_sent'
+3. See all review decision emails sent with timestamps and content
+
+---
+
 ## 9. Benefits of Three-Tier Review System
 
 1. **Quality Assurance:** All junior tech work reviewed before member sees it
