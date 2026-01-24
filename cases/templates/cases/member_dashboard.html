@@ -685,12 +685,6 @@ function handleMemberDocumentUpload(caseId) {
     formData.append('document_notes', notesInput.value);
     formData.append('csrfmiddlewaretoken', csrfToken);  // Add CSRF to body
     
-    // Add event listener to detect if modal tries to hide
-    uploadModal.addEventListener('hide.bs.modal', (e) => {
-        console.warn('DEBUG: hide.bs.modal event triggered - PREVENTING DEFAULT');
-        e.preventDefault();
-    });
-    
     fetch(`/cases/${caseId}/upload-member-documents/`, {
         method: 'POST',
         body: formData,
@@ -713,12 +707,7 @@ function handleMemberDocumentUpload(caseId) {
     .then(data => {
         console.log('DEBUG: Upload response:', data);
         if (data.success) {
-            // Show success alert in the open modal
-            uploadAlertMessage.textContent = data.message;
-            uploadAlert.style.display = 'block';
-            console.log('DEBUG: Success alert shown');
-            
-            // Update count display in Update modal
+            // Update count display in Update modal FIRST
             if (data.document_count) {
                 uploadCountDisplay.innerHTML = `<strong style="color: #28a745;">Documents: ${data.document_count} new</strong>`;
                 console.log('DEBUG: Count updated to:', data.document_count);
@@ -728,21 +717,18 @@ function handleMemberDocumentUpload(caseId) {
             fileInput.value = '';
             notesInput.value = '';
             
-            // Ensure modal stays visible (don't close)
-            console.log('DEBUG: Modal should stay open');
-            if (uploadModal) {
-                uploadModal.style.display = 'block';
-                // Add class to ensure bootstrap doesn't hide it
-                uploadModal.classList.add('show');
-                console.log('DEBUG: Explicitly set modal display to block and added show class');
-            }
+            // Close upload modal
+            const uploadModalInstance = bootstrap.Modal.getInstance(uploadModal) || new bootstrap.Modal(uploadModal);
+            uploadModalInstance.hide();
+            console.log('DEBUG: Upload modal closed');
             
-            // Auto-hide success alert after 3 seconds (but keep modal open)
-            console.log('DEBUG: Starting alert auto-hide timer (3 seconds)');
+            // Reopen Update modal (bring it back to front)
             setTimeout(() => {
-                console.log('DEBUG: Hiding alert after 3 seconds, but modal stays open');
-                uploadAlert.style.display = 'none';
-            }, 3000);
+                const updateModal = document.getElementById(`updateCaseModal${caseId}`);
+                const updateModalInstance = bootstrap.Modal.getInstance(updateModal) || new bootstrap.Modal(updateModal);
+                updateModalInstance.show();
+                console.log('DEBUG: Update modal reopened with new count');
+            }, 300);
         } else {
             console.log('DEBUG: Upload failed:', data.error);
             alert('Error: ' + data.error);
