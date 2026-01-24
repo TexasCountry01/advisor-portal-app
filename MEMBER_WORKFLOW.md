@@ -151,28 +151,20 @@ The staff team can see on the case detail page:
 
 ## Common Member Scenarios
 
-### Scenario A: "I need my benefits verified ASAP"
+### Scenario A: "Need report ASAP"
 1. Go to "Submit New Case"
-2. Select "Rushed" option (understand extra cost)
+2. Select "Rushed" option (+$20.00 fee)
 3. Upload all documents
 4. Submit with rush fee
 5. Case prioritized in queue
-6. Tech accepts and completes faster
 
-### Scenario B: "My case is still in progress, when will it be done?"
+### Scenario B: "When will my case be done?"
 1. Go to Member Dashboard
 2. Find your case
-3. If status is "Submitted" or "Accepted": Check back later
-4. If status is "Completed": Check for release date
-5. If release date has passed: Reports should be visible
-6. If release date is future: Wait for that date
+3. Check the status and any scheduled release date
 
-### Scenario C: "My case was completed but I can't see the report"
-1. Go to case detail
-2. If status is "Completed": Check scheduled release date
-3. If date hasn't arrived yet: Come back on that date
-4. If date has passed but still no report: Contact administrator
-5. If release date is NULL: Contact administrator to release immediately
+### Scenario C: "Can't see my completed report"
+1. Contact administrator or support
 
 ### Scenario D: "I want to add more documents to my case"
 1. Go to case detail
