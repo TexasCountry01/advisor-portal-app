@@ -4095,16 +4095,21 @@ def create_case_change_request(request, case_id):
         
         # Log to audit trail
         from core.models import AuditLog
+        metadata = {
+            'request_type': request_type,
+            'member_notes': member_notes,
+        }
+        if request_type == 'due_date_extension':
+            metadata['requested_due_date'] = str(requested_due_date) if requested_due_date else None
+        elif request_type == 'cancellation':
+            metadata['cancellation_reason'] = cancellation_reason
+        
         AuditLog.log_activity(
             user=user,
             action_type='member_change_request_created',
             case=case,
             description=f'Member requested {request_type.replace("_", " ")}',
-            metadata={
-                'request_type': request_type,
-                'member_notes': member_notes,
-                'requested_due_date': str(requested_due_date) if requested_due_date else None
-            }
+            metadata=metadata
         )
         
         logger.info(f'Member {user.id} created {request_type} request for case {case_id}')

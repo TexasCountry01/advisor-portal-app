@@ -385,13 +385,7 @@
                                             <div id="cancelFields{{ case.id }}" style="display: none; margin-left: 2rem; margin-bottom: 1rem;">
                                                 <div class="mb-2">
                                                     <label for="cancelReason{{ case.id }}" class="form-label">Reason for Cancellation</label>
-                                                    <select id="cancelReason{{ case.id }}" name="cancellation_reason" class="form-select">
-                                                        <option value="">-- Select reason --</option>
-                                                        <option value="no_longer_needed">No longer needed</option>
-                                                        <option value="changed_mind">Changed my mind</option>
-                                                        <option value="employee_declined">Employee declined</option>
-                                                        <option value="other">Other</option>
-                                                    </select>
+                                                    <textarea id="cancelReason{{ case.id }}" name="cancellation_reason" class="form-control" rows="3" placeholder="Please explain why you want to cancel this case..." required></textarea>
                                                 </div>
                                             </div>
                                             
@@ -608,8 +602,8 @@ function submitUpdateCaseRequest(caseId) {
     // Validate cancellation reason if needed
     if (requestType === 'cancellation') {
         const reason = formData.get('cancellation_reason');
-        if (!reason) {
-            alert('Please select a cancellation reason');
+        if (!reason || reason.trim() === '') {
+            alert('Please provide a reason for cancellation');
             return;
         }
     }
