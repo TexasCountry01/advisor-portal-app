@@ -674,6 +674,12 @@ function handleMemberDocumentUpload(caseId) {
     
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
     
+    // Add event listener to detect if modal tries to hide
+    uploadModal.addEventListener('hide.bs.modal', (e) => {
+        console.warn('DEBUG: hide.bs.modal event triggered - PREVENTING DEFAULT');
+        e.preventDefault();
+    });
+    
     fetch(`/cases/${caseId}/upload-member-documents/`, {
         method: 'POST',
         body: formData,
@@ -704,7 +710,9 @@ function handleMemberDocumentUpload(caseId) {
             console.log('DEBUG: Modal should stay open');
             if (uploadModal) {
                 uploadModal.style.display = 'block';
-                console.log('DEBUG: Explicitly set modal display to block');
+                // Add class to ensure bootstrap doesn't hide it
+                uploadModal.classList.add('show');
+                console.log('DEBUG: Explicitly set modal display to block and added show class');
             }
             
             // Auto-hide success alert after 3 seconds (but keep modal open)
