@@ -422,7 +422,7 @@
                         
                         <!-- UPLOAD DOCUMENTS MODAL -->
                         {% if case.status in 'submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' %}
-                        <div class="modal fade" id="uploadDocumentsModal{{ case.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal fade" id="uploadDocumentsModal{{ case.id }}" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
                             <div class="modal-dialog">
                                 <div class="modal-content">
                                     <div class="modal-header bg-success text-white">
@@ -659,6 +659,7 @@ function handleMemberDocumentUpload(caseId) {
     const uploadAlert = document.getElementById(`uploadAlert${caseId}`);
     const uploadAlertMessage = document.getElementById(`uploadAlertMessage${caseId}`);
     const uploadCountDisplay = document.getElementById(`uploadCount${caseId}`);
+    const uploadModal = document.getElementById(`uploadDocumentsModal${caseId}`);
     
     if (!fileInput.files.length) {
         alert('Please select a file to upload');
@@ -699,10 +700,17 @@ function handleMemberDocumentUpload(caseId) {
             fileInput.value = '';
             notesInput.value = '';
             
+            // Ensure modal stays visible (don't close)
+            console.log('DEBUG: Modal should stay open');
+            if (uploadModal) {
+                uploadModal.style.display = 'block';
+                console.log('DEBUG: Explicitly set modal display to block');
+            }
+            
             // Auto-hide success alert after 3 seconds (but keep modal open)
-            console.log('DEBUG: Modal should stay open - starting alert auto-hide timer');
+            console.log('DEBUG: Starting alert auto-hide timer (3 seconds)');
             setTimeout(() => {
-                console.log('DEBUG: Hiding alert after 3 seconds');
+                console.log('DEBUG: Hiding alert after 3 seconds, but modal stays open');
                 uploadAlert.style.display = 'none';
             }, 3000);
         } else {
