@@ -405,20 +405,18 @@
                             </td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
-                                <div style="display: flex; align-items: center; gap: 0.25rem; white-space: nowrap;">
-                                    {% if case.assigned_to %}
-                                        <small style="flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">
-                                            {% if case.assigned_to.first_name %}
-                                                {{ case.assigned_to.first_name }}
-                                            {% else %}
-                                                {{ case.assigned_to.username }}
-                                            {% endif %}
-                                        </small>
+                                {% if case.assigned_to %}
+                                    {% if case.assigned_to.first_name %}
+                                        {{ case.assigned_to.first_name }}
+                                    {% else %}
+                                        {{ case.assigned_to.username }}
                                     {% endif %}
-                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Assign or reassign case technician" style="flex-shrink: 0; padding: 0.25rem 0.4rem; font-size: 0.7rem; white-space: nowrap;">
-                                        <i class="bi bi-person-check"></i> Assign
-                                    </button>
-                                </div>
+                                {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Assign or reassign case technician" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
+                                    <i class="bi bi-person-check"></i> Assign
+                                </button>
                             </td>
                             <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_scheduled %}
