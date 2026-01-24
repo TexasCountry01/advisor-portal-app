@@ -414,9 +414,15 @@
                                 {% else %}
                                     <span class="text-muted">Unassigned</span>
                                 {% endif %}
-                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Assign or reassign case technician" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">
-                                    <i class="bi bi-person-check"></i> Assign
-                                </button>
+                                {% if case.assigned_to %}
+                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                {% endif %}
                             </td>
                             <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_scheduled %}
