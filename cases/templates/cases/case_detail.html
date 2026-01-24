@@ -1605,7 +1605,6 @@ function showResumeFromHoldModal() {
 
 function submitPutOnHold() {
     const reason = document.getElementById('holdReason').value.trim();
-    const holdDuration = document.getElementById('holdDuration').value;
     
     if (!reason) {
         alert('Please enter a reason for putting the case on hold.');
@@ -1623,8 +1622,7 @@ function submitPutOnHold() {
             'X-CSRFToken': '{{ csrf_token }}'
         },
         body: JSON.stringify({
-            reason: reason,
-            hold_duration: holdDuration
+            reason: reason
         })
     })
     .then(response => response.json())
@@ -2855,21 +2853,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>The case will be placed on hold while maintaining your ownership. You can resume processing at any time.</p>
+                <p>The case will be placed on hold indefinitely while maintaining your ownership. Member will be notified of the hold reason. Resume when member provides needed information.</p>
                 <div class="form-group mb-3">
                     <label for="holdReason" class="form-label">Reason for Hold <span class="text-danger">*</span></label>
                     <textarea class="form-control" id="holdReason" rows="3" placeholder="Why are you putting this case on hold? (e.g., 'Waiting for member clarification', 'Awaiting additional documents')" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="holdDuration" class="form-label">Expected Hold Duration</label>
-                    <select class="form-select" id="holdDuration">
-                        <option value="immediate" selected>Immediate (No Duration Specified)</option>
-                        <option value="2_hours">2 Hours</option>
-                        <option value="4_hours">4 Hours</option>
-                        <option value="8_hours">8 Hours</option>
-                        <option value="1_day">1 Day</option>
-                        <option value="custom">Custom Duration</option>
-                    </select>
                 </div>
             </div>
             <div class="modal-footer">

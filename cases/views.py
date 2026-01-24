@@ -1041,6 +1041,7 @@ def put_case_on_hold(request, case_id):
     FUNCTIONALITY:
     - Changes case status from 'accepted' to 'hold'
     - Preserves case ownership (assigned_to unchanged)
+    - Holds case INDEFINITELY until needed information is received
     - Sends email to member with hold reason
     - Creates in-app notification for member
     - Captures technician-provided reason for hold
@@ -1066,7 +1067,6 @@ def put_case_on_hold(request, case_id):
     
     PARAMETERS (POST JSON):
     - reason (required): Why case is on hold (e.g., "More documents needed", "Awaiting client response")
-    - hold_duration: Duration code (2_hours, 4_hours, 8_hours, 1_day, custom, immediate)
     """
     from django.http import JsonResponse
     from cases.services.case_audit_service import hold_case
@@ -1111,7 +1111,6 @@ def put_case_on_hold(request, case_id):
             # ====================================================================
             body_data = json.loads(request.body) if request.body else {}
             reason = body_data.get('reason', '').strip()
-            hold_duration = body_data.get('hold_duration', 'custom')
             
             # Validate hold reason provided by technician
             if not reason:
@@ -1120,29 +1119,16 @@ def put_case_on_hold(request, case_id):
                     'error': 'Please provide a reason for putting the case on hold.'
                 }, status=400)
             
-            # Convert hold_duration to days for database storage
-            hold_duration_days = None
-            if hold_duration == '2_hours':
-                hold_duration_days = 0.083
-            elif hold_duration == '4_hours':
-                hold_duration_days = 0.167
-            elif hold_duration == '8_hours':
-                hold_duration_days = 0.333
-            elif hold_duration == '1_day':
-                hold_duration_days = 1
-            elif hold_duration in ['custom', 'immediate']:
-                hold_duration_days = None
-            
             # ====================================================================
             # UPDATE CASE STATUS AND LOG IN AUDIT TRAIL
             # ====================================================================
             
-            # Use the service to hold the case (this creates primary audit log entry)
+            # Use the service to hold the case (indefinitely - no duration)
             success = hold_case(
                 case=case,
                 user=user,
                 reason=reason,
-                hold_duration_days=hold_duration_days
+                hold_duration_days=None  # Indefinite hold
             )
             
             if not success:
