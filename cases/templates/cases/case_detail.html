@@ -1373,18 +1373,28 @@ function confirmCaseCompletion() {
     const btn = document.getElementById('confirmReleaseBtn');
     const releaseNowRadio = document.getElementById('releaseNow');
     const releaseDateInput = document.getElementById('releaseDate');
+    const releaseTimeInput = document.getElementById('releaseTime');
     
     let releaseOption = 'now';
-    let releaseDate = null;
+    let releaseDateTime = null;
     
     if (!releaseNowRadio.checked) {
         releaseOption = 'schedule';
-        releaseDate = releaseDateInput.value;
+        const releaseDate = releaseDateInput.value;
+        const releaseTime = releaseTimeInput.value;
         
         if (!releaseDate) {
             alert('Please select a release date.');
             return;
         }
+        
+        if (!releaseTime) {
+            alert('Please select a release time.');
+            return;
+        }
+        
+        // Combine date and time: "2026-02-15 14:30" (the backend will interpret as CST)
+        releaseDateTime = `${releaseDate} ${releaseTime}`;
     }
     
     btn.disabled = true;
@@ -1399,7 +1409,7 @@ function confirmCaseCompletion() {
         },
         body: JSON.stringify({
             release_option: releaseOption,
-            release_date: releaseDate,
+            release_datetime: releaseDateTime,
             override_incomplete: window.caseCompletionOverride || false
         })
     })
@@ -1442,53 +1452,86 @@ function confirmCaseCompletion() {
     });
 }
 
-// Set minimum date to today + 7 days when modal is shown
+// Set minimum date when modal is shown and handle date/time updates
 document.addEventListener('DOMContentLoaded', function() {
     const modal = document.getElementById('releaseOptionsModal');
     if (modal) {
         modal.addEventListener('show.bs.modal', function() {
             const today = new Date();
             const minDate = new Date(today);
-            minDate.setDate(minDate.getDate() + 1);  // Minimum 1 day from now for testing
+            minDate.setDate(minDate.getDate() + 1);  // Minimum 1 day from now
             const dateInput = document.getElementById('releaseDate');
             const minDateStr = minDate.toISOString().split('T')[0];
             dateInput.min = minDateStr;
             dateInput.value = minDateStr;
             
-            // Set max date to the case due date if it exists
-            const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
-            if (caseDueDate && caseDueDate !== 'None' && caseDueDate.length > 0) {
-                dateInput.max = caseDueDate;
-                console.log('Date Input Min:', minDateStr);
-                console.log('Date Input Max:', caseDueDate);
-                // If the default date (1 day from now) is after due date, use due date instead
-                if (minDateStr > caseDueDate) {
-                    dateInput.value = caseDueDate;
-                    console.log('Default date after due date, setting to:', caseDueDate);
-                }
-            } else {
-                console.log('No due date set, min only:', minDateStr);
-            }
+            // Set reasonable max date (60 days in future)
+            const maxDate = new Date(today);
+            maxDate.setDate(maxDate.getDate() + 60);
+            const maxDateStr = maxDate.toISOString().split('T')[0];
+            dateInput.max = maxDateStr;
+            
+            updateReleaseSummary();
         });
     }
     
-    // Toggle date input based on radio selection
+    // Toggle datetime picker based on radio selection
     const releaseNow = document.getElementById('releaseNow');
     const scheduleRelease = document.getElementById('scheduleRelease');
-    const releaseDateGroup = document.getElementById('releaseDateGroup');
+    const releaseDateTimeGroup = document.getElementById('releaseDateTimeGroup');
     
     if (releaseNow) {
         releaseNow.addEventListener('change', function() {
-            if (releaseDateGroup) releaseDateGroup.style.display = 'none';
+            if (releaseDateTimeGroup) releaseDateTimeGroup.style.display = 'none';
         });
     }
     
     if (scheduleRelease) {
         scheduleRelease.addEventListener('change', function() {
-            if (releaseDateGroup) releaseDateGroup.style.display = 'block';
+            if (releaseDateTimeGroup) releaseDateTimeGroup.style.display = 'block';
+            updateReleaseSummary();
         });
     }
+    
+    // Update summary when date or time changes
+    const dateInput = document.getElementById('releaseDate');
+    const timeInput = document.getElementById('releaseTime');
+    
+    if (dateInput) {
+        dateInput.addEventListener('change', updateReleaseSummary);
+    }
+    
+    if (timeInput) {
+        timeInput.addEventListener('change', updateReleaseSummary);
+    }
 });
+
+function updateReleaseSummary() {
+    const releaseDate = document.getElementById('releaseDate').value;
+    const releaseTime = document.getElementById('releaseTime').value;
+    const summaryDiv = document.getElementById('releaseSummary');
+    
+    if (!releaseDate || !releaseTime) {
+        summaryDiv.innerHTML = '<small>Select a date and time above to preview the release schedule</small>';
+        return;
+    }
+    
+    const dateObj = new Date(releaseDate);
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateFormatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeFormatted = releaseTime; // Already in HH:MM format
+    
+    const today = new Date();
+    const daysUntil = Math.ceil((dateObj - today) / (1000 * 60 * 60 * 24));
+    const daysText = daysUntil === 1 ? 'tomorrow' : `in ${daysUntil} days`;
+    
+    summaryDiv.innerHTML = `
+        <div class="mb-2">
+            <strong>Release scheduled for:</strong> ${dayName}, ${dateFormatted} at ${timeFormatted} CST
+        </div>
+        <small class="text-muted">(${daysText})</small>
+    `;
+}
 
 function markCaseIncomplete() {
     // Show confirmation dialog
@@ -1715,41 +1758,61 @@ function deleteNote(noteId, caseId) {
 
 <!-- Release Options Modal -->
 <div class="modal fade" id="releaseOptionsModal" tabindex="-1" aria-labelledby="releaseOptionsLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
+            <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="releaseOptionsLabel">
                     <i class="bi bi-calendar-check"></i> When should this case be released to the member?
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted mb-4">Choose when the member should be able to see the completed case:</p>
+                <p class="text-muted mb-4">Choose when the member should be able to see the completed case and receive the notification:</p>
                 
-                <div class="form-check mb-3">
+                <div class="form-check mb-4 p-3 border rounded">
                     <input class="form-check-input" type="radio" name="releaseOption" id="releaseNow" value="now" checked>
                     <label class="form-check-label" for="releaseNow">
-                        <strong>Release Now</strong>
+                        <strong><i class="bi bi-lightning-fill text-warning"></i> Release Now</strong>
                         <br>
-                        <small class="text-muted">Member can view the completed case immediately</small>
+                        <small class="text-muted">Member can view and download results immediately</small>
                     </label>
                 </div>
                 
-                <div class="form-check">
+                <div class="form-check p-3 border rounded">
                     <input class="form-check-input" type="radio" name="releaseOption" id="scheduleRelease" value="schedule">
                     <label class="form-check-label" for="scheduleRelease">
-                        <strong>Schedule Release</strong>
+                        <strong><i class="bi bi-hourglass-split text-info"></i> Schedule Release</strong>
                         <br>
-                        <small class="text-muted">Member will see the case on a specific date</small>
+                        <small class="text-muted">Member will see the case on a specific date and time</small>
                     </label>
                 </div>
                 
-                <div id="releaseDateGroup" style="display: none; margin-top: 20px;">
-                    <label for="releaseDate" class="form-label">Release Date:</label>
-                    <input type="date" class="form-control" id="releaseDate">
-                    <small class="text-muted d-block mt-2">
-                        <i class="bi bi-info-circle"></i> Default is 7 days from completion. You can select a later date if preferred.
-                    </small>
+                <div id="releaseDateTimeGroup" style="display: none; margin-top: 20px;">
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Release Timing:</strong> Select the date and time (CST) when this case should be released to the member. 
+                        Emails are typically sent several days in advance.
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="releaseDate" class="form-label">Release Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="releaseDate">
+                            <small class="text-muted d-block mt-2">Select a date at least 1 day from today</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="releaseTime" class="form-label">Release Time (CST) <span class="text-danger">*</span></label>
+                            <input type="time" class="form-control" id="releaseTime" value="09:00">
+                            <small class="text-muted d-block mt-2">Default: 9:00 AM CST</small>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-light rounded">
+                        <strong>Release Schedule:</strong>
+                        <div id="releaseSummary" class="mt-2 text-muted">
+                            <small>Select a date and time above to preview the release schedule</small>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">

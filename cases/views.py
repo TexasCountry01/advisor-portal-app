@@ -2011,24 +2011,14 @@ def mark_case_completed(request, case_id):
                 # Level 2/3 technician work can go directly to completed
                 case.status = 'completed'
             
-            # Get completion delay option (hours: 0-5, or use default from settings)
-            completion_delay_hours = body_data.get('completion_delay_hours')
-            
-            if completion_delay_hours is None:
-                # Use default from system settings
-                settings = SystemSettings.get_settings()
-                completion_delay_hours = settings.default_completion_delay_hours
-            else:
-                try:
-                    completion_delay_hours = int(completion_delay_hours)
-                    if completion_delay_hours < 0 or completion_delay_hours > 24:
-                        completion_delay_hours = 0
-                except (ValueError, TypeError):
-                    completion_delay_hours = 0
+            # Handle release scheduling - new datetime format or legacy hours format
+            release_option = body_data.get('release_option', 'now')
+            release_datetime_str = body_data.get('release_datetime')  # NEW: format "YYYY-MM-DD HH:MM"
+            completion_delay_hours = body_data.get('completion_delay_hours')  # OLD: backward compatibility
             
             # Only apply release scheduling if case is actually completed (not pending review)
             if case.status == 'completed':
-                if completion_delay_hours == 0:
+                if release_option == 'now' or (not release_datetime_str and not completion_delay_hours):
                     # Immediate release and email
                     case.scheduled_release_date = None
                     case.actual_release_date = timezone.now()
@@ -2037,15 +2027,71 @@ def mark_case_completed(request, case_id):
                     case.date_completed = timezone.now()
                     release_msg = "released immediately"
                 else:
-                    # Calculate release time in CST with delay
-                    release_time_cst = calculate_release_time_cst(completion_delay_hours)
-                    case.scheduled_release_date = convert_to_scheduled_date_cst(release_time_cst)
-                    case.scheduled_email_date = convert_to_scheduled_date_cst(release_time_cst)  # Tied together
-                    case.actual_release_date = None
-                    case.actual_email_sent_date = None  # Keep empty until sent
-                    case.date_completed = None  # Keep empty until released
-                    delay_label = get_delay_label(completion_delay_hours)
-                    release_msg = f"scheduled for release in {delay_label} (CST)"
+                    # Handle new datetime format (date + time in CST)
+                    if release_datetime_str:
+                        try:
+                            from datetime import datetime
+                            # Parse the datetime string "YYYY-MM-DD HH:MM"
+                            release_dt_naive = datetime.strptime(release_datetime_str, '%Y-%m-%d %H:%M')
+                            
+                            # Create timezone-aware datetime in CST
+                            import pytz
+                            cst = pytz.timezone('US/Central')
+                            release_dt_cst = cst.localize(release_dt_naive)
+                            
+                            # Convert to UTC for storage (Django ORM stores in UTC)
+                            release_dt_utc = release_dt_cst.astimezone(pytz.UTC)
+                            
+                            # Store as date only for scheduled_release_date (matches existing schema)
+                            case.scheduled_release_date = release_dt_utc.date()
+                            case.scheduled_email_date = release_dt_utc.date()
+                            case.actual_release_date = None
+                            case.actual_email_sent_date = None
+                            case.date_completed = None
+                            
+                            # Format for user display
+                            release_date_str = release_dt_cst.strftime('%b %d, %Y at %I:%M %p %Z')
+                            release_msg = f"scheduled for release on {release_date_str}"
+                        except (ValueError, AttributeError) as e:
+                            # If parsing fails, fall back to immediate release
+                            case.scheduled_release_date = None
+                            case.actual_release_date = timezone.now()
+                            case.scheduled_email_date = None
+                            case.actual_email_sent_date = timezone.now()
+                            case.date_completed = timezone.now()
+                            release_msg = "released immediately (invalid datetime format)"
+                    else:
+                        # Fall back to legacy hours format if provided
+                        if completion_delay_hours is None:
+                            # Use default from system settings
+                            settings = SystemSettings.get_settings()
+                            completion_delay_hours = settings.default_completion_delay_hours
+                        else:
+                            try:
+                                completion_delay_hours = int(completion_delay_hours)
+                                if completion_delay_hours < 0 or completion_delay_hours > 24:
+                                    completion_delay_hours = 0
+                            except (ValueError, TypeError):
+                                completion_delay_hours = 0
+                        
+                        if completion_delay_hours == 0:
+                            # Immediate release
+                            case.scheduled_release_date = None
+                            case.actual_release_date = timezone.now()
+                            case.scheduled_email_date = None
+                            case.actual_email_sent_date = timezone.now()
+                            case.date_completed = timezone.now()
+                            release_msg = "released immediately"
+                        else:
+                            # Calculate release time in CST with delay (legacy)
+                            release_time_cst = calculate_release_time_cst(completion_delay_hours)
+                            case.scheduled_release_date = convert_to_scheduled_date_cst(release_time_cst)
+                            case.scheduled_email_date = convert_to_scheduled_date_cst(release_time_cst)
+                            case.actual_release_date = None
+                            case.actual_email_sent_date = None
+                            case.date_completed = None
+                            delay_label = get_delay_label(completion_delay_hours)
+                            release_msg = f"scheduled for release in {delay_label} (CST)"
             else:
                 # Case is pending_review - don't set release/completion dates yet
                 case.scheduled_release_date = None

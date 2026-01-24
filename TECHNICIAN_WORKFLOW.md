@@ -94,10 +94,14 @@ Technicians process cases through acceptance, investigation, and completion:
 
 ### 5. **Completing Case**
 - ✓ Mark as "Completed"
-- ✓ Select release timing (0-24 hours CST)
-- ✓ Set actual_release_date (if 0 hrs)
-- ✓ Set scheduled_release_date & scheduled_email_date (if 1-24 hrs)
+- ✓ Select release option:
+  - **Release Now** - Member sees results immediately
+  - **Schedule Release** - Select specific date & time (CST) when member should receive notification
+    - Date picker: Choose any date from tomorrow to 60 days in advance
+    - Time picker: Select time in CST (default 9:00 AM)
+    - Use case: "Release results on Feb 15 at 2:00 PM CST"
 - ✓ Email notification automatically scheduled with release
+- ✓ Works regardless of whether Level 1 or Level 2/3 technician
 
 ### 6. **Completed Case - Awaiting Release**
 - ✓ Can still add internal notes
