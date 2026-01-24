@@ -427,14 +427,6 @@ All technician activities are automatically tracked in the system's audit trail.
 | **Change Case Tier** | `case_tier_changed` | On change | Previous tier, new tier, case ID, reason |
 | **Profile Update** | `member_profile_updated` | On save | Which fields changed, old/new values (if applicable) |
 
-### Audit Trail Uses for Technicians
-- **Compliance:** Verify all your actions are documented
-- **Disputes:** If questioned about a case, audit trail proves your actions
-- **Performance:** See your case completion times
-
-### Access Your Audit Info
-Contact your administrator for audit trail reports related to your work.
-
 ---
 
 ## Technician Support Resources
