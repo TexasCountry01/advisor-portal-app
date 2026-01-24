@@ -4,7 +4,7 @@
 **Benefits-Technicians** accept cases from the queue, perform validations, review documents submitted by members, upload reports generated from benefits-software, and manage case workflow from submission through completion and release.
 
 > **📊 AUDIT TRAIL TRACKING NOTE:**  
-> All technician activities are automatically tracked in the audit trail system, including case assignments, status changes, holds/resumes, tier changes, and quality reviews. Managers can access detailed reports showing technician productivity, case workflows, and quality metrics. Technicians can view their personal activity history in the Performance dashboard.
+> All technician activities are automatically tracked in the audit trail system, including case assignments, status changes, holds/resumes, tier changes, and quality reviews. Managers can access detailed reports showing technician productivity, case workflows, and quality metrics.
 
 ---
 
