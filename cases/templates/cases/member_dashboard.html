@@ -323,11 +323,6 @@
                                 </button>
                                 {% endif %}
                                 {% if case.status == 'draft' %}
-                                <button class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" onclick="submitCaseFinal({{ case.id }})">
-                                    <i class="bi bi-check-circle"></i> Submit
-                                </button>
-                                {% endif %}
-                                {% if case.status == 'draft' %}
                                 <a href="{% url 'cases:delete_case' case.pk %}" class="btn btn-sm btn-outline-danger" style="display: inline-block !important; min-width: 70px !important; padding: 0.375rem 0.5rem !important; font-size: 0.875rem !important; overflow: visible !important; visibility: visible !important;" onclick="return confirm('Are you sure you want to delete this draft case? This action cannot be undone.')">
                                     <i class="bi bi-trash"></i> Delete
                                 </a>
