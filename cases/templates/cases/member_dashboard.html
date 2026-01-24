@@ -668,11 +668,13 @@ function handleMemberDocumentUpload(caseId) {
     
     console.log('DEBUG: File selected:', fileInput.files[0].name);
     
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+    console.log('DEBUG: CSRF token:', csrfToken ? 'found' : 'NOT FOUND');
+    
     const formData = new FormData();
     formData.append('document_file', fileInput.files[0]);
     formData.append('document_notes', notesInput.value);
-    
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+    formData.append('csrfmiddlewaretoken', csrfToken);  // Add CSRF to body too
     
     // Add event listener to detect if modal tries to hide
     uploadModal.addEventListener('hide.bs.modal', (e) => {
