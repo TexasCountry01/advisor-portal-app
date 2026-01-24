@@ -56,133 +56,15 @@
 
 ---
 
-## Admin Dashboard Overview
 
-```
-┌──────────────────────────────────────────────────────────┐
-│ ADMINISTRATOR CONSOLE                                    │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│ SYSTEM STATUS                CRITICAL ALERTS           │
-│ ├─ Users Online: 42          ├─ Database: 89% full    │
-│ ├─ Cases in System: 2,847    ├─ API Rate: Normal      │
-│ ├─ Uptime: 99.7%             ├─ Failed Jobs: 1        │
-│ └─ Last Backup: 2 hrs ago    └─ SSL Certificate: OK   │
-│                                                          │
-│ USER MANAGEMENT              ESCALATIONS               │
-│ ├─ Total Users: 142          ├─ Pending: 5            │
-│ ├─ Admins: 2                 ├─ Complex: 3            │
-│ ├─ Managers: 8               ├─ Rush: 1               │
-│ ├─ Technicians: 45           └─ Waiting Approval: 2   │
-│ └─ Members: 87                                         │
-│                                                          │
-│ SYSTEM SETTINGS              AUDIT ACTIVITY           │
-│ ├─ Case Delay: 2 hours       ├─ Changes Today: 23     │
-│ ├─ Release Date: Auto         ├─ User Logins: 156    │
-│ ├─ Batch Processing: On       ├─ Case Updates: 847    │
-│ └─ Cron Job Status: Running   └─ Deletions: 2         │
-│                                                          │
-│ PERFORMANCE                  RECENT ACTIONS            │
-│ ├─ Avg Response: 234ms        ├─ User Created: Alice  │
-│ ├─ Database: Healthy          ├─ Settings Changed     │
-│ ├─ API: Normal                ├─ Case Escalated: 1038 │
-│ └─ Storage: 156 GB / 500 GB   └─ Report Generated     │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
-```
+## Core Administrator Actions
 
----
+Administrators manage system-wide configuration and integrity:
 
-## Decision Tree: "What Needs Admin Attention?"
-
-```
-              START: Check admin console for tasks
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ What type of action?     │
-                └────────┬─────────────────┘
-                         │
-    ┌──────┬────────┬────┴────┬───────┬────────┐
-    │      │        │         │       │        │
-   USER  SYSTEM   CASE     AUDIT   SECURITY  MAINTENANCE
-   MGMT  CONFIG   ESCALATE REVIEW  ALERT    TASK
-    │      │        │         │       │        │
-    ▼      ▼        ▼         ▼       ▼        ▼
- [See     [See     [See      [See    [See    [See
-  Below]  Below]   Below]    Below]  Below]  Below]
-```
-
----
-
-## Decision Tree 1: User Management Actions
-
-```
-              START: Need to manage users?
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ What action needed?      │
-                └────────┬─────────────────┘
-                         │
-    ┌────────┬──────────┬┴─────┬──────────┐
-    │        │          │      │          │
-  CREATE  UPDATE     RESET   DEACTIVATE REACTIVATE
-  USER    ROLE       PASSWORD ACCOUNT    ACCOUNT
-    │      │          │        │         │
-    ▼      ▼          ▼        ▼         ▼
-   Fill   Change    Send     Mark     Mark
-  Form    Role      Reset    Inactive  Active
-  →       → Save    Link    → Confirm  → Confirm
- Confirm           → Send    (Preserves (Restore
-    │              Email      Data)     Access)
-    ▼                │          │        │
- User          ┌─────┴──────┐   │        ▼
- Created       │            │   │    User
- & Notified   User Updates  │   │  Reactivated
-              Password      │   │
-                   │        │   ▼
-                   ▼        ▼
-              Login &   Cases & Data
-              Proceed   Fully Preserved
-```
-
-**⚠️ NO DELETE OPTION:** Users are deactivated (not deleted) to preserve all case data and audit trails.
-
----
-
-## Decision Tree 2: System Configuration
-
-```
-                START: Modify system settings?
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ What setting to change?  │
-                └────────┬─────────────────┘
-                         │
-    ┌────────┬──────────┬┴──────┬────────┐
-    │        │          │       │        │
- RELEASE  API CRON    DATABASE FEATURE MAINTENANCE
- TIMING   CONFIG  SCHEDULING   CONFIG   MODE
-    │        │       │          │        │
-    ▼        ▼       ▼          ▼        ▼
- Open    Update   Enable/   Backup   Toggle
- Release Update   Disable   Settings Maintenance
- Setting Config   Schedule  Update   Mode
-    │        │       │          │        │
-    ▼        ▼       ▼          ▼        ▼
- Select  Test    Verify    Execute   Status
- Delay   Config  Cron      Change    Change
-    │        │       │       Works    │
-    ▼        ▼       ▼        │       ▼
- Save    Deploy   Schedule   │      Done
-    │        │       │       │
-    └────────┴───────┴───────┘
-            │
-            ▼
-    Log Change & Audit
-```
+- **User Management** - Create accounts, assign roles, manage access
+- **System Configuration** - Email settings, delays, case tiers
+- **Escalation Handling** - Review and resolve complex cases
+- **Audit & Compliance** - Monitor trails, generate reports
 
 ---
 
@@ -1016,3 +898,138 @@ All administrator activities are automatically tracked in the system's audit tra
 - Emergency escalation procedures
 - Technical support contact
 - Security incident hotline
+
+---
+
+## Reference Diagrams
+
+## Admin Dashboard Overview
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ ADMINISTRATOR CONSOLE                                    │
+├──────────────────────────────────────────────────────────┤
+│                                                          │
+│ SYSTEM STATUS                CRITICAL ALERTS           │
+│ ├─ Users Online: 42          ├─ Database: 89% full    │
+│ ├─ Cases in System: 2,847    ├─ API Rate: Normal      │
+│ ├─ Uptime: 99.7%             ├─ Failed Jobs: 1        │
+│ └─ Last Backup: 2 hrs ago    └─ SSL Certificate: OK   │
+│                                                          │
+│ USER MANAGEMENT              ESCALATIONS               │
+│ ├─ Total Users: 142          ├─ Pending: 5            │
+│ ├─ Admins: 2                 ├─ Complex: 3            │
+│ ├─ Managers: 8               ├─ Rush: 1               │
+│ ├─ Technicians: 45           └─ Waiting Approval: 2   │
+│ └─ Members: 87                                         │
+│                                                          │
+│ SYSTEM SETTINGS              AUDIT ACTIVITY           │
+│ ├─ Case Delay: 2 hours       ├─ Changes Today: 23     │
+│ ├─ Release Date: Auto         ├─ User Logins: 156    │
+│ ├─ Batch Processing: On       ├─ Case Updates: 847    │
+│ └─ Cron Job Status: Running   └─ Deletions: 2         │
+│                                                          │
+│ PERFORMANCE                  RECENT ACTIONS            │
+│ ├─ Avg Response: 234ms        ├─ User Created: Alice  │
+│ ├─ Database: Healthy          ├─ Settings Changed     │
+│ ├─ API: Normal                ├─ Case Escalated: 1038 │
+│ └─ Storage: 156 GB / 500 GB   └─ Report Generated     │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Decision Tree: "What Needs Admin Attention?"
+
+```
+              START: Check admin console for tasks
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ What type of action?     │
+                └────────┬─────────────────┘
+                         │
+    ┌──────┬────────┬────┴────┬───────┬────────┐
+    │      │        │         │       │        │
+   USER  SYSTEM   CASE     AUDIT   SECURITY  MAINTENANCE
+   MGMT  CONFIG   ESCALATE REVIEW  ALERT    TASK
+    │      │        │         │       │        │
+    ▼      ▼        ▼         ▼       ▼        ▼
+ [See     [See     [See      [See    [See    [See
+  Below]  Below]   Below]    Below]  Below]  Below]
+```
+
+---
+
+## Decision Tree 1: User Management Actions
+
+```
+              START: Need to manage users?
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ What action needed?      │
+                └────────┬─────────────────┘
+                         │
+    ┌────────┬──────────┬┴─────┬──────────┐
+    │        │          │      │          │
+  CREATE  UPDATE     RESET   DEACTIVATE REACTIVATE
+  USER    ROLE       PASSWORD ACCOUNT    ACCOUNT
+    │      │          │        │         │
+    ▼      ▼          ▼        ▼         ▼
+   Fill   Change    Send     Mark     Mark
+  Form    Role      Reset    Inactive  Active
+  →       → Save    Link    → Confirm  → Confirm
+ Confirm           → Send    (Preserves (Restore
+    │              Email      Data)     Access)
+    ▼                │          │        │
+ User          ┌─────┴──────┐   │        ▼
+ Created       │            │   │    User
+ & Notified   User Updates  │   │  Reactivated
+              Password      │   │
+                   │        │   ▼
+                   ▼        ▼
+              Login &   Cases & Data
+              Proceed   Fully Preserved
+```
+
+**⚠️ NO DELETE OPTION:** Users are deactivated (not deleted) to preserve all case data and audit trails.
+
+---
+
+## Decision Tree 2: System Configuration
+
+```
+                START: Modify system settings?
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ What setting to change?  │
+                └────────┬─────────────────┘
+                         │
+    ┌────────┬──────────┬┴──────┬────────┐
+    │        │          │       │        │
+ RELEASE  API CRON    DATABASE FEATURE MAINTENANCE
+ TIMING   CONFIG  SCHEDULING   CONFIG   MODE
+    │        │       │          │        │
+    ▼        ▼       ▼          ▼        ▼
+ Open    Update   Enable/   Backup   Toggle
+ Release Update   Disable   Settings Maintenance
+ Setting Config   Schedule  Update   Mode
+    │        │       │          │        │
+    ▼        ▼       ▼          ▼        ▼
+ Select  Test    Verify    Execute   Status
+ Delay   Config  Cron      Change    Change
+    │        │       │       Works    │
+    ▼        ▼       ▼        │       ▼
+ Save    Deploy   Schedule   │      Done
+    │        │       │       │
+    └────────┴───────┴───────┘
+            │
+            ▼
+    Log Change & Audit
+```
+
+---
+

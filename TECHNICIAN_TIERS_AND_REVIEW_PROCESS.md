@@ -69,6 +69,606 @@ The system defines three distinct technician levels based on experience and expe
   - Escalation cases
 - **Capabilities:** Full case processing + quality review authority + escalation handling
 
+
+## Core Technician Actions
+
+Technicians work within a three-tier hierarchy with quality review gates:
+
+- **Level 1** - Process cases (require review before completion)
+- **Level 2/3** - Process cases + perform quality reviews
+- **Quality Review** - Approval gate ensuring case quality
+
+---
+
+## 5. Implementation Status
+
+### Currently Implemented ✅
+
+- User levels (Level 1, 2, 3) in User model
+- `reviewed_by` field on Case model
+- `requires_review` property on Case model
+- `pending_review` status value
+- Admin dashboard "Review" stat tracking
+- Case complexity tier structure (Tier 1, 2, 3)
+- Database schema for review tracking
+
+### Missing/Incomplete ❌
+
+- **NO** automatic trigger to set `pending_review` status when Level 1 completes case
+- **NO** review queue interface/view for Level 2/3 technicians
+- **NO** approve/reject/correct action endpoints
+- **NO** review decision notification system
+- **NO** review queue template in dashboard
+- **NO** audit logging for review actions
+- **NO** revision routing (sending case back to Level 1)
+- **NO** UI for Level 2/3 techs to see cases pending review
+
+---
+
+## 6. Configuration Decisions Needed
+
+Based on the client meeting agenda, several decisions about the review process are outstanding:
+
+### 6.1 Review Bypass Options
+
+**Decision Needed:**
+- Should Level 1 technicians' cases **ALWAYS** require review?
+- OR should admins have ability to bypass review for certain Level 1 techs?
+- OR should all cases from all techs (including Level 2/3) require review?
+
+**Current Spec Assumption:** Only Level 1 cases require mandatory review.
+
+### 6.2 Who Can Review Whom
+
+**Decision Needed:**
+- Can Level 2 review Level 1 cases? ✅ (Assumed YES)
+- Can Level 3 review Level 1 cases? ✅ (Assumed YES)
+- Can Level 2 and Level 3 review each other's cases? ❓
+- Can Level 3 review Level 2 cases? ❓
+
+**Current Spec Assumption:** Level 2 and Level 3 both review Level 1 cases (same authority).
+
+### 6.3 Review Time Limits
+
+**Decision Needed:**
+- Should there be a maximum time a case can be in review?
+- Should Level 2/3 be notified/escalated if review queue gets too old?
+- Should admin have ability to force-complete a case if review takes too long?
+
+**Current Spec:** No time limits mentioned.
+
+### 6.4 Multiple Revisions
+
+**Decision Needed:**
+- If Level 1 tech resubmits after "Request Changes" and Level 2/3 tech requests changes again, what's the limit?
+- Should there be audit trail of all revision cycles?
+- Should case be escalated to admin after N revisions?
+
+**Current Spec:** Unlimited revisions implied (but not explicitly stated).
+
+---
+
+## 7. Notifications for Review Process
+
+### Level 1 Technician Notifications
+
+**When Review Complete - APPROVED:**
+- Title: "Case Review Approved"
+- Message: "Your case [ID] has been approved by [Level 2/3 Name]"
+- Details: Case now ready for release to advisor
+
+**When Review Complete - CHANGES REQUESTED:**
+- Title: "Case Review - Revisions Needed"
+- Message: "Your case [ID] needs revisions from [Level 2/3 Name]"
+- Details: [Specific feedback from Level 2/3 tech]
+- Action: Case returned to "Accepted" status, awaiting rework
+
+**When Review Complete - CORRECTED:**
+- Title: "Case Review Complete - Corrected"
+- Message: "Your case [ID] has been reviewed and corrected by [Level 2/3 Name]"
+- Details: [What corrections were made]
+- Action: Case is now complete and ready for advisor
+
+### Level 2/3 Technician Notifications
+
+**New Cases in Review Queue:**
+- Title: "New Case Awaiting Review"
+- Message: "[Level 1 Tech Name] has submitted case [ID] for review"
+- Details: Case type, complexity tier, submission date
+
+### Advisor Notifications
+
+**When Case Completed (After Review Approved):**
+- Title: "Your Case Report is Ready"
+- Message: "Case [ID] analysis complete, report ready for download"
+- Channel: Email + SMS (if enabled)
+
+---
+
+## 8. Key Metrics & Reporting
+
+### Metrics Related to Review Process
+
+**For Administrators/Managers:**
+- Total cases pending review (by day)
+- Average review time (days from pending to completed)
+- Review approval rate (% approved vs. sent back)
+- Review rejection rate (cases sent back for revisions)
+- Multiple revision rate (cases requiring 2+ revision cycles)
+- Average revisions per case before approval
+- Level 1 tech "first-time approval" rate (quality indicator)
+
+**For Level 2/3 Technicians:**
+- Cases in my review queue
+- Average time spent reviewing per case
+- Review actions performed (approved/rejected/corrected counts)
+
+**For Level 1 Technicians:**
+- Cases awaiting review
+- Approval rate (% cases approved on first review)
+- Average feedback for improvements
+- Common revision reasons (for skill development)
+
+---
+
+## 9. Quality Review Email Notifications
+
+### Overview
+
+All Level 1 technicians receive email notifications when their completed cases are reviewed by Level 2 or Level 3 technicians. These emails serve as the primary communication mechanism for quality review decisions and are logged in the audit trail.
+
+### Emails Level 1 Technicians Receive
+
+#### Email #1: **Case Approved** ✅
+- **When Sent:** Immediately when Level 2/3 tech approves a Level 1 case
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review Complete: Your Case [ID] APPROVED"
+- **Template:** case_approved_notification.html
+- **Content:**
+  - Approval confirmation
+  - Reviewer name and tier level (Level 2 or 3)
+  - Approval timestamp
+  - Case proceeds to completion
+- **Action:** No action needed; case automatically completed
+- **Case Status:** Changes to 'completed'
+- **Audit Trail:** Logged as email_sent with reviewer info
+
+#### Email #2: **Revisions Requested** ✅
+- **When Sent:** Immediately when Level 2/3 tech requests revisions
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review: Revisions Requested for Case [ID]"
+- **Template:** case_revisions_needed_notification.html
+- **Content:**
+  - What revisions are needed (specific sections)
+  - Reviewer name and tier level
+  - Detailed feedback and comments
+  - Deadline for revision completion
+  - Instructions on how to resubmit
+- **Action:** Level 1 tech must review feedback and make necessary revisions
+- **Case Status:** Remains 'pending_review'
+- **Audit Trail:** Logged with revision details and reviewer feedback
+
+#### Email #3: **Corrections Required** ✅
+- **When Sent:** Immediately when Level 2/3 tech requires corrections
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review: Corrections Required for Case [ID]"
+- **Template:** case_corrections_notification.html
+- **Content:**
+  - What corrections are needed
+  - Severity level (minor, moderate, critical)
+  - Detailed explanation of issues
+  - Reviewer name and tier level
+  - Deadline for correction
+- **Action:** Level 1 tech must correct errors and resubmit
+- **Case Status:** Remains 'pending_review'
+- **Audit Trail:** Logged with correction details and severity
+
+#### Email #4: **Case Resubmitted Alert** ✅
+- **When Sent:** Immediately when member resubmits a completed case
+- **Recipient:** Technician currently assigned to case
+- **Subject:** "Alert: Case [ID] Resubmitted by Member"
+- **Content:**
+  - Case has been resubmitted
+  - Count of resubmissions
+  - List of new documents uploaded
+  - Member's resubmission reason/notes
+- **Action:** Review member's new documents and assess changes
+- **Case Status:** Changes to 'resubmitted'
+- **Audit Trail:** Logged with resubmission count and member notes
+
+### Email Delivery & Audit Trail
+
+**All Quality Review Emails:**
+- Sent immediately (not scheduled)
+- Logged in audit trail with action_type='email_sent'
+- Include reviewer identification for accountability
+- Track delivery status (success/failed)
+- Failed emails logged as 'email_failed' for admin recovery
+
+**Finding Email History:**
+1. View case detail → Audit Trail tab
+2. Filter by action_type='email_sent'
+3. See all review decision emails sent with timestamps and content
+
+---
+
+## 9. Benefits of Three-Tier Review System
+
+1. **Quality Assurance:** All junior tech work reviewed before member sees it
+2. **Consistency:** Senior techs ensure uniform quality standards
+3. **Mentoring:** Feedback helps junior techs improve
+4. **Risk Mitigation:** Catches errors before delivery
+5. **Workload Flexibility:** Senior techs can work on hard cases while reviewing juniors
+6. **Career Development:** Clear path for advancement (Level 1 → 2 → 3)
+7. **Audit Trail:** Full traceability of who reviewed and approved each case
+
+---
+
+## 10. Comparison: Review vs. No Review
+
+### Without Review Process
+```
+Level 1 Tech Completes
+    ↓
+Status = "Completed"
+    ↓
+Report visible to advisor
+    ↓
+Problem: No quality gate, errors reach advisors
+```
+
+### With Review Process (Implemented)
+```
+Level 1 Tech Completes
+    ↓
+Status = "Pending Review"
+    ↓
+Level 2/3 Tech Reviews
+    ↓
+├─ APPROVE → Status = "Completed" → Report visible
+├─ REQUEST CHANGES → Status = "Accepted" → Level 1 reworks
+└─ CORRECT → Fix issues, Status = "Completed" → Report visible
+```
+
+---
+
+## Summary Table
+
+| Aspect | Level 1 | Level 2 | Level 3 |
+|--------|---------|---------|---------|
+| **Experience** | New/Junior | 1-2+ years | 3+ years |
+| **Own Cases** | ✅ | ✅ | ✅ |
+| **Review Others** | ❌ | ✅ (L1 only) | ✅ (L1 only) |
+| **Can Approve** | ❌ | ✅ | ✅ |
+| **Can Correct** | ❌ | ✅ | ✅ |
+| **Review Bypass** | Always required | N/A | N/A |
+| **Queue** | Work queue | Review queue | Review queue |
+| **Complexity** | All tiers | 1-2 primary | 2-3 primary |
+| **Notification** | Gets feedback | Sees review queue | Sees review queue |
+
+---
+
+## Next Steps for Implementation
+
+To fully implement the quality review workflow:
+
+1. **Trigger Logic:** Modify `mark_case_complete()` view to check technician level
+2. **Review Queue View:** Create view for Level 2/3 to see pending cases
+3. **Review Actions:** Implement approve/reject/correct endpoints
+4. **Audit Logging:** Log all review actions with timestamps and notes
+5. **Notifications:** Email/SMS for review decisions
+6. **Dashboard:** Show review queue stats and metrics
+7. **Testing:** Create test cases for all review scenarios
+8. **Documentation:** Update user guides and training materials
+
+---
+
+**End of Document**
+
+---
+
+## Reference Diagrams & Hierarchy
+
+
+## Core Technician Actions
+
+Technicians work within a three-tier hierarchy with quality review gates:
+
+- **Level 1** - Process cases (require review before completion)
+- **Level 2/3** - Process cases + perform quality reviews
+- **Quality Review** - Approval gate ensuring case quality
+
+---
+
+## 5. Implementation Status
+
+### Currently Implemented ✅
+
+- User levels (Level 1, 2, 3) in User model
+- `reviewed_by` field on Case model
+- `requires_review` property on Case model
+- `pending_review` status value
+- Admin dashboard "Review" stat tracking
+- Case complexity tier structure (Tier 1, 2, 3)
+- Database schema for review tracking
+
+### Missing/Incomplete ❌
+
+- **NO** automatic trigger to set `pending_review` status when Level 1 completes case
+- **NO** review queue interface/view for Level 2/3 technicians
+- **NO** approve/reject/correct action endpoints
+- **NO** review decision notification system
+- **NO** review queue template in dashboard
+- **NO** audit logging for review actions
+- **NO** revision routing (sending case back to Level 1)
+- **NO** UI for Level 2/3 techs to see cases pending review
+
+---
+
+## 6. Configuration Decisions Needed
+
+Based on the client meeting agenda, several decisions about the review process are outstanding:
+
+### 6.1 Review Bypass Options
+
+**Decision Needed:**
+- Should Level 1 technicians' cases **ALWAYS** require review?
+- OR should admins have ability to bypass review for certain Level 1 techs?
+- OR should all cases from all techs (including Level 2/3) require review?
+
+**Current Spec Assumption:** Only Level 1 cases require mandatory review.
+
+### 6.2 Who Can Review Whom
+
+**Decision Needed:**
+- Can Level 2 review Level 1 cases? ✅ (Assumed YES)
+- Can Level 3 review Level 1 cases? ✅ (Assumed YES)
+- Can Level 2 and Level 3 review each other's cases? ❓
+- Can Level 3 review Level 2 cases? ❓
+
+**Current Spec Assumption:** Level 2 and Level 3 both review Level 1 cases (same authority).
+
+### 6.3 Review Time Limits
+
+**Decision Needed:**
+- Should there be a maximum time a case can be in review?
+- Should Level 2/3 be notified/escalated if review queue gets too old?
+- Should admin have ability to force-complete a case if review takes too long?
+
+**Current Spec:** No time limits mentioned.
+
+### 6.4 Multiple Revisions
+
+**Decision Needed:**
+- If Level 1 tech resubmits after "Request Changes" and Level 2/3 tech requests changes again, what's the limit?
+- Should there be audit trail of all revision cycles?
+- Should case be escalated to admin after N revisions?
+
+**Current Spec:** Unlimited revisions implied (but not explicitly stated).
+
+---
+
+## 7. Notifications for Review Process
+
+### Level 1 Technician Notifications
+
+**When Review Complete - APPROVED:**
+- Title: "Case Review Approved"
+- Message: "Your case [ID] has been approved by [Level 2/3 Name]"
+- Details: Case now ready for release to advisor
+
+**When Review Complete - CHANGES REQUESTED:**
+- Title: "Case Review - Revisions Needed"
+- Message: "Your case [ID] needs revisions from [Level 2/3 Name]"
+- Details: [Specific feedback from Level 2/3 tech]
+- Action: Case returned to "Accepted" status, awaiting rework
+
+**When Review Complete - CORRECTED:**
+- Title: "Case Review Complete - Corrected"
+- Message: "Your case [ID] has been reviewed and corrected by [Level 2/3 Name]"
+- Details: [What corrections were made]
+- Action: Case is now complete and ready for advisor
+
+### Level 2/3 Technician Notifications
+
+**New Cases in Review Queue:**
+- Title: "New Case Awaiting Review"
+- Message: "[Level 1 Tech Name] has submitted case [ID] for review"
+- Details: Case type, complexity tier, submission date
+
+### Advisor Notifications
+
+**When Case Completed (After Review Approved):**
+- Title: "Your Case Report is Ready"
+- Message: "Case [ID] analysis complete, report ready for download"
+- Channel: Email + SMS (if enabled)
+
+---
+
+## 8. Key Metrics & Reporting
+
+### Metrics Related to Review Process
+
+**For Administrators/Managers:**
+- Total cases pending review (by day)
+- Average review time (days from pending to completed)
+- Review approval rate (% approved vs. sent back)
+- Review rejection rate (cases sent back for revisions)
+- Multiple revision rate (cases requiring 2+ revision cycles)
+- Average revisions per case before approval
+- Level 1 tech "first-time approval" rate (quality indicator)
+
+**For Level 2/3 Technicians:**
+- Cases in my review queue
+- Average time spent reviewing per case
+- Review actions performed (approved/rejected/corrected counts)
+
+**For Level 1 Technicians:**
+- Cases awaiting review
+- Approval rate (% cases approved on first review)
+- Average feedback for improvements
+- Common revision reasons (for skill development)
+
+---
+
+## 9. Quality Review Email Notifications
+
+### Overview
+
+All Level 1 technicians receive email notifications when their completed cases are reviewed by Level 2 or Level 3 technicians. These emails serve as the primary communication mechanism for quality review decisions and are logged in the audit trail.
+
+### Emails Level 1 Technicians Receive
+
+#### Email #1: **Case Approved** ✅
+- **When Sent:** Immediately when Level 2/3 tech approves a Level 1 case
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review Complete: Your Case [ID] APPROVED"
+- **Template:** case_approved_notification.html
+- **Content:**
+  - Approval confirmation
+  - Reviewer name and tier level (Level 2 or 3)
+  - Approval timestamp
+  - Case proceeds to completion
+- **Action:** No action needed; case automatically completed
+- **Case Status:** Changes to 'completed'
+- **Audit Trail:** Logged as email_sent with reviewer info
+
+#### Email #2: **Revisions Requested** ✅
+- **When Sent:** Immediately when Level 2/3 tech requests revisions
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review: Revisions Requested for Case [ID]"
+- **Template:** case_revisions_needed_notification.html
+- **Content:**
+  - What revisions are needed (specific sections)
+  - Reviewer name and tier level
+  - Detailed feedback and comments
+  - Deadline for revision completion
+  - Instructions on how to resubmit
+- **Action:** Level 1 tech must review feedback and make necessary revisions
+- **Case Status:** Remains 'pending_review'
+- **Audit Trail:** Logged with revision details and reviewer feedback
+
+#### Email #3: **Corrections Required** ✅
+- **When Sent:** Immediately when Level 2/3 tech requires corrections
+- **Recipient:** Level 1 technician who completed the case
+- **Subject:** "Quality Review: Corrections Required for Case [ID]"
+- **Template:** case_corrections_notification.html
+- **Content:**
+  - What corrections are needed
+  - Severity level (minor, moderate, critical)
+  - Detailed explanation of issues
+  - Reviewer name and tier level
+  - Deadline for correction
+- **Action:** Level 1 tech must correct errors and resubmit
+- **Case Status:** Remains 'pending_review'
+- **Audit Trail:** Logged with correction details and severity
+
+#### Email #4: **Case Resubmitted Alert** ✅
+- **When Sent:** Immediately when member resubmits a completed case
+- **Recipient:** Technician currently assigned to case
+- **Subject:** "Alert: Case [ID] Resubmitted by Member"
+- **Content:**
+  - Case has been resubmitted
+  - Count of resubmissions
+  - List of new documents uploaded
+  - Member's resubmission reason/notes
+- **Action:** Review member's new documents and assess changes
+- **Case Status:** Changes to 'resubmitted'
+- **Audit Trail:** Logged with resubmission count and member notes
+
+### Email Delivery & Audit Trail
+
+**All Quality Review Emails:**
+- Sent immediately (not scheduled)
+- Logged in audit trail with action_type='email_sent'
+- Include reviewer identification for accountability
+- Track delivery status (success/failed)
+- Failed emails logged as 'email_failed' for admin recovery
+
+**Finding Email History:**
+1. View case detail → Audit Trail tab
+2. Filter by action_type='email_sent'
+3. See all review decision emails sent with timestamps and content
+
+---
+
+## 9. Benefits of Three-Tier Review System
+
+1. **Quality Assurance:** All junior tech work reviewed before member sees it
+2. **Consistency:** Senior techs ensure uniform quality standards
+3. **Mentoring:** Feedback helps junior techs improve
+4. **Risk Mitigation:** Catches errors before delivery
+5. **Workload Flexibility:** Senior techs can work on hard cases while reviewing juniors
+6. **Career Development:** Clear path for advancement (Level 1 → 2 → 3)
+7. **Audit Trail:** Full traceability of who reviewed and approved each case
+
+---
+
+## 10. Comparison: Review vs. No Review
+
+### Without Review Process
+```
+Level 1 Tech Completes
+    ↓
+Status = "Completed"
+    ↓
+Report visible to advisor
+    ↓
+Problem: No quality gate, errors reach advisors
+```
+
+### With Review Process (Implemented)
+```
+Level 1 Tech Completes
+    ↓
+Status = "Pending Review"
+    ↓
+Level 2/3 Tech Reviews
+    ↓
+├─ APPROVE → Status = "Completed" → Report visible
+├─ REQUEST CHANGES → Status = "Accepted" → Level 1 reworks
+└─ CORRECT → Fix issues, Status = "Completed" → Report visible
+```
+
+---
+
+## Summary Table
+
+| Aspect | Level 1 | Level 2 | Level 3 |
+|--------|---------|---------|---------|
+| **Experience** | New/Junior | 1-2+ years | 3+ years |
+| **Own Cases** | ✅ | ✅ | ✅ |
+| **Review Others** | ❌ | ✅ (L1 only) | ✅ (L1 only) |
+| **Can Approve** | ❌ | ✅ | ✅ |
+| **Can Correct** | ❌ | ✅ | ✅ |
+| **Review Bypass** | Always required | N/A | N/A |
+| **Queue** | Work queue | Review queue | Review queue |
+| **Complexity** | All tiers | 1-2 primary | 2-3 primary |
+| **Notification** | Gets feedback | Sees review queue | Sees review queue |
+
+---
+
+## Next Steps for Implementation
+
+To fully implement the quality review workflow:
+
+1. **Trigger Logic:** Modify `mark_case_complete()` view to check technician level
+2. **Review Queue View:** Create view for Level 2/3 to see pending cases
+3. **Review Actions:** Implement approve/reject/correct endpoints
+4. **Audit Logging:** Log all review actions with timestamps and notes
+5. **Notifications:** Email/SMS for review decisions
+6. **Dashboard:** Show review queue stats and metrics
+7. **Testing:** Create test cases for all review scenarios
+8. **Documentation:** Update user guides and training materials
+
+---
+
+**End of Document**
+
+---
+
+## Reference Diagrams & Hierarchy
+
 ### 1.2 Visual Hierarchy
 
 ```
@@ -580,287 +1180,8 @@ CREATE TABLE case_review_history (
 
 ---
 
-## 5. Implementation Status
-
-### Currently Implemented ✅
-
-- User levels (Level 1, 2, 3) in User model
-- `reviewed_by` field on Case model
-- `requires_review` property on Case model
-- `pending_review` status value
-- Admin dashboard "Review" stat tracking
-- Case complexity tier structure (Tier 1, 2, 3)
-- Database schema for review tracking
-
-### Missing/Incomplete ❌
-
-- **NO** automatic trigger to set `pending_review` status when Level 1 completes case
-- **NO** review queue interface/view for Level 2/3 technicians
-- **NO** approve/reject/correct action endpoints
-- **NO** review decision notification system
-- **NO** review queue template in dashboard
-- **NO** audit logging for review actions
-- **NO** revision routing (sending case back to Level 1)
-- **NO** UI for Level 2/3 techs to see cases pending review
 
 ---
 
-## 6. Configuration Decisions Needed
+## Reference Diagrams & Hierarchy
 
-Based on the client meeting agenda, several decisions about the review process are outstanding:
-
-### 6.1 Review Bypass Options
-
-**Decision Needed:**
-- Should Level 1 technicians' cases **ALWAYS** require review?
-- OR should admins have ability to bypass review for certain Level 1 techs?
-- OR should all cases from all techs (including Level 2/3) require review?
-
-**Current Spec Assumption:** Only Level 1 cases require mandatory review.
-
-### 6.2 Who Can Review Whom
-
-**Decision Needed:**
-- Can Level 2 review Level 1 cases? ✅ (Assumed YES)
-- Can Level 3 review Level 1 cases? ✅ (Assumed YES)
-- Can Level 2 and Level 3 review each other's cases? ❓
-- Can Level 3 review Level 2 cases? ❓
-
-**Current Spec Assumption:** Level 2 and Level 3 both review Level 1 cases (same authority).
-
-### 6.3 Review Time Limits
-
-**Decision Needed:**
-- Should there be a maximum time a case can be in review?
-- Should Level 2/3 be notified/escalated if review queue gets too old?
-- Should admin have ability to force-complete a case if review takes too long?
-
-**Current Spec:** No time limits mentioned.
-
-### 6.4 Multiple Revisions
-
-**Decision Needed:**
-- If Level 1 tech resubmits after "Request Changes" and Level 2/3 tech requests changes again, what's the limit?
-- Should there be audit trail of all revision cycles?
-- Should case be escalated to admin after N revisions?
-
-**Current Spec:** Unlimited revisions implied (but not explicitly stated).
-
----
-
-## 7. Notifications for Review Process
-
-### Level 1 Technician Notifications
-
-**When Review Complete - APPROVED:**
-- Title: "Case Review Approved"
-- Message: "Your case [ID] has been approved by [Level 2/3 Name]"
-- Details: Case now ready for release to advisor
-
-**When Review Complete - CHANGES REQUESTED:**
-- Title: "Case Review - Revisions Needed"
-- Message: "Your case [ID] needs revisions from [Level 2/3 Name]"
-- Details: [Specific feedback from Level 2/3 tech]
-- Action: Case returned to "Accepted" status, awaiting rework
-
-**When Review Complete - CORRECTED:**
-- Title: "Case Review Complete - Corrected"
-- Message: "Your case [ID] has been reviewed and corrected by [Level 2/3 Name]"
-- Details: [What corrections were made]
-- Action: Case is now complete and ready for advisor
-
-### Level 2/3 Technician Notifications
-
-**New Cases in Review Queue:**
-- Title: "New Case Awaiting Review"
-- Message: "[Level 1 Tech Name] has submitted case [ID] for review"
-- Details: Case type, complexity tier, submission date
-
-### Advisor Notifications
-
-**When Case Completed (After Review Approved):**
-- Title: "Your Case Report is Ready"
-- Message: "Case [ID] analysis complete, report ready for download"
-- Channel: Email + SMS (if enabled)
-
----
-
-## 8. Key Metrics & Reporting
-
-### Metrics Related to Review Process
-
-**For Administrators/Managers:**
-- Total cases pending review (by day)
-- Average review time (days from pending to completed)
-- Review approval rate (% approved vs. sent back)
-- Review rejection rate (cases sent back for revisions)
-- Multiple revision rate (cases requiring 2+ revision cycles)
-- Average revisions per case before approval
-- Level 1 tech "first-time approval" rate (quality indicator)
-
-**For Level 2/3 Technicians:**
-- Cases in my review queue
-- Average time spent reviewing per case
-- Review actions performed (approved/rejected/corrected counts)
-
-**For Level 1 Technicians:**
-- Cases awaiting review
-- Approval rate (% cases approved on first review)
-- Average feedback for improvements
-- Common revision reasons (for skill development)
-
----
-
-## 9. Quality Review Email Notifications
-
-### Overview
-
-All Level 1 technicians receive email notifications when their completed cases are reviewed by Level 2 or Level 3 technicians. These emails serve as the primary communication mechanism for quality review decisions and are logged in the audit trail.
-
-### Emails Level 1 Technicians Receive
-
-#### Email #1: **Case Approved** ✅
-- **When Sent:** Immediately when Level 2/3 tech approves a Level 1 case
-- **Recipient:** Level 1 technician who completed the case
-- **Subject:** "Quality Review Complete: Your Case [ID] APPROVED"
-- **Template:** case_approved_notification.html
-- **Content:**
-  - Approval confirmation
-  - Reviewer name and tier level (Level 2 or 3)
-  - Approval timestamp
-  - Case proceeds to completion
-- **Action:** No action needed; case automatically completed
-- **Case Status:** Changes to 'completed'
-- **Audit Trail:** Logged as email_sent with reviewer info
-
-#### Email #2: **Revisions Requested** ✅
-- **When Sent:** Immediately when Level 2/3 tech requests revisions
-- **Recipient:** Level 1 technician who completed the case
-- **Subject:** "Quality Review: Revisions Requested for Case [ID]"
-- **Template:** case_revisions_needed_notification.html
-- **Content:**
-  - What revisions are needed (specific sections)
-  - Reviewer name and tier level
-  - Detailed feedback and comments
-  - Deadline for revision completion
-  - Instructions on how to resubmit
-- **Action:** Level 1 tech must review feedback and make necessary revisions
-- **Case Status:** Remains 'pending_review'
-- **Audit Trail:** Logged with revision details and reviewer feedback
-
-#### Email #3: **Corrections Required** ✅
-- **When Sent:** Immediately when Level 2/3 tech requires corrections
-- **Recipient:** Level 1 technician who completed the case
-- **Subject:** "Quality Review: Corrections Required for Case [ID]"
-- **Template:** case_corrections_notification.html
-- **Content:**
-  - What corrections are needed
-  - Severity level (minor, moderate, critical)
-  - Detailed explanation of issues
-  - Reviewer name and tier level
-  - Deadline for correction
-- **Action:** Level 1 tech must correct errors and resubmit
-- **Case Status:** Remains 'pending_review'
-- **Audit Trail:** Logged with correction details and severity
-
-#### Email #4: **Case Resubmitted Alert** ✅
-- **When Sent:** Immediately when member resubmits a completed case
-- **Recipient:** Technician currently assigned to case
-- **Subject:** "Alert: Case [ID] Resubmitted by Member"
-- **Content:**
-  - Case has been resubmitted
-  - Count of resubmissions
-  - List of new documents uploaded
-  - Member's resubmission reason/notes
-- **Action:** Review member's new documents and assess changes
-- **Case Status:** Changes to 'resubmitted'
-- **Audit Trail:** Logged with resubmission count and member notes
-
-### Email Delivery & Audit Trail
-
-**All Quality Review Emails:**
-- Sent immediately (not scheduled)
-- Logged in audit trail with action_type='email_sent'
-- Include reviewer identification for accountability
-- Track delivery status (success/failed)
-- Failed emails logged as 'email_failed' for admin recovery
-
-**Finding Email History:**
-1. View case detail → Audit Trail tab
-2. Filter by action_type='email_sent'
-3. See all review decision emails sent with timestamps and content
-
----
-
-## 9. Benefits of Three-Tier Review System
-
-1. **Quality Assurance:** All junior tech work reviewed before member sees it
-2. **Consistency:** Senior techs ensure uniform quality standards
-3. **Mentoring:** Feedback helps junior techs improve
-4. **Risk Mitigation:** Catches errors before delivery
-5. **Workload Flexibility:** Senior techs can work on hard cases while reviewing juniors
-6. **Career Development:** Clear path for advancement (Level 1 → 2 → 3)
-7. **Audit Trail:** Full traceability of who reviewed and approved each case
-
----
-
-## 10. Comparison: Review vs. No Review
-
-### Without Review Process
-```
-Level 1 Tech Completes
-    ↓
-Status = "Completed"
-    ↓
-Report visible to advisor
-    ↓
-Problem: No quality gate, errors reach advisors
-```
-
-### With Review Process (Implemented)
-```
-Level 1 Tech Completes
-    ↓
-Status = "Pending Review"
-    ↓
-Level 2/3 Tech Reviews
-    ↓
-├─ APPROVE → Status = "Completed" → Report visible
-├─ REQUEST CHANGES → Status = "Accepted" → Level 1 reworks
-└─ CORRECT → Fix issues, Status = "Completed" → Report visible
-```
-
----
-
-## Summary Table
-
-| Aspect | Level 1 | Level 2 | Level 3 |
-|--------|---------|---------|---------|
-| **Experience** | New/Junior | 1-2+ years | 3+ years |
-| **Own Cases** | ✅ | ✅ | ✅ |
-| **Review Others** | ❌ | ✅ (L1 only) | ✅ (L1 only) |
-| **Can Approve** | ❌ | ✅ | ✅ |
-| **Can Correct** | ❌ | ✅ | ✅ |
-| **Review Bypass** | Always required | N/A | N/A |
-| **Queue** | Work queue | Review queue | Review queue |
-| **Complexity** | All tiers | 1-2 primary | 2-3 primary |
-| **Notification** | Gets feedback | Sees review queue | Sees review queue |
-
----
-
-## Next Steps for Implementation
-
-To fully implement the quality review workflow:
-
-1. **Trigger Logic:** Modify `mark_case_complete()` view to check technician level
-2. **Review Queue View:** Create view for Level 2/3 to see pending cases
-3. **Review Actions:** Implement approve/reject/correct endpoints
-4. **Audit Logging:** Log all review actions with timestamps and notes
-5. **Notifications:** Email/SMS for review decisions
-6. **Dashboard:** Show review queue stats and metrics
-7. **Testing:** Create test cases for all review scenarios
-8. **Documentation:** Update user guides and training materials
-
----
-
-**End of Document**

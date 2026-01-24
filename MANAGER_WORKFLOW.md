@@ -62,127 +62,15 @@
 
 ---
 
-## Manager Dashboard View
 
-```
-┌────────────────────────────────────────────────────────────┐
-│ MANAGER DASHBOARD                                          │
-├────────────────────────────────────────────────────────────┤
-│                                                             │
-│ TEAM OVERVIEW                    CASE STATUS              │
-│ ├─ Techs: 5 active              ├─ Total Cases: 247      │
-│ ├─ Cases Assigned: 43           ├─ New: 8                │
-│ ├─ Avg Completion: 1.2d         ├─ In Progress: 28       │
-│ └─ Quality Score: 94%           └─ Completed: 211        │
-│                                                             │
-│ THIS WEEK'S METRICS              BOTTLENECKS              │
-│ ├─ Cases Completed: 42          ├─ Pending Escalations: 3│
-│ ├─ Avg Resolution Time: 24h     ├─ Overdue Cases: 2      │
-│ ├─ Quality Issues: 1             ├─ Waiting on Member: 5  │
-│ └─ Member Satisfaction: 4.6/5   └─ System Issues: 0      │
-│                                                             │
-│ TEAM LOAD DISTRIBUTION           ACTION ITEMS            │
-│ ├─ Tech A: 8 cases (28%)         ├─ Review Tech A case   │
-│ ├─ Tech B: 7 cases (24%)         ├─ Check escalation     │
-│ ├─ Tech C: 6 cases (20%)         ├─ Contact member on 2  │
-│ ├─ Tech D: 5 cases (18%)         └─ Approve 3 releases   │
-│ └─ Tech E: 2 cases (7%)                                   │
-│                                                             │
-└────────────────────────────────────────────────────────────┘
-```
+## Core Manager Actions
 
----
+Managers oversee technician operations and case workflows:
 
-## Decision Tree: "What Should I Manage?"
-
-```
-                START: Manager checking system
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ Are there issues to      │
-                │ address?                 │
-                └────────┬─────────────────┘
-                         │
-    ┌────────────────────┼────────────────────┐
-    │                    │                    │
- TEAM ISSUE        CASE ISSUE            SYSTEM
- (Performance)     (Escalation/          (Config/
-                   Problem)              Process)
-    │                    │                    │
-    ▼                    ▼                    ▼
-┌────────────┐     ┌────────────┐     ┌────────────┐
-│ Check Team │     │ Open       │     │ Contact   │
-│ Metrics    │     │ Escalated  │     │ Admin     │
-└─────┬──────┘     │ Case       │     └────────────┘
-      │            └─────┬──────┘
-      ▼                   ▼
-  ┌──────────┐      ┌────────────┐
-  │ Uneven   │      │ Review     │
-  │ Load?    │      │ Issue      │
-  └────┬─────┘      │ Details    │
-       │            └─────┬──────┘
-    ┌──┴──┐              │
-    │     │          ┌───┴────┐
-   YES   NO         │         │
-    │     │       SIMPLE   COMPLEX
-    │     │         │         │
-    ▼     ▼         ▼         ▼
-┌─────┐ ┌──┐   ┌──────┐ ┌─────────┐
-│Move │ │OK│   │Fix   │ │Escalate │
-│Case │ │  │   │Now   │ │to Admin  │
-│Load │ │  │   │      │ │         │
-└─────┘ └──┘   └──────┘ └─────────┘
-    │    │         │         │
-    └────┴─────────┴─────────┘
-           │
-           ▼
-    ┌────────────────┐
-    │ Monitor Outcome│
-    │ & Follow Up    │
-    └────────────────┘
-```
-
----
-
-## Decision Tree: "Should I Reassign This Case?"
-
-```
-              START: Tech is overloaded or case needs reassignment
-                            │
-                            ▼
-                ┌──────────────────────────┐
-                │ Why reassign?             │
-                └────────┬─────────────────┘
-                         │
-    ┌────────┬──────────┬┴────────┬────────┐
-    │        │          │         │        │
- RUSH    OVER-    SPECIALIST  ESCALATE  SWAP
-  CASE   LOAD      NEEDED      TO ADMIN  LOAD
-    │     │         │           │        │
-    ▼     ▼         ▼           ▼        ▼
-  FIND   FIND     FIND         ASK      FIND
- BEST   LEAST    EXPERT      ADMIN    EQUAL
- TECH   BUSY                          LEVEL
-    │     │        │           │       │
-    └─────┴────────┴───────────┴───────┘
-           │
-           ▼
-    ┌────────────────────────┐
-    │ Click "Reassign Case"  │
-    │ Select New Technician  │
-    │ Add Reason (optional)  │
-    │ Confirm                │
-    └────────────────────────┘
-           │
-           ▼
-    ┌────────────────────────┐
-    │ Technician Notified    │
-    │ Case Reassigned        │
-    │ Old Tech: Read-only    │
-    │ New Tech: Full Access  │
-    └────────────────────────┘
-```
+- **Assign Cases** - Distribute cases to technicians
+- **Monitor Performance** - Track metrics, completion times, quality
+- **Escalate Issues** - Handle complex cases and exceptions
+- **Review Audit Trail** - Track team activity and compliance
 
 ---
 
@@ -710,3 +598,132 @@ All manager activities are automatically tracked in the system's audit trail. He
 - Monthly manager meetings
 - Training docs in knowledge base
 - HR for personnel issues
+
+---
+
+## Reference Diagrams
+
+## Manager Dashboard View
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ MANAGER DASHBOARD                                          │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│ TEAM OVERVIEW                    CASE STATUS              │
+│ ├─ Techs: 5 active              ├─ Total Cases: 247      │
+│ ├─ Cases Assigned: 43           ├─ New: 8                │
+│ ├─ Avg Completion: 1.2d         ├─ In Progress: 28       │
+│ └─ Quality Score: 94%           └─ Completed: 211        │
+│                                                             │
+│ THIS WEEK'S METRICS              BOTTLENECKS              │
+│ ├─ Cases Completed: 42          ├─ Pending Escalations: 3│
+│ ├─ Avg Resolution Time: 24h     ├─ Overdue Cases: 2      │
+│ ├─ Quality Issues: 1             ├─ Waiting on Member: 5  │
+│ └─ Member Satisfaction: 4.6/5   └─ System Issues: 0      │
+│                                                             │
+│ TEAM LOAD DISTRIBUTION           ACTION ITEMS            │
+│ ├─ Tech A: 8 cases (28%)         ├─ Review Tech A case   │
+│ ├─ Tech B: 7 cases (24%)         ├─ Check escalation     │
+│ ├─ Tech C: 6 cases (20%)         ├─ Contact member on 2  │
+│ ├─ Tech D: 5 cases (18%)         └─ Approve 3 releases   │
+│ └─ Tech E: 2 cases (7%)                                   │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Decision Tree: "What Should I Manage?"
+
+```
+                START: Manager checking system
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ Are there issues to      │
+                │ address?                 │
+                └────────┬─────────────────┘
+                         │
+    ┌────────────────────┼────────────────────┐
+    │                    │                    │
+ TEAM ISSUE        CASE ISSUE            SYSTEM
+ (Performance)     (Escalation/          (Config/
+                   Problem)              Process)
+    │                    │                    │
+    ▼                    ▼                    ▼
+┌────────────┐     ┌────────────┐     ┌────────────┐
+│ Check Team │     │ Open       │     │ Contact   │
+│ Metrics    │     │ Escalated  │     │ Admin     │
+└─────┬──────┘     │ Case       │     └────────────┘
+      │            └─────┬──────┘
+      ▼                   ▼
+  ┌──────────┐      ┌────────────┐
+  │ Uneven   │      │ Review     │
+  │ Load?    │      │ Issue      │
+  └────┬─────┘      │ Details    │
+       │            └─────┬──────┘
+    ┌──┴──┐              │
+    │     │          ┌───┴────┐
+   YES   NO         │         │
+    │     │       SIMPLE   COMPLEX
+    │     │         │         │
+    ▼     ▼         ▼         ▼
+┌─────┐ ┌──┐   ┌──────┐ ┌─────────┐
+│Move │ │OK│   │Fix   │ │Escalate │
+│Case │ │  │   │Now   │ │to Admin  │
+│Load │ │  │   │      │ │         │
+└─────┘ └──┘   └──────┘ └─────────┘
+    │    │         │         │
+    └────┴─────────┴─────────┘
+           │
+           ▼
+    ┌────────────────┐
+    │ Monitor Outcome│
+    │ & Follow Up    │
+    └────────────────┘
+```
+
+---
+
+## Decision Tree: "Should I Reassign This Case?"
+
+```
+              START: Tech is overloaded or case needs reassignment
+                            │
+                            ▼
+                ┌──────────────────────────┐
+                │ Why reassign?             │
+                └────────┬─────────────────┘
+                         │
+    ┌────────┬──────────┬┴────────┬────────┐
+    │        │          │         │        │
+ RUSH    OVER-    SPECIALIST  ESCALATE  SWAP
+  CASE   LOAD      NEEDED      TO ADMIN  LOAD
+    │     │         │           │        │
+    ▼     ▼         ▼           ▼        ▼
+  FIND   FIND     FIND         ASK      FIND
+ BEST   LEAST    EXPERT      ADMIN    EQUAL
+ TECH   BUSY                          LEVEL
+    │     │        │           │       │
+    └─────┴────────┴───────────┴───────┘
+           │
+           ▼
+    ┌────────────────────────┐
+    │ Click "Reassign Case"  │
+    │ Select New Technician  │
+    │ Add Reason (optional)  │
+    │ Confirm                │
+    └────────────────────────┘
+           │
+           ▼
+    ┌────────────────────────┐
+    │ Technician Notified    │
+    │ Case Reassigned        │
+    │ Old Tech: Read-only    │
+    │ New Tech: Full Access  │
+    └────────────────────────┘
+```
+
+---
+
