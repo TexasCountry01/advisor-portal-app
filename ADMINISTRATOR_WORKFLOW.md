@@ -253,7 +253,7 @@
 - ✓ View reassignment history for each case
 - ✓ Monitor rejection rates and trends
 - ✓ Delete/archive cases (if needed)
-- ✓ **Manage Case Holds** (NEW):
+- Manage Case Holds:
   - View all cases on hold with hold reasons and duration
   - Put cases on hold (if technician hasn't)
   - Resume cases from hold
@@ -271,7 +271,7 @@
 - ✓ Generate compliance reports
 - ✓ Monitor access control
 - ✓ Review rejection analytics
-- ✓ **Track member profile changes** (NEW):
+- Track member profile changes:
   - All member profile edits logged (WHO/WHAT/WHEN/WHY)
   - Member detail updates recorded by technician
   - Delegate add/edit/revoke tracked with dates
@@ -645,7 +645,7 @@ Admin Override:
 - ✓ Case releases and reassignments
 - ✓ Escalations and resolutions
 - ✓ Admin actions (any admin action)
-- ✓ **Member profile changes** (NEW):
+- Member profile changes:
   - Profile edits (who edited, what changed, when)
   - Delegate management (add, edit, revoke with dates)
   - Quarterly credit allowance updates

@@ -290,7 +290,7 @@ While **technicians (Level 2/3)** perform technical case reviews, **managers** o
 - ✓ Approve delayed releases
 - ✓ Contact member if issues
 
-### 7. **Hold Management** (NEW)
+### 7. **Hold Management**
 - ✓ View cases placed on hold
 - ✓ See hold reason and duration
 - ✓ Monitor hold duration tracking
