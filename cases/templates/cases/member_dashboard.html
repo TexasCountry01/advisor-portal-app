@@ -653,6 +653,7 @@ function submitUpdateCaseRequest(caseId) {
 
 // Handle member document upload with AJAX
 function handleMemberDocumentUpload(caseId) {
+    console.log('DEBUG: handleMemberDocumentUpload called for caseId:', caseId);
     const fileInput = document.getElementById(`documentFile${caseId}`);
     const notesInput = document.getElementById(`documentNotes${caseId}`);
     const uploadAlert = document.getElementById(`uploadAlert${caseId}`);
@@ -663,6 +664,8 @@ function handleMemberDocumentUpload(caseId) {
         alert('Please select a file to upload');
         return;
     }
+    
+    console.log('DEBUG: File selected:', fileInput.files[0].name);
     
     const formData = new FormData();
     formData.append('document_file', fileInput.files[0]);
@@ -679,14 +682,17 @@ function handleMemberDocumentUpload(caseId) {
     })
     .then(response => response.json())
     .then(data => {
+        console.log('DEBUG: Upload response:', data);
         if (data.success) {
             // Show success alert in the open modal
             uploadAlertMessage.textContent = data.message;
             uploadAlert.style.display = 'block';
+            console.log('DEBUG: Success alert shown');
             
             // Update count display in Update modal
             if (data.document_count) {
                 uploadCountDisplay.innerHTML = `<strong style="color: #28a745;">Documents: ${data.document_count} new</strong>`;
+                console.log('DEBUG: Count updated to:', data.document_count);
             }
             
             // Clear file input and notes
@@ -694,15 +700,18 @@ function handleMemberDocumentUpload(caseId) {
             notesInput.value = '';
             
             // Auto-hide success alert after 3 seconds (but keep modal open)
+            console.log('DEBUG: Modal should stay open - starting alert auto-hide timer');
             setTimeout(() => {
+                console.log('DEBUG: Hiding alert after 3 seconds');
                 uploadAlert.style.display = 'none';
             }, 3000);
         } else {
+            console.log('DEBUG: Upload failed:', data.error);
             alert('Error: ' + data.error);
         }
     })
     .catch(error => {
-        console.error('Error:', error);
+        console.error('DEBUG: Fetch error:', error);
         alert('An error occurred while uploading the document');
     });
 }
