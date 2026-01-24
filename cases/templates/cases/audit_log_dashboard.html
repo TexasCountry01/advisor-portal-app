@@ -173,6 +173,8 @@
                                     <td>
                                         {% if log.action_type == 'case_details_edited' %}
                                             <span class="badge bg-warning text-dark">{{ log.get_action_type_display }}</span>
+                                        {% elif log.action_type == 'case_accepted' %}
+                                            <span class="badge bg-success">{{ log.get_action_type_display }}</span>
                                         {% elif log.action_type == 'case_status_changed' %}
                                             <span class="badge bg-info">{{ log.get_action_type_display }}</span>
                                         {% elif log.action_type == 'case_assigned' or log.action_type == 'case_reassigned' %}

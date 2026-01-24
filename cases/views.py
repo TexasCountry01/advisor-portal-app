@@ -717,18 +717,88 @@ def accept_case(request, case_id):
             
             case.save()
             
-            # Create audit log entry
-            AuditLog.objects.create(
-                action_type='case_accepted',
+            # Get IP address for audit
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+            
+            # Create comprehensive audit log entry
+            description = f"Case accepted as Tier {tier}"
+            if case.assigned_to:
+                description += f", assigned to {case.assigned_to.get_full_name() or case.assigned_to.username}"
+            if not docs_verified or docs_verified == 'no':
+                description += " (docs not verified)"
+            if acceptance_notes:
+                description += f" - Notes: {acceptance_notes[:100]}"
+            
+            AuditLog.log_activity(
                 user=user,
+                action_type='case_accepted',
+                description=description,
                 case=case,
-                details={
-                    'tier': tier,
-                    'assigned_to': case.assigned_to.username if case.assigned_to else 'unassigned',
+                changes={
+                    'status': ('submitted', 'accepted'),
+                    'tier': (None, tier),
+                    'accepted_by': (None, user.username),
+                    'date_accepted': (None, timezone.now().isoformat()),
+                    'assigned_to': (None, case.assigned_to.username if case.assigned_to else None)
+                },
+                ip_address=ip_address,
+                metadata={
                     'docs_verified': docs_verified,
                     'acceptance_notes': acceptance_notes
                 }
             )
+            
+            # Send notification to assigned technician (if any and different from accepter)
+            if case.assigned_to and case.assigned_to != user:
+                try:
+                    from django.core.mail import send_mail
+                    from django.template.loader import render_to_string
+                    
+                    email_context = {
+                        'case': case,
+                        'accepted_by': user.get_full_name() or user.username,
+                        'tier': tier,
+                        'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
+                    }
+                    
+                    html_message = render_to_string('cases/emails/case_accepted.html', email_context)
+                    
+                    send_mail(
+                        subject=f'Case {case.external_case_id} - Accepted and Assigned to You',
+                        message=f'Case {case.external_case_id} has been accepted as Tier {tier} and assigned to you.',
+                        from_email='noreply@advisor-portal.com',
+                        recipient_list=[case.assigned_to.email],
+                        html_message=html_message,
+                        fail_silently=True
+                    )
+                except Exception as e:
+                    print(f"Error sending tech notification: {str(e)}")
+            
+            # Send notification to member
+            try:
+                from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                
+                email_context = {
+                    'case': case,
+                    'tier': tier,
+                    'member_name': case.member.get_full_name() or case.member.username,
+                    'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
+                }
+                
+                html_message = render_to_string('cases/emails/case_accepted_member.html', email_context)
+                
+                send_mail(
+                    subject=f'Case {case.external_case_id} - Your Case Has Been Accepted',
+                    message=f'Your case {case.external_case_id} has been received and accepted by our team.',
+                    from_email='noreply@advisor-portal.com',
+                    recipient_list=[case.member.email],
+                    html_message=html_message,
+                    fail_silently=True
+                )
+            except Exception as e:
+                print(f"Error sending member notification: {str(e)}")
             
             return JsonResponse({
                 'success': True,
