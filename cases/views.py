@@ -4263,3 +4263,84 @@ def deny_case_change_request(request, request_id):
     except Exception as e:
         logger.error(f'Error denying change request: {str(e)}', exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def upload_member_documents(request, case_id):
+    """Member uploads additional documents to their case (AJAX endpoint)"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=400)
+    
+    try:
+        user = request.user
+        case = get_object_or_404(Case, id=case_id)
+        
+        # Permission: Only member can upload to their cases
+        if case.member != user:
+            return JsonResponse({'success': False, 'error': 'Not your case'}, status=403)
+        
+        # Can only upload for submitted/in-progress cases
+        if case.status not in ['submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:
+            return JsonResponse({
+                'success': False,
+                'error': f'Cannot upload documents for {case.get_status_display()} cases'
+            }, status=400)
+        
+        # Get file from request
+        document_file = request.FILES.get('document_file')
+        document_notes = request.POST.get('document_notes', '').strip()
+        
+        if not document_file:
+            return JsonResponse({'success': False, 'error': 'No file provided'}, status=400)
+        
+        # Create CaseDocument record
+        filename_with_employee = f"{case.employee_last_name}_{document_file.name}"
+        
+        doc = CaseDocument.objects.create(
+            case=case,
+            document_type='supporting',  # Member uploads are supporting docs
+            original_filename=filename_with_employee,
+            file_size=document_file.size,
+            uploaded_by=user,
+            file=document_file,
+            notes=document_notes,
+        )
+        
+        # Set flag to notify technician
+        case.has_member_new_info = True
+        case.save()
+        
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='member_document_uploaded',
+            case=case,
+            description=f'Member uploaded document: {filename_with_employee}',
+            metadata={
+                'document_id': doc.id,
+                'original_filename': document_file.name,
+                'file_size': document_file.size,
+                'notes': document_notes
+            }
+        )
+        
+        # Count total member-uploaded documents (supporting docs)
+        document_count = CaseDocument.objects.filter(
+            case=case,
+            document_type='supporting',
+            uploaded_by=user
+        ).count()
+        
+        logger.info(f'Member {user.id} uploaded document to case {case_id}')
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'✓ Document uploaded successfully',
+            'document_count': document_count,
+            'document_id': doc.id
+        })
+    
+    except Exception as e:
+        logger.error(f'Error uploading member document: {str(e)}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

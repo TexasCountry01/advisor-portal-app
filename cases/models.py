@@ -427,6 +427,12 @@ class Case(models.Model):
         help_text='Flag indicating member has pending change request (extension/cancellation/info)'
     )
     
+    # Member Document Uploads
+    has_member_new_info = models.BooleanField(
+        default=False,
+        help_text='Flag indicating member has uploaded new documents that technician should review'
+    )
+    
     # Additional fields for internal tracking
     notes = models.TextField(blank=True, help_text='Internal notes not visible to member')
     created_at = models.DateTimeField(auto_now_add=True)

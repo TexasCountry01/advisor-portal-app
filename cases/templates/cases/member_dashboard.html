@@ -395,13 +395,12 @@
                                                 </div>
                                             </div>
                                             
-                                            <!-- Option 3: Add Additional Info -->
-                                            <div class="form-check mb-3 p-3 border rounded bg-light" style="cursor: pointer;" onclick="selectUpdateOption({{ case.id }}, 'additional_info')">
-                                                <input class="form-check-input" type="radio" name="request_type{{ case.id }}" id="docs{{ case.id }}" value="additional_info" required>
-                                                <label class="form-check-label" for="docs{{ case.id }}" style="cursor: pointer; flex: 1; margin-bottom: 0.5rem;">
-                                                    <strong>📎 Upload Additional Information</strong>
-                                                    <div class="text-muted small">Have more documents to share?</div>
-                                                </label>
+                                            <!-- Upload additional document button -->
+                                            <div class="mb-3 p-3 border-top pt-4">
+                                                <button type="button" class="btn btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#uploadDocumentsModal{{ case.id }}">
+                                                    <i class="bi bi-cloud-upload"></i> Upload additional document
+                                                </button>
+                                                <small class="text-muted ms-2" id="uploadCount{{ case.id }}"></small>
                                             </div>
                                             
                                             <!-- Notes for all options -->
@@ -420,6 +419,47 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- UPLOAD DOCUMENTS MODAL -->
+                        {% if case.status in 'submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' %}
+                        <div class="modal fade" id="uploadDocumentsModal{{ case.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header bg-success text-white">
+                                        <h5 class="modal-title">
+                                            <i class="bi bi-cloud-upload"></i> Upload Additional Documents
+                                        </h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div id="uploadAlert{{ case.id }}" class="alert alert-success alert-dismissible fade hide" role="alert" style="display: none;">
+                                            <i class="bi bi-check-circle"></i>
+                                            <span id="uploadAlertMessage{{ case.id }}"></span>
+                                            <button type="button" class="btn-close" onclick="this.parentElement.style.display='none';"></button>
+                                        </div>
+                                        <form id="uploadForm{{ case.id }}" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <label for="documentFile{{ case.id }}" class="form-label">Select File(s)</label>
+                                                <input type="file" id="documentFile{{ case.id }}" name="document_file" class="form-control" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.xlsx,.xls" required>
+                                                <small class="text-muted">Supported: PDF, DOC, DOCX, TXT, JPG, PNG, XLS, XLSX</small>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="documentNotes{{ case.id }}" class="form-label">Notes (Optional)</label>
+                                                <textarea id="documentNotes{{ case.id }}" name="document_notes" class="form-control" rows="2" placeholder="What is this document about?"></textarea>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        <button type="button" class="btn btn-success" onclick="handleMemberDocumentUpload({{ case.id }})">
+                                            <i class="bi bi-cloud-upload"></i> Upload
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                         {% endif %}
                         {% endfor %}
                     </tbody>
@@ -608,6 +648,63 @@ function submitUpdateCaseRequest(caseId) {
     .catch(error => {
         console.error('Error:', error);
         alert('An error occurred while sending your request');
+    });
+}
+
+// Handle member document upload with AJAX
+function handleMemberDocumentUpload(caseId) {
+    const fileInput = document.getElementById(`documentFile${caseId}`);
+    const notesInput = document.getElementById(`documentNotes${caseId}`);
+    const uploadAlert = document.getElementById(`uploadAlert${caseId}`);
+    const uploadAlertMessage = document.getElementById(`uploadAlertMessage${caseId}`);
+    const uploadCountDisplay = document.getElementById(`uploadCount${caseId}`);
+    
+    if (!fileInput.files.length) {
+        alert('Please select a file to upload');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('document_file', fileInput.files[0]);
+    formData.append('document_notes', notesInput.value);
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+    
+    fetch(`/cases/${caseId}/upload-member-documents/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success alert in the open modal
+            uploadAlertMessage.textContent = data.message;
+            uploadAlert.style.display = 'block';
+            
+            // Update count display in Update modal
+            if (data.document_count) {
+                uploadCountDisplay.innerHTML = `<strong style="color: #28a745;">Documents: ${data.document_count} new</strong>`;
+            }
+            
+            // Clear file input
+            fileInput.value = '';
+            notesInput.value = '';
+            
+            // Auto-close upload modal after 1.5 seconds
+            setTimeout(() => {
+                const uploadModal = bootstrap.Modal.getInstance(document.getElementById(`uploadDocumentsModal${caseId}`));
+                if (uploadModal) uploadModal.hide();
+            }, 1500);
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while uploading the document');
     });
 }
 </script>
