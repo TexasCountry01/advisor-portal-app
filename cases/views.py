@@ -4073,8 +4073,8 @@ def create_case_change_request(request, case_id):
         cancellation_reason = request.POST.get('cancellation_reason')
         member_notes = request.POST.get('member_notes', '').strip()
         
-        # Validate request type
-        if request_type not in ['due_date_extension', 'cancellation', 'additional_info']:
+        # Validate request type (additional_info is now handled by direct upload endpoint)
+        if request_type not in ['due_date_extension', 'cancellation']:
             return JsonResponse({'success': False, 'error': 'Invalid request type'}, status=400)
         
         # Create the change request
