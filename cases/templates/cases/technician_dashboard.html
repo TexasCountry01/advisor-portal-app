@@ -343,6 +343,11 @@
                                         <i class="bi bi-info-circle"></i> New Info
                                     </span>
                                     {% endif %}
+                                    {% if case.has_member_change_request %}
+                                    <span class="badge bg-primary" title="Member has pending change request (extension/cancellation/info)">
+                                        <i class="bi bi-pencil"></i> Change Request
+                                    </span>
+                                    {% endif %}
                                 </div>
                             </td>
                             <td class="column-member {% if 'member' not in visible_columns %}column-hidden{% endif %}">

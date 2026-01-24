@@ -79,6 +79,11 @@ urlpatterns = [
     path('audit/', views.audit_log_dashboard, name='audit_log_dashboard'),
     path('<int:case_id>/audit-history/', views.case_audit_history, name='case_audit_history'),
     
+    # API - Member change requests (extend date, cancel, add info)
+    path('<int:case_id>/request-update/', views.create_case_change_request, name='create_case_change_request'),
+    path('change-request/<int:request_id>/approve/', views.approve_case_change_request, name='approve_change_request'),
+    path('change-request/<int:request_id>/deny/', views.deny_case_change_request, name='deny_change_request'),
+    
     # Reference PDF template with document upload
     path('<int:case_id>/fact-finder-template/', views_pdf_template.fact_finder_template, name='case_fact_finder'),
     path('<int:case_id>/view-fact-finder-pdf/', views_pdf_template.view_fact_finder_pdf, name='view_fact_finder_pdf'),

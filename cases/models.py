@@ -421,6 +421,12 @@ class Case(models.Model):
         help_text='When the member last updated the case (after initial submission)'
     )
     
+    # Member Change Requests (extension/cancellation/info)
+    has_member_change_request = models.BooleanField(
+        default=False,
+        help_text='Flag indicating member has pending change request (extension/cancellation/info)'
+    )
+    
     # Additional fields for internal tracking
     notes = models.TextField(blank=True, help_text='Internal notes not visible to member')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -862,3 +868,110 @@ class CaseNotification(models.Model):
             self.is_read = True
             self.read_at = timezone.now()
             self.save()
+
+
+class CaseChangeRequest(models.Model):
+    """
+    Member requests for case changes (extend due date, cancel, add docs)
+    Technician must approve or deny requests.
+    """
+    
+    REQUEST_TYPE_CHOICES = [
+        ('due_date_extension', 'Request Due Date Extension'),
+        ('cancellation', 'Request Case Cancellation'),
+        ('additional_info', 'Request to Add Information'),
+    ]
+    
+    REQUEST_STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+    ]
+    
+    # Links to case and member
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='change_requests',
+        help_text='Case this request relates to'
+    )
+    
+    member = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='case_change_requests',
+        limit_choices_to={'role': 'member'},
+        help_text='Member making the request'
+    )
+    
+    # Request details
+    request_type = models.CharField(
+        max_length=25,
+        choices=REQUEST_TYPE_CHOICES,
+        help_text='Type of change being requested'
+    )
+    
+    requested_due_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text='New due date if requesting extension (null for cancellations)'
+    )
+    
+    cancellation_reason = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text='Reason for cancellation request (dropdown value)'
+    )
+    
+    member_notes = models.TextField(
+        blank=True,
+        help_text='Additional notes/reasoning from member'
+    )
+    
+    # Status and response
+    status = models.CharField(
+        max_length=15,
+        choices=REQUEST_STATUS_CHOICES,
+        default='pending',
+        help_text='Whether request is pending, approved, or denied'
+    )
+    
+    technician_response_notes = models.TextField(
+        blank=True,
+        help_text='Technician notes when approving/denying request'
+    )
+    
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_change_requests',
+        help_text='Technician who reviewed/approved/denied this request'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='When request was created'
+    )
+    
+    reviewed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When technician reviewed this request'
+    )
+    
+    class Meta:
+        verbose_name = 'Case Change Request'
+        verbose_name_plural = 'Case Change Requests'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['case', 'status']),
+            models.Index(fields=['member', '-created_at']),
+            models.Index(fields=['status', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_request_type_display()} - Case {self.case.external_case_id} ({self.status})"

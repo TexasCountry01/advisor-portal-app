@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
 from accounts.models import User
-from .models import Case, CaseDocument
+from .models import Case, CaseDocument, CaseChangeRequest
 import logging
 import json
 
@@ -4013,3 +4013,208 @@ def get_hold_cases(request):
             'success': False,
             'error': f'An error occurred: {str(e)}'
         }, status=500)
+
+@login_required
+def create_case_change_request(request, case_id):
+    """Member creates a request to extend due date, cancel case, or add info"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=400)
+    
+    try:
+        user = request.user
+        case = get_object_or_404(Case, id=case_id)
+        
+        # Permission: Only member can create requests for their cases
+        if case.member != user:
+            return JsonResponse({'success': False, 'error': 'Not your case'}, status=403)
+        
+        # Can only create requests for submitted/in-progress cases (not draft or completed)
+        if case.status not in ['submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:
+            return JsonResponse({
+                'success': False,
+                'error': f'Cannot make requests for {case.get_status_display()} cases'
+            }, status=400)
+        
+        # Get request details from POST
+        request_type = request.POST.get('request_type')
+        requested_due_date = request.POST.get('requested_due_date')
+        cancellation_reason = request.POST.get('cancellation_reason')
+        member_notes = request.POST.get('member_notes', '').strip()
+        
+        # Validate request type
+        if request_type not in ['due_date_extension', 'cancellation', 'additional_info']:
+            return JsonResponse({'success': False, 'error': 'Invalid request type'}, status=400)
+        
+        # Create the change request
+        change_request = CaseChangeRequest(
+            case=case,
+            member=user,
+            request_type=request_type,
+            requested_due_date=requested_due_date if request_type == 'due_date_extension' else None,
+            cancellation_reason=cancellation_reason if request_type == 'cancellation' else None,
+            member_notes=member_notes,
+            status='pending'
+        )
+        change_request.save()
+        
+        # Set flag on case
+        case.has_member_change_request = True
+        case.save()
+        
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='member_change_request_created',
+            case=case,
+            details=f'{request_type}: {member_notes[:100] if member_notes else "No notes"}'
+        )
+        
+        logger.info(f'Member {user.id} created {request_type} request for case {case_id}')
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{change_request.get_request_type_display()} request created',
+            'request_id': change_request.id
+        })
+    
+    except Exception as e:
+        logger.error(f'Error creating change request: {str(e)}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def approve_case_change_request(request, request_id):
+    """Technician approves a member's change request"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=400)
+    
+    try:
+        user = request.user
+        change_req = get_object_or_404(CaseChangeRequest, id=request_id)
+        case = change_req.case
+        
+        # Permission: Only techs/admins can approve
+        if user.role not in ['technician', 'manager', 'administrator']:
+            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
+        
+        # Can only approve pending requests
+        if change_req.status != 'pending':
+            return JsonResponse({
+                'success': False,
+                'error': f'Request is already {change_req.status}'
+            }, status=400)
+        
+        tech_response_notes = request.POST.get('tech_response_notes', '').strip()
+        
+        # Update request
+        change_req.status = 'approved'
+        change_req.reviewed_by = user
+        change_req.reviewed_at = timezone.now()
+        change_req.technician_response_notes = tech_response_notes
+        change_req.save()
+        
+        # Apply approval based on request type
+        if change_req.request_type == 'due_date_extension':
+            # Update due date and recalculate urgency
+            old_due_date = case.date_due
+            case.date_due = change_req.requested_due_date
+            
+            # Recalculate urgency
+            from datetime import timedelta, date
+            today = date.today()
+            default_due_date = today + timedelta(days=7)
+            case.urgency = 'rush' if case.date_due < default_due_date else 'normal'
+            
+            case.save()
+            
+            logger.info(f'Tech {user.id} approved extension: {old_due_date} → {change_req.requested_due_date}')
+        
+        elif change_req.request_type == 'cancellation':
+            # Change case status to cancelled (new status)
+            case.status = 'cancelled'
+            case.save()
+            
+            logger.info(f'Tech {user.id} approved cancellation for case {case_id}')
+        
+        # Clear the change request flag if no more pending requests
+        pending_count = CaseChangeRequest.objects.filter(case=case, status='pending').count()
+        if pending_count == 0:
+            case.has_member_change_request = False
+            case.save()
+        
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='member_change_request_approved',
+            case=case,
+            details=f'{change_req.get_request_type_display()} approved: {tech_response_notes[:100]}'
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{change_req.get_request_type_display()} approved'
+        })
+    
+    except Exception as e:
+        logger.error(f'Error approving change request: {str(e)}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+def deny_case_change_request(request, request_id):
+    """Technician denies a member's change request"""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=400)
+    
+    try:
+        user = request.user
+        change_req = get_object_or_404(CaseChangeRequest, id=request_id)
+        case = change_req.case
+        
+        # Permission: Only techs/admins can deny
+        if user.role not in ['technician', 'manager', 'administrator']:
+            return JsonResponse({'success': False, 'error': 'Not authorized'}, status=403)
+        
+        # Can only deny pending requests
+        if change_req.status != 'pending':
+            return JsonResponse({
+                'success': False,
+                'error': f'Request is already {change_req.status}'
+            }, status=400)
+        
+        tech_response_notes = request.POST.get('tech_response_notes', '').strip()
+        
+        # Update request
+        change_req.status = 'denied'
+        change_req.reviewed_by = user
+        change_req.reviewed_at = timezone.now()
+        change_req.technician_response_notes = tech_response_notes
+        change_req.save()
+        
+        # Clear the change request flag if no more pending requests
+        pending_count = CaseChangeRequest.objects.filter(case=case, status='pending').count()
+        if pending_count == 0:
+            case.has_member_change_request = False
+            case.save()
+        
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='member_change_request_denied',
+            case=case,
+            details=f'{change_req.get_request_type_display()} denied: {tech_response_notes[:100]}'
+        )
+        
+        logger.info(f'Tech {user.id} denied {change_req.request_type} for case {case.id}')
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'{change_req.get_request_type_display()} denied'
+        })
+    
+    except Exception as e:
+        logger.error(f'Error denying change request: {str(e)}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
