@@ -574,16 +574,16 @@
                         <i class="bi bi-file-pdf"></i> Upload Documents
                     </h5>
                     <p style="color: #666; margin-bottom: 15px;">
-                        Upload your completed Federal Fact Finder form and any supporting documents. You can upload multiple files at once.
+                        Upload your completed Federal Fact Finder and all supporting documents (pay stub, TSP statement and Social Security statement, etc.).
                     </p>
                     
                     <div class="file-upload-section" id="documentUploadArea" onclick="document.getElementById('documentFileInput').click();" style="margin-bottom: 15px;">
                         <div class="file-upload-icon">📁</div>
-                        <div class="file-upload-text">Click to upload documents</div>
+                        <div class="file-upload-text">Click to upload documents or drag and drop here</div>
                         <div class="file-upload-subtext">PDF, DOC, DOCX, JPG, PNG (Max 100MB per file)</div>
                     </div>
-                    <input type="file" id="documentFileInput" name="case_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleDocumentFileSelect(event)">
-                    <small style="color: #666; display: block; margin-top: 8px; margin-bottom: 15px;">Accumulated files: <strong id="accumulatedCount">0</strong></small>
+                    <input type="file" id="documentFileInput" name="case_documents" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onchange="handleDocumentFileSelect(event)" style="display: none;">
+                    <small style="color: #666; display: none; margin-top: 8px; margin-bottom: 15px;">Accumulated files: <strong id="accumulatedCount">0</strong></small>
                     <ul class="file-list" id="documentFileList"></ul>
                 </div>
 
