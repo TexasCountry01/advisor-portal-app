@@ -182,13 +182,6 @@ Dashboard Column Visibility:
 6. Filters can be collapsed to reduce visual clutter
 7. Active filter count displayed for quick reference
 
-**Benefits:**
-- ✓ Faster scanning of cases you care about
-- ✓ Reduce horizontal scrolling
-- ✓ Focus on relevant information
-- ✓ Personalized dashboard layout
-- ✓ Settings remember your preferences
-
 ### Case Queue Management
 ```
 My Dashboard shows:
