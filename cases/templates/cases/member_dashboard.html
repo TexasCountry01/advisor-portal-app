@@ -397,7 +397,7 @@
                                             
                                             <!-- Upload additional document button -->
                                             <div class="mb-3 p-3 border-top pt-4">
-                                                <button type="button" class="btn btn-outline-success me-2" data-bs-toggle="modal" data-bs-target="#uploadDocumentsModal{{ case.id }}">
+                                                <button type="button" class="btn btn-outline-success me-2" onclick="openUploadModal({{ case.id }})">
                                                     <i class="bi bi-cloud-upload"></i> Upload additional document
                                                 </button>
                                                 <small class="text-muted ms-2" id="uploadCount{{ case.id }}"></small>
@@ -649,6 +649,12 @@ function submitUpdateCaseRequest(caseId) {
         console.error('Error:', error);
         alert('An error occurred while sending your request');
     });
+}
+
+// Open upload modal while keeping update modal visible
+function openUploadModal(caseId) {
+    const uploadModal = new bootstrap.Modal(document.getElementById(`uploadDocumentsModal${caseId}`));
+    uploadModal.show();
 }
 
 // Handle member document upload with AJAX
