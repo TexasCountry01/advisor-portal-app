@@ -232,7 +232,7 @@
                         <tr>
                             <td class="column-workshop {% if 'workshop' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
+                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}">{{ case.num_reports_requested }}</td>
                             <td class="column-due_date {% if 'due_date' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_due %}
                                     {{ case.date_due|date:"m/d/y" }}
@@ -758,6 +758,12 @@ function handleMemberDocumentUpload(caseId) {
         opacity: 0.9;
     }
 
+    /* Left-align all table headers and cells */
+    table thead th,
+    table tbody td {
+        text-align: left !important;
+    }
+
     /* Column-specific widths and alignment */
     table th:nth-child(1),
     table td:nth-child(1) {
@@ -768,12 +774,7 @@ function handleMemberDocumentUpload(caseId) {
     table th:nth-child(2),
     table td:nth-child(2) {
         min-width: 80px;
-        text-align: left;
         padding-right: 5px;
-    }
-
-    table th:nth-child(2) {
-        text-align: left;
     }
 
     /* Tighten table spacing */
