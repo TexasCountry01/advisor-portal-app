@@ -687,7 +687,18 @@ function handleMemberDocumentUpload(caseId) {
             'X-CSRFToken': csrfToken
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('DEBUG: Response status:', response.status);
+        console.log('DEBUG: Response headers:', response.headers);
+        if (!response.ok) {
+            console.error('DEBUG: Response not OK, status:', response.status);
+            return response.text().then(text => {
+                console.error('DEBUG: Response body:', text);
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         console.log('DEBUG: Upload response:', data);
         if (data.success) {
@@ -728,7 +739,9 @@ function handleMemberDocumentUpload(caseId) {
     })
     .catch(error => {
         console.error('DEBUG: Fetch error:', error);
-        alert('An error occurred while uploading the document');
+        console.error('DEBUG: Error message:', error.message);
+        console.error('DEBUG: Error stack:', error.stack);
+        alert('An error occurred while uploading the document: ' + error.message);
     });
 }
 </script>
