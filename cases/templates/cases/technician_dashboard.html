@@ -410,11 +410,11 @@
                                     <span class="text-muted">Unassigned</span>
                                 {% endif %}
                                 {% if case.assigned_to %}
-                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}">
+                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 {% else %}
-                                    <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}">
+                                    <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                 {% endif %}
