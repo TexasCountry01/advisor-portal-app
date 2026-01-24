@@ -74,7 +74,6 @@ Technicians process cases through acceptance, investigation, and completion:
   - See the hold reason you provided
 - ✓ Can still view all case documents
 - ✓ Can still add internal notes
-- ✓ Cannot edit other case fields while on hold
 - ✓ **Resume from Hold** button available:
   - Click to resume investigation
   - Add reason for resuming
