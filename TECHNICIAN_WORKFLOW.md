@@ -1,7 +1,7 @@
 # Technician Workflow & Decision Tree
 
 ## Role Overview
-**Technicians** (Benefits-Technicians) are the core workforce processing cases. They accept cases from the queue, perform investigations, complete fact-finding, upload reports, and manage case workflow from submission through completion and release.
+**Technicians** (Benefits-Technicians) are the core workforce processing cases. They accept cases from the queue, perform investigations, review documents submitted by member, upload reports, and manage case workflow from submission through completion and release.
 
 > **📊 AUDIT TRAIL TRACKING NOTE:**  
 > All technician activities are automatically tracked in the audit trail system, including case assignments, status changes, holds/resumes, tier changes, and quality reviews. Managers can access detailed reports showing technician productivity, case workflows, and quality metrics. Technicians can view their personal activity history in the Performance dashboard.
