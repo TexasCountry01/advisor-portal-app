@@ -863,6 +863,83 @@
         <!-- Right Column: Timeline & Actions (Technician/Admin only) -->
         <div class="col-md-4">
             {% if user.role != 'member' %}
+                <!-- Initial Case Review (only show if status is submitted and not yet accepted) -->
+                {% if case.status == 'submitted' and not case.accepted_by %}
+                <div class="card mb-4 border-warning">
+                    <div class="card-header bg-warning bg-opacity-10">
+                        <h5 class="mb-0 text-warning">
+                            <i class="bi bi-clipboard-check"></i> Initial Case Review
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="small mb-3">To accept this case, confirm the following:</p>
+                        
+                        <!-- Document Checklist -->
+                        <div class="mb-3">
+                            <h6 class="small mb-2">Confirm receipt & eligibility of documents:</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="doc_fact_finder" name="doc_fact_finder">
+                                <label class="form-check-label small" for="doc_fact_finder">Fact Finder</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="doc_pay_stub" name="doc_pay_stub">
+                                <label class="form-check-label small" for="doc_pay_stub">Pay Stub</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="doc_social_security" name="doc_social_security">
+                                <label class="form-check-label small" for="doc_social_security">Social Security</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="doc_tsp_statement" name="doc_tsp_statement">
+                                <label class="form-check-label small" for="doc_tsp_statement">TSP statement</label>
+                            </div>
+                            <div class="alert alert-info small mt-2 mb-0" style="display: none;" id="missingDocsWarning">
+                                <i class="bi bi-exclamation-circle"></i> Not all documents are checked. If accepting without all docs, add a note below.
+                            </div>
+                        </div>
+                        
+                        <!-- Assign Tier -->
+                        <div class="mb-3">
+                            <label for="assignTier" class="form-label small">Assign Tier:</label>
+                            <select class="form-select form-select-sm" id="assignTier" name="assign_tier">
+                                <option value="">-- Select Tier --</option>
+                                <option value="1">Tier 1</option>
+                                <option value="2">Tier 2</option>
+                                <option value="3">Tier 3</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Note: Tier cannot exceed technician level capability</small>
+                        </div>
+                        
+                        <!-- Assign Tech -->
+                        <div class="mb-3">
+                            <label for="assignTechInit" class="form-label small">Assign Tech:</label>
+                            <select class="form-select form-select-sm" id="assignTechInit" name="assign_tech_init">
+                                <option value="">-- Leave Unassigned --</option>
+                                {% for tech in available_techs %}
+                                    <option value="{{ tech.id }}">{{ tech.first_name }} {{ tech.last_name }} ({{ tech.user_level }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Override Notes -->
+                        <div class="mb-3">
+                            <label for="acceptanceNotes" class="form-label small">Notes (if overriding checks):</label>
+                            <textarea class="form-control form-control-sm" id="acceptanceNotes" name="acceptance_notes" rows="2" placeholder="Add notes if accepting without all documents..."></textarea>
+                        </div>
+                        
+                        <!-- Buttons -->
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-success btn-sm" id="acceptCaseBtn">
+                                <i class="bi bi-check-circle"></i> Accept Case
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#putOnHoldInitialModal">
+                                <i class="bi bi-pause-circle"></i> Put on Hold
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Assignment -->
                 <div class="card mb-4">
                     <div class="card-header">
@@ -876,6 +953,15 @@
                                 <br><small class="text-muted">{{ case.assigned_to.user_level }}</small>
                             {% else %}
                                 <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Accepted By:</strong><br>
+                            {% if case.accepted_by %}
+                                {{ case.accepted_by.username }}
+                                <br><small class="text-muted">{{ case.accepted_by.user_level }}</small>
+                            {% else %}
+                                <span class="text-muted">Not yet reviewed</span>
                             {% endif %}
                         </div>
                         <div class="mb-3">
@@ -2401,6 +2487,86 @@ function saveReportNotes(editor) {
         if (editorContainer) editorContainer.classList.remove('floating-notes-saving');
     });
 }
+</script>
+
+<!-- Initial Case Review JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const docCheckboxes = ['doc_fact_finder', 'doc_pay_stub', 'doc_social_security', 'doc_tsp_statement'];
+    const missingDocsWarning = document.getElementById('missingDocsWarning');
+    const assignTierSelect = document.getElementById('assignTier');
+    const assignTechSelect = document.getElementById('assignTechInit');
+    const acceptBtn = document.getElementById('acceptCaseBtn');
+    
+    // Show warning if not all documents checked
+    function checkDocuments() {
+        const allChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
+        if (missingDocsWarning) {
+            missingDocsWarning.style.display = allChecked ? 'none' : 'block';
+        }
+    }
+    
+    // Add change listeners to checkboxes
+    docCheckboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+            checkbox.addEventListener('change', checkDocuments);
+        }
+    });
+    
+    // Handle Accept Case button click
+    if (acceptBtn) {
+        acceptBtn.addEventListener('click', function() {
+            const tier = assignTierSelect.value;
+            const tech = assignTechSelect.value;
+            const notes = document.getElementById('acceptanceNotes').value;
+            const docsAllChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
+            
+            // Validation
+            if (!tier) {
+                alert('Please select a tier level.');
+                return;
+            }
+            
+            // Warning if docs not all checked but no note
+            if (!docsAllChecked && !notes.trim()) {
+                alert('Please check all documents or add a note explaining why you\'re accepting without them.');
+                return;
+            }
+            
+            // Submit acceptance
+            const caseId = {{ case.id }};
+            const data = {
+                'tier': tier,
+                'assigned_to': tech || null,
+                'acceptance_notes': notes,
+                'docs_verified': docsAllChecked ? 'yes' : 'no'
+            };
+            
+            fetch(`/cases/${caseId}/accept/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    return response.json().then(data => {
+                        alert('Error: ' + (data.error || 'Failed to accept case'));
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while accepting the case.');
+            });
+        });
+    }
+});
 </script>
 
 {% include 'cases/edit_case_details_modal.html' %}

@@ -194,6 +194,16 @@ class Case(models.Model):
     # Field 14: Date Accepted
     date_accepted = models.DateTimeField(null=True, blank=True)
     
+    # Field 14a: Accepted By (tracks who accepted the case)
+    accepted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='accepted_cases',
+        help_text='Technician or admin who accepted/reviewed the case'
+    )
+    
     # Field 15: Date Due (visible to technicians/admins only)
     date_due = models.DateField(
         null=True, 

@@ -644,6 +644,110 @@ def delete_case(request, pk):
 
 
 @login_required
+def accept_case(request, case_id):
+    """Accept a submitted case - technician/admin initial review"""
+    import json
+    from django.http import JsonResponse
+    from django.utils import timezone
+    from core.models import AuditLog
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only technician, manager, or admin
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({
+            'success': False,
+            'error': 'You do not have permission to accept cases.'
+        }, status=403)
+    
+    # Case must be in submitted status
+    if case.status != 'submitted':
+        return JsonResponse({
+            'success': False,
+            'error': f'Only submitted cases can be accepted. Current status: {case.get_status_display()}'
+        }, status=400)
+    
+    if request.method == 'POST':
+        try:
+            body_data = json.loads(request.body) if request.body else {}
+            tier = body_data.get('tier')
+            assigned_to_id = body_data.get('assigned_to')
+            acceptance_notes = body_data.get('acceptance_notes', '').strip()
+            docs_verified = body_data.get('docs_verified', 'no')
+            
+            # Validation
+            if not tier:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Tier must be specified.'
+                }, status=400)
+            
+            # Tier validation - check if tech level matches tier capability
+            if user.role == 'technician':
+                # Tier 1 can be handled by any tech
+                # Tier 2 requires level 2+ 
+                # Tier 3 requires level 3
+                if tier == '2' and user.user_level == 'level_1':
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Your technician level (Level 1) cannot handle Tier 2 cases. Can be overridden with a note.'
+                    }, status=400)
+                if tier == '3' and user.user_level in ['level_1', 'level_2']:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Your technician level ({user.user_level.replace("_", " ").title()}) cannot handle Tier 3 cases. Can be overridden with a note.'
+                    }, status=400)
+            
+            # Update case
+            case.status = 'accepted'
+            case.tier = tier
+            case.date_accepted = timezone.now()
+            case.accepted_by = user
+            
+            if assigned_to_id:
+                try:
+                    tech = get_object_or_404(User, id=assigned_to_id, role='technician')
+                    case.assigned_to = tech
+                except:
+                    return JsonResponse({
+                        'success': False,
+                        'error': 'Invalid technician selected.'
+                    }, status=400)
+            
+            case.save()
+            
+            # Create audit log entry
+            AuditLog.objects.create(
+                action_type='case_accepted',
+                user=user,
+                case=case,
+                details={
+                    'tier': tier,
+                    'assigned_to': case.assigned_to.username if case.assigned_to else 'unassigned',
+                    'docs_verified': docs_verified,
+                    'acceptance_notes': acceptance_notes
+                }
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Case {case.external_case_id} has been accepted and moved to Tier {tier}.'
+            })
+        
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'POST method required.'
+    }, status=405)
+
+
+@login_required
 def case_detail(request, pk):
     """Case detail view"""
     user = request.user
