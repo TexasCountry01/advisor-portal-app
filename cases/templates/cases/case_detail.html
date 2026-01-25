@@ -21,6 +21,18 @@
                 </ol>
             </nav>
             <h2>{{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
+            
+            <!-- Link to Original Case (for modification/resubmission cases) -->
+            {% if case.original_case %}
+            <div class="alert alert-info mt-2 mb-0" role="alert">
+                <i class="bi bi-link-45deg"></i>
+                <strong>Linked Case:</strong> 
+                This is a modification of case <a href="{% url 'cases:case_detail' case.original_case.id %}" class="alert-link"><strong>{{ case.original_case.external_case_id }}</strong></a>.
+                <a href="{% url 'cases:case_detail' case.original_case.id %}" class="btn btn-sm btn-outline-info ms-2">
+                    <i class="bi bi-arrow-up-right"></i> View Original Case
+                </a>
+            </div>
+            {% endif %}
         </div>
         <div class="col-auto d-flex align-items-center gap-2">
             {% if user.role == 'member' %}

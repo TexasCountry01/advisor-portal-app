@@ -2108,6 +2108,26 @@ def mark_case_completed(request, case_id):
                 if case.original_case.assigned_to and not case.assigned_to:
                     case.assigned_to = case.original_case.assigned_to
                     logger.info(f'Auto-assigned modification case {case.external_case_id} to original technician {case.original_case.assigned_to.username}')
+                    
+                    # Create notification message for original technician
+                    # This appears in the case messages so they know it's a modification of their original work
+                    modification_note = (
+                        f"**MODIFICATION CASE NOTIFICATION**\n\n"
+                        f"This case has been auto-assigned to you as the original technician who worked case {case.original_case.external_case_id}. "
+                        f"This is a modification of your original case that the member has resubmitted with additional information."
+                    )
+                    CaseMessage.objects.create(
+                        case=case,
+                        author=request.user,
+                        message=modification_note
+                    )
+                    
+                    # Mark as unread for the original technician
+                    UnreadMessage.objects.create(
+                        message=CaseMessage.objects.filter(case=case).latest('id'),
+                        user=case.original_case.assigned_to,
+                        case=case
+                    )
             
             case.save()
             
