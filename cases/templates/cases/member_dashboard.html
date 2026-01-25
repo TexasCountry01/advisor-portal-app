@@ -1127,26 +1127,42 @@ function handleMemberDocumentUpload(caseId) {
      * - Saves preference to localStorage
      */
     function toggleHoldCasesAlert() {
+        console.log('DEBUG: toggleHoldCasesAlert function called!');
+        
         const content = document.getElementById('hold-cases-content');
         const icon = document.getElementById('hold-cases-toggle-icon');
         
+        if (!content) {
+            console.error('DEBUG: ERROR - hold-cases-content element not found!');
+            return;
+        }
+        if (!icon) {
+            console.error('DEBUG: ERROR - hold-cases-toggle-icon element not found!');
+            return;
+        }
+        
+        console.log('DEBUG: Current content.style.display:', content.style.display);
+        console.log('DEBUG: Element HTML:', content.innerHTML.substring(0, 100));
+        
         const isCurrentlyHidden = content.style.display === 'none';
-        console.log('DEBUG: toggleHoldCasesAlert - isCurrentlyHidden:', isCurrentlyHidden);
+        console.log('DEBUG: isCurrentlyHidden:', isCurrentlyHidden);
         
         if (isCurrentlyHidden) {
             // Show it
+            console.log('DEBUG: Setting display to block...');
             content.style.display = 'block';
             icon.classList.remove('bi-chevron-down');
             icon.classList.add('bi-chevron-up');
             localStorage.setItem('holdCasesExpanded', 'true');
-            console.log('DEBUG: Hold cases now VISIBLE');
+            console.log('DEBUG: Hold cases now VISIBLE - display is:', content.style.display);
         } else {
             // Hide it
+            console.log('DEBUG: Setting display to none...');
             content.style.display = 'none';
             icon.classList.remove('bi-chevron-up');
             icon.classList.add('bi-chevron-down');
             localStorage.setItem('holdCasesExpanded', 'false');
-            console.log('DEBUG: Hold cases now HIDDEN');
+            console.log('DEBUG: Hold cases now HIDDEN - display is:', content.style.display);
         }
     }
     
