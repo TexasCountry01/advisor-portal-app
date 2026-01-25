@@ -156,6 +156,16 @@ class Case(models.Model):
         limit_choices_to={'role': 'technician', 'user_level__in': ['level_2', 'level_3']}
     )
     
+    # Original Case (for resubmissions/modifications)
+    original_case = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='resubmitted_cases',
+        help_text='If this case is a resubmission of a completed case, link to the original case'
+    )
+    
     # Quality Review Fields
     reviewed_at = models.DateTimeField(
         null=True,

@@ -2102,6 +2102,13 @@ def mark_case_completed(request, case_id):
                 case.date_completed = None
                 release_msg = "submitted for quality review"
             
+            # Auto-assign modification cases to original technician
+            if case.original_case and case.status == 'completed':
+                # This is a modification case - auto-assign to original technician
+                if case.original_case.assigned_to and not case.assigned_to:
+                    case.assigned_to = case.original_case.assigned_to
+                    logger.info(f'Auto-assigned modification case {case.external_case_id} to original technician {case.original_case.assigned_to.username}')
+            
             case.save()
             
             messages.success(request, f'Case marked as completed and {release_msg}.')
@@ -2988,6 +2995,91 @@ def get_unread_message_count(request):
         
     except Exception as e:
         logger.error(f'Error getting unread message count: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_modification(request, pk):
+    """
+    Member requests a modification to a completed case.
+    Creates a new case linked to the original case.
+    Stores the reason in the original case's messages.
+    Auto-assigns new case to original technician when completed.
+    """
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: Only member can request modification
+    if user.role != 'member' or case.member != user:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    # Case must be completed
+    if case.status != 'completed' or not case.actual_release_date:
+        return JsonResponse({'error': 'Can only request modification for completed cases'}, status=400)
+    
+    # Check 60-day limit
+    from datetime import timedelta
+    from django.utils import timezone as tz
+    release_date = case.actual_release_date
+    if isinstance(release_date, str):
+        from django.utils.dateparse import parse_datetime
+        release_date = parse_datetime(release_date)
+    
+    days_since_release = (tz.now().date() - release_date.date()).days
+    if days_since_release > 60:
+        return JsonResponse({'error': 'Modification requests are only available within 60 days of case completion'}, status=400)
+    
+    try:
+        reason = request.POST.get('reason', '').strip()
+        
+        if not reason:
+            return JsonResponse({'error': 'Reason is required'}, status=400)
+        
+        # Create new case as a copy of the original
+        new_case = Case.objects.create(
+            external_case_id=Case.objects.count() + 1000,  # Simplified ID generation
+            workshop_code=case.workshop_code,
+            member=case.member,
+            created_by=user,
+            employee_first_name=case.employee_first_name,
+            employee_last_name=case.employee_last_name,
+            client_email=case.client_email,
+            num_reports_requested=case.num_reports_requested,
+            urgency=case.urgency,
+            status='submitted',  # Start as new submission
+            original_case=case,  # Link to original case
+            tier=case.tier,
+            date_submitted=tz.now(),
+        )
+        
+        logger.info(f'New modification case {new_case.external_case_id} created for case {case.external_case_id} by member {user.username}')
+        
+        # Store the modification request in the original case's messages
+        modification_message = f"**MODIFICATION REQUESTED BY MEMBER**\n\nReason: {reason}\n\nNew case created: {new_case.external_case_id}"
+        msg = CaseMessage.objects.create(
+            case=case,
+            author=user,
+            message=modification_message
+        )
+        
+        # Mark message as unread for assigned technician
+        if case.assigned_to:
+            UnreadMessage.objects.get_or_create(
+                message=msg,
+                user=case.assigned_to,
+                case=case
+            )
+        
+        return JsonResponse({
+            'success': True,
+            'new_case_id': new_case.external_case_id,
+            'new_case_pk': new_case.pk,
+            'message': f'New case {new_case.external_case_id} created and linked to original case'
+        })
+        
+    except Exception as e:
+        logger.error(f'Error creating modification request: {str(e)}')
         return JsonResponse({'error': str(e)}, status=500)
 
 
