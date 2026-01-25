@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
 from accounts.models import User
-from .models import Case, CaseDocument, CaseChangeRequest
+from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage
 import logging
 import json
 
@@ -2781,7 +2781,109 @@ def save_report_notes(request, pk):
 
 
 @login_required
+@require_http_methods(["POST"])
+def add_case_message(request, pk):
+    """
+    Add a two-way communication message to a case.
+    Available to both members and benefits-technicians.
+    Visible to both parties throughout the case lifecycle.
+    """
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: Only member or assigned technician can message
+    is_member = (user.role == 'member' and case.member == user)
+    is_technician = (user.role in ['technician', 'administrator', 'manager'] and 
+                     (case.assigned_to == user or user.role in ['administrator', 'manager']))
+    
+    if not (is_member or is_technician):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        message_text = request.POST.get('message', '').strip()
+        
+        if not message_text:
+            return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+        
+        # Create message
+        msg = CaseMessage.objects.create(
+            case=case,
+            author=user,
+            message=message_text
+        )
+        
+        logger.info(f'Message added to case {case.external_case_id} by {user.username}')
+        
+        return JsonResponse({
+            'success': True,
+            'message_id': msg.id,
+            'author': user.get_full_name() or user.username,
+            'author_role': user.role,
+            'created_at': msg.created_at.isoformat(),
+            'message': message_text
+        })
+        
+    except Exception as e:
+        logger.error(f'Error adding message: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_case_messages(request, pk):
+    """
+    Retrieve all messages for a case (paginated).
+    Available to both member and assigned technician.
+    """
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: Only member or assigned technician can view messages
+    is_member = (user.role == 'member' and case.member == user)
+    is_technician = (user.role in ['technician', 'administrator', 'manager'] and 
+                     (case.assigned_to == user or user.role in ['administrator', 'manager']))
+    
+    if not (is_member or is_technician):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        # Get all messages for this case
+        messages_qs = CaseMessage.objects.filter(case=case).select_related('author')
+        
+        # Paginate
+        page = request.GET.get('page', 1)
+        paginator = Paginator(messages_qs, 20)
+        page_obj = paginator.get_page(page)
+        
+        messages_data = []
+        for msg in page_obj:
+            messages_data.append({
+                'id': msg.id,
+                'author': msg.author.get_full_name() or msg.author.username,
+                'author_id': msg.author.id,
+                'author_role': msg.author.role,
+                'message': msg.message,
+                'created_at': msg.created_at.isoformat(),
+                'updated_at': msg.updated_at.isoformat(),
+                'is_author': msg.author == user
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'messages': messages_data,
+            'page': page_obj.number,
+            'total_pages': paginator.num_pages,
+            'total_messages': paginator.count
+        })
+        
+    except Exception as e:
+        logger.error(f'Error retrieving messages: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
 def upload_image_for_notes(request):
+
     """
     Upload image for TinyMCE editor (notes).
     Called by TinyMCE's image upload feature.

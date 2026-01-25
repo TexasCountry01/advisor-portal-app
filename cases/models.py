@@ -981,3 +981,52 @@ class CaseChangeRequest(models.Model):
     
     def __str__(self):
         return f"{self.get_request_type_display()} - Case {self.case.external_case_id} ({self.status})"
+
+
+class CaseMessage(models.Model):
+    """
+    Two-way communication messages between member and benefits-technician.
+    Visible to both parties throughout the entire case lifecycle.
+    Captures all conversation history in one place.
+    """
+    
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='messages',
+        help_text='Case this message is associated with'
+    )
+    
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='case_messages',
+        help_text='User who wrote this message (member or benefits-technician)'
+    )
+    
+    message = models.TextField(
+        help_text='Message content - visible to both member and technician'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='When message was created'
+    )
+    
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        help_text='When message was last edited'
+    )
+    
+    class Meta:
+        verbose_name = 'Case Message'
+        verbose_name_plural = 'Case Messages'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['case', 'created_at']),
+            models.Index(fields=['author', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Message by {self.author.username if self.author else 'Unknown'} on Case {self.case.external_case_id}"
