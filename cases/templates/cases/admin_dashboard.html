@@ -343,7 +343,11 @@
                             <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.assigned_to %}
                                     <span class="badge bg-info">
-                                        {{ case.assigned_to.first_name }}
+                                        {% if case.assigned_to.first_name %}
+                                            {{ case.assigned_to.first_name }}
+                                        {% else %}
+                                            {{ case.assigned_to.username }}
+                                        {% endif %}
                                     </span>
                                 {% else %}
                                     <span class="badge bg-light text-dark">Unassigned</span>
