@@ -1231,7 +1231,7 @@ function handleMemberDocumentUpload(caseId) {
         cases.forEach(caseObj => {
             html += `
                 <li>
-                    <strong>${caseObj.case_id}</strong> (${caseObj.employee})
+                    <strong>${caseObj.employee}</strong>
                     <br><small class="text-muted">Reason: ${caseObj.hold_reason}</small>
                     <br><button type="button" class="btn btn-sm btn-warning mt-1" onclick="openUploadDocumentsModal(${caseObj.id})">
                         <i class="bi bi-cloud-upload"></i> Upload Documents
