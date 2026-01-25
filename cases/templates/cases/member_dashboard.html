@@ -1160,16 +1160,20 @@ function handleMemberDocumentUpload(caseId) {
                     displayHoldCases(data.cases);
                     
                     // Restore the expanded/collapsed state from localStorage
+                    // Default to collapsed (false) if no preference is saved
                     const wasExpanded = localStorage.getItem('holdCasesExpanded') === 'true';
                     const content = document.getElementById('hold-cases-content');
                     const icon = document.getElementById('hold-cases-toggle-icon');
                     
                     if (wasExpanded) {
+                        // Show content (expanded)
                         content.style.display = 'block';
                         icon.classList.remove('bi-chevron-down');
                         icon.classList.add('bi-chevron-up');
                     } else {
+                        // Hide content (collapsed) - default state
                         content.style.display = 'none';
+                        icon.classList.remove('bi-chevron-up');
                         icon.classList.add('bi-chevron-down');
                     }
                 }
