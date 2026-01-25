@@ -745,6 +745,10 @@ def accept_case(request, case_id):
             
             if assigned_tech:
                 case.assigned_to = assigned_tech
+            elif user.role == 'technician':
+                # If no explicit assignment but accepting tech is a technician, 
+                # they should be automatically assigned
+                case.assigned_to = user
             
             case.save()
             
