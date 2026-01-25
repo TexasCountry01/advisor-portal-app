@@ -823,8 +823,8 @@
             </div>
             {% endif %}
 
-            <!-- Technician Notes PDF Download -->
-            {% if can_view_report and case.report_notes_to_member %}
+            <!-- Technician Notes PDF Download - ONLY for Members when case is completed -->
+            {% if user.role == 'member' and case.status == 'completed' and case.actual_release_date and case.report_notes_to_member %}
             <div class="card mb-4 border-info">
                 <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -2413,7 +2413,7 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
 });
 </script>
 
-<!-- Floating Report Notes Window with Rich Text Editor -->
+<!-- Floating Report Notes Window with Rich Text Editor - ONLY for Technicians -->
 {% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed,hold' %}
 <div id="floatingNotesWindow" class="floating-window" style="display: none;">
     <div class="floating-window-header">
@@ -2446,6 +2446,7 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
     style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; display: none;">
     <i class="bi bi-sticky"></i> Notes
 </button>
+{% endif %}
 
 <!-- TinyMCE Library - Development Mode (No API key required for local development) -->
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
