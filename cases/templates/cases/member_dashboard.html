@@ -32,16 +32,21 @@
         </div>
     </div>
 
-    <!-- Cases on Hold Alert Section -->
+    <!-- Cases on Hold Alert Section (Collapsible) -->
     <div id="hold-cases-section" style="display:none;">
-        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-            <div class="d-flex align-items-center">
+        <div class="alert alert-warning fade show" role="alert" style="margin-bottom: 1rem;">
+            <div class="d-flex align-items-center justify-content-between">
                 <div class="flex-grow-1">
-                    <h5 class="alert-heading mb-2"><i class="bi bi-exclamation-triangle-fill"></i> You Have Cases on Hold</h5>
-                    <p id="hold-cases-list" class="mb-0"></p>
+                    <h5 class="alert-heading mb-0" style="cursor: pointer; user-select: none;" onclick="toggleHoldCasesAlert()" id="hold-cases-header">
+                        <i class="bi bi-exclamation-triangle-fill"></i> You Have Cases on Hold
+                        <i class="bi bi-chevron-down" id="hold-cases-toggle-icon" style="margin-left: 8px;"></i>
+                    </h5>
+                    <div id="hold-cases-content" style="display: none; margin-top: 12px;">
+                        <p id="hold-cases-list" class="mb-0"></p>
+                    </div>
                 </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" style="margin-top: -5px;"></button>
             </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     </div>
 
@@ -1116,10 +1121,36 @@ function handleMemberDocumentUpload(caseId) {
     }
     
     /**
+     * Toggle visibility of hold cases content
+     * - Toggles the hold-cases-content div
+     * - Updates the toggle icon (chevron)
+     * - Saves preference to localStorage
+     */
+    function toggleHoldCasesAlert() {
+        const content = document.getElementById('hold-cases-content');
+        const icon = document.getElementById('hold-cases-toggle-icon');
+        
+        const isCurrentlyHidden = content.style.display === 'none';
+        
+        if (isCurrentlyHidden) {
+            content.style.display = 'block';
+            icon.classList.remove('bi-chevron-down');
+            icon.classList.add('bi-chevron-up');
+            localStorage.setItem('holdCasesExpanded', 'true');
+        } else {
+            content.style.display = 'none';
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+            localStorage.setItem('holdCasesExpanded', 'false');
+        }
+    }
+    
+    /**
      * Load and display cases on hold
      * - Fetches all cases with status='hold'
      * - Shows in alert section at top of dashboard
      * - Includes hold reason and link to case
+     * - Restores previous expansion state from localStorage
      */
     function loadHoldCases() {
         fetch('{% url "cases:get_hold_cases" %}')
@@ -1127,6 +1158,20 @@ function handleMemberDocumentUpload(caseId) {
             .then(data => {
                 if (data.success && data.total_count > 0) {
                     displayHoldCases(data.cases);
+                    
+                    // Restore the expanded/collapsed state from localStorage
+                    const wasExpanded = localStorage.getItem('holdCasesExpanded') === 'true';
+                    const content = document.getElementById('hold-cases-content');
+                    const icon = document.getElementById('hold-cases-toggle-icon');
+                    
+                    if (wasExpanded) {
+                        content.style.display = 'block';
+                        icon.classList.remove('bi-chevron-down');
+                        icon.classList.add('bi-chevron-up');
+                    } else {
+                        content.style.display = 'none';
+                        icon.classList.add('bi-chevron-down');
+                    }
                 }
             })
             .catch(error => console.error('Error loading hold cases:', error));
