@@ -1,7 +1,30 @@
-# Deploy changes to test server via SSH
-# This script ensures database config, pulls changes from GitHub, runs migrations, and restarts Gunicorn
-# CRITICAL: This uses DigitalOcean Managed MySQL (NOT SQLite)
-# 4-STEP WORKFLOW: Ensure .env config -> Git pull -> Run migrations -> Restart gunicorn
+# ==============================================================================
+# DEPLOY SCRIPT: Test Server Deployment
+# ==============================================================================
+#
+# ⚠️ CRITICAL DATABASE WARNING ⚠️
+# This script deploys to the TEST SERVER which uses DigitalOcean MYSQL/MARIADB
+# 
+# DO NOT CONFUSE DATABASES:
+# - LOCAL DEVELOPMENT: SQLite (db.sqlite3) - for local testing ONLY
+# - TEST SERVER: DigitalOcean MySQL/MariaDB - for testing deployed app
+# - PRODUCTION: DigitalOcean MySQL/MariaDB - for live users
+#
+# See DATABASE_SETUP_GUIDE.md for complete database configuration documentation
+# ==============================================================================
+#
+# WORKFLOW: 4 STEPS
+# 1. Verify .env database configuration (MySQL, NOT SQLite)
+# 2. Pull latest changes from GitHub
+# 3. Run Django migrations on MySQL database
+# 4. Restart Gunicorn application server
+#
+# Security Notes:
+# - Database password stored securely in remote .env file (NOT in this script)
+# - Never commit passwords to GitHub
+# - Backup remote .env locally before changes
+# - See .env.backup.test-server for reference
+# ==============================================================================
 
 # Configuration
 $testServerHost = "157.245.141.42"
@@ -10,9 +33,8 @@ $projectPath = "/var/www/advisor-portal"
 $venvPath = "/home/dev/advisor-portal-app/venv"
 $gunicornSocket = "/home/dev/advisor-portal-app/gunicorn.sock"
 
-# Database Configuration (DigitalOcean Managed MySQL)
-# NOTE: Database password is stored securely in the remote server .env file
-# DO NOT commit passwords to GitHub - use secure deployment methods only
+# ⚠️ TEST SERVER DATABASE - DigitalOcean Managed MySQL/MariaDB
+# (NOT SQLite - only use SQLite for LOCAL development)
 $dbEngine = "django.db.backends.mysql"
 $dbName = "advisor_portal"
 $dbUser = "doadmin"
