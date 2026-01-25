@@ -1150,7 +1150,7 @@ function handleMemberDocumentUpload(caseId) {
      * - Fetches all cases with status='hold'
      * - Shows in alert section at top of dashboard
      * - Includes hold reason and link to case
-     * - Restores previous expansion state from localStorage
+     * - Restores previous expansion state from localStorage, defaults to collapsed
      */
     function loadHoldCases() {
         fetch('{% url "cases:get_hold_cases" %}')
@@ -1160,18 +1160,19 @@ function handleMemberDocumentUpload(caseId) {
                     displayHoldCases(data.cases);
                     
                     // Restore the expanded/collapsed state from localStorage
-                    // Default to collapsed (false) if no preference is saved
+                    // Default to COLLAPSED (false) if no preference is saved
                     const wasExpanded = localStorage.getItem('holdCasesExpanded') === 'true';
                     const content = document.getElementById('hold-cases-content');
                     const icon = document.getElementById('hold-cases-toggle-icon');
                     
+                    // Always explicitly set the state to ensure proper display
                     if (wasExpanded) {
                         // Show content (expanded)
                         content.style.display = 'block';
                         icon.classList.remove('bi-chevron-down');
                         icon.classList.add('bi-chevron-up');
                     } else {
-                        // Hide content (collapsed) - default state
+                        // Hide content (collapsed) - this is the default state
                         content.style.display = 'none';
                         icon.classList.remove('bi-chevron-up');
                         icon.classList.add('bi-chevron-down');
@@ -1186,10 +1187,12 @@ function handleMemberDocumentUpload(caseId) {
      * - Shows in prominent alert at top of dashboard
      * - Lists each case with reason
      * - Quick link to upload documents (opens modal directly)
+     * - NOTE: Content display state is controlled by loadHoldCases()
      */
     function displayHoldCases(cases) {
         const section = document.getElementById('hold-cases-section');
         const list = document.getElementById('hold-cases-list');
+        const content = document.getElementById('hold-cases-content');
         
         let html = `<strong>${cases.length} case(s) on hold - Action Required:</strong><ul class="mt-2 mb-0">`;
         cases.forEach(caseObj => {
@@ -1207,6 +1210,8 @@ function handleMemberDocumentUpload(caseId) {
         
         list.innerHTML = html;
         section.style.display = 'block';
+        // Explicitly keep content hidden until user toggles it
+        content.style.display = 'none';
     }
 
     /**
