@@ -342,6 +342,20 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="reply_email_address" class="form-label">
+                                        <strong>Reply-To Email Address</strong>
+                                    </label>
+                                    <input type="email" class="form-control" id="reply_email_address" name="reply_email_address" 
+                                           value="{{ settings.reply_email_address }}" 
+                                           placeholder="reports@profeds.com">
+                                    <small class="text-muted">Email address to use as Reply-To in member notifications. Admin only.</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="alert alert-info mt-3" role="alert">
                             <i class="bi bi-info-circle"></i> <strong>Email Notification Info:</strong>
                             <ul class="mb-0 mt-2 ms-3">

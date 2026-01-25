@@ -106,6 +106,12 @@ def system_settings(request):
             settings.batch_release_time = request.POST.get('batch_release_time', '09:00')
             settings.batch_release_enabled = request.POST.get('batch_release_enabled') == 'on'
             
+            # Email Settings
+            settings.enable_delayed_email_notifications = request.POST.get('enable_delayed_email_notifications') == 'on'
+            settings.default_email_delay_hours = int(request.POST.get('default_email_delay_hours', 0))
+            settings.batch_email_enabled = request.POST.get('batch_email_enabled') == 'on'
+            settings.reply_email_address = request.POST.get('reply_email_address', 'reports@profeds.com')
+            
             # API Configuration
             settings.benefits_software_api_url = request.POST.get('benefits_software_api_url', '')
             settings.benefits_software_api_key = request.POST.get('benefits_software_api_key', '')

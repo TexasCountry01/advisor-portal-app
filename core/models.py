@@ -266,6 +266,12 @@ class SystemSettings(models.Model):
         help_text='Automatically send scheduled emails via batch job'
     )
     
+    # Email Reply Address
+    reply_email_address = models.EmailField(
+        default='reports@profeds.com',
+        help_text='Reply-to email address for member notifications (admin only)'
+    )
+    
     # API Configuration - Benefits Software
     benefits_software_api_url = models.CharField(
         max_length=500,
