@@ -1164,24 +1164,28 @@ function handleMemberDocumentUpload(caseId) {
                 if (data.success && data.total_count > 0) {
                     displayHoldCases(data.cases);
                     
-                    // Restore the expanded/collapsed state from localStorage
-                    // Default to COLLAPSED (false) if no preference is saved
-                    const wasExpanded = localStorage.getItem('holdCasesExpanded') === 'true';
+                    // Get the content element and icon AFTER displayHoldCases() populates it
                     const content = document.getElementById('hold-cases-content');
                     const icon = document.getElementById('hold-cases-toggle-icon');
                     
-                    console.log('DEBUG: loadHoldCases - wasExpanded:', wasExpanded);
+                    // CRITICAL: Start with collapsed state as default
+                    // Content should be hidden by CSS, but ensure it's not in visible class
+                    content.classList.remove('visible');
                     
-                    // Always explicitly set the state using CSS class
+                    // Restore the expanded/collapsed state from localStorage
+                    const wasExpanded = localStorage.getItem('holdCasesExpanded') === 'true';
+                    console.log('DEBUG: loadHoldCases - wasExpanded from localStorage:', wasExpanded);
+                    
+                    // Set the correct state
                     if (wasExpanded) {
                         // Show content (expanded)
-                        console.log('DEBUG: Setting hold cases to EXPANDED');
+                        console.log('DEBUG: User preference: EXPANDED');
                         content.classList.add('visible');
                         icon.classList.remove('bi-chevron-down');
                         icon.classList.add('bi-chevron-up');
                     } else {
                         // Hide content (collapsed) - this is the default state
-                        console.log('DEBUG: Setting hold cases to COLLAPSED');
+                        console.log('DEBUG: User preference: COLLAPSED (default)');
                         content.classList.remove('visible');
                         icon.classList.remove('bi-chevron-up');
                         icon.classList.add('bi-chevron-down');
@@ -1242,6 +1246,13 @@ function handleMemberDocumentUpload(caseId) {
     
     // Initialize notifications on page load
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize hold cases content to collapsed state (ensure CSS class is not present)
+        const holdContent = document.getElementById('hold-cases-content');
+        if (holdContent) {
+            holdContent.classList.remove('visible');
+            console.log('DEBUG: DOMContentLoaded - Hold cases content initialized to collapsed');
+        }
+        
         loadNotifications();
         
         // Set up Mark All Read button
