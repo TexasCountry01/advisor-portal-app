@@ -330,7 +330,7 @@
                                     {% endif %}
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-release_date {% if 'release_date' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.scheduled_release_date %}
                                     <span class="badge bg-info">{{ case.scheduled_release_date|date:"m/d/y" }}</span>
                                 {% elif case.actual_release_date %}
@@ -339,8 +339,8 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td style="text-align: left;">{{ case.num_reports_requested }}</td>
-                            <td>
+                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
+                            <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.assigned_to %}
                                     <span class="badge bg-info">
                                         {{ case.assigned_to.first_name }}
@@ -349,14 +349,14 @@
                                     <span class="badge bg-light text-dark">Unassigned</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_scheduled %}
                                     {{ case.date_scheduled|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-tier {% if 'tier' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.tier %}
                                     <span class="badge bg-dark">{{ case.get_tier_display }}</span>
                                 {% else %}
