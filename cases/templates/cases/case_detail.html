@@ -21,18 +21,6 @@
                 </ol>
             </nav>
             <h2>{{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
-            
-            <!-- Link to Original Case (for modification/resubmission cases) -->
-            {% if case.original_case %}
-            <div class="alert alert-info mt-2 mb-0" role="alert">
-                <i class="bi bi-link-45deg"></i>
-                <strong>Linked Case:</strong> 
-                This is a modification of case <a href="{% url 'cases:case_detail' case.original_case.id %}" class="alert-link"><strong>{{ case.original_case.external_case_id }}</strong></a>.
-                <a href="{% url 'cases:case_detail' case.original_case.id %}" class="btn btn-sm btn-outline-info ms-2">
-                    <i class="bi bi-arrow-up-right"></i> View Original Case
-                </a>
-            </div>
-            {% endif %}
         </div>
         <div class="col-auto d-flex align-items-center gap-2">
             {% if user.role == 'member' %}
@@ -217,6 +205,39 @@
                             {{ case.workshop_code }}
                         </div>
                     </div>
+                    
+                    <!-- Linked Cases Section -->
+                    {% if case.original_case or case.resubmitted_cases.exists %}
+                    <hr class="my-3">
+                    <div class="linked-cases-section">
+                        <!-- Link to Original Case -->
+                        {% if case.original_case %}
+                        <div class="mb-2">
+                            <span class="badge bg-info"><i class="bi bi-link-45deg"></i> Modification</span>
+                            <span class="ms-2">This is a modification of:</span>
+                            <a href="{% url 'cases:case_detail' case.original_case.id %}" class="btn btn-sm btn-outline-info ms-1">
+                                <i class="bi bi-arrow-left"></i> {{ case.original_case.external_case_id }}
+                            </a>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Links to Resubmitted Cases -->
+                        {% if case.resubmitted_cases.exists %}
+                        <div class="mt-2">
+                            <span class="badge bg-warning text-dark"><i class="bi bi-link-45deg"></i> Resubmissions</span>
+                            <span class="ms-2">This case has modifications:</span>
+                            {% for resubmitted in case.resubmitted_cases.all %}
+                            <div class="ms-3 mt-1">
+                                <a href="{% url 'cases:case_detail' resubmitted.id %}" class="btn btn-sm btn-outline-warning">
+                                    <i class="bi bi-arrow-right"></i> {{ resubmitted.external_case_id }}
+                                </a>
+                                <small class="text-muted ms-2">{{ resubmitted.get_status_display }}</small>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                 </div>
             </div>
 

@@ -995,6 +995,12 @@ def case_detail(request, pk):
             Q(case=case) | Q(document__case=case)
         ).select_related('user', 'case', 'document').order_by('-timestamp')[:15]
     
+    # Get resubmitted/modification cases linked to this case
+    resubmitted_cases = Case.objects.filter(original_case=case).order_by('-created_at')
+    
+    # Add related_cases queryset to case object for template use
+    case.resubmitted_cases = resubmitted_cases
+    
     context = {
         'case': case,
         'can_edit': can_edit,
