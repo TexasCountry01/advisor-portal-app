@@ -1181,7 +1181,7 @@ function handleMemberDocumentUpload(caseId) {
      * Display hold cases alert
      * - Shows in prominent alert at top of dashboard
      * - Lists each case with reason
-     * - Quick link to upload documents
+     * - Quick link to upload documents (opens modal directly)
      */
     function displayHoldCases(cases) {
         const section = document.getElementById('hold-cases-section');
@@ -1193,7 +1193,9 @@ function handleMemberDocumentUpload(caseId) {
                 <li>
                     <strong>${caseObj.case_id}</strong> (${caseObj.employee})
                     <br><small class="text-muted">Reason: ${caseObj.hold_reason}</small>
-                    <br><a href="${caseObj.case_detail_url}" class="btn btn-sm btn-warning mt-1">Upload Documents</a>
+                    <br><button type="button" class="btn btn-sm btn-warning mt-1" onclick="openUploadDocumentsModal(${caseObj.id})">
+                        <i class="bi bi-cloud-upload"></i> Upload Documents
+                    </button>
                 </li>
             `;
         });
@@ -1201,6 +1203,20 @@ function handleMemberDocumentUpload(caseId) {
         
         list.innerHTML = html;
         section.style.display = 'block';
+    }
+
+    /**
+     * Open upload documents modal for a specific case
+     * Used from hold cases alert
+     */
+    function openUploadDocumentsModal(caseId) {
+        const modalElement = document.getElementById(`uploadDocumentsModal${caseId}`);
+        if (modalElement) {
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+        } else {
+            console.error(`Modal not found for case ${caseId}`);
+        }
     }
     
     // Initialize notifications on page load
