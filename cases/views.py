@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
 from accounts.models import User
-from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage
+from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage, UnreadMessage
 import logging
 import json
 
@@ -44,7 +44,8 @@ def member_dashboard(request):
     cases = Case.objects.filter(
         member=user
     ).prefetch_related(
-        'documents'
+        'documents',
+        'unread_messages_for_users'
     ).select_related(
         'assigned_to'
     ).order_by('-date_submitted')
@@ -72,6 +73,11 @@ def member_dashboard(request):
     if sort_by in ['external_case_id', '-external_case_id', 'date_submitted', '-date_submitted', 
                    'date_due', '-date_due', 'status', '-status', 'urgency', '-urgency']:
         cases = cases.order_by(sort_by)
+    
+    # Add unread message count to each case
+    for case in cases:
+        unread_count = UnreadMessage.objects.filter(case=case, user=user).count()
+        case.unread_message_count = unread_count
     
     # Calculate statistics
     all_cases = Case.objects.filter(member=user)
@@ -196,6 +202,11 @@ def technician_dashboard(request):
         'completed': cases.filter(status='completed').count(),
         'rush': cases.filter(urgency='rush').count(),
     }
+    
+    # Add unread message count to each case
+    for case in cases:
+        unread_count = UnreadMessage.objects.filter(case=case, user=user).count()
+        case.unread_message_count = unread_count
     
     # Get available technicians and administrators for assignment dropdown
     technicians = User.objects.filter(
@@ -2787,6 +2798,7 @@ def add_case_message(request, pk):
     Add a two-way communication message to a case.
     Available to both members and benefits-technicians.
     Visible to both parties throughout the case lifecycle.
+    Creates UnreadMessage records for the recipient(s).
     """
     case = get_object_or_404(Case, pk=pk)
     user = request.user
@@ -2811,6 +2823,24 @@ def add_case_message(request, pk):
             author=user,
             message=message_text
         )
+        
+        # Create UnreadMessage records for recipient(s)
+        if is_member:
+            # Member posted - mark as unread for the assigned technician
+            if case.assigned_to:
+                UnreadMessage.objects.get_or_create(
+                    message=msg,
+                    user=case.assigned_to,
+                    case=case
+                )
+        else:
+            # Technician posted - mark as unread for the member
+            if case.member:
+                UnreadMessage.objects.get_or_create(
+                    message=msg,
+                    user=case.member,
+                    case=case
+                )
         
         logger.info(f'Message added to case {case.external_case_id} by {user.username}')
         
@@ -2878,6 +2908,86 @@ def get_case_messages(request, pk):
         
     except Exception as e:
         logger.error(f'Error retrieving messages: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def mark_messages_as_read(request, pk):
+    """
+    Mark all messages in a case as read by the current user.
+    Called when user views the case detail page.
+    """
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+    
+    # Permission check: Only member or assigned technician can mark as read
+    is_member = (user.role == 'member' and case.member == user)
+    is_technician = (user.role in ['technician', 'administrator', 'manager'] and 
+                     (case.assigned_to == user or user.role in ['administrator', 'manager']))
+    
+    if not (is_member or is_technician):
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        # Delete all UnreadMessage records for this user on this case
+        UnreadMessage.objects.filter(case=case, user=user).delete()
+        
+        logger.info(f'Messages marked as read for {user.username} on case {case.external_case_id}')
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Messages marked as read'
+        })
+        
+    except Exception as e:
+        logger.error(f'Error marking messages as read: {str(e)}')
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_unread_message_count(request):
+    """
+    Get count of unread messages for the current user across all cases.
+    Used to display notification badges on dashboards.
+    """
+    user = request.user
+    
+    try:
+        # Get count of unread messages per case
+        unread_by_case = UnreadMessage.objects.filter(
+            user=user
+        ).values('case').annotate(
+            count=models.Count('id')
+        ).order_by('-count')
+        
+        # Also get total unread count
+        total_unread = UnreadMessage.objects.filter(user=user).count()
+        
+        # Build response with case details
+        unread_cases = []
+        for item in unread_by_case:
+            try:
+                case = Case.objects.get(pk=item['case'])
+                unread_cases.append({
+                    'case_id': case.id,
+                    'external_case_id': case.external_case_id,
+                    'member_name': case.member.get_full_name() if case.member else 'Unknown',
+                    'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
+                    'unread_count': item['count']
+                })
+            except Case.DoesNotExist:
+                pass
+        
+        return JsonResponse({
+            'success': True,
+            'total_unread': total_unread,
+            'unread_by_case': unread_cases
+        })
+        
+    except Exception as e:
+        logger.error(f'Error getting unread message count: {str(e)}')
         return JsonResponse({'error': str(e)}, status=500)
 
 

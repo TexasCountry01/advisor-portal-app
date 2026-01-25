@@ -1030,3 +1030,50 @@ class CaseMessage(models.Model):
     
     def __str__(self):
         return f"Message by {self.author.username if self.author else 'Unknown'} on Case {self.case.external_case_id}"
+
+
+class UnreadMessage(models.Model):
+    """
+    Track which users have read which messages.
+    When a message is read by a user, the record is deleted.
+    This keeps the table lean and makes querying unread messages fast.
+    """
+    
+    message = models.ForeignKey(
+        CaseMessage,
+        on_delete=models.CASCADE,
+        related_name='unread_by_users',
+        help_text='The message that is unread'
+    )
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='unread_messages',
+        help_text='User who has not yet read this message'
+    )
+    
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='unread_messages_for_users',
+        help_text='For faster querying of unread messages per case'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        help_text='When this message became unread (when created)'
+    )
+    
+    class Meta:
+        verbose_name = 'Unread Message'
+        verbose_name_plural = 'Unread Messages'
+        unique_together = [['message', 'user']]
+        indexes = [
+            models.Index(fields=['user', 'case']),
+            models.Index(fields=['case', 'user']),
+            models.Index(fields=['user', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Unread message for {self.user.username} on Case {self.case.external_case_id}"

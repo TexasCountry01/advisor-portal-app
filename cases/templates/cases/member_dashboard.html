@@ -320,6 +320,9 @@
                                 {% else %}
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
+                                    {% if case.unread_message_count > 0 %}
+                                    <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
+                                    {% endif %}
                                 </a>
                                 {% endif %}
                                 {% if case.status == 'draft' %}

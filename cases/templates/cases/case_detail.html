@@ -1857,7 +1857,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load messages on page load
     loadMessages();
+    
+    // Mark all messages as read for current user
+    markMessagesAsRead();
 });
+
+// Mark messages as read
+function markMessagesAsRead() {
+    const caseId = {{ case.id }};
+    fetch(`/cases/${caseId}/mark-messages-read/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Messages marked as read');
+            // Optionally refresh dashboard unread counts
+            updateDashboardUnreadCounts();
+        }
+    })
+    .catch(error => console.error('Error marking messages as read:', error));
+}
+
+// Update unread message counts on dashboard
+function updateDashboardUnreadCounts() {
+    fetch('/cases/unread-message-count/', {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.total_unread > 0) {
+            // This will trigger a custom event that the dashboard can listen for
+            window.dispatchEvent(new CustomEvent('unreadMessagesUpdated', { detail: data }));
+        }
+    })
+    .catch(error => console.error('Error updating unread counts:', error));
+}
 
 function deleteNote(noteId, caseId) {
     if (!confirm('Are you sure you want to delete this note? This action cannot be undone.')) {
