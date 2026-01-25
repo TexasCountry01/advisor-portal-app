@@ -615,12 +615,20 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    {% if case.status == 'completed' %}
                     <div class="alert alert-info alert-permanent mb-4" role="alert">
                         <i class="bi bi-info-circle"></i>
                         <strong>This case has been completed.</strong> 
                         If you have additional documents or information that should be reviewed, 
                         you can upload them here and resubmit the case for further processing.
                     </div>
+                    {% else %}
+                    <div class="alert alert-info alert-permanent mb-4" role="alert">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Upload Documents</strong>
+                        Upload any required documents or supporting materials for this case.
+                    </div>
+                    {% endif %}
 
                     <!-- Document Upload Form -->
                     <div class="card mb-3">
