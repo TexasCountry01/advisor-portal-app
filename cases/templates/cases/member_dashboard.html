@@ -1122,7 +1122,7 @@ function handleMemberDocumentUpload(caseId) {
     
     /**
      * Toggle visibility of hold cases content
-     * - Toggles the hold-cases-content div using CSS class
+     * - Toggles the hold-cases-content div visibility
      * - Updates the toggle icon (chevron)
      * - Saves preference to localStorage
      */
@@ -1130,23 +1130,23 @@ function handleMemberDocumentUpload(caseId) {
         const content = document.getElementById('hold-cases-content');
         const icon = document.getElementById('hold-cases-toggle-icon');
         
-        const isCurrentlyVisible = content.classList.contains('visible');
-        console.log('DEBUG: toggleHoldCasesAlert - isCurrentlyVisible:', isCurrentlyVisible);
+        const isCurrentlyHidden = content.style.display === 'none';
+        console.log('DEBUG: toggleHoldCasesAlert - isCurrentlyHidden:', isCurrentlyHidden);
         
-        if (isCurrentlyVisible) {
-            // Hide it
-            content.classList.remove('visible');
-            icon.classList.remove('bi-chevron-up');
-            icon.classList.add('bi-chevron-down');
-            localStorage.setItem('holdCasesExpanded', 'false');
-            console.log('DEBUG: Hold cases now HIDDEN');
-        } else {
+        if (isCurrentlyHidden) {
             // Show it
-            content.classList.add('visible');
+            content.style.display = 'block';
             icon.classList.remove('bi-chevron-down');
             icon.classList.add('bi-chevron-up');
             localStorage.setItem('holdCasesExpanded', 'true');
             console.log('DEBUG: Hold cases now VISIBLE');
+        } else {
+            // Hide it
+            content.style.display = 'none';
+            icon.classList.remove('bi-chevron-up');
+            icon.classList.add('bi-chevron-down');
+            localStorage.setItem('holdCasesExpanded', 'false');
+            console.log('DEBUG: Hold cases now HIDDEN');
         }
     }
     
@@ -1169,8 +1169,7 @@ function handleMemberDocumentUpload(caseId) {
                     const icon = document.getElementById('hold-cases-toggle-icon');
                     
                     // CRITICAL: Start with collapsed state as default
-                    // Content should be hidden by CSS, but ensure it's not in visible class
-                    content.classList.remove('visible');
+                    content.style.display = 'none';
                     
                     // Restore the expanded/collapsed state from localStorage
                     const wasExpanded = localStorage.getItem('holdCasesExpanded') === 'true';
@@ -1180,13 +1179,13 @@ function handleMemberDocumentUpload(caseId) {
                     if (wasExpanded) {
                         // Show content (expanded)
                         console.log('DEBUG: User preference: EXPANDED');
-                        content.classList.add('visible');
+                        content.style.display = 'block';
                         icon.classList.remove('bi-chevron-down');
                         icon.classList.add('bi-chevron-up');
                     } else {
                         // Hide content (collapsed) - this is the default state
                         console.log('DEBUG: User preference: COLLAPSED (default)');
-                        content.classList.remove('visible');
+                        content.style.display = 'none';
                         icon.classList.remove('bi-chevron-up');
                         icon.classList.add('bi-chevron-down');
                     }
@@ -1200,7 +1199,7 @@ function handleMemberDocumentUpload(caseId) {
      * - Shows in prominent alert at top of dashboard
      * - Lists each case with reason
      * - Quick link to upload documents (opens modal directly)
-     * - NOTE: Content display state is controlled by CSS class 'visible'
+     * - NOTE: Content display state is controlled by loadHoldCases()
      */
     function displayHoldCases(cases) {
         const section = document.getElementById('hold-cases-section');
@@ -1225,9 +1224,9 @@ function handleMemberDocumentUpload(caseId) {
         
         list.innerHTML = html;
         section.style.display = 'block';
-        // Content hidden by default via CSS - 'visible' class needed to show
-        content.classList.remove('visible');
-        console.log('DEBUG: Hold cases content hidden by default');
+        // Content starts hidden - loadHoldCases will set the correct state
+        content.style.display = 'none';
+        console.log('DEBUG: Hold cases content set to hidden (will be restored by loadHoldCases)');
     }
 
     /**
@@ -1246,10 +1245,10 @@ function handleMemberDocumentUpload(caseId) {
     
     // Initialize notifications on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize hold cases content to collapsed state (ensure CSS class is not present)
+        // Initialize hold cases content to collapsed state
         const holdContent = document.getElementById('hold-cases-content');
         if (holdContent) {
-            holdContent.classList.remove('visible');
+            holdContent.style.display = 'none';
             console.log('DEBUG: DOMContentLoaded - Hold cases content initialized to collapsed');
         }
         
