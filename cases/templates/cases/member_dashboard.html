@@ -1165,15 +1165,19 @@ function handleMemberDocumentUpload(caseId) {
                     const content = document.getElementById('hold-cases-content');
                     const icon = document.getElementById('hold-cases-toggle-icon');
                     
+                    console.log('DEBUG: loadHoldCases - wasExpanded:', wasExpanded);
+                    
                     // Always explicitly set the state to ensure proper display
                     if (wasExpanded) {
                         // Show content (expanded)
+                        console.log('DEBUG: Setting hold cases to EXPANDED');
                         content.style.display = 'block';
                         icon.classList.remove('bi-chevron-down');
                         icon.classList.add('bi-chevron-up');
                     } else {
                         // Hide content (collapsed) - this is the default state
-                        content.style.display = 'none';
+                        console.log('DEBUG: Setting hold cases to COLLAPSED');
+                        content.style.display = 'none !important';
                         icon.classList.remove('bi-chevron-up');
                         icon.classList.add('bi-chevron-down');
                     }
@@ -1194,6 +1198,8 @@ function handleMemberDocumentUpload(caseId) {
         const list = document.getElementById('hold-cases-list');
         const content = document.getElementById('hold-cases-content');
         
+        console.log('DEBUG: displayHoldCases called');
+        
         let html = `<strong>${cases.length} case(s) on hold - Action Required:</strong><ul class="mt-2 mb-0">`;
         cases.forEach(caseObj => {
             html += `
@@ -1210,8 +1216,9 @@ function handleMemberDocumentUpload(caseId) {
         
         list.innerHTML = html;
         section.style.display = 'block';
-        // Explicitly keep content hidden until user toggles it
-        content.style.display = 'none';
+        // Explicitly keep content hidden until user toggles it - use !important to override any CSS
+        content.style.display = 'none !important';
+        console.log('DEBUG: Set hold cases content to display none');
     }
 
     /**
