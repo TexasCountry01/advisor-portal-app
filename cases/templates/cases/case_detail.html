@@ -692,7 +692,8 @@
                         {% endif %}
                     {% endwith %}
 
-                    <!-- Resubmit Button -->
+                    <!-- Resubmit Button - ONLY for completed cases -->
+                    {% if case.status == 'completed' %}
                     <div class="mt-4 pt-3 border-top">
                         <p class="text-muted small mb-3">
                             When ready, submit the form below to resubmit this case for technician review:
@@ -705,6 +706,7 @@
                             Resubmitting will change the case status back to "Submitted" and notify the assigned technician to review your documents.
                         </p>
                     </div>
+                    {% endif %}
                 </div>
             </div>
                 {% endif %}
