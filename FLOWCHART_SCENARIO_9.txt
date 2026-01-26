@@ -1,0 +1,70 @@
+SCENARIO 9: Multiple Document Requests (Iterative)
+
+┌─────────────────────────────────────────────────────────────────┐
+│ SCENARIO 9: Back-and-Forth Questions (No Holds)                 │
+└─────────────────────────────────────────────────────────────────┘
+
+START: Case accepted
+Status: accepted (stays accepted throughout)
+        │
+        ▼
+REQUEST #1
+        │
+        ▼
+Tech: Asks Public Question
+"Can you upload medical report?"
+        │
+        ▼
+Member: Sees Question Badge
+        │
+        ▼
+Member: Uploads Document
+"Medical Report"
+        │
+        ▼
+Member: Adds Response
+"Here's my medical report"
+        │
+        ▼
+REQUEST #2
+        │
+        ▼
+Tech: Reviews Upload
+Needs: Clarification
+        │
+        ▼
+Tech: Asks 2nd Question
+"Can you clarify treatment dates?"
+        │
+        ▼
+Member: Uploads Supplement
+"Treatment Timeline"
+        │
+        ▼
+Member: Responds
+"I've attached the timeline"
+        │
+        ▼
+REQUEST #3
+        │
+        ▼
+Tech: Asks Final Question
+"Any employment after 2023?"
+        │
+        ▼
+Member: Final Answer
+"No, on benefits"
+        │
+        ▼
+Tech: All Info Gathered
+        │
+        ▼
+Tech: Complete Case
+        │
+        ▼
+Member: Receives Report
+        │
+        ▼
+END: Case Archived
+    3 rounds of Q&A
+    No holds needed

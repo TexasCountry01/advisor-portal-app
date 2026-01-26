@@ -160,76 +160,13 @@ Choose based on your priorities and resources:
 
 ---
 
-## OPTION C: DIY Testing + External Build (6-8 Weeks)
-
-**Focus:** Understand gaps yourself, then hire contractor for implementation
-
-**Your Work (Weeks 1-2): Testing & Verification**
-1. Run test_scenarios.py against local sqlite
-2. Document which tests fail
-3. Verify current email system (works vs doesn't)
-4. Confirm cron job status
-5. Test hold duration UI
-6. Document exact gaps found
-
-**Documentation Deliverables for Contractor:**
-- Test output showing failures
-- IMPLEMENTATION_PRIORITIES.md (already done)
-- SCENARIO_FLOWCHARTS.md (already done)
-- Specific list of what to build
-
-**Contractor Work (Weeks 3-8):** 40-60 hours
-- Build missing features
-- Fix email system
-- Implement cron job
-- Add hold options
-- Build case reopening
-- Run full test suite
-
-**Effort:**
-- Your time: 10-15 hours
-- Contractor: 40-60 hours
-- **Total: 50-75 hours**
-
-**Timeline:** 6-8 weeks
-**Cost:** Contractor rates × 40-60 hours
-
-**Who Should Do This:**
-- If you lack Django expertise
-- If your team is fully booked
-- If you want external validation
-- If you need faster turnaround
-
-**Contractor Resources:**
-- All specs in IMPLEMENTATION_PRIORITIES.md
-- All test scripts in test_scenarios.py
-- All scenario details in other docs
-- Can provide to freelancer on Upwork/GitHub
-
----
-
 ## RECOMMENDATION
 
-Based on your situation:
+**OPTION A:** Fix it yourself (3 weeks, 35-45 hours)
+→ Cleanest, most direct path forward
 
-**IF** you have 1 Django developer available:
-→ **Choose OPTION A** (3 weeks, 35-45 hours)
-→ Cleanest solution, under your control, production-ready
-
-**IF** you're already at capacity:
-→ **Choose OPTION B** (6 weeks, 25-35 hours)
-→ Incremental but slower, risk of delays
-
-**IF** you don't have Django expertise:
-→ **Choose OPTION C** (6-8 weeks + contractor cost)
-→ Fastest time-to-completion for your team
-→ Best if you want independent validation
-
-**IF** you're not sure:
-→ **Start with OPTION A Phase 1 (Week 1)**
-→ Verify cron job & test email system
-→ Decide after seeing what's actually needed
-→ May be simpler than expected
+**OPTION B:** Incremental approach (6 weeks, 25-35 hours)
+→ Phased rollout, lower impact on current work
 
 ---
 

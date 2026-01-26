@@ -1,0 +1,59 @@
+SCENARIO 3: Case Put on Hold
+
+┌─────────────────────────────────────────────────────────────────┐
+│ SCENARIO 3: Case Put on Hold                                    │
+└─────────────────────────────────────────────────────────────────┘
+
+START: Tech is investigating case
+Status: accepted
+        │
+        ▼
+Tech: Encounters Issue
+Need info from outside source
+        │
+        ▼
+Tech: Clicks "Put on Hold"
+Selects: Hold reason
+Duration: Until problem is solved
+        │
+        ▼
+Status: accepted → hold
+        │
+        ▼
+Member: Receives Hold Notification Email
+"Your case is on hold - reason given"
+        │
+        ▼
+Member: Can Upload Documents During Hold
+Member: Can Add Comments
+        │
+        ▼
+Member: Uploads Documents
+        │
+        ▼
+Tech: Sees Member Has Updated
+        │
+        ▼
+Tech: Reviews Member Upload
+Assessment: "This solves the problem"
+        │
+        ▼
+Tech: Clicks "Resume Processing"
+Adds: Reason for resuming
+Status: hold → accepted
+        │
+        ▼
+Member: Receives Resume Notification
+"Your case processing has resumed"
+        │
+        ▼
+Tech: Continues Investigation
+        │
+        ▼
+Tech: Completes Case
+        │
+        ▼
+Member: Receives Report
+        │
+        ▼
+END: Case Archived

@@ -226,17 +226,10 @@ python manage.py test test_scenarios --database=test_mysql
 ### Option A: Quick Wins (3 weeks, 35-45 hours)
 - Fix all critical gaps
 - Production-ready
-- Recommended if developer available
 
 ### Option B: Incremental (6 weeks, 25-35 hours)
 - Fix in phases
 - Lower impact on current work
-- Recommended if team at capacity
-
-### Option C: Outsourced (6-8 weeks + contractor cost)
-- Hire contractor for implementation
-- You do testing/validation (10-15 hours)
-- Recommended if no Django expertise
 
 **All paths are documented** with deliverables, timelines, and success criteria.
 

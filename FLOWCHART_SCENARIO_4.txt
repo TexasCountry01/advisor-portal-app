@@ -1,0 +1,44 @@
+SCENARIO 4: Case Reassignment
+
+┌─────────────────────────────────────────────────────────────────┐
+│ SCENARIO 4: Case Reassignment                                   │
+└─────────────────────────────────────────────────────────────────┘
+
+START: Case is being worked by Tech A
+Status: accepted
+Assigned To: Tech A
+        │
+        ▼
+Tech A: Cannot Continue
+Reason: Vacation, sick, busy
+        │
+        ▼
+Tech A: Clicks "Reassign"
+Selects: New technician (Tech B)
+Optional: Adds reason
+        │
+        ▼
+Case Updated:
+Status: accepted (UNCHANGED)
+Assigned To: Tech A → Tech B
+        │
+        ▼
+Tech B: Receives Notification
+"Case assigned to you"
+        │
+        ▼
+Tech B: Opens Case
+Sees: All previous notes, documents, history
+        │
+        ▼
+Tech B: Continues Investigation
+Same work as normal
+        │
+        ▼
+Tech B: Completes & Releases
+        │
+        ▼
+Member: Receives Report from Tech B
+        │
+        ▼
+END: Case Archived
