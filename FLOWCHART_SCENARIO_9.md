@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 9: Multiple Document Requests (Iterative)
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -68,3 +69,5 @@ Member: Receives Report
 END: Case Archived
     3 rounds of Q&A
     No holds needed
+
+```

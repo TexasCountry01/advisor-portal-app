@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 1: Happy Path - Standard Processing
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -62,3 +63,5 @@ Member: Receives Report
         │
         ▼
 END: Case Archived
+
+```

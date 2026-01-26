@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 6: Member Requests Modification
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -54,3 +55,5 @@ END: Both cases archived
         │
         └─ Modification button: DISABLED
            Member can: Ask a Question instead
+
+```

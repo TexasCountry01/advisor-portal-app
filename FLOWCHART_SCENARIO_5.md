@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 5: Scheduled Release
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -41,3 +42,5 @@ Member: Downloads Report
         │
         ▼
 END: Case Archived
+
+```

@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 8: Modification Outside 60-Day Window
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -46,3 +47,5 @@ Member: Gets Response
         ▼
 END: Case stays archived
     No new modification case
+
+```

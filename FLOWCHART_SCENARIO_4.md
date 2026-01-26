@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 4: Case Reassignment
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -42,3 +43,5 @@ Member: Receives Report from Tech B
         │
         ▼
 END: Case Archived
+
+```

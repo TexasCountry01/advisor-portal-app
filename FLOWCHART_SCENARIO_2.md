@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 2: Information Request & Resubmission
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -54,3 +55,5 @@ Member: Gets Report
         │
         ▼
 END: Case Archived
+
+```

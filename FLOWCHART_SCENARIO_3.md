@@ -1,58 +1,54 @@
-SCENARIO 7: Complex Hold & Resume Cycle
+```plaintext
+SCENARIO 3: Case Put on Hold
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ SCENARIO 7: Multiple Hold/Resume Cycles                         │
+│ SCENARIO 3: Case Put on Hold                                    │
 └─────────────────────────────────────────────────────────────────┘
 
-START: Tech investigating
+START: Tech is investigating case
 Status: accepted
         │
         ▼
-HOLD CYCLE #1
+Tech: Encounters Issue
+Need info from outside source
         │
         ▼
-Tech: Put on Hold #1
-Reason: "Waiting for employment verification"
+Tech: Clicks "Put on Hold"
+Selects: Hold reason
+Duration: Until problem is solved
         │
         ▼
-Member: Notified - Case on Hold
+Status: accepted → hold
         │
         ▼
-Member: Uploads Employment Letter
+Member: Receives Hold Notification Email
+"Your case is on hold - reason given"
         │
         ▼
-Tech: Reviews Upload
-Assessment: "Good, acceptable"
+Member: Can Upload Documents During Hold
+Member: Can Add Comments
         │
         ▼
-Tech: Resume from Hold #1
+Member: Uploads Documents
+        │
+        ▼
+Tech: Sees Member Has Updated
+        │
+        ▼
+Tech: Reviews Member Upload
+Assessment: "This solves the problem"
+        │
+        ▼
+Tech: Clicks "Resume Processing"
+Adds: Reason for resuming
 Status: hold → accepted
         │
         ▼
-Member: Notified - Case Resumed
+Member: Receives Resume Notification
+"Your case processing has resumed"
         │
         ▼
 Tech: Continues Investigation
-        │
-        ▼
-HOLD CYCLE #2
-        │
-        ▼
-Tech: Put on Hold #2
-Reason: "Awaiting manager approval"
-        │
-        ▼
-Member: Notified - Case on Hold (Again)
-        │
-        ▼
-Manager: Approves
-        │
-        ▼
-Tech: Resume from Hold #2
-Status: hold → accepted
-        │
-        ▼
-Member: Notified - Case Resumed
         │
         ▼
 Tech: Completes Case
@@ -62,3 +58,5 @@ Member: Receives Report
         │
         ▼
 END: Case Archived
+
+```

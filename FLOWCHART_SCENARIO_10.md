@@ -1,3 +1,4 @@
+```plaintext
 SCENARIO 10: Manager Quality Review
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -70,3 +71,5 @@ PATH A: APPROVAL
         │
         ▼
    Case Finalized
+
+```
