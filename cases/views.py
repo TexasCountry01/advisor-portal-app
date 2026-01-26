@@ -661,6 +661,7 @@ def accept_case(request, case_id):
     from django.http import JsonResponse
     from django.utils import timezone
     from core.models import AuditLog
+    from cases.services.email_service import send_case_accepted_email, send_new_case_assigned_email
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
@@ -1287,6 +1288,7 @@ def resume_case_from_hold(request, case_id):
     """Resume a case from hold - preserves ownership, returns to 'accepted' status"""
     from django.http import JsonResponse
     from cases.services.case_audit_service import resume_case
+    from cases.services.email_service import send_case_hold_resumed_email
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
@@ -1330,7 +1332,9 @@ def resume_case_from_hold(request, case_id):
                 previous_status='accepted'
             )
             
+            # Send resume notification email to member
             if success:
+                send_case_hold_resumed_email(case)
                 return JsonResponse({
                     'success': True,
                     'message': f'Case {case.external_case_id} has been resumed from hold.',
@@ -1715,6 +1719,7 @@ def add_case_note(request, case_id):
     from cases.models import CaseNote
     from django.utils import timezone
     from datetime import timedelta
+    from cases.services.email_service import send_member_response_email, send_case_question_asked_email
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
@@ -1754,6 +1759,15 @@ def add_case_note(request, case_id):
                     note=note_text,
                     is_internal=is_internal
                 )
+                
+                # Send notification emails
+                if user.role == 'member' and case.assigned_to:
+                    # Member responded - notify tech
+                    send_member_response_email(case, case.assigned_to)
+                elif user.role in ['technician', 'administrator'] and not is_internal and case.member:
+                    # Tech asked question - notify member
+                    send_case_question_asked_email(case, note_text)
+                
                 messages.success(request, 'Note added successfully.')
         else:
             messages.warning(request, 'Note cannot be empty.')
@@ -2421,6 +2435,8 @@ def detect_case_changes(case):
 @login_required
 def resubmit_case(request, case_id):
     """Allow members to resubmit completed cases with additional documentation"""
+    from cases.services.email_service import send_case_resubmitted_email
+    
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
@@ -2484,6 +2500,10 @@ def resubmit_case(request, case_id):
                     'resubmission_sequence': case.resubmission_count
                 }
             )
+            
+            # Send resubmission notification to assigned technician
+            if case.assigned_to:
+                send_case_resubmitted_email(case, case.assigned_to)
             
             messages.success(
                 request, 
