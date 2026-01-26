@@ -3053,6 +3053,8 @@ def request_modification(request, pk):
     Stores the reason in the original case's messages.
     Auto-assigns new case to original technician when completed.
     """
+    from cases.services.email_service import send_modification_created_email
+    
     case = get_object_or_404(Case, pk=pk)
     user = request.user
     
@@ -3116,6 +3118,8 @@ def request_modification(request, pk):
                 user=case.assigned_to,
                 case=case
             )
+            # Send email notification about modification request
+            send_modification_created_email(case, new_case, case.assigned_to)
         
         return JsonResponse({
             'success': True,
