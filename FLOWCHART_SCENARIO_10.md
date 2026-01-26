@@ -1,75 +1,67 @@
 ```plaintext
-SCENARIO 10: Manager Quality Review
+SCENARIO 10: Manager Monitoring & Reporting
 
 ┌─────────────────────────────────────────────────────────────────┐
-│ SCENARIO 10: Manager Quality Review                             │
+│ SCENARIO 10: Manager Monitoring & Reporting                     │
 └─────────────────────────────────────────────────────────────────┘
 
-START: Case is completed
-Status: completed
+START: Manager logs in
+Role: Manager (read-only analytics access)
         │
         ▼
-Manager: Reviews Completed Cases
-Can see: All completed cases
+Manager: Views Dashboard
+Sees: Key metrics and KPIs
+        ├─ Total cases completed
+        ├─ Average processing time
+        ├─ Cases in-progress
+        └─ Team productivity stats
         │
         ▼
-Manager: Opens Case Detail
-Sees: Full case, notes, documents, report
+Manager: Reviews Team Performance
+Can see: Individual technician metrics
+        ├─ Cases handled by Tech A
+        ├─ Cases handled by Tech B
+        ├─ Average completion time per person
+        └─ Cases on hold (pending resolution)
         │
         ▼
-PATH A: APPROVAL
-        │
-        ├─ Manager Reviews Work
-        │  Assessment: "Excellent, calculations correct"
-        │  │
-        │  ▼
-        │  Manager: Optional - Add Review Note
-        │  Content: "Approved"
-        │  │
-        │  ▼
-        │  Tech: Sees Manager Feedback
-        │  │
-        │  ▼
-        │  END: Case stays completed ✅
-        │
-        │
-        │
-        PATH B: ISSUES FOUND
-        │
-        ├─ Manager Reviews Work
-        │  Issue: "Q3 calculation appears incorrect"
-        │  │
-        │  ▼
-        │  Manager: Clicks "Reopen for Correction"
-        │  Reason: "Q3 calculation error"
-        │  │
-        │  ▼
-        │  Case Status: completed → reopen_for_correction
-        │  │
-        │  ▼
-        │  Tech: Receives Notification
-        │  "Case reopened for correction"
-        │  "Reason: Q3 calculation error"
-        │  │
-        │  ▼
-        │  Tech: Investigates Issue
-        │  Recalculates Q3
-        │  Finds: Manager is correct
-        │  │
-        │  ▼
-        │  Tech: Fixes and Uploads Corrected Report
-        │  │
-        │  ▼
-        │  Case Status: reopen_for_correction → completed
-        │  │
-        │  ▼
-        │  Manager: Re-Reviews
-        │  │
-        │  ▼
-        │  END: Case Corrected & Approved ✅
-        │
+Manager: Views Completed Cases List
+Can filter/sort by:
+        ├─ Date range
+        ├─ Technician
+        ├─ Case status
+        └─ Tier/credit value
         │
         ▼
-   Case Finalized
+Manager: Opens Case Detail (VIEW ONLY)
+Sees: Full case history, notes, documents, report
+Can read but NOT edit or modify
+        │
+        ▼
+Manager: Generates Reports
+Options:
+        ├─ Monthly productivity report
+        ├─ Team performance summary
+        ├─ Case metrics breakdown
+        └─ Export data for analysis
+        │
+        ▼
+Manager: Monitors Work in Progress
+Can see: Currently assigned cases by technician
+        ├─ Which tech has case
+        ├─ Current status (submitted/accepted/hold)
+        ├─ How long case has been assigned
+        └─ Any cases on hold (reason + duration)
+        │
+        ▼
+Manager: No Edit Access
+        ├─ Cannot modify cases
+        ├─ Cannot reopen completed cases
+        ├─ Cannot change assignments (tech can self-reassign)
+        └─ Cannot approve or reject work
+        │
+        ▼
+Manager: END - Reports Generated
+Data ready for analysis and strategic planning
 
 ```

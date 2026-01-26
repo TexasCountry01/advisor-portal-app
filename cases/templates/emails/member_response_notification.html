@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; border-radius: 4px 4px 0 0; }
+        .content { background-color: #f8f9fa; padding: 20px; border-radius: 0 0 4px 4px; }
+        .button { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 10px; }
+        .footer { margin-top: 20px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Member Update on Case {{ case_id }}</h1>
+        </div>
+        <div class="content">
+            <p>Hi Technician,</p>
+            
+            <p><strong>{{ member_name }}</strong> has responded to a question or uploaded documents on case <strong>{{ case_id }}</strong>.</p>
+            
+            <p>Please log in to your portal and review the member's response so you can continue processing the case.</p>
+            
+            <p>
+                <a href="{{ portal_url }}/cases/{{ case_id }}/" class="button">View Case Details</a>
+            </p>
+            
+            <div class="footer">
+                <p>This is an automated email. Please do not reply directly to this message.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

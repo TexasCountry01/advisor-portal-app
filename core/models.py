@@ -238,6 +238,12 @@ class SystemSettings(models.Model):
         help_text='Automatically process scheduled releases at batch_release_time'
     )
     
+    # Email Notification Settings - MASTER TOGGLE
+    email_notifications_enabled = models.BooleanField(
+        default=True,
+        help_text='Master toggle: Enable/disable ALL email notifications globally'
+    )
+    
     # Email Notification Settings (tied to release schedule)
     enable_delayed_email_notifications = models.BooleanField(
         default=True,
