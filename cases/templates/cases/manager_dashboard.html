@@ -577,10 +577,10 @@
                 headers.forEach(header => {
                     if (isChecked) {
                         header.classList.remove('column-hidden');
-                        header.style.display = '';  // Reset inline style
+                        header.style.removeProperty('display');  // Remove inline style
                     } else {
                         header.classList.add('column-hidden');
-                        header.style.display = 'none';  // Force via inline style
+                        header.style.setProperty('display', 'none', 'important');  // Force with !important
                     }
                 });
                 
@@ -588,10 +588,12 @@
                 cells.forEach(cell => {
                     if (isChecked) {
                         cell.classList.remove('column-hidden');
-                        cell.style.display = '';  // Reset inline style
+                        cell.style.removeProperty('display');  // Remove inline style
+                        console.log('Showing cell:', cell.dataset.columnId, cell);
                     } else {
                         cell.classList.add('column-hidden');
-                        cell.style.display = 'none';  // Force via inline style
+                        cell.style.setProperty('display', 'none', 'important');  // Force with !important
+                        console.log('Hiding cell:', cell.dataset.columnId, 'display style:', cell.style.display);
                     }
                 });
                 
@@ -599,10 +601,10 @@
                 cellsByClass.forEach(cell => {
                     if (isChecked) {
                         cell.classList.remove('column-hidden');
-                        cell.style.display = '';  // Reset inline style
+                        cell.style.removeProperty('display');  // Remove inline style
                     } else {
                         cell.classList.add('column-hidden');
-                        cell.style.display = 'none';  // Force via inline style
+                        cell.style.setProperty('display', 'none', 'important');  // Force with !important
                     }
                 });
                 
