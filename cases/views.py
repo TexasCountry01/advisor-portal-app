@@ -45,7 +45,7 @@ def member_dashboard(request):
         user=user
     ).values('case').annotate(
         count=Count('*')
-    ).values('count')
+    ).values('count')[:1]
     
     # Get all cases for this member with unread count annotation
     cases = Case.objects.filter(
