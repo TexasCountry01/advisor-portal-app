@@ -542,10 +542,16 @@
 </style>
 
 <script>
-    console.log('ADMIN DASHBOARD SCRIPT LOADED');
+    console.log('ADMIN DASHBOARD SCRIPT LOADED - STARTING IMMEDIATE EXECUTION');
     
-    // Toggle view/stats section
+    // Immediate execution - no DOMContentLoaded wrapper for now
+    console.log('Script executing immediately');
+    const testToggles = document.querySelectorAll('.column-toggle');
+    console.log('Found column toggles:', testToggles.length);
+    
+    // Now wrap remaining code in DOMContentLoaded
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded fired');
         const toggleBtn = document.getElementById('toggle-view-stats');
         const container = document.getElementById('view-stats-container');
 
