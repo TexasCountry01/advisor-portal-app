@@ -570,17 +570,21 @@
     // Column Visibility Management
     document.addEventListener('DOMContentLoaded', function() {
         const columnToggles = document.querySelectorAll('.column-toggle');
+        console.log('Found', columnToggles.length, 'column toggles');
         
         columnToggles.forEach(toggle => {
-            toggle.addEventListener('change', function() {
+            toggle.addEventListener('change', function(e) {
                 const colId = this.dataset.column;
                 const isChecked = this.checked;
+                console.log('Column toggle changed:', colId, 'isChecked:', isChecked);
                 
                 // Toggle headers and cells - use data-column-id for consistency
                 const headers = document.querySelectorAll('th[data-column-id="' + colId + '"]');
                 const cells = document.querySelectorAll('td[data-column-id="' + colId + '"]');
                 // Also match cells with class-based naming for backward compatibility
                 const cellsByClass = document.querySelectorAll('td.column-' + colId);
+                
+                console.log('Found', headers.length, 'headers,', cells.length, 'cells with data-column-id,', cellsByClass.length, 'cells with class');
                 
                 headers.forEach(header => {
                     if (isChecked) {
