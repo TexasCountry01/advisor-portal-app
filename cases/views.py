@@ -30,8 +30,7 @@ def form_preview(request):
 @login_required
 def member_dashboard(request):
     """Dashboard view for Member role"""
-    from django.db.models import Q, Count, OuterRef, Subquery, IntegerField
-    from django.db.models.functions import Coalesce
+    from django.db.models import Q
     
     user = request.user
     
@@ -39,14 +38,6 @@ def member_dashboard(request):
     if user.role != 'member':
         messages.error(request, 'Access denied. Members only.')
         return redirect('home')
-    
-    # Subquery to count unread messages per case - simpler approach
-    unread_count_subquery = UnreadMessage.objects.filter(
-        case=OuterRef('pk'),
-        user=user
-    ).values('case').annotate(
-        count=Count('id', output_field=IntegerField())
-    ).values('count')[:1]
     
     # Get all cases for this member with unread count annotation
     cases = Case.objects.filter(
@@ -56,9 +47,17 @@ def member_dashboard(request):
         'unread_messages_for_users'
     ).select_related(
         'assigned_to'
-    ).annotate(
-        unread_message_count=Coalesce(Subquery(unread_count_subquery), 0, output_field=IntegerField())
     ).order_by('-date_submitted')
+    
+    # Add unread message count to each case
+    for case in cases:
+        case.unread_message_count = UnreadMessage.objects.filter(
+            case=case,
+            user=user
+        ).count()
+    
+    # Convert to list to preserve the modified case objects with unread_message_count
+    cases = list(cases)
     
     # Apply filters
     status_filter = request.GET.get('status')
