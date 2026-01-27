@@ -2878,21 +2878,27 @@ def add_case_message(request, pk):
         if is_member:
             # Member posted - mark as unread for the assigned technician
             if case.assigned_to:
-                um, created = UnreadMessage.objects.get_or_create(
-                    message=msg,
-                    user=case.assigned_to,
-                    case=case
-                )
-                logger.info(f'Member {user.username} message on case {case.external_case_id} - Created UnreadMessage for technician {case.assigned_to.username}: {created}')
+                try:
+                    um, created = UnreadMessage.objects.get_or_create(
+                        message=msg,
+                        user=case.assigned_to,
+                        case=case
+                    )
+                    logger.info(f'Member {user.username} message on case {case.external_case_id} - Created UnreadMessage for technician {case.assigned_to.username}: {created}')
+                except Exception as e:
+                    logger.error(f'Error creating UnreadMessage: {str(e)}')
         else:
             # Technician posted - mark as unread for the member
             if case.member:
-                um, created = UnreadMessage.objects.get_or_create(
-                    message=msg,
-                    user=case.member,
-                    case=case
-                )
-                logger.info(f'Technician {user.username} message on case {case.external_case_id} - Created UnreadMessage for member {case.member.username}: {created}')
+                try:
+                    um, created = UnreadMessage.objects.get_or_create(
+                        message=msg,
+                        user=case.member,
+                        case=case
+                    )
+                    logger.info(f'Technician {user.username} message on case {case.external_case_id} - Created UnreadMessage for member {case.member.username}: {created}')
+                except Exception as e:
+                    logger.error(f'Error creating UnreadMessage: {str(e)}')
         
         logger.info(f'Message added to case {case.external_case_id} by {user.username}')
         
