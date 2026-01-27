@@ -278,7 +278,7 @@
                                  Reason: ID column removed from dashboard.
                             <td id="id-column"><a href="{% url 'cases:case_detail' case.id %}" class="btn btn-sm btn-outline-primary" title="{{ case.external_case_id }}">Link</a></td>
                             -->
-                            <td id="code-column" data-column-id="code">
+                            <td id="code-column" data-column-id="code" {% if 'code' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <div class="d-flex align-items-center gap-2">
                                     <span>{{ case.workshop_code }}</span>
                                     {% if case.has_member_updates %}
@@ -288,30 +288,30 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td data-column-id="member">
+                            <td data-column-id="member" {% if 'member' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.member.get_full_name %}
                                     <span class="badge bg-primary">{{ case.member.get_full_name }}</span>
                                 {% else %}
                                     <span class="badge bg-primary">{{ case.member.username }}</span>
                                 {% endif %}
                             </td>
-                            <td data-column-id="employee">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td data-column-id="submitted">{{ case.date_submitted|date:"m/d/y" }}</td>
-                            <td data-column-id="due">
+                            <td data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}>{{ case.date_submitted|date:"m/d/y" }}</td>
+                            <td data-column-id="due" {% if 'due' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.date_due %}
                                     {{ case.date_due|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td data-column-id="urgency">
+                            <td data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.urgency == 'rush' %}
                                     <span class="badge bg-danger">Rush</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Normal</span>
                                 {% endif %}
                             </td>
-                            <td data-column-id="status">
+                            <td data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.status == 'submitted' %}
                                     <span class="badge bg-secondary" title="Case received and waiting for technician to start">Submitted</span>
                                 {% elif case.status == 'accepted' %}
