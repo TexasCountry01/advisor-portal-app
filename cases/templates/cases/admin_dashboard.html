@@ -380,7 +380,7 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td data-column-id="notes" class="column-report_notes {% if 'report_notes' not in visible_columns %}column-hidden{% endif %}">
+                            <td data-column-id="notes" class="column-report_notes {% if 'notes' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.report_notes %}
                                     <small>{{ case.report_notes|length }} note(s)</small>
                                 {% else %}
