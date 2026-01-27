@@ -50,31 +50,6 @@
         </div>
     </div>
 
-    <!-- Cases with Unread Technician Responses Alert Section -->
-    {% if cases %}
-        {% with unread_cases=cases|dictsort:"unread_message_count"|slice:"-999:" %}
-            {% if unread_cases %}
-            <div id="unread-responses-section">
-                <div class="alert alert-info fade show" role="alert" style="margin-bottom: 1rem;">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div class="flex-grow-1">
-                            <h5 class="alert-heading mb-0" style="cursor: pointer; user-select: none;" onclick="toggleUnreadResponsesAlert()" id="unread-responses-header">
-                                <i class="bi bi-chat-dots-fill"></i> New Technician Responses
-                                <span id="unread-count-badge" class="badge bg-danger ms-2"></span>
-                                <i class="bi bi-chevron-down" id="unread-responses-toggle-icon" style="margin-left: 8px;"></i>
-                            </h5>
-                            <div id="unread-responses-content" class="" style="margin-top: 12px;">
-                                <p id="unread-responses-list" class="mb-0"></p>
-                            </div>
-                        </div>
-                        <button type="button" class="btn-close" onclick="toggleUnreadResponsesAlert()" style="margin-top: -5px;"></button>
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-        {% endwith %}
-    {% endif %}
-
     <!-- Notification Offcanvas Sidebar -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="notificationOffcanvas" aria-labelledby="notificationOffcanvasLabel">
         <div class="offcanvas-header bg-info text-white">
@@ -259,7 +234,7 @@
                     </thead>
                     <tbody>
                         {% for case in cases %}
-                        <tr data-case-id="{{ case.id }}" data-case-name="Case #{{ case.id }}" data-case-unread-count="{{ case.unread_message_count }}">
+                        <tr>
                             <td class="column-workshop {% if 'workshop' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}">{{ case.num_reports_requested }}</td>
@@ -1220,94 +1195,6 @@ function handleMemberDocumentUpload(caseId) {
     }
     
     /**
-     * Toggle visibility of cases with unread technician responses
-     */
-    function toggleUnreadResponsesAlert() {
-        const content = document.getElementById('unread-responses-content');
-        const icon = document.getElementById('unread-responses-toggle-icon');
-        
-        if (!content || !icon) return;
-        
-        const isCurrentlyHidden = content.style.display === 'none';
-        
-        if (isCurrentlyHidden) {
-            content.style.display = 'block';
-            icon.classList.remove('bi-chevron-down');
-            icon.classList.add('bi-chevron-up');
-            localStorage.setItem('unreadResponsesExpanded', 'true');
-        } else {
-            content.style.display = 'none';
-            icon.classList.remove('bi-chevron-up');
-            icon.classList.add('bi-chevron-down');
-            localStorage.setItem('unreadResponsesExpanded', 'false');
-        }
-    }
-    
-    /**
-     * Load and display cases with unread technician responses
-     */
-    function loadUnreadResponses() {
-        console.log('DEBUG: loadUnreadResponses called');
-        const casesByUnread = [];
-        
-        // Find all cases with unread messages by checking data attributes
-        document.querySelectorAll('[data-case-unread-count]').forEach(caseRow => {
-            const count = parseInt(caseRow.dataset.caseUnreadCount);
-            console.log('DEBUG: Case row - ID:', caseRow.dataset.caseId, 'Unread:', count);
-            
-            if (count > 0) {
-                const caseId = caseRow.dataset.caseId;
-                const caseName = caseRow.dataset.caseName;
-                casesByUnread.push({ id: caseId, name: caseName, count: count });
-                console.log('DEBUG: Added to unread list:', caseName, 'Count:', count);
-            }
-        });
-        
-        console.log('DEBUG: Total cases with unread messages:', casesByUnread.length);
-        
-        // Always check the section and content elements exist
-        const section = document.getElementById('unread-responses-section');
-        const content = document.getElementById('unread-responses-content');
-        const list = document.getElementById('unread-responses-list');
-        
-        if (!section || !content || !list) {
-            console.error('DEBUG: Missing alert DOM elements');
-            return;
-        }
-        
-        if (casesByUnread.length > 0) {
-            console.log('DEBUG: Showing unread responses alert');
-            
-            // Show the section
-            section.style.display = 'block';
-            
-            // Build HTML
-            let html = '';
-            casesByUnread.forEach(c => {
-                html += `<div class="mb-2"><a href="/cases/${c.id}/" class="text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> ${c.name}</a> <span class="badge bg-danger">${c.count} new</span></div>`;
-            });
-            list.innerHTML = html;
-            document.getElementById('unread-count-badge').textContent = casesByUnread.length;
-            
-            // Restore expansion state or default to expanded if first time
-            const wasExpanded = localStorage.getItem('unreadResponsesExpanded');
-            if (wasExpanded === 'false') {
-                content.style.display = 'none';
-                document.getElementById('unread-responses-toggle-icon').classList.remove('bi-chevron-up');
-                document.getElementById('unread-responses-toggle-icon').classList.add('bi-chevron-down');
-            } else {
-                // Default to expanded
-                content.style.display = 'block';
-                document.getElementById('unread-responses-toggle-icon').classList.remove('bi-chevron-down');
-                document.getElementById('unread-responses-toggle-icon').classList.add('bi-chevron-up');
-            }
-        } else {
-            console.log('DEBUG: No unread responses, hiding section');
-            section.style.display = 'none';
-        }
-    }
-    
-    /**
      * Load and display cases on hold
      * - Fetches all cases with status='hold'
      * - Shows in alert section at top of dashboard
@@ -1410,7 +1297,6 @@ function handleMemberDocumentUpload(caseId) {
         }
         
         loadNotifications();
-        loadUnreadResponses();  // Load cases with unread technician responses
         
         // Set up Mark All Read button
         document.getElementById('mark-all-read-btn').addEventListener('click', markAllNotificationsRead);
