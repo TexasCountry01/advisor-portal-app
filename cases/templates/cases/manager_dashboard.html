@@ -277,7 +277,7 @@
                                  Reason: ID column removed from dashboard.
                             <td id="id-column"><a href="{% url 'cases:case_detail' case.id %}" class="btn btn-sm btn-outline-primary" title="{{ case.external_case_id }}">Link</a></td>
                             -->
-                            <td id="code-column">
+                            <td id="code-column" data-column-id="code">
                                 <div class="d-flex align-items-center gap-2">
                                     <span>{{ case.workshop_code }}</span>
                                     {% if case.has_member_updates %}
@@ -287,30 +287,30 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td>
+                            <td data-column-id="member">
                                 {% if case.member.get_full_name %}
                                     {{ case.member.get_full_name }}
                                 {% else %}
                                     {{ case.member.username }}
                                 {% endif %}
                             </td>
-                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td>{{ case.date_submitted|date:"m/d/y" }}</td>
-                            <td>
+                            <td data-column-id="employee">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td data-column-id="submitted">{{ case.date_submitted|date:"m/d/y" }}</td>
+                            <td data-column-id="due">
                                 {% if case.date_due %}
                                     {{ case.date_due|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-column-id="urgency">
                                 {% if case.urgency == 'rush' %}
                                     <span class="badge bg-danger">Rush</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Normal</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-column-id="status">
                                 {% if case.status == 'submitted' %}
                                     <span class="badge bg-secondary" title="Case received and waiting for technician to start">Submitted</span>
                                 {% elif case.status == 'accepted' %}
@@ -329,7 +329,7 @@
                                     {% endif %}
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-column-id="release_date">
                                 {% if case.scheduled_release_date %}
                                     {{ case.scheduled_release_date|date:"m/d/y" }}
                                 {% elif case.actual_release_date %}
@@ -338,29 +338,29 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td style="text-align: left;">{{ case.num_reports_requested }}</td>
-                            <td>
+                            <td data-column-id="reports" style="text-align: left;">{{ case.num_reports_requested }}</td>
+                            <td data-column-id="assigned_to">
                                 {% if case.assigned_to %}
                                     {{ case.assigned_to.first_name }}
                                 {% else %}
                                     Unassigned
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-column-id="date_scheduled">
                                 {% if case.date_scheduled %}
                                     {{ case.date_scheduled|date:"m/d/Y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td>
+                            <td data-column-id="tier">
                                 {% if case.tier %}
                                     {{ case.get_tier_display }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-reviewed_by {% if 'reviewed_by' not in visible_columns %}column-hidden{% endif %}">
+                            <td data-column-id="reviewed_by" class="column-reviewed_by {% if 'reviewed_by' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.reviewed_by %}
                                     {% if case.reviewed_by.get_full_name %}
                                         {{ case.reviewed_by.get_full_name }}
@@ -371,14 +371,14 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-notes {% if 'notes' not in visible_columns %}column-hidden{% endif %}">
+                            <td data-column-id="notes" class="column-notes {% if 'notes' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.report_notes %}
                                     <small>{{ case.report_notes|length }} note(s)</small>
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-on_time {% if 'on_time' not in visible_columns %}column-hidden{% endif %}">
+                            <td data-column-id="on_time" class="column-on_time {% if 'on_time' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'completed' and case.date_completed and case.date_due %}
                                     {% if case.date_completed|date:"Y-m-d" <= case.date_due|date:"Y-m-d" %}
                                         <span class="badge bg-success">On-Time</span>
@@ -389,14 +389,14 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-date_completed {% if 'date_completed' not in visible_columns %}column-hidden{% endif %}">
+                            <td data-column-id="date_completed" class="column-date_completed {% if 'date_completed' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_completed %}
                                     {{ case.date_completed|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-actions {% if 'actions' not in visible_columns %}column-hidden{% endif %}" style="min-width: 120px;">
+                            <td data-column-id="actions" class="column-actions {% if 'actions' not in visible_columns %}column-hidden{% endif %}" style="min-width: 120px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                 </a>
@@ -566,7 +566,9 @@
                 const isChecked = this.checked;
                 
                 const headers = document.querySelectorAll('th[data-column-id="' + colId + '"]');
-                const cells = document.querySelectorAll('td.column-' + colId);
+                const cells = document.querySelectorAll('td[data-column-id="' + colId + '"]');
+                // Also match cells with class-based naming for backward compatibility
+                const cellsByClass = document.querySelectorAll('td.column-' + colId);
                 
                 headers.forEach(header => {
                     if (isChecked) {
@@ -576,7 +578,17 @@
                     }
                 });
                 
+                // Hide/show cells with data-column-id attribute
                 cells.forEach(cell => {
+                    if (isChecked) {
+                        cell.classList.remove('column-hidden');
+                    } else {
+                        cell.classList.add('column-hidden');
+                    }
+                });
+                
+                // Hide/show cells with class-based naming for backward compatibility
+                cellsByClass.forEach(cell => {
                     if (isChecked) {
                         cell.classList.remove('column-hidden');
                     } else {
