@@ -30,7 +30,7 @@ def form_preview(request):
 @login_required
 def member_dashboard(request):
     """Dashboard view for Member role"""
-    from django.db.models import Q
+    from django.db.models import Q, Count, OuterRef, Subquery
     
     user = request.user
     
@@ -39,8 +39,15 @@ def member_dashboard(request):
         messages.error(request, 'Access denied. Members only.')
         return redirect('home')
     
-    # Get all cases for this member
-    # Show all cases - completed cases appear as "working" if scheduled but not yet released
+    # Subquery to count unread messages per case
+    unread_count_subquery = UnreadMessage.objects.filter(
+        case=OuterRef('pk'),
+        user=user
+    ).values('case').annotate(
+        count=Count('*')
+    ).values('count')
+    
+    # Get all cases for this member with unread count annotation
     cases = Case.objects.filter(
         member=user
     ).prefetch_related(
@@ -48,6 +55,8 @@ def member_dashboard(request):
         'unread_messages_for_users'
     ).select_related(
         'assigned_to'
+    ).annotate(
+        unread_message_count=Subquery(unread_count_subquery)
     ).order_by('-date_submitted')
     
     # Apply filters
@@ -73,11 +82,6 @@ def member_dashboard(request):
     if sort_by in ['external_case_id', '-external_case_id', 'date_submitted', '-date_submitted', 
                    'date_due', '-date_due', 'status', '-status', 'urgency', '-urgency']:
         cases = cases.order_by(sort_by)
-    
-    # Add unread message count to each case
-    for case in cases:
-        unread_count = UnreadMessage.objects.filter(case=case, user=user).count()
-        case.unread_message_count = unread_count
     
     # Calculate statistics
     all_cases = Case.objects.filter(member=user)
