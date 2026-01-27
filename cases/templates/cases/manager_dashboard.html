@@ -531,16 +531,8 @@
 </style>
 
 <script>
-    console.log('MANAGER DASHBOARD SCRIPT LOADED - STARTING IMMEDIATE EXECUTION');
-    
-    // Immediate execution - no DOMContentLoaded wrapper for now
-    console.log('Script executing immediately');
-    const testToggles = document.querySelectorAll('.column-toggle');
-    console.log('Found column toggles:', testToggles.length);
-    
-    // Now wrap remaining code in DOMContentLoaded
+    // Toggle view/stats section
     document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOMContentLoaded fired');
         const toggleBtn = document.getElementById('toggle-view-stats');
         const container = document.getElementById('view-stats-container');
 
@@ -567,23 +559,13 @@
     // Column Visibility Management
     document.addEventListener('DOMContentLoaded', function() {
         const columnToggles = document.querySelectorAll('.column-toggle');
-        console.log('Found', columnToggles.length, 'column toggles');
-        
-        // DEBUG: Log all cells with data-column-id
-        const allCells = document.querySelectorAll('td[data-column-id]');
-        console.log('Total cells with data-column-id:', allCells.length);
-        allCells.forEach((cell, idx) => {
-            if (idx < 5) {  // Log first 5
-                console.log('Cell ' + idx + ':', 'data-column-id=' + cell.dataset.columnId, 'class=' + cell.className, cell);
-            }
-        });
         
         columnToggles.forEach(toggle => {
             toggle.addEventListener('change', function(e) {
                 const colId = this.dataset.column;
                 const isChecked = this.checked;
-                console.log('=== Column toggle changed:', colId, 'isChecked:', isChecked, '===');
                 
+                // Toggle headers and cells - use data-column-id for consistency
                 const headers = document.querySelectorAll('th[data-column-id="' + colId + '"]');
                 const cells = document.querySelectorAll('td[data-column-id="' + colId + '"]');
                 // Also match cells with class-based naming for backward compatibility
@@ -611,12 +593,10 @@
                 cells.forEach(cell => {
                     if (isChecked) {
                         cell.classList.remove('column-hidden');
-                        cell.style.removeProperty('display');  // Remove inline style
-                        console.log('Showing cell:', cell.dataset.columnId, cell);
+                        cell.style.removeProperty('display');
                     } else {
                         cell.classList.add('column-hidden');
-                        cell.style.setProperty('display', 'none', 'important');  // Force with !important
-                        console.log('Hiding cell:', cell.dataset.columnId, 'display style:', cell.style.display);
+                        cell.style.setProperty('display', 'none', 'important');
                     }
                 });
                 
@@ -624,21 +604,14 @@
                 cellsByClass.forEach(cell => {
                     if (isChecked) {
                         cell.classList.remove('column-hidden');
-                        cell.style.removeProperty('display');  // Remove inline style
+                        cell.style.removeProperty('display');
                     } else {
                         cell.classList.add('column-hidden');
-                        cell.style.setProperty('display', 'none', 'important');  // Force with !important
+                        cell.style.setProperty('display', 'none', 'important');
                     }
                 });
                 
                 saveColumnPreference();
-                
-                // DEBUG: Inspect first cell after toggle
-                if (cells.length > 0) {
-                    const firstCell = cells[0];
-                    console.log('First cell AFTER:', 'className=' + firstCell.className, 'style.display=' + firstCell.style.display, 'computed display:', window.getComputedStyle(firstCell).display);
-                }
-                
                 updateHiddenCountBadge();
             });
         });
