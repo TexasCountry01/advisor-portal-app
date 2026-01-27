@@ -589,8 +589,10 @@
                 headers.forEach(header => {
                     if (isChecked) {
                         header.classList.remove('column-hidden');
+                        header.style.display = '';  // Reset inline style
                     } else {
                         header.classList.add('column-hidden');
+                        header.style.display = 'none';  // Force via inline style
                     }
                 });
                 
@@ -598,8 +600,10 @@
                 cells.forEach(cell => {
                     if (isChecked) {
                         cell.classList.remove('column-hidden');
+                        cell.style.display = '';  // Reset inline style
                     } else {
                         cell.classList.add('column-hidden');
+                        cell.style.display = 'none';  // Force via inline style
                     }
                 });
                 
@@ -607,8 +611,10 @@
                 cellsByClass.forEach(cell => {
                     if (isChecked) {
                         cell.classList.remove('column-hidden');
+                        cell.style.display = '';  // Reset inline style
                     } else {
                         cell.classList.add('column-hidden');
+                        cell.style.display = 'none';  // Force via inline style
                     }
                 });
                 
