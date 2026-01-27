@@ -54,7 +54,7 @@
     {% if cases %}
         {% with unread_cases=cases|dictsort:"unread_message_count"|slice:"-999:" %}
             {% if unread_cases %}
-            <div id="unread-responses-section" style="display:none;">
+            <div id="unread-responses-section">
                 <div class="alert alert-info fade show" role="alert" style="margin-bottom: 1rem;">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="flex-grow-1">
@@ -1247,41 +1247,63 @@ function handleMemberDocumentUpload(caseId) {
      * Load and display cases with unread technician responses
      */
     function loadUnreadResponses() {
-        const casesData = {{ cases|safe }};
+        console.log('DEBUG: loadUnreadResponses called');
         const casesByUnread = [];
         
-        // Find all cases with unread messages
+        // Find all cases with unread messages by checking data attributes
         document.querySelectorAll('[data-case-unread-count]').forEach(caseRow => {
             const count = parseInt(caseRow.dataset.caseUnreadCount);
+            console.log('DEBUG: Case row - ID:', caseRow.dataset.caseId, 'Unread:', count);
+            
             if (count > 0) {
                 const caseId = caseRow.dataset.caseId;
                 const caseName = caseRow.dataset.caseName;
                 casesByUnread.push({ id: caseId, name: caseName, count: count });
+                console.log('DEBUG: Added to unread list:', caseName, 'Count:', count);
             }
         });
         
+        console.log('DEBUG: Total cases with unread messages:', casesByUnread.length);
+        
+        // Always check the section and content elements exist
+        const section = document.getElementById('unread-responses-section');
+        const content = document.getElementById('unread-responses-content');
+        const list = document.getElementById('unread-responses-list');
+        
+        if (!section || !content || !list) {
+            console.error('DEBUG: Missing alert DOM elements');
+            return;
+        }
+        
         if (casesByUnread.length > 0) {
+            console.log('DEBUG: Showing unread responses alert');
+            
             // Show the section
-            document.getElementById('unread-responses-section').style.display = 'block';
+            section.style.display = 'block';
             
             // Build HTML
             let html = '';
             casesByUnread.forEach(c => {
                 html += `<div class="mb-2"><a href="/cases/${c.id}/" class="text-decoration-none"><i class="bi bi-box-arrow-up-right"></i> ${c.name}</a> <span class="badge bg-danger">${c.count} new</span></div>`;
             });
-            document.getElementById('unread-responses-list').innerHTML = html;
+            list.innerHTML = html;
             document.getElementById('unread-count-badge').textContent = casesByUnread.length;
             
-            // Restore expansion state
-            const content = document.getElementById('unread-responses-content');
-            const wasExpanded = localStorage.getItem('unreadResponsesExpanded') === 'true';
-            if (wasExpanded) {
+            // Restore expansion state or default to expanded if first time
+            const wasExpanded = localStorage.getItem('unreadResponsesExpanded');
+            if (wasExpanded === 'false') {
+                content.style.display = 'none';
+                document.getElementById('unread-responses-toggle-icon').classList.remove('bi-chevron-up');
+                document.getElementById('unread-responses-toggle-icon').classList.add('bi-chevron-down');
+            } else {
+                // Default to expanded
                 content.style.display = 'block';
                 document.getElementById('unread-responses-toggle-icon').classList.remove('bi-chevron-down');
                 document.getElementById('unread-responses-toggle-icon').classList.add('bi-chevron-up');
-            } else {
-                content.style.display = 'none';
             }
+        } else {
+            console.log('DEBUG: No unread responses, hiding section');
+            section.style.display = 'none';
         }
     }
     
