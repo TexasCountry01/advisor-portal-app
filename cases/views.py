@@ -49,17 +49,7 @@ def member_dashboard(request):
         'assigned_to'
     ).order_by('-date_submitted')
     
-    # Add unread message count to each case
-    for case in cases:
-        case.unread_message_count = UnreadMessage.objects.filter(
-            case=case,
-            user=user
-        ).count()
-    
-    # Convert to list to preserve the modified case objects with unread_message_count
-    cases = list(cases)
-    
-    # Apply filters
+    # Apply filters BEFORE adding unread count
     status_filter = request.GET.get('status')
     urgency_filter = request.GET.get('urgency')
     search_query = request.GET.get('search')
@@ -78,10 +68,37 @@ def member_dashboard(request):
             Q(employee_last_name__icontains=search_query)
         )
     
-    # Handle sorting
-    if sort_by in ['external_case_id', '-external_case_id', 'date_submitted', '-date_submitted', 
-                   'date_due', '-date_due', 'status', '-status', 'urgency', '-urgency']:
-        cases = cases.order_by(sort_by)
+    # Add unread message count to each case
+    for case in cases:
+        case.unread_message_count = UnreadMessage.objects.filter(
+            case=case,
+            user=user
+        ).count()
+    
+    # Convert to list to preserve the modified case objects with unread_message_count
+    cases = list(cases)
+    
+    # Handle sorting on the list (after filters applied)
+    if sort_by == 'external_case_id':
+        cases = sorted(cases, key=lambda x: x.external_case_id or '')
+    elif sort_by == '-external_case_id':
+        cases = sorted(cases, key=lambda x: x.external_case_id or '', reverse=True)
+    elif sort_by == 'date_submitted':
+        cases = sorted(cases, key=lambda x: x.date_submitted or timezone.now())
+    elif sort_by == '-date_submitted':
+        cases = sorted(cases, key=lambda x: x.date_submitted or timezone.now(), reverse=True)
+    elif sort_by == 'date_due':
+        cases = sorted(cases, key=lambda x: x.date_due or timezone.now())
+    elif sort_by == '-date_due':
+        cases = sorted(cases, key=lambda x: x.date_due or timezone.now(), reverse=True)
+    elif sort_by == 'status':
+        cases = sorted(cases, key=lambda x: x.status or '')
+    elif sort_by == '-status':
+        cases = sorted(cases, key=lambda x: x.status or '', reverse=True)
+    elif sort_by == 'urgency':
+        cases = sorted(cases, key=lambda x: x.urgency or '')
+    elif sort_by == '-urgency':
+        cases = sorted(cases, key=lambda x: x.urgency or '', reverse=True)
     
     # Calculate statistics
     all_cases = Case.objects.filter(member=user)
