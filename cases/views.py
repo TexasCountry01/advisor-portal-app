@@ -70,10 +70,13 @@ def member_dashboard(request):
     
     # Add unread message count to each case
     for case in cases:
-        case.unread_message_count = UnreadMessage.objects.filter(
+        unread_count = UnreadMessage.objects.filter(
             case=case,
             user=user
         ).count()
+        case.unread_message_count = unread_count
+        if unread_count > 0:
+            logger.info(f'Member dashboard: Case {case.external_case_id} has {unread_count} unread messages for {user.username}')
     
     # Convert to list to preserve the modified case objects with unread_message_count
     cases = list(cases)
@@ -2918,8 +2921,11 @@ def add_case_message(request, pk):
                         defaults={'case': case}
                     )
                     logger.info(f'Technician {user.username} message on case {case.external_case_id} - Created UnreadMessage for member {case.member.username}: {created}')
+                    logger.info(f'UnreadMessage details: id={um.id}, case={um.case_id}, user={um.user_id}, message={um.message_id}')
                 except Exception as e:
                     logger.error(f'Error creating UnreadMessage for member: {str(e)}')
+                    import traceback
+                    logger.error(traceback.format_exc())
         
         logger.info(f'Message added to case {case.external_case_id} by {user.username}')
         
