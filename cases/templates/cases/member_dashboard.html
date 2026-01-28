@@ -234,7 +234,6 @@
                     </thead>
                     <tbody>
                         {% for case in cases %}
-                        <!-- DEBUG: Case {{ case.external_case_id }} - unread_message_count = {{ case.unread_message_count|default:"NOT SET" }} -->
                         <tr>
                             <td class="column-workshop {% if 'workshop' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
@@ -313,10 +312,16 @@
                                 {% if case.status == 'completed' and case.actual_release_date %}
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-success" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible; font-weight: 500;" title="Your report is ready to download!">
                                     <i class="bi bi-download"></i> Download
+                                    {% if case.unread_message_count > 0 %}
+                                    <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
+                                    {% endif %}
                                 </a>
                                 {% elif case.status == 'completed' and case.scheduled_release_date and not case.actual_release_date %}
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" title="Report will be available on {{ case.scheduled_release_date|date:'M j, Y' }}">
                                     <i class="bi bi-clock"></i> Pending
+                                    {% if case.unread_message_count > 0 %}
+                                    <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
+                                    {% endif %}
                                 </a>
                                 {% else %}
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
