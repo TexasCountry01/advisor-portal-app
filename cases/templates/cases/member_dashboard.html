@@ -234,6 +234,7 @@
                     </thead>
                     <tbody>
                         {% for case in cases %}
+                        <!-- DEBUG: Case {{ case.external_case_id }} - unread_message_count = {{ case.unread_message_count|default:"NOT SET" }} -->
                         <tr>
                             <td class="column-workshop {% if 'workshop' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
