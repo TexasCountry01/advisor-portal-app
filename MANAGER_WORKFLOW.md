@@ -128,7 +128,17 @@ Managers oversee technician operations and case workflows:
   - On-Time/Late metrics visible for completed cases
 
 ### 2B. **Column Visibility Management**
-- ✓ **Customize dashboard view:**
+### 2C. **Notification System Overview** (NEW)
+- ✓ Can view own notification center if notifications exist
+- ✓ Can access all case messaging via audit trail
+- ✓ Cannot directly view member notifications (member-only access)
+- ✓ Can monitor team messaging via case detail pages
+- ✓ Can see email notification status on case detail
+- ✓ Can respond to member messages (same as technician)
+- ℹ️ **Message Notifications:** Instant (no email sent)
+- ℹ️ **Case Completion Emails:** Scheduled 0-24 hours (different system)
+
+### 2D. **Customize dashboard view:**
   - Click "Column Settings" button (gear icon)
   - Toggle columns on/off to show/hide:
     - Case ID, Member Name, Status, Created Date

@@ -649,3 +649,87 @@ All member activities are automatically tracked in the system's audit trail. Her
 ```
 
 ---
+
+## Two-Way Messaging & Notification Center (NEW - Jan 31, 2026)
+
+### What is Two-Way Messaging?
+Two-way messaging allows direct communication between members and technicians throughout the case lifecycle. Ask questions, get clarifications, and receive immediate updates.
+
+### Where to Message
+
+**Method 1: In Case Detail Page**
+- Open any case detail page
+- Scroll to **Messages** section at bottom
+- Type your message in the text area
+- Click **Send Message** button
+- Your message appears in conversation thread
+- Technician gets notified immediately
+
+**Method 2: Ask a Question Modal (Completed Cases Only)**
+- Case must have status = "Completed"
+- Click **Ask a Question** button (top-right of case detail page)
+- Modal dialog opens with textarea
+- Type your question
+- Click **Ask Question** button
+- Question added to case conversation thread
+
+### When Technician Responds
+
+You receive an **immediate notification** (no delay) that includes:
+
+1. **Notification Bell Badge**
+   - Dashboard top-right corner shows red badge with count
+   - Indicates unread responses from technician
+
+2. **Notification Card Details**
+   - **Title:** "Response from [Technician First Name]" (e.g., "Response from Monica")
+   - **Preview:** First 1-2 sentences of technician's response
+   - **Badge:** Blue "View Response " indicator
+   - **Timestamp:** When response was posted (e.g., "Jan 31, 2026 01:26 PM")
+   - **Mark as read:** Manual button if you want to dismiss
+
+### Accessing Your Notification Center
+
+1. On member dashboard (top-right corner)
+2. Click **Notifications** button with bell icon 
+3. Offcanvas sidebar opens from right side with all notifications
+4. Notifications display in order (newest first):
+   - **Unread notifications** show with light background (highlighted)
+   - **Read notifications** show with normal background
+   - **Hold reasons** display in yellow alert box (if case on hold)
+   - **"Mark All as Read"** button at bottom
+
+### Clicking a Notification
+
+When you click on a notification card:
+
+1. **Navigation:** You're taken directly to the case detail page
+2. **Auto-Scroll:** Page automatically scrolls to messages section
+3. **Focus:** Your focus is set on the message area (no need to scroll)
+4. **Auto-Mark Read:** Notification automatically marked as read (happens behind scenes)
+5. **View Response:** You see the technician's full response immediately
+6. **Next Refresh:** On next dashboard refresh, notification disappears (it's read)
+
+### Unread Message Badge
+
+You might also see numbered badges on your dashboard action buttons:
+
+- **View button:** Shows unread count if messages present
+- **Download button:** Shows unread count
+- **Pending button:** Shows unread count
+- **What it means:** Technician has responded to your case
+- **How to clear:** Click any action button to open case (marks as read)
+
+**Note:** This badge is separate from the notification center. Both systems let you know when technician has responded.
+
+### Message History
+
+- **Permanent Record:** All messages stored permanently
+- **Scroll History:** Can scroll through entire conversation history
+- **Timestamps:** See when each person posted
+- **Full Conversation:** See all technician responses and member questions
+- **Audit Trail:** All interactions logged automatically
+
+###  Audit Trail - Two-Way Messaging
+
+All messaging activities automatically tracked in case audit trail.

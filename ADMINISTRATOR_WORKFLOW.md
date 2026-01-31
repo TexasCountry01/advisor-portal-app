@@ -93,7 +93,22 @@ Administrators manage system-wide configuration and integrity:
   - Control which columns appear by role/level
 
 ### 2A. **Column Visibility Management** (NEW - Admin Dashboard)
-- ✓ **Customize dashboard view:**
+### 2B. **Notification System (Admin Scope)** (NEW)
+- ✓ Have audit trail access to ALL notifications (system-wide)
+- ✓ Cannot directly view member notifications in UI (member-only)
+- ✓ Can access database to troubleshoot notification issues
+- ✓ Can view audit trail showing:
+  - When notifications created (case messages, holds, releases)
+  - When members viewed notifications
+  - Message content and responses
+  - All messaging activity with timestamps
+- ✓ Can verify notification creation is working
+- ✓ Can reset/delete notifications if needed for testing
+- ℹ️ **Two Systems:**
+  - **Message Notifications:** Instant in-app (no email)
+  - **Case Emails:** Scheduled 0-24 hours per configuration
+
+### 2C. **Customize dashboard view:**
   - Click "Column Settings" button (gear icon)
   - Toggle columns on/off to show/hide:
     - Case ID, Member Name, Status, Created Date

@@ -817,3 +817,58 @@ DOCS      FROM ADMIN             PENDING
                                     ▼
                                   END
 ```
+
+## Responding to Member Messages (NEW - Jan 31, 2026)
+
+### Member Questions During Case Processing
+
+Members can ask questions and provide updates while your case is being processed. Respond promptly to clarify requirements and provide status updates.
+
+### How to Respond
+
+1. **Open Case Detail Page** - Click case from your queue
+2. **Scroll to Messages Section** - Bottom of page shows all member messages
+3. **Type Your Response** - Click text area and type response
+4. **Send Message** - Click **Send Message** button
+5. **Member Notified Instantly** - Member sees notification within seconds
+
+### What Happens Automatically
+
+When you send a response:
+
+1. **CaseMessage Created** - Your message stored permanently
+2. **UnreadMessage Created** - Member sees unread badge on dashboard
+3. **CaseNotification Created** - In-app notification for member with:
+   - **Title:** "Response from [Your First Name]" (e.g., "Response from Monica")
+   - **Preview:** First 1-2 sentences of your response (max 200 chars)
+   - **Badge:** Blue "View Response " indicator
+   - **Timestamp:** When you posted (e.g., "Jan 31, 2026 01:26 PM")
+
+### Member Sees Your Response
+
+1. Member gets notification bell badge
+2. Member clicks notification  Case detail opens
+3. Page auto-scrolls to messages section
+4. Member sees your full response
+5. Notification auto-marked as read
+6. On next refresh, notification disappears
+
+### Response Best Practices
+
+ **DO:**
+- Be clear and specific ("2021 tax return" not "documents")
+- Respond within 24 hours
+- Use professional, helpful tone
+- Provide actionable next steps
+
+ **DON'T:**
+- Send vague responses
+- Leave member waiting unnecessarily
+- Share sensitive information in messages
+
+### Notification Timing
+
+- **Message Notifications:** Instant (no delay)
+- **Member Email:** NOT sent for message responses (different from case emails)
+- **Member Must Check:** Dashboard to see notifications
+- **Frequency:** Every response triggers notification
