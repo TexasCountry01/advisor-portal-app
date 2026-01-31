@@ -20,7 +20,8 @@
 <body>
     {% if user.is_authenticated %}
     <style>
-        body { font-size: {{ user.get_font_size_percentage }}; }
+        body, body * { font-size: {{ user.get_font_size_percentage }} !important; }
+        html { font-size: {{ user.get_font_size_percentage }} !important; }
     </style>
     {% endif %}
     <!-- Navigation -->
