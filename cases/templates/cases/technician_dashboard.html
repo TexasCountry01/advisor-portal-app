@@ -72,7 +72,7 @@
             {% url 'cases:technician_dashboard' as base_url %}
             {% with status_query=status_filters|join:"&status=" %}
             
-            <form method="get">
+            <form method="get" action="{% url 'cases:technician_dashboard' %}">
                 <!-- Row 1: View Options (Left) | Stats (Right) -->
                 <div class="row mb-3" id="top-row">
                     <!-- LEFT: View Options -->
@@ -894,6 +894,45 @@ function getCsrfToken() {
     }
     return cookieValue;
 }
+
+// Preserve filters when sorting
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[method="get"]');
+    if (form) {
+        const sortLinks = document.querySelectorAll('thead a[href*="sort="]');
+        sortLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const formData = new FormData(form);
+                const params = new URLSearchParams(formData);
+                const currentParams = new URLSearchParams(window.location.search);
+                
+                // Extract sort parameter from link
+                const href = this.getAttribute('href');
+                const sortMatch = href.match(/sort=[^&]*/);
+                if (sortMatch) {
+                    params.set('sort', sortMatch[0].replace('sort=', ''));
+                }
+                
+                // Get all status[] values from form
+                const statuses = [];
+                document.querySelectorAll('input[name="status"]:checked').forEach(cb => {
+                    statuses.push(cb.value);
+                });
+                
+                // Remove all status params first
+                params.delete('status');
+                
+                // Add status[] params
+                statuses.forEach(status => {
+                    params.append('status', status);
+                });
+                
+                e.preventDefault();
+                window.location.href = '?' + params.toString();
+            });
+        });
+    }
+});
 </script>
 
 {% endblock %}
