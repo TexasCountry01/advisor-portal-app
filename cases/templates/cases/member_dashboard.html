@@ -219,16 +219,16 @@
                 <table class="table table-hover table-sm">
                     <thead>
                         <tr>
-                            <th data-column-id="workshop" {% if 'workshop' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}">Workshop</a></th>
-                            <th data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}">Employee Name</a></th>
+                            <th data-column-id="workshop" {% if 'workshop' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}" title="Click to sort by Workshop">Workshop</a></th>
+                            <th data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}" title="Click to sort by Employee Name">Employee Name</a></th>
                             <th data-column-id="reports" {% if 'reports' not in visible_columns %}class="column-hidden"{% endif %}>Reports</th>
-                            <th data-column-id="due_date" {% if 'due_date' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}">Due Date</a></th>
-                            <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}">Urgency</a></th>
-                            <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}">Status</a></th>
+                            <th data-column-id="due_date" {% if 'due_date' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}" title="Click to sort by Due Date">Due Date</a></th>
+                            <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}" title="Click to sort by Urgency">Urgency</a></th>
+                            <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
                             <th data-column-id="credit" {% if 'credit' not in visible_columns %}class="column-hidden"{% endif %}>Credit</th>
-                            <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}">Submitted</a></th>
-                            <th data-column-id="accepted" {% if 'accepted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_accepted' %}sort=-date_accepted{% else %}sort=date_accepted{% endif %}">Accepted</a></th>
-                            <th data-column-id="completed" {% if 'completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}">Completed</a></th>
+                            <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}" title="Click to sort by Submitted">Submitted</a></th>
+                            <th data-column-id="accepted" {% if 'accepted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_accepted' %}sort=-date_accepted{% else %}sort=date_accepted{% endif %}" title="Click to sort by Accepted">Accepted</a></th>
+                            <th data-column-id="completed" {% if 'completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}" title="Click to sort by Completed">Completed</a></th>
                             <th data-column-id="actions">Actions</th>
                         </tr>
                     </thead>
