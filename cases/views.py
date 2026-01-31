@@ -2620,8 +2620,8 @@ def credit_audit_trail(request, case_id=None):
     """View credit audit trail for cases - Manager/Admin only."""
     user = request.user
     
-    # Check if user is admin or manager
-    if not user.is_staff and user.groups.filter(name__in=['admin', 'manager']).count() == 0:
+    # Check if user is admin or manager (check role field)
+    if user.role not in ['administrator', 'manager']:
         messages.error(request, 'You do not have permission to view credit audit trails.')
         return redirect('cases:case_list')
     
