@@ -80,49 +80,59 @@
                 </div>
             </div>
 
-            <!-- Filter Form -->
-            <form method="get" action="{% url 'cases:manager_dashboard' %}" class="row g-3" id="filter-row">
+            <!-- Row 2: Filter Controls (Collapsible) -->
+            <div class="row g-3 mt-1 mb-2">
+                <div class="col-12">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filter-row">
+                        <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Row 3: Filter Form (Collapsed by default) -->
+            <div class="collapse" id="filter-row">
+            <form method="get" action="{% url 'cases:manager_dashboard' %}" class="row g-3 mt-0" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
                 <div class="col-md-2">
                     <label class="form-label"><strong>Status (Multiple)</strong></label>
                     <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto; background-color: white;">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="submitted" 
-                                   id="status_submitted" {% if 'submitted' in status_filters %}checked{% endif %}>
+                                   id="status_submitted" {% if 'submitted' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_submitted">
                                 Submitted
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="accepted" 
-                                   id="status_accepted" {% if 'accepted' in status_filters %}checked{% endif %}>
+                                   id="status_accepted" {% if 'accepted' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_accepted">
                                 Accepted
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="pending_review" 
-                                   id="status_pending" {% if 'pending_review' in status_filters %}checked{% endif %}>
+                                   id="status_pending" {% if 'pending_review' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_pending">
                                 Pending Review
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="hold" 
-                                   id="status_hold" {% if 'hold' in status_filters %}checked{% endif %}>
+                                   id="status_hold" {% if 'hold' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_hold">
                                 On Hold
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="resubmitted" 
-                                   id="status_resubmitted" {% if 'resubmitted' in status_filters %}checked{% endif %}>
+                                   id="status_resubmitted" {% if 'resubmitted' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_resubmitted">
                                 Resubmitted
                             </label>
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="completed" 
-                                   id="status_completed" {% if 'completed' in status_filters %}checked{% endif %}>
+                                   id="status_completed" {% if 'completed' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_completed">
                                 Completed
                             </label>
@@ -194,7 +204,7 @@
                            placeholder="Case ID, Employee, Workshop, Email..." 
                            value="{{ search_query|default:'' }}">
                 </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
+                <div class="col-md-12 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-sm btn-primary">Filter</button>
                     <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
                     <div class="dropdown">
@@ -231,9 +241,8 @@
                     </a>
                 </div>
             </form>
+            </div>
         </div>
-    </div>
-
     </div>
 
     <!-- Cases Table (Read-Only) -->
