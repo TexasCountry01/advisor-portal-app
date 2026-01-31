@@ -86,6 +86,14 @@ def member_dashboard(request):
         cases = sorted(cases, key=lambda x: x.external_case_id or '')
     elif sort_by == '-external_case_id':
         cases = sorted(cases, key=lambda x: x.external_case_id or '', reverse=True)
+    elif sort_by == 'workshop_code':
+        cases = sorted(cases, key=lambda x: x.workshop_code or '')
+    elif sort_by == '-workshop_code':
+        cases = sorted(cases, key=lambda x: x.workshop_code or '', reverse=True)
+    elif sort_by == 'employee_first_name':
+        cases = sorted(cases, key=lambda x: x.employee_first_name or '')
+    elif sort_by == '-employee_first_name':
+        cases = sorted(cases, key=lambda x: x.employee_first_name or '', reverse=True)
     elif sort_by == 'date_submitted':
         cases = sorted(cases, key=lambda x: x.date_submitted or timezone.now())
     elif sort_by == '-date_submitted':
@@ -94,6 +102,14 @@ def member_dashboard(request):
         cases = sorted(cases, key=lambda x: x.date_due or timezone.now())
     elif sort_by == '-date_due':
         cases = sorted(cases, key=lambda x: x.date_due or timezone.now(), reverse=True)
+    elif sort_by == 'date_accepted':
+        cases = sorted(cases, key=lambda x: x.date_accepted or timezone.now())
+    elif sort_by == '-date_accepted':
+        cases = sorted(cases, key=lambda x: x.date_accepted or timezone.now(), reverse=True)
+    elif sort_by == 'date_completed':
+        cases = sorted(cases, key=lambda x: x.date_completed or timezone.now())
+    elif sort_by == '-date_completed':
+        cases = sorted(cases, key=lambda x: x.date_completed or timezone.now(), reverse=True)
     elif sort_by == 'status':
         cases = sorted(cases, key=lambda x: x.status or '')
     elif sort_by == '-status':
@@ -202,14 +218,20 @@ def technician_dashboard(request):
     allowed_sorts = [
         'external_case_id', '-external_case_id',
         'workshop_code', '-workshop_code',
+        'case_code', '-case_code',
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
+        'member_id', '-member_id',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
         'date_scheduled', '-date_scheduled',
+        'scheduled_release_date', '-scheduled_release_date',
         'status', '-status',
         'urgency', '-urgency',
-        'tier', '-tier'
+        'tier', '-tier',
+        'assigned_to', '-assigned_to',
+        'on_time', '-on_time',
+        'date_completed', '-date_completed'
     ]
     if sort_by in allowed_sorts:
         cases = cases.order_by(sort_by)
@@ -338,14 +360,20 @@ def admin_dashboard(request):
     allowed_sorts = [
         'external_case_id', '-external_case_id',
         'workshop_code', '-workshop_code',
+        'case_code', '-case_code',
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
+        'member_id', '-member_id',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
         'date_scheduled', '-date_scheduled',
+        'scheduled_release_date', '-scheduled_release_date',
         'status', '-status',
         'urgency', '-urgency',
-        'tier', '-tier'
+        'tier', '-tier',
+        'assigned_to', '-assigned_to',
+        'on_time', '-on_time',
+        'date_completed', '-date_completed'
     ]
     if sort_by in allowed_sorts:
         cases = cases.order_by(sort_by)
@@ -493,14 +521,20 @@ def manager_dashboard(request):
     allowed_sorts = [
         'external_case_id', '-external_case_id',
         'workshop_code', '-workshop_code',
+        'case_code', '-case_code',
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
+        'member_id', '-member_id',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
         'date_scheduled', '-date_scheduled',
+        'scheduled_release_date', '-scheduled_release_date',
         'status', '-status',
         'urgency', '-urgency',
-        'tier', '-tier'
+        'tier', '-tier',
+        'assigned_to', '-assigned_to',
+        'on_time', '-on_time',
+        'date_completed', '-date_completed'
     ]
     if sort_by in allowed_sorts:
         cases = cases.order_by(sort_by)
