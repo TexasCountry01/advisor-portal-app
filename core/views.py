@@ -141,17 +141,18 @@ def update_font_size(request):
         # Validate font size
         valid_sizes = ['75', '85', '100', '115', '130', '150']
         if font_size in valid_sizes:
+            # Update database for persistence across logins
             request.user.font_size = font_size
             request.user.save()
-            # Update the session to ensure the change is reflected immediately
-            update_session_auth_hash(request, request.user)
-            messages.success(request, f'Font size updated to {font_size}%')
-            # Add a response that includes JavaScript to update localStorage
-            response = redirect('profile')
-            # Store in session as well for immediate availability
+            
+            # Update session immediately so all pages show the change
             request.session['user_font_size'] = font_size
             request.session.modified = True
-            return response
+            
+            # Update password hash to refresh session (handles password changes)
+            update_session_auth_hash(request, request.user)
+            
+            messages.success(request, f'Font size updated to {font_size}%')
         else:
             messages.error(request, 'Invalid font size value')
     

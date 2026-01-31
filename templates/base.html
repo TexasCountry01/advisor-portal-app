@@ -20,26 +20,24 @@
 <body>
     {% if user.is_authenticated %}
     <script>
-        // Store initial font size from server
-        const serverFontSize = '{{ user.get_font_size_percentage }}';
+        // Determine font size: session takes priority (most recent), then database value
+        const sessionFontSize = '{{ request.session.user_font_size|default:"" }}';
+        const dbFontSize = '{{ user.get_font_size_percentage }}';
+        const fontSizeToUse = sessionFontSize || dbFontSize;
         
         // Function to apply font size
         function applyFontSize(fontSize) {
-            document.body.style.fontSize = fontSize;
-            localStorage.setItem('userFontSize', fontSize);
+            if (fontSize) {
+                document.body.style.fontSize = fontSize;
+            }
         }
         
-        // Check localStorage first (most recent), fall back to server
-        const savedFontSize = localStorage.getItem('userFontSize');
-        const fontSizeToUse = savedFontSize || serverFontSize;
-        
-        // Apply immediately
+        // Apply immediately (before DOM is ready)
         applyFontSize(fontSizeToUse);
         
-        // Also apply after DOM is ready
+        // Also apply after DOM is loaded (in case body wasn't ready)
         document.addEventListener('DOMContentLoaded', function() {
-            const currentSavedSize = localStorage.getItem('userFontSize') || serverFontSize;
-            applyFontSize(currentSavedSize);
+            applyFontSize(fontSizeToUse);
         });
     </script>
     {% endif %}
