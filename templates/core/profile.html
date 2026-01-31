@@ -148,6 +148,8 @@
                 </form>
                 <script>
                     document.getElementById('font_size').addEventListener('change', function() {
+                        // Store in localStorage before form submission
+                        localStorage.setItem('userFontSize', this.value + '%');
                         document.getElementById('font-size-form').submit();
                     });
                 </script>

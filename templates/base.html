@@ -19,16 +19,28 @@
 </head>
 <body>
     {% if user.is_authenticated %}
-    <style>
-        body { font-size: {{ user.get_font_size_percentage }}; }
-    </style>
     <script>
-        // Apply font size immediately on page load
+        // Store initial font size from server
+        const serverFontSize = '{{ user.get_font_size_percentage }}';
+        
+        // Function to apply font size
+        function applyFontSize(fontSize) {
+            document.body.style.fontSize = fontSize;
+            localStorage.setItem('userFontSize', fontSize);
+        }
+        
+        // Check localStorage first (most recent), fall back to server
+        const savedFontSize = localStorage.getItem('userFontSize');
+        const fontSizeToUse = savedFontSize || serverFontSize;
+        
+        // Apply immediately
+        applyFontSize(fontSizeToUse);
+        
+        // Also apply after DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
-            document.body.style.fontSize = '{{ user.get_font_size_percentage }}';
+            const currentSavedSize = localStorage.getItem('userFontSize') || serverFontSize;
+            applyFontSize(currentSavedSize);
         });
-        // Also apply it immediately (before DOM load)
-        document.body.style.fontSize = '{{ user.get_font_size_percentage }}';
     </script>
     {% endif %}
     <!-- Navigation -->

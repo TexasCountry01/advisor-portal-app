@@ -146,6 +146,12 @@ def update_font_size(request):
             # Update the session to ensure the change is reflected immediately
             update_session_auth_hash(request, request.user)
             messages.success(request, f'Font size updated to {font_size}%')
+            # Add a response that includes JavaScript to update localStorage
+            response = redirect('profile')
+            # Store in session as well for immediate availability
+            request.session['user_font_size'] = font_size
+            request.session.modified = True
+            return response
         else:
             messages.error(request, 'Invalid font size value')
     
