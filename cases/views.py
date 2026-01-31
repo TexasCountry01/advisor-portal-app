@@ -2909,6 +2909,9 @@ def add_case_message(request, pk):
             message=message_text
         )
         
+        # Import CaseNotification for notification creation
+        from cases.models import CaseNotification
+        
         # Create UnreadMessage records for recipient(s)
         if is_member:
             # Member posted - mark as unread for the assigned technician
@@ -2937,6 +2940,18 @@ def add_case_message(request, pk):
                     logger.error(f'Error creating UnreadMessage for member: {str(e)}')
                     import traceback
                     logger.error(traceback.format_exc())
+                
+                # Create CaseNotification for member
+                try:
+                    CaseNotification.objects.create(
+                        case=case,
+                        member=case.member,
+                        notification_type='member_update_received',
+                        title=f'Response from {user.get_full_name() or user.username}',
+                        message=f'New response on case {case.external_case_id}'
+                    )
+                except Exception as e:
+                    logger.error(f'Error creating CaseNotification for member: {str(e)}')
         
         logger.info(f'Message added to case {case.external_case_id} by {user.username}')
         
