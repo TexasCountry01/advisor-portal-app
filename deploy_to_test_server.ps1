@@ -30,8 +30,8 @@
 $testServerHost = "157.245.141.42"
 $testServerUser = "dev"
 $projectPath = "/var/www/advisor-portal"
-$venvPath = "/home/dev/advisor-portal-app/venv"
-$gunicornSocket = "/home/dev/advisor-portal-app/gunicorn.sock"
+$venvPath = "/var/www/advisor-portal/venv"
+$gunicornSocket = "/var/www/advisor-portal/gunicorn.sock"
 
 # ⚠️ TEST SERVER DATABASE - DigitalOcean Managed MySQL/MariaDB
 # (NOT SQLite - only use SQLite for LOCAL development)
