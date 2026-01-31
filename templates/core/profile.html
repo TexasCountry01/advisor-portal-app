@@ -3,6 +3,35 @@
 {% block title %}Profile - {{ user.get_full_name }}{% endblock %}
 
 {% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h2>User Profile</h2>
+        <p class="text-muted">{{ user.get_full_name|default:user.username }}</p>
+    </div>
+    <div class="col-auto d-flex gap-2 align-items-center">
+        {% if user.role == 'member' %}
+            <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        {% elif user.role == 'technician' %}
+            <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        {% elif user.role == 'manager' %}
+            <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        {% elif user.role == 'administrator' %}
+            <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        {% endif %}
+        <a href="{% url 'logout' %}" class="btn btn-outline-danger">
+            <i class="bi bi-box-arrow-right"></i> Logout
+        </a>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-3">
         <div class="card">
