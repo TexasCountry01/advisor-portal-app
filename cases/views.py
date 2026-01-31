@@ -2954,15 +2954,20 @@ def add_case_message(request, pk):
                     # Get technician's first name
                     tech_first_name = user.first_name or user.username
                     
-                    CaseNotification.objects.create(
+                    logger.info(f'Creating CaseNotification: title="Response from {tech_first_name}", message="{preview}"')
+                    
+                    notification = CaseNotification.objects.create(
                         case=case,
                         member=case.member,
                         notification_type='member_update_received',
                         title=f'Response from {tech_first_name}',
                         message=preview
                     )
+                    logger.info(f'CaseNotification created successfully: {notification.id}')
                 except Exception as e:
                     logger.error(f'Error creating CaseNotification for member: {str(e)}')
+                    import traceback
+                    logger.error(traceback.format_exc())
         
         logger.info(f'Message added to case {case.external_case_id} by {user.username}')
         
