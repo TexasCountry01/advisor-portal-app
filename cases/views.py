@@ -4007,6 +4007,16 @@ def approve_case_review(request, case_id):
             review_notes=review_notes
         )
         
+        # Create notification for member that case is released
+        from cases.models import CaseNotification
+        CaseNotification.objects.create(
+            case=case,
+            member=case.member,
+            notification_type='case_released',
+            title='Your Case is Completed',
+            message=f'Case {case.external_case_id} has been completed and is ready for you to review.'
+        )
+        
         # TODO: Send email notification to technician
         messages.success(request, f'Case {case.external_case_id} approved and marked as completed.')
         
