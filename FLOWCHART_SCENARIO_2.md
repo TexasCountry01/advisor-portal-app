@@ -7,6 +7,8 @@ SCENARIO 2: Information Request & Resubmission
 
 START: Member submits incomplete case
 Status: submitted
+Timestamp: Central Time Zone
+(Admin Dashboard shows in submitted queue)
         │
         ▼
 Tech: Reviews Case
@@ -19,10 +21,12 @@ Add notes: "Need X documents"
         │
         ▼
 Status: submitted → needs_resubmission
+Timestamp logged: Central Time Zone
         │
         ▼
 Member: Receives Rejection Email
 "Additional information needed for case"
+(Email timestamp: Central Time)
         │
         ▼
 Member: Uploads Missing Documents
@@ -34,6 +38,7 @@ Status: needs_resubmission → submitted
         ▼
 Case: Back in Tech's Queue
 Tech sees: "Resubmitted case - review required"
+(Admin monitors from Admin Dashboard)
         │
         ▼
 Tech: Re-Reviews Case

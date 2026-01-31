@@ -16,17 +16,22 @@ Need info from outside source
 Tech: Clicks "Put on Hold"
 Selects: Hold reason
 Duration: Until problem is solved
+Timestamp: Central Time Zone
         │
         ▼
 Status: accepted → hold
+Hold duration tracked: Central Time Zone
+(Admin Dashboard shows cases on hold)
         │
         ▼
 Member: Receives Hold Notification Email
 "Your case is on hold - reason given"
+(Email timestamp: Central Time)
         │
         ▼
 Member: Can Upload Documents During Hold
 Member: Can Add Comments
+(Timestamps tracked in Central Time)
         │
         ▼
 Member: Uploads Documents

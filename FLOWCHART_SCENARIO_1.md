@@ -5,23 +5,26 @@ SCENARIO 1: Happy Path - Standard Processing
 │ SCENARIO 1: Happy Path - Standard Processing                    │
 └─────────────────────────────────────────────────────────────────┘
 
-START: Member logs in
+START: Member logs in (Member Dashboard)
         │
         ▼
 Create Draft Case (FFF form + docs)
 Status: draft
+Timestamp: Central Time Zone (America/Chicago)
         │
         ▼
 Submit Case (validation check)
 Status: draft → submitted
         │
         ▼
-Appears in Unassigned Queue
+Appears in Technician Unassigned Queue
+(Admin can monitor from Admin Dashboard)
         │
         ▼
 Tech: Review & Accept
 Decision: Tier=1, Credit=1.5
 Status: submitted → accepted
+Timestamp logged: Central Time Zone
         │
         ▼
 Tech: Investigates (4-12 hours)
@@ -57,11 +60,13 @@ Document type: 'report'
 Tech: Marks Case Complete
 Selects: "Release Now"
 Status: accepted → completed
+Timestamp: Central Time Zone
+(Admin receives completion notification)
         │
         ▼
-Member: Receives Report
+Member: Receives Report (Email with timestamp)
         │
         ▼
-END: Case Archived
+END: Case Archived (PRODUCTION Audit Trail logged)
 
 ```
