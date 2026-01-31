@@ -1007,6 +1007,21 @@
                             <small class="text-muted d-block mt-1">Note: Tier cannot exceed technician level capability</small>
                         </div>
                         
+                        <!-- Assign Credit Value -->
+                        <div class="mb-3">
+                            <label for="assignCreditValue" class="form-label small">Assign Credit Value:</label>
+                            <select class="form-select form-select-sm" id="assignCreditValue" name="assign_credit_value">
+                                <option value="">-- Select Credit --</option>
+                                <option value="0.5">0.5 Credits</option>
+                                <option value="1.0">1.0 Credit</option>
+                                <option value="1.5">1.5 Credits</option>
+                                <option value="2.0">2.0 Credits</option>
+                                <option value="2.5">2.5 Credits</option>
+                                <option value="3.0">3.0 Credits</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Credit value for this case</small>
+                        </div>
+                        
                         <!-- Assign Tech -->
                         <div class="mb-3">
                             <label for="assignTechInit" class="form-label small">Assign Tech:</label>
@@ -3047,9 +3062,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Submit acceptance
             const caseId = {{ case.id }};
+            const creditValue = document.getElementById('assignCreditValue').value;
+            
+            // Validate credit value is selected
+            if (!creditValue) {
+                alert('Please select a credit value.');
+                return;
+            }
+            
             const data = {
                 'tier': tier,
                 'assigned_to': tech || null,
+                'credit_value': creditValue,
                 'acceptance_notes': notes,
                 'docs_verified': docsAllChecked ? 'yes' : 'no',
                 'tech_override_reason': overrideReason || null

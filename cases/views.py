@@ -2718,10 +2718,17 @@ def accept_case(request, pk):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     try:
-        # Get form data
-        credit_value = request.POST.get('credit_value')
-        tier = request.POST.get('tier')
-        assigned_to_id = request.POST.get('assigned_to')
+        # Handle both JSON and form data
+        if request.content_type == 'application/json':
+            import json
+            data = json.loads(request.body)
+            credit_value = data.get('credit_value')
+            tier = data.get('tier')
+            assigned_to_id = data.get('assigned_to')
+        else:
+            credit_value = request.POST.get('credit_value')
+            tier = request.POST.get('tier')
+            assigned_to_id = request.POST.get('assigned_to')
         
         # Validate - provide specific error messages
         if not credit_value:
