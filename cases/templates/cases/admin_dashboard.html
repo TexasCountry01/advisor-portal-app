@@ -20,9 +20,14 @@
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Quick Stats & Filters</h5>
-            <button type="button" id="toggle-view-stats" class="btn btn-sm btn-outline-secondary" title="Show/hide stats">
-                <i class="bi bi-chevron-up"></i> Hide
-            </button>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" id="toggle-view-stats" class="btn btn-outline-secondary" title="Show/hide stats">
+                    <i class="bi bi-chevron-up"></i> Stats
+                </button>
+                <button type="button" id="toggle-view-filters" class="btn btn-outline-secondary" title="Show/hide filters" data-bs-toggle="collapse" data-bs-target="#filter-container">
+                    <i class="bi bi-chevron-down"></i> Filters
+                </button>
+            </div>
         </div>
         <div id="view-stats-container" class="card-body">
             <style>
@@ -79,8 +84,11 @@
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Filter Form -->
+        <!-- Filter Form (Collapsible) -->
+        <div class="collapse" id="filter-container">
+        <div class="card-body border-top">
             <form method="get" class="row g-3" id="filter-row">
                 <!-- Status Filter - Multiple Checkboxes -->
                 <div class="col-md-3">
@@ -206,6 +214,7 @@
                     </a>
                 </div>
             </form>
+        </div>
         </div>
     </div>
 
@@ -708,6 +717,22 @@
                 }
             }
         });
+        
+        // Toggle filter button icon
+        const filterBtn = document.getElementById('toggle-view-filters');
+        const filterContainer = document.getElementById('filter-container');
+        if (filterBtn && filterContainer) {
+            filterContainer.addEventListener('show.bs.collapse', function() {
+                const icon = filterBtn.querySelector('i');
+                if (icon) icon.classList.remove('bi-chevron-down');
+                if (icon) icon.classList.add('bi-chevron-up');
+            });
+            filterContainer.addEventListener('hide.bs.collapse', function() {
+                const icon = filterBtn.querySelector('i');
+                if (icon) icon.classList.remove('bi-chevron-up');
+                if (icon) icon.classList.add('bi-chevron-down');
+            });
+        }
     });
 </script>
 
