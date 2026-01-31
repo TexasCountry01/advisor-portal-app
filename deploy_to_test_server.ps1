@@ -29,9 +29,9 @@
 # Configuration
 $testServerHost = "157.245.141.42"
 $testServerUser = "dev"
-$projectPath = "/var/www/advisor-portal"
-$venvPath = "/var/www/advisor-portal/venv"
-$gunicornSocket = "/var/www/advisor-portal/gunicorn.sock"
+$projectPath = "/home/dev/advisor-portal-app"
+$venvPath = "/home/dev/advisor-portal-app/venv"
+$gunicornSocket = "/home/dev/advisor-portal-app/gunicorn.sock"
 
 # ⚠️ TEST SERVER DATABASE - DigitalOcean Managed MySQL/MariaDB
 # (NOT SQLite - only use SQLite for LOCAL development)
@@ -114,7 +114,7 @@ Start-Sleep -Seconds 2
 
 $timeout = 5
 $startGunicornScript = {
-    ssh dev@157.245.141.42 "cd /var/www/advisor-portal && source /home/dev/advisor-portal-app/venv/bin/activate && nohup /home/dev/advisor-portal-app/venv/bin/gunicorn --workers 3 --bind unix:/home/dev/advisor-portal-app/gunicorn.sock --umask 0000 config.wsgi:application > /tmp/gunicorn.log 2>&1 &" 
+    ssh dev@157.245.141.42 "cd /home/dev/advisor-portal-app && source /home/dev/advisor-portal-app/venv/bin/activate && nohup /home/dev/advisor-portal-app/venv/bin/gunicorn --workers 3 --bind unix:/home/dev/advisor-portal-app/gunicorn.sock --umask 0000 config.wsgi:application > /tmp/gunicorn.log 2>&1 &" 
 }
 
 $job = Start-Job -ScriptBlock $startGunicornScript
