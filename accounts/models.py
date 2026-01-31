@@ -30,6 +30,19 @@ class User(AbstractUser):
         blank=True,
         help_text='For members: Pre-assigned workshop code'
     )
+    font_size = models.CharField(
+        max_length=10,
+        default='100',
+        choices=[
+            ('75', '75% (Small)'),
+            ('85', '85% (Smaller)'),
+            ('100', '100% (Normal)'),
+            ('115', '115% (Larger)'),
+            ('130', '130% (Large)'),
+            ('150', '150% (X-Large)'),
+        ],
+        help_text='Adjustable font size for accessibility'
+    )
     phone = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -37,6 +50,10 @@ class User(AbstractUser):
     
     def __str__(self):
         return f"{self.get_full_name() or self.username} ({self.get_role_display()})"
+    
+    def get_font_size_percentage(self):
+        """Return font size as a CSS percentage value"""
+        return f"{self.font_size}%"
     
     class Meta:
         verbose_name = 'User'

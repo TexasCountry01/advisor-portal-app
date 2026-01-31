@@ -123,6 +123,33 @@
         </div>
 
         <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="bi bi-sliders"></i> Preferences</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'update_font_size' %}">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="font_size" class="form-label"><strong>Font Size:</strong></label>
+                        </div>
+                        <div class="col-md-8">
+                            <select id="font_size" name="font_size" class="form-select" onchange="document.querySelector('form[action*=font_size]').submit();">
+                                <option value="75" {% if user.font_size == '75' %}selected{% endif %}>75% (Small)</option>
+                                <option value="85" {% if user.font_size == '85' %}selected{% endif %}>85% (Smaller)</option>
+                                <option value="100" {% if user.font_size == '100' %}selected{% endif %}>100% (Normal)</option>
+                                <option value="115" {% if user.font_size == '115' %}selected{% endif %}>115% (Larger)</option>
+                                <option value="130" {% if user.font_size == '130' %}selected{% endif %}>130% (Large)</option>
+                                <option value="150" {% if user.font_size == '150' %}selected{% endif %}>150% (X-Large)</option>
+                            </select>
+                            <small class="text-muted">Changes apply immediately</small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
             <div class="card-header bg-secondary text-white">
                 <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Security</h5>
             </div>

@@ -130,3 +130,21 @@ def system_settings(request):
     }
     
     return render(request, 'core/system_settings.html', context)
+
+
+@login_required
+def update_font_size(request):
+    """Update user's font size preference"""
+    if request.method == 'POST':
+        font_size = request.POST.get('font_size', '100')
+        
+        # Validate font size
+        valid_sizes = ['75', '85', '100', '115', '130', '150']
+        if font_size in valid_sizes:
+            request.user.font_size = font_size
+            request.user.save()
+            messages.success(request, f'Font size updated to {font_size}%')
+        else:
+            messages.error(request, 'Invalid font size value')
+    
+    return redirect('profile')
