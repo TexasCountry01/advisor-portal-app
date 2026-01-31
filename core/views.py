@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib import messages
@@ -143,7 +143,8 @@ def update_font_size(request):
         if font_size in valid_sizes:
             request.user.font_size = font_size
             request.user.save()
-            request.user.refresh_from_db()
+            # Update the session to ensure the change is reflected immediately
+            update_session_auth_hash(request, request.user)
             messages.success(request, f'Font size updated to {font_size}%')
         else:
             messages.error(request, 'Invalid font size value')
