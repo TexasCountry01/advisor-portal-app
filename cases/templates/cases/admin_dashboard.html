@@ -82,16 +82,35 @@
 
             <!-- Filter Form -->
             <form method="get" class="row g-3" id="filter-row">
-                <div class="col-md-2">
-                    <label for="status" class="form-label">Status</label>
-                    <select name="status" id="status" class="form-select">
-                        <option value="">All Statuses</option>
-                        <option value="submitted" {% if status_filter == 'submitted' %}selected{% endif %}>Submitted</option>
-                        <option value="accepted" {% if status_filter == 'accepted' %}selected{% endif %}>Accepted</option>
-                        <option value="hold" {% if status_filter == 'hold' %}selected{% endif %}>On Hold</option>
-                        <option value="pending_review" {% if status_filter == 'pending_review' %}selected{% endif %}>Pending Review</option>
-                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
-                    </select>
+                <!-- Status Filter - Multiple Checkboxes -->
+                <div class="col-md-3">
+                    <label class="form-label">Status (Multiple)</label>
+                    <div class="border rounded p-2" style="max-height: 200px; overflow-y: auto;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="submitted" id="status_submitted" {% if 'submitted' in status_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="status_submitted">Submitted</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="accepted" id="status_accepted" {% if 'accepted' in status_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="status_accepted">Accepted</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="pending_review" id="status_pending_review" {% if 'pending_review' in status_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="status_pending_review">Pending Review</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="hold" id="status_hold" {% if 'hold' in status_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="status_hold">On Hold</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="resubmitted" id="status_resubmitted" {% if 'resubmitted' in status_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="status_resubmitted">Resubmitted</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="completed" id="status_completed" {% if 'completed' in status_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="status_completed">Completed</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-2">
                     <label for="urgency" class="form-label">Urgency</label>
@@ -120,16 +139,6 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label for="date_from" class="form-label">From Date</label>
-                    <input type="date" name="date_from" id="date_from" class="form-control" 
-                           value="{{ custom_date_from|default:'' }}">
-                </div>
-                <div class="col-md-2">
-                    <label for="date_to" class="form-label">To Date</label>
-                    <input type="date" name="date_to" id="date_to" class="form-control" 
-                           value="{{ custom_date_to|default:'' }}">
-                </div>
-                <div class="col-md-2">
                     <label for="member" class="form-label">Member</label>
                     <select name="member" id="member" class="form-select">
                         <option value="">All Members</option>
@@ -151,13 +160,13 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label for="search" class="form-label">Search</label>
                     <input type="text" name="search" id="search" class="form-control" 
                            placeholder="Case ID, Employee, Workshop, Email..." 
                            value="{{ search_query|default:'' }}">
                 </div>
-                <div class="col-md-3 d-flex align-items-end gap-2">
+                <div class="col-md-12 d-flex align-items-end gap-2">
                     <button type="submit" class="btn btn-sm btn-primary">Filter</button>
                     <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
                     <div class="dropdown">
@@ -675,6 +684,31 @@
         }
         return cookieValue;
     }
+    
+    // Enhance sort links to preserve all filter parameters
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all current filter values from the form
+        const filterForm = document.getElementById('filter-row');
+        if (!filterForm) return;
+        
+        // Build query string for filters
+        const formData = new FormData(filterForm);
+        const filterParams = new URLSearchParams(formData).toString();
+        
+        // Update all table header sort links to include filter params
+        document.querySelectorAll('thead a').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('?')) {
+                // Extract the sort parameter
+                const sortMatch = href.match(/sort=[^&]*/);
+                if (sortMatch) {
+                    const sortParam = sortMatch[0];
+                    // Rebuild URL with sort param and all filter params
+                    link.setAttribute('href', '?' + sortParam + (filterParams ? '&' + filterParams : ''));
+                }
+            }
+        });
+    });
 </script>
 
 <style>

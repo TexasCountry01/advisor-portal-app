@@ -12,8 +12,30 @@ from accounts.models import User
 from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage, UnreadMessage
 import logging
 import json
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
+
+
+def build_filter_params(request):
+    """
+    Build a query string with all current filter parameters.
+    Used to preserve filters when sorting or paginating.
+    """
+    params = {}
+    
+    # Preserve status filters (multiple values)
+    status_list = request.GET.getlist('status')
+    if status_list:
+        params['status'] = status_list
+    
+    # Preserve other filters
+    for param in ['urgency', 'tier', 'member', 'technician', 'date_range', 'date_from', 'date_to', 'search']:
+        value = request.GET.get(param)
+        if value:
+            params[param] = value
+    
+    return params
 
 
 # DEV ONLY - Form preview without authentication
@@ -50,13 +72,13 @@ def member_dashboard(request):
     ).order_by('-date_submitted')
     
     # Apply filters BEFORE adding unread count
-    status_filter = request.GET.get('status')
+    status_filter = request.GET.getlist('status')  # Use getlist for multiple values
     urgency_filter = request.GET.get('urgency')
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort', '-date_submitted')
     
     if status_filter:
-        cases = cases.filter(status=status_filter)
+        cases = cases.filter(status__in=status_filter)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
@@ -143,6 +165,7 @@ def member_dashboard(request):
         'sort_by': sort_by,
         'visible_columns': visible_columns,
         'all_columns': DASHBOARD_COLUMN_CONFIG['member_dashboard']['available_columns'],
+        'filter_params': build_filter_params(request),
     }
     
     return render(request, 'cases/member_dashboard.html', context)
@@ -267,6 +290,7 @@ def technician_dashboard(request):
         'assigned_filter': assigned_filter,
         'technicians': technicians,
         'dashboard_type': 'technician',
+        'filter_params': build_filter_params(request),
     }
     
     # Add column visibility data
@@ -295,7 +319,8 @@ def admin_dashboard(request):
     ).order_by('-date_submitted')
     
     # Apply filters
-    status_filter = request.GET.get('status')
+    # Status filter - support multiple values (from checkboxes)
+    status_filter = request.GET.getlist('status')  # Use getlist for multiple values
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
     member_filter = request.GET.get('member')
@@ -307,7 +332,7 @@ def admin_dashboard(request):
     sort_by = request.GET.get('sort', '-date_submitted')
     
     if status_filter:
-        cases = cases.filter(status=status_filter)
+        cases = cases.filter(status__in=status_filter)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
@@ -430,6 +455,7 @@ def admin_dashboard(request):
         'dashboard_type': 'admin',
         'visible_columns': get_user_visible_columns(user, 'admin_dashboard'),
         'all_columns': DASHBOARD_COLUMN_CONFIG['admin_dashboard']['available_columns'],
+        'filter_params': build_filter_params(request),
     }
     
     return render(request, 'cases/admin_dashboard.html', context)
@@ -453,7 +479,7 @@ def manager_dashboard(request):
     ).order_by('-date_submitted')
     
     # Apply filters
-    status_filter = request.GET.get('status')
+    status_filter = request.GET.getlist('status')  # Use getlist for multiple values
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
     member_filter = request.GET.get('member')
@@ -465,7 +491,7 @@ def manager_dashboard(request):
     sort_by = request.GET.get('sort', '-date_submitted')
     
     if status_filter:
-        cases = cases.filter(status=status_filter)
+        cases = cases.filter(status__in=status_filter)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
@@ -600,6 +626,7 @@ def manager_dashboard(request):
         'is_readonly': True,
         'visible_columns': get_user_visible_columns(user, 'manager_dashboard'),
         'all_columns': DASHBOARD_COLUMN_CONFIG['manager_dashboard']['available_columns'],
+        'filter_params': build_filter_params(request),
     }
     
     return render(request, 'cases/manager_dashboard.html', context)
