@@ -1939,6 +1939,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load messages on page load
     loadMessages();
     
+    // Check if we should focus on messages (from notification click)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('focus') === 'messages') {
+        setTimeout(() => {
+            const messagesContainer = document.getElementById('messages-container');
+            if (messagesContainer) {
+                messagesContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                messagesContainer.focus();
+            }
+        }, 500); // Wait for messages to load
+    }
+    
     // Mark all messages as read for current user
     markMessagesAsRead();
 });
