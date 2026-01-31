@@ -331,7 +331,11 @@ def admin_dashboard(request):
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort', '-date_submitted')
     
+    # DEBUG: Log what filters were received
+    logger.info(f'Admin Dashboard Filters Received: status={status_filter}, urgency={urgency_filter}, tier={tier_filter}')
+    
     if status_filter:
+        logger.info(f'Applying status filter: {status_filter}')
         cases = cases.filter(status__in=status_filter)
     
     if urgency_filter:
