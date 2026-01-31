@@ -218,10 +218,8 @@ def technician_dashboard(request):
     allowed_sorts = [
         'external_case_id', '-external_case_id',
         'workshop_code', '-workshop_code',
-        'case_code', '-case_code',
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
-        'member_id', '-member_id',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
         'date_scheduled', '-date_scheduled',
@@ -230,7 +228,6 @@ def technician_dashboard(request):
         'urgency', '-urgency',
         'tier', '-tier',
         'assigned_to', '-assigned_to',
-        'on_time', '-on_time',
         'date_completed', '-date_completed'
     ]
     if sort_by in allowed_sorts:
@@ -360,10 +357,8 @@ def admin_dashboard(request):
     allowed_sorts = [
         'external_case_id', '-external_case_id',
         'workshop_code', '-workshop_code',
-        'case_code', '-case_code',
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
-        'member_id', '-member_id',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
         'date_scheduled', '-date_scheduled',
@@ -372,7 +367,6 @@ def admin_dashboard(request):
         'urgency', '-urgency',
         'tier', '-tier',
         'assigned_to', '-assigned_to',
-        'on_time', '-on_time',
         'date_completed', '-date_completed'
     ]
     if sort_by in allowed_sorts:
@@ -521,10 +515,8 @@ def manager_dashboard(request):
     allowed_sorts = [
         'external_case_id', '-external_case_id',
         'workshop_code', '-workshop_code',
-        'case_code', '-case_code',
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
-        'member_id', '-member_id',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
         'date_scheduled', '-date_scheduled',
@@ -533,7 +525,6 @@ def manager_dashboard(request):
         'urgency', '-urgency',
         'tier', '-tier',
         'assigned_to', '-assigned_to',
-        'on_time', '-on_time',
         'date_completed', '-date_completed'
     ]
     if sort_by in allowed_sorts:
