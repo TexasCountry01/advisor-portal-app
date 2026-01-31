@@ -1076,7 +1076,7 @@ function handleMemberDocumentUpload(caseId) {
             const icon = notif.notification_type.includes('hold') ? 'exclamation-triangle' : 'info-circle';
             
             html += `
-                <div class="notification-item p-3 border-bottom cursor-pointer" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f8f9fa;'}" onclick="window.location.href='/cases/${notif.case_id}/?focus=messages'">
+                <div class="notification-item p-3 border-bottom cursor-pointer" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f8f9fa;'}" onclick="window.location.href='/cases/${notif.case_id}/?focus=messages&notification_id=${notif.id}'">
                     <div class="d-flex gap-2">
                         <i class="bi bi-${icon} flex-shrink-0 mt-1"></i>
                         <div class="flex-grow-1">
