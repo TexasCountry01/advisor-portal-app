@@ -89,7 +89,7 @@
         <!-- Filter Form (Collapsible) -->
         <div class="collapse" id="filter-container">
         <div class="card-body border-top">
-            <form method="get" class="row g-3" id="filter-row">
+            <form method="get" action="{% url 'cases:admin_dashboard' %}" class="row g-3" id="filter-row">
                 <!-- Status Filter - Multiple Checkboxes -->
                 <div class="col-md-3">
                     <label class="form-label">Status (Multiple)</label>
