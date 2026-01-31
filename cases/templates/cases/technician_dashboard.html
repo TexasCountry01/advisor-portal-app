@@ -304,21 +304,21 @@
                                 <a href="?{% if sort_by == 'external_case_id' %}sort=-external_case_id{% else %}sort=external_case_id{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}">ID</a>
                             </th>
                             -->
-                            <th id="code-column" data-column-id="code" {% if 'code' not in visible_columns %}class="column-hidden"{% endif %}>Code</th>
-                            <th data-column-id="member" {% if 'member' not in visible_columns %}class="column-hidden"{% endif %}>Member</th>
-                            <th data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}>Employee Name</th>
-                            <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}>Submitted</th>
-                            <th data-column-id="due" {% if 'due' not in visible_columns %}class="column-hidden"{% endif %}>Due Date</th>
-                            <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}>Urgency</th>
-                            <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}>Status</th>
-                            <th data-column-id="release_date" {% if 'release_date' not in visible_columns %}class="column-hidden"{% endif %}>Release Date</th>
+                            <th id="code-column" data-column-id="code" {% if 'code' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'case_code' %}sort=-case_code{% else %}sort=case_code{% endif %}">Code</a></th>
+                            <th data-column-id="member" {% if 'member' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'member_id' %}sort=-member_id{% else %}sort=member_id{% endif %}">Member</a></th>
+                            <th data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}">Employee Name</a></th>
+                            <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}">Submitted</a></th>
+                            <th data-column-id="due" {% if 'due' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}">Due Date</a></th>
+                            <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}">Urgency</a></th>
+                            <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}">Status</a></th>
+                            <th data-column-id="release_date" {% if 'release_date' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'scheduled_release_date' %}sort=-scheduled_release_date{% else %}sort=scheduled_release_date{% endif %}">Release Date</a></th>
                             <th data-column-id="reports" {% if 'reports' not in visible_columns %}class="column-hidden"{% endif %}>Reports</th>
-                            <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}>Assigned To</th>
-                            <th data-column-id="date_scheduled" {% if 'date_scheduled' not in visible_columns %}class="column-hidden"{% endif %}>Scheduled</th>
-                            <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}>Tier</th>
+                            <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}">Assigned To</a></th>
+                            <th data-column-id="date_scheduled" {% if 'date_scheduled' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_scheduled' %}sort=-date_scheduled{% else %}sort=date_scheduled{% endif %}">Scheduled</a></th>
+                            <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}">Tier</a></th>
                             <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
-                            <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
-                            <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}>Completed</th>
+                            <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'on_time' %}sort=-on_time{% else %}sort=on_time{% endif %}">On-Time/Late</a></th>
+                            <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}">Completed</a></th>
                         </tr>
                     </thead>
                     <tbody>
