@@ -2723,9 +2723,13 @@ def accept_case(request, pk):
         tier = request.POST.get('tier')
         assigned_to_id = request.POST.get('assigned_to')
         
-        # Validate
-        if not credit_value or not tier or not assigned_to_id:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        # Validate - provide specific error messages
+        if not credit_value:
+            return JsonResponse({'error': 'Please select a credit value before accepting'}, status=400)
+        if not tier:
+            return JsonResponse({'error': 'Please assign a case tier before accepting'}, status=400)
+        if not assigned_to_id:
+            return JsonResponse({'error': 'Please assign a technician before accepting'}, status=400)
         
         # Get assigned technician
         assigned_to = get_object_or_404(User, pk=assigned_to_id, role='technician')

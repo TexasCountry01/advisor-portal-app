@@ -311,10 +311,13 @@ function acceptCase() {
         return;
     }
 
-    // Get selected values
+    // Get selected values - debug logging
     const creditValue = document.getElementById('creditValue').value;
     const caseTier = document.getElementById('caseTier').value;
     const assignedTechId = document.getElementById('assignedTo').value;
+    
+    console.log('Form values:', { creditValue, caseTier, assignedTechId });
+    
     const techElement = document.querySelector(`[id="assignedTo"] option[value="${assignedTechId}"]`);
     const techLevel = techElement ? techElement.dataset.level : null;
 
