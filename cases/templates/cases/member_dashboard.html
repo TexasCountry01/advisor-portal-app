@@ -1086,6 +1086,7 @@ function handleMemberDocumentUpload(caseId) {
                             <div class="d-flex gap-2">
                                 <small class="text-muted">${notif.created_at}</small>
                                 ${!notif.is_read ? `<button class="btn btn-link btn-sm p-0" onclick="markNotificationRead(${notif.id})">Mark as read</button>` : ''}
+                                ${notif.notification_type === 'member_update_received' ? `<a href="/cases/${notif.case_id}/" class="btn btn-link btn-sm p-0">View Response</a>` : ''}
                             </div>
                         </div>
                     </div>

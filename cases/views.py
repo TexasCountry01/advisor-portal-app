@@ -2943,12 +2943,23 @@ def add_case_message(request, pk):
                 
                 # Create CaseNotification for member
                 try:
+                    # Extract first 1-2 sentences from the message
+                    import re
+                    sentences = re.split(r'(?<=[.!?])\s+', message_text.strip())
+                    preview = ' '.join(sentences[:2]) if sentences else message_text[:100]
+                    # Ensure preview doesn't exceed 200 chars
+                    if len(preview) > 200:
+                        preview = preview[:197] + '...'
+                    
+                    # Get technician's first name
+                    tech_first_name = user.first_name or user.username
+                    
                     CaseNotification.objects.create(
                         case=case,
                         member=case.member,
                         notification_type='member_update_received',
-                        title=f'Response from {user.get_full_name() or user.username}',
-                        message=f'New response on case {case.external_case_id}'
+                        title=f'Response from {tech_first_name}',
+                        message=preview
                     )
                 except Exception as e:
                     logger.error(f'Error creating CaseNotification for member: {str(e)}')
