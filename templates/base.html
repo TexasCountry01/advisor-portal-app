@@ -19,6 +19,11 @@
 </head>
 <body>
     {% if user.is_authenticated %}
+    <style>
+        html, body {
+            font-size: {{ user.get_font_size_percentage }} !important;
+        }
+    </style>
     <script>
         // Determine font size: session takes priority (most recent), then database value
         let sessionFontSize = '{{ request.session.user_font_size|default:"" }}';
@@ -31,18 +36,24 @@
         
         const fontSizeToUse = sessionFontSize || dbFontSize;
         
-        // Function to apply font size
+        // Function to apply font size with !important
         function applyFontSize(fontSize) {
             if (fontSize) {
-                document.body.style.fontSize = fontSize;
+                document.documentElement.style.setProperty('font-size', fontSize, 'important');
+                document.body.style.setProperty('font-size', fontSize, 'important');
             }
         }
         
-        // Apply immediately (before DOM is ready)
+        // Apply immediately
         applyFontSize(fontSizeToUse);
         
-        // Also apply after DOM is loaded (in case body wasn't ready)
+        // Apply after DOM loaded
         document.addEventListener('DOMContentLoaded', function() {
+            applyFontSize(fontSizeToUse);
+        });
+        
+        // Also apply on window load to be extra sure
+        window.addEventListener('load', function() {
             applyFontSize(fontSizeToUse);
         });
     </script>
