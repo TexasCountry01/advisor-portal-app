@@ -25,9 +25,16 @@
         const dbFontSize = '{{ user.get_font_size_percentage }}';
         const fontSizeToUse = sessionFontSize || dbFontSize;
         
+        // Debug logging
+        console.log('Font Size Debug:');
+        console.log('Session font size:', sessionFontSize);
+        console.log('DB font size:', dbFontSize);
+        console.log('Using:', fontSizeToUse);
+        
         // Function to apply font size
         function applyFontSize(fontSize) {
             if (fontSize) {
+                console.log('Applying font size:', fontSize);
                 document.body.style.fontSize = fontSize;
             }
         }
