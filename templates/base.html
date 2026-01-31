@@ -20,8 +20,13 @@
 <body>
     {% if user.is_authenticated %}
     <style>
-        body, body * { font-size: {{ user.get_font_size_percentage }} !important; }
-        html { font-size: {{ user.get_font_size_percentage }} !important; }
+        :root {
+            --user-font-size: {{ user.get_font_size_percentage }};
+        }
+        body { font-size: var(--user-font-size); }
+        p, span, div, td, th, li, label, button, a, h1, h2, h3, h4, h5, h6 { 
+            font-size: var(--user-font-size);
+        }
     </style>
     {% endif %}
     <!-- Navigation -->
