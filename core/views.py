@@ -143,6 +143,7 @@ def update_font_size(request):
         if font_size in valid_sizes:
             request.user.font_size = font_size
             request.user.save()
+            request.user.refresh_from_db()
             messages.success(request, f'Font size updated to {font_size}%')
         else:
             messages.error(request, 'Invalid font size value')
