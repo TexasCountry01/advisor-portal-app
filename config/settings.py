@@ -138,7 +138,7 @@ AUTH_USER_MODEL = 'accounts.User'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Chicago'  # Central Time Zone (CST/CDT) - ALL timestamps in system use this timezone
 
 USE_I18N = True
 

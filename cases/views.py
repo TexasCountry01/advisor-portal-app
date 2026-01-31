@@ -3016,15 +3016,21 @@ def get_case_messages(request, pk):
         page_obj = paginator.get_page(page)
         
         messages_data = []
+        import pytz
+        cst_tz = pytz.timezone('America/Chicago')
         for msg in page_obj:
+            # Convert timestamps to CST (Central Time Zone)
+            created_at_cst = msg.created_at.astimezone(cst_tz) if msg.created_at.tzinfo else pytz.UTC.localize(msg.created_at).astimezone(cst_tz)
+            updated_at_cst = msg.updated_at.astimezone(cst_tz) if msg.updated_at.tzinfo else pytz.UTC.localize(msg.updated_at).astimezone(cst_tz)
+            
             messages_data.append({
                 'id': msg.id,
                 'author': msg.author.get_full_name() or msg.author.username,
                 'author_id': msg.author.id,
                 'author_role': msg.author.role,
                 'message': msg.message,
-                'created_at': msg.created_at.isoformat(),
-                'updated_at': msg.updated_at.isoformat(),
+                'created_at': created_at_cst.strftime('%b %d, %Y %I:%M %p %Z'),
+                'updated_at': updated_at_cst.strftime('%b %d, %Y %I:%M %p %Z'),
                 'is_author': msg.author == user
             })
         
@@ -4251,7 +4257,13 @@ def get_member_notifications(request):
         
         # Format response
         notification_list = []
+        import pytz
+        cst_tz = pytz.timezone('America/Chicago')
         for notif in page_obj.object_list:
+            # Convert timestamps to CST (Central Time Zone)
+            created_at_cst = notif.created_at.astimezone(cst_tz) if notif.created_at.tzinfo else pytz.UTC.localize(notif.created_at).astimezone(cst_tz)
+            read_at_cst = notif.read_at.astimezone(cst_tz) if notif.read_at and notif.read_at.tzinfo else (pytz.UTC.localize(notif.read_at).astimezone(cst_tz) if notif.read_at else None)
+            
             notification_list.append({
                 'id': notif.id,
                 'case_id': notif.case.id,
@@ -4262,8 +4274,8 @@ def get_member_notifications(request):
                 'message': notif.message,
                 'hold_reason': notif.hold_reason,
                 'is_read': notif.is_read,
-                'created_at': notif.created_at.strftime('%b %d, %Y %I:%M %p'),
-                'read_at': notif.read_at.strftime('%b %d, %Y %I:%M %p') if notif.read_at else None
+                'created_at': created_at_cst.strftime('%b %d, %Y %I:%M %p %Z'),
+                'read_at': read_at_cst.strftime('%b %d, %Y %I:%M %p %Z') if read_at_cst else None
             })
         
         return JsonResponse({
