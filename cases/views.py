@@ -4256,7 +4256,8 @@ def get_member_notifications(request):
                 'id': notif.id,
                 'case_id': notif.case.id,
                 'case_code': notif.case.external_case_id,
-                'notification_type': notif.get_notification_type_display(),
+                'notification_type': notif.notification_type,  # Return raw type value for JS checking
+                'notification_type_display': notif.get_notification_type_display(),
                 'title': notif.title,
                 'message': notif.message,
                 'hold_reason': notif.hold_reason,

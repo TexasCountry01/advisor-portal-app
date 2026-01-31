@@ -1076,17 +1076,17 @@ function handleMemberDocumentUpload(caseId) {
             const icon = notif.notification_type.includes('hold') ? 'exclamation-triangle' : 'info-circle';
             
             html += `
-                <div class="notification-item p-3 border-bottom" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f8f9fa;'}">
+                <div class="notification-item p-3 border-bottom cursor-pointer" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f8f9fa;'}" onclick="window.location.href='/cases/${notif.case_id}/'">
                     <div class="d-flex gap-2">
                         <i class="bi bi-${icon} flex-shrink-0 mt-1"></i>
                         <div class="flex-grow-1">
                             <h6 class="mb-1">${notif.title}</h6>
                             <p class="text-muted small mb-1">${notif.message}</p>
                             ${notif.hold_reason ? `<div class="alert alert-light border-left-warning p-2 small mb-2"><strong>Reason:</strong> ${notif.hold_reason}</div>` : ''}
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-2 align-items-center">
                                 <small class="text-muted">${notif.created_at}</small>
-                                ${!notif.is_read ? `<button class="btn btn-link btn-sm p-0" onclick="markNotificationRead(${notif.id})">Mark as read</button>` : ''}
-                                ${notif.notification_type === 'member_update_received' ? `<a href="/cases/${notif.case_id}/" class="btn btn-link btn-sm p-0">View Response</a>` : ''}
+                                ${!notif.is_read ? `<button class="btn btn-link btn-sm p-0" onclick="event.stopPropagation(); markNotificationRead(${notif.id})">Mark as read</button>` : ''}
+                                ${notif.notification_type === 'member_update_received' ? `<span class="badge bg-primary">View Response →</span>` : ''}
                             </div>
                         </div>
                     </div>
