@@ -21,20 +21,19 @@
     {% if user.is_authenticated %}
     <script>
         // Determine font size: session takes priority (most recent), then database value
-        const sessionFontSize = '{{ request.session.user_font_size|default:"" }}';
-        const dbFontSize = '{{ user.get_font_size_percentage }}';
-        const fontSizeToUse = sessionFontSize || dbFontSize;
+        let sessionFontSize = '{{ request.session.user_font_size|default:"" }}';
+        let dbFontSize = '{{ user.get_font_size_percentage }}';
         
-        // Debug logging
-        console.log('Font Size Debug:');
-        console.log('Session font size:', sessionFontSize);
-        console.log('DB font size:', dbFontSize);
-        console.log('Using:', fontSizeToUse);
+        // Ensure percent sign is included
+        if (sessionFontSize && !sessionFontSize.includes('%')) {
+            sessionFontSize = sessionFontSize + '%';
+        }
+        
+        const fontSizeToUse = sessionFontSize || dbFontSize;
         
         // Function to apply font size
         function applyFontSize(fontSize) {
             if (fontSize) {
-                console.log('Applying font size:', fontSize);
                 document.body.style.fontSize = fontSize;
             }
         }
