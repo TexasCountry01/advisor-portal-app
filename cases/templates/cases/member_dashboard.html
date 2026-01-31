@@ -190,18 +190,11 @@
                            placeholder="Case ID or Employee Name..." 
                            value="{{ search_query|default:'' }}">
                 </div>
-                <div class="col-md-2 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
-                    <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary">Reset</a>
-                </div>
-            </form>
-            </div>
-
-            <!-- Column Visibility Button -->
-            <div class="row mt-2 mb-3">
-                <div class="col-12">
-                    <div class="dropdown d-inline-block">
-                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" id="columnButton" data-bs-toggle="dropdown" aria-expanded="false" title="Show/hide columns">
+                <div class="col-md-12 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+                    <a href="{% url 'cases:member_dashboard' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="columnButton" data-bs-toggle="dropdown" aria-expanded="false" title="Show/hide columns">
                             <i class="bi bi-columns-gap"></i> Columns
                             <span class="badge bg-warning ms-1" id="hidden-count" style="display:none;">0</span>
                         </button>
@@ -219,6 +212,7 @@
                         </ul>
                     </div>
                 </div>
+            </form>
             </div>
         </div>
     </div>
