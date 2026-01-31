@@ -45,13 +45,17 @@ def log_user_login(sender, request, user, **kwargs):
 @receiver(user_logged_out)
 def log_user_logout(sender, request, user, **kwargs):
     """Log when a user logs out"""
-    ip_address = get_client_ip(request)
-    AuditLog.log_activity(
-        user=user,
-        action_type='logout',
-        description=f'{user.username} logged out',
-        ip_address=ip_address
-    )
+    # user can be None at logout time, so get from request instead
+    logout_user = user or getattr(request, 'user', None)
+    
+    if logout_user and logout_user.is_authenticated:
+        ip_address = get_client_ip(request)
+        AuditLog.log_activity(
+            user=logout_user,
+            action_type='logout',
+            description=f'{logout_user.username} logged out',
+            ip_address=ip_address
+        )
 
 
 # ============================================================================
