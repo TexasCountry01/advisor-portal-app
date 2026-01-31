@@ -294,10 +294,20 @@ const techLevels = {
 };
 
 function acceptCase() {
-    // Check completeness
-    const allChecked = Array.from(document.querySelectorAll('.completeness-item')).every(el => el.checked);
-    if (!allChecked) {
-        alert('⚠️ Please check all items in the Pre-Acceptance Checklist before accepting.');
+    // Check completeness - show detailed feedback
+    const completenessItems = document.querySelectorAll('.completeness-item');
+    const uncheckedItems = [];
+    
+    completenessItems.forEach(item => {
+        if (!item.checked) {
+            const label = document.querySelector(`label[for="${item.id}"]`);
+            uncheckedItems.push(label ? label.textContent.trim() : item.id);
+        }
+    });
+    
+    if (uncheckedItems.length > 0) {
+        const itemList = uncheckedItems.map((item, idx) => `${idx + 1}. ${item}`).join('\n');
+        alert('⚠️ Please check ALL items in the Pre-Acceptance Checklist:\n\n' + itemList);
         return;
     }
 
