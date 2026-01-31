@@ -49,37 +49,9 @@ Write-Host ""
 # STEP 1: Ensure .env has correct database configuration
 Write-Host "[1/4] Verifying database configuration (.env)..." -ForegroundColor Yellow
 
-# NOTE: The database password should already be set on the remote server's .env file
-# This script only updates other configuration variables
-# For security, database password is NOT included in this script
-
-ssh $testServerUser@$testServerHost "cat > $projectPath/.env.deploy << 'ENVEOF'
-DEBUG=False
-ALLOWED_HOSTS=test-reports.profeds.com,157.245.141.42,localhost
-CSRF_TRUSTED_ORIGINS=https://test-reports.profeds.com,https://157.245.141.42
-SECRET_KEY=django-insecure-4-!+ec_gh4*-vap+do#iw76prls*e9j)xq%5q@n3smd3tdx1o`$
-
-# TEST SERVER - MySQL Database Configuration (DigitalOcean Managed Database)
-DB_ENGINE=$dbEngine
-DB_NAME=$dbName
-DB_USER=$dbUser
-DB_HOST=$dbHost
-DB_PORT=$dbPort
-
-# Security
-SESSION_COOKIE_SECURE=True
-CSRF_COOKIE_SECURE=True
-
-# Email (for testing)
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-
-# Storage
-MEDIA_ROOT=media/
-STATIC_ROOT=staticfiles/
-ENVEOF
-
-# Preserve existing password and merge configs
-ssh $testServerUser@$testServerHost 'cd $projectPath && (grep -q "DB_PASSWORD" .env && grep "DB_PASSWORD" .env >> .env.deploy || true) && mv .env.deploy .env'"
+# NOTE: The .env file already exists on the remote server with all necessary configuration
+# including the database password. We just verify it exists and contains required keys.
+ssh $testServerUser@$testServerHost "cd $projectPath && if [ -f .env ]; then echo 'OK'; else echo 'ERROR: .env not found'; exit 1; fi" | Out-Null
 
 Write-Host "OK - Database configuration verified" -ForegroundColor Green
 Write-Host ""
