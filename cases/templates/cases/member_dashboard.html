@@ -236,7 +236,7 @@
                             <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
                             <th data-column-id="credit" {% if 'credit' not in visible_columns %}class="column-hidden"{% endif %}>Credit</th>
                             <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}" title="Click to sort by Submitted">Submitted</a></th>
-                            <th data-column-id="accepted" {% if 'accepted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_accepted' %}sort=-date_accepted{% else %}sort=date_accepted{% endif %}" title="Click to sort by Accepted">Accepted</a></th>
+                            <th data-column-id="accepted" style="display: none;" {% if 'accepted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_accepted' %}sort=-date_accepted{% else %}sort=date_accepted{% endif %}" title="Click to sort by Accepted">Accepted</a></th>
                             <th data-column-id="completed" {% if 'completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}" title="Click to sort by Completed">Completed</a></th>
                             <th data-column-id="actions">Actions</th>
                         </tr>
@@ -286,13 +286,13 @@
                             </td>
                             <td class="column-credit {% if 'credit' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.credit_value %}
-                                    <strong>{{ case.credit_value }}</strong>
+                                    {{ case.credit_value }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
                             <td class="column-submitted {% if 'submitted' not in visible_columns %}column-hidden{% endif %}">{{ case.date_submitted|date:"m/d/y" }}</td>
-                            <td class="column-accepted {% if 'accepted' not in visible_columns %}column-hidden{% endif %}">
+                            <td class="column-accepted" style="display: none;" {% if 'accepted' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.date_accepted %}
                                     {{ case.date_accepted|date:"m/d/y" }}
                                 {% else %}
@@ -301,15 +301,11 @@
                             </td>
                             <td class="column-completed {% if 'completed' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'completed' and case.actual_release_date %}
-                                    <span class="badge bg-success">✓ Ready</span>
+                                    {{ case.actual_release_date|date:"m/d/y" }}
                                 {% elif case.status == 'completed' and case.scheduled_release_date and not case.actual_release_date %}
-                                    <span class="badge bg-warning" title="Available on {{ case.scheduled_release_date|date:'M j, Y' }}">⏳ Scheduled</span>
-                                {% elif case.status == 'completed' %}
-                                    <span class="badge bg-info">In Progress</span>
-                                {% elif case.status == 'draft' %}
-                                    <span class="badge bg-warning">Draft</span>
+                                    —
                                 {% else %}
-                                    <span class="badge bg-secondary">—</span>
+                                    —
                                 {% endif %}
                                 {% if case.status == 'completed' and case.is_resubmitted %}
                                 <br><span class="badge bg-info" title="This case has been resubmitted" style="margin-top: 0.25rem;">
@@ -1275,7 +1271,7 @@ function handleMemberDocumentUpload(caseId) {
                     <strong>${caseObj.employee}</strong>
                     <br><small class="text-muted">Reason: ${caseObj.hold_reason}</small>
                     <br><button type="button" class="btn btn-sm btn-warning mt-1" onclick="openUploadDocumentsModal(${caseObj.id})">
-                        <i class="bi bi-cloud-upload"></i> Upload Documents
+                        <i class="bi bi-file-text"></i> See Case Details
                     </button>
                 </li>
             `;

@@ -379,7 +379,7 @@
                                 {% if case.scheduled_release_date %}
                                     {{ case.scheduled_release_date|date:"m/d/y" }}
                                 {% elif case.actual_release_date %}
-                                    Released
+                                    {{ case.actual_release_date|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
