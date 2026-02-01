@@ -3239,7 +3239,7 @@ def request_modification(request, pk):
             case.save()
             
             # Log to audit trail
-            from cases.models import AuditLog
+            from core.models import AuditLog
             AuditLog.objects.create(
                 case=case,
                 user=user,
@@ -3266,16 +3266,6 @@ def request_modification(request, pk):
             )
             # Send email notification about modification request
             send_modification_created_email(case, new_case, case.assigned_to)
-            
-            # Send additional notification if error flagged
-            if is_profeds_error:
-                from cases.models import Notification
-                Notification.objects.create(
-                    user=case.assigned_to,
-                    case=case,
-                    notification_type='case_modification_error',
-                    message=f'Member flagged modification request for case {case.external_case_id} as a ProFeds error'
-                )
         
         return JsonResponse({
             'success': True,
