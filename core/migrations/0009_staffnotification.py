@@ -9,6 +9,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('cases', '0032_case_error_modification_count_case_has_profeds_error'),
+        ('core', '0008_add_email_notifications_enabled_toggle'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
