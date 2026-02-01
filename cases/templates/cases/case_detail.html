@@ -504,26 +504,6 @@
                 </div>
             {% endif %}
 
-            <!-- Document Summary Alert -->
-            <div class="alert alert-light border mb-4">
-                <h6 class="mb-2"><i class="bi bi-file-earmark"></i> Document Summary:</h6>
-                <div>
-                    {% regroup documents by document_type as docs_by_type %}
-                    {% for doc_type_group in docs_by_type %}
-                        {% if doc_type_group.grouper == 'Federal Fact Finder' %}
-                            Federal Fact Finder: {{ doc_type_group.list|length }} file(s)<br>
-                        {% elif doc_type_group.grouper == 'Supporting Document' %}
-                            Supporting Documents: {{ doc_type_group.list|length }} file(s)<br>
-                        {% endif %}
-                    {% empty %}
-                        Federal Fact Finder: 0 file(s)<br>
-                        Supporting Documents: 0 file(s)<br>
-                    {% endfor %}
-                    
-                    <strong>Total: {{ documents|length }} document(s)</strong>
-                </div>
-            </div>
-
             <!-- Supporting Documents -->
             <div class="card mb-4">
                 <div class="card-header">
