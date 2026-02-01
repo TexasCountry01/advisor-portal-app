@@ -3277,8 +3277,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="modal-body">
                 <div class="alert alert-info mb-4">
                     <i class="bi bi-info-circle"></i>
-                    <strong>Case Resubmission:</strong> A new case will be created and linked to this original case. 
-                    You will receive a new case number. The technician will work the new case and may contact you if needed.
+                    <strong>Case Resubmission:</strong> A new case will be created and linked to this original case. The technician will work the new case and may contact you if needed.
                 </div>
                 <form id="requestModForm" onsubmit="submitRequestModification(event, {{ case.id }})">
                     {% csrf_token %}
@@ -3291,9 +3290,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             name="reason" 
                             class="form-control" 
                             rows="4" 
-                            placeholder="Please explain what changes or corrections you need made to your case..."
+                            placeholder="Please explain what changes or corrections you need made to your case. Be as detailed as possible to help the technician understand your request."
                             required></textarea>
-                        <small class="text-muted d-block mt-2">Be as detailed as possible to help the technician understand your request.</small>
                     </div>
                 </form>
             </div>
