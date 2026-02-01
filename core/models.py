@@ -324,3 +324,80 @@ class SystemSettings(models.Model):
     def get_available_credits_list(self):
         """Return available credits as a list of floats"""
         return [float(x.strip()) for x in self.available_credits.split(',')]
+
+
+class StaffNotification(models.Model):
+    """
+    In-app notification system for staff/technicians/managers/admins
+    
+    Used for alerting staff about case events like:
+    - ProFeds error flagged on case modification
+    - Case assignments
+    - Quality review feedback
+    - System alerts
+    """
+    
+    NOTIFICATION_TYPE_CHOICES = [
+        ('case_modification_error', 'Case Modification Error Flagged'),
+        ('case_assigned', 'Case Assigned to You'),
+        ('quality_review_feedback', 'Quality Review Feedback'),
+        ('case_on_hold', 'Case Placed on Hold'),
+        ('system_alert', 'System Alert'),
+    ]
+    
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.CASCADE,
+        related_name='staff_notifications',
+        help_text='Staff member receiving this notification'
+    )
+    
+    case = models.ForeignKey(
+        'cases.Case',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='staff_notifications',
+        help_text='Related case (if applicable)'
+    )
+    
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NOTIFICATION_TYPE_CHOICES,
+        help_text='Type of notification'
+    )
+    
+    title = models.CharField(
+        max_length=255,
+        help_text='Notification title'
+    )
+    
+    message = models.TextField(
+        help_text='Notification message content'
+    )
+    
+    is_read = models.BooleanField(
+        default=False,
+        help_text='Whether staff member has viewed this notification'
+    )
+    
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        db_index=True
+    )
+    
+    read_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='When notification was viewed'
+    )
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['user', 'is_read']),
+        ]
+    
+    def __str__(self):
+        return f"{self.get_notification_type_display()} for {self.user.username} - {self.title}"

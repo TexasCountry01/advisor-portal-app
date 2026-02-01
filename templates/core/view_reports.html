@@ -44,6 +44,21 @@
         </div>
     </div>
 
+    <!-- Specialized Reports -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-exclamation-triangle-fill text-danger"></i> ProFeds Error Tracking
+                    </h5>
+                    <p class="card-text text-muted">View cases flagged as ProFeds errors and error metrics by technician</p>
+                    <a href="{% url 'profeds_error_tracking_report' %}" class="btn btn-sm btn-outline-danger">View Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Nav Tabs -->
     <ul class="nav nav-tabs mb-4" role="tablist">
         <li class="nav-item" role="presentation">

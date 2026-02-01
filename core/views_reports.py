@@ -305,3 +305,113 @@ def export_reports_csv(request):
     writer.writerow(['Export Date', timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')])
     
     return response
+
+
+@login_required
+def profeds_error_tracking_report(request):
+    """
+    Report showing ProFeds error cases - Admin and Manager only
+    
+    Displays:
+    - Cases flagged with ProFeds errors
+    - Count of errors per technician
+    - Modification details
+    - Timeline of errors
+    """
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+    
+    # Get date range from request
+    date_from = request.GET.get('date_from')
+    date_to = request.GET.get('date_to')
+    
+    # Build queryset for cases with ProFeds errors
+    error_cases_qs = Case.objects.filter(has_profeds_error=True)
+    
+    if date_from:
+        from datetime import datetime
+        date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+        error_cases_qs = error_cases_qs.filter(date_submitted__date__gte=date_from_obj)
+    
+    if date_to:
+        from datetime import datetime
+        date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+        error_cases_qs = error_cases_qs.filter(date_submitted__date__lte=date_to_obj)
+    
+    # Get error statistics
+    total_error_cases = error_cases_qs.count()
+    
+    # Errors per technician
+    errors_per_tech = error_cases_qs.filter(
+        assigned_to__isnull=False
+    ).values(
+        'assigned_to__id',
+        'assigned_to__username',
+        'assigned_to__first_name',
+        'assigned_to__last_name'
+    ).annotate(
+        error_count=Count('id'),
+        avg_error_count=Avg('error_modification_count')
+    ).order_by('-error_count')
+    
+    # Error trends (by week)
+    from django.db.models.functions import TruncWeek
+    error_trends = error_cases_qs.annotate(
+        week=TruncWeek('date_submitted')
+    ).values('week').annotate(
+        count=Count('id')
+    ).order_by('week')
+    
+    # Get all error cases for table
+    error_cases = error_cases_qs.select_related(
+        'assigned_to',
+        'member',
+        'original_case'
+    ).order_by('-date_submitted')[:500]  # Limit to 500 recent cases
+    
+    context = {
+        'total_error_cases': total_error_cases,
+        'errors_per_tech': errors_per_tech,
+        'error_trends': list(error_trends),
+        'error_cases': error_cases,
+        'date_from': date_from,
+        'date_to': date_to,
+        'report_type': 'ProFeds Error Tracking',
+    }
+    
+    # Handle CSV export
+    if request.GET.get('export') == 'csv':
+        return export_error_tracking_csv(error_cases, date_from, date_to)
+    
+    return render(request, 'core/profeds_error_tracking_report.html', context)
+
+
+def export_error_tracking_csv(error_cases, date_from, date_to):
+    """Export ProFeds error tracking data to CSV"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="profeds_error_report.csv"'
+    
+    writer = csv.writer(response)
+    
+    # Header
+    writer.writerow(['ProFeds Error Tracking Report'])
+    writer.writerow([f'Generated: {timezone.now().strftime("%Y-%m-%d %H:%M:%S UTC")}'])
+    if date_from or date_to:
+        writer.writerow([f'Date Range: {date_from or "N/A"} to {date_to or "N/A"}'])
+    writer.writerow([])
+    
+    # Error cases table
+    writer.writerow(['Case ID', 'Member', 'Technician', 'Status', 'Error Count', 'Date Submitted', 'Notes'])
+    for case in error_cases:
+        writer.writerow([
+            case.external_case_id,
+            case.member.get_full_name() if case.member else 'N/A',
+            case.assigned_to.get_full_name() if case.assigned_to else 'Unassigned',
+            case.status,
+            case.error_modification_count,
+            case.date_submitted.strftime('%Y-%m-%d %H:%M') if case.date_submitted else 'N/A',
+            'Original case' if case.original_case else 'Primary case'
+        ])
+    
+    return response

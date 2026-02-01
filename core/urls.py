@@ -12,6 +12,7 @@ urlpatterns = [
     path('system-settings/', views.system_settings, name='system_settings'),
     path('reports/', views_reports.view_reports, name='view_reports'),
     path('reports/export-csv/', views_reports.export_reports_csv, name='export_reports_csv'),
+    path('reports/profeds-errors/', views_reports.profeds_error_tracking_report, name='profeds_error_tracking_report'),
     # Audit Log URLs
     path('audit-log/', views_audit.view_audit_log, name='view_audit_log'),
     path('audit-log/<int:log_id>/', views_audit.audit_log_detail, name='audit_log_detail'),

@@ -3264,8 +3264,30 @@ def request_modification(request, pk):
                 user=case.assigned_to,
                 case=case
             )
-            # Send email notification about modification request
-            send_modification_created_email(case, new_case, case.assigned_to)
+            # Send in-app notification to original technician
+            if is_profeds_error:
+                from core.models import StaffNotification
+                StaffNotification.objects.create(
+                    user=case.assigned_to,
+                    case=case,
+                    notification_type='case_modification_error',
+                    title=f'ProFeds Error: Case {case.external_case_id}',
+                    message=f'Member {user.get_full_name()} flagged a modification request for case {case.external_case_id} as a ProFeds error. New modification case: {new_case.external_case_id}'
+                )
+            
+            # Send in-app notifications to all managers and admins
+            from core.models import StaffNotification
+            from accounts.models import User
+            staff_users = User.objects.filter(role__in=['manager', 'administrator'])
+            for staff_user in staff_users:
+                if is_profeds_error:
+                    StaffNotification.objects.create(
+                        user=staff_user,
+                        case=case,
+                        notification_type='case_modification_error',
+                        title=f'ProFeds Error Alert: Case {case.external_case_id}',
+                        message=f'Member {user.get_full_name()} flagged modification for case {case.external_case_id} (Tech: {case.assigned_to.get_full_name()}) as ProFeds error. New case: {new_case.external_case_id}'
+                    )
         
         return JsonResponse({
             'success': True,

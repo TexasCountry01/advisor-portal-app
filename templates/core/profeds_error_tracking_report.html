@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ProFeds Error Tracking Report{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="bi bi-exclamation-triangle-fill text-danger"></i> ProFeds Error Tracking Report</h2>
+            <p class="text-muted">Cases flagged with ProFeds errors by members during modification requests</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-outline-primary">
+                <i class="bi bi-download"></i> Export to CSV
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="{% url 'profeds_error_tracking_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-light border-0">
+                <div class="card-body text-center">
+                    <h4 class="card-title text-danger">{{ total_error_cases }}</h4>
+                    <p class="card-text text-muted mb-0">Total Error Cases</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Rate by Technician -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-graph-up"></i> Error Rate by Technician</h5>
+        </div>
+        <div class="card-body">
+            {% if errors_per_tech %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Technician</th>
+                                <th class="text-end">Error Cases</th>
+                                <th class="text-end">Avg Errors per Case</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in errors_per_tech %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ item.assigned_to__first_name }} {{ item.assigned_to__last_name }}</strong>
+                                        <br>
+                                        <small class="text-muted">@{{ item.assigned_to__username }}</small>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-danger">{{ item.error_count }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        {{ item.avg_error_count|floatformat:2 }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-muted">No error cases found for the selected period.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Error Cases Table -->
+    <div class="card">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-list-check"></i> Error Cases Detail</h5>
+        </div>
+        <div class="card-body">
+            {% if error_cases %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case ID</th>
+                                <th>Member</th>
+                                <th>Technician</th>
+                                <th>Status</th>
+                                <th class="text-center">Errors</th>
+                                <th>Date Submitted</th>
+                                <th class="text-end">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for case in error_cases %}
+                                <tr class="align-middle">
+                                    <td>
+                                        <a href="{% url 'case_detail' case.pk %}">
+                                            <strong>#{{ case.external_case_id }}</strong>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        {{ case.member.get_full_name }}
+                                    </td>
+                                    <td>
+                                        {% if case.assigned_to %}
+                                            {{ case.assigned_to.get_full_name }}
+                                        {% else %}
+                                            <span class="text-muted">Unassigned</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">{{ case.status|title }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-danger">{{ case.error_modification_count }}</span>
+                                    </td>
+                                    <td>
+                                        <small>{{ case.date_submitted|date:"M d, Y H:i" }}</small>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if case.original_case %}
+                                            <span class="badge bg-warning text-dark">Modification</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Primary</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if error_cases|length >= 500 %}
+                    <p class="text-muted mt-3"><small>Showing latest 500 cases. Use date filters to narrow results.</small></p>
+                {% endif %}
+            {% else %}
+                <p class="text-muted">No error cases found for the selected period.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
