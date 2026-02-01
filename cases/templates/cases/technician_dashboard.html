@@ -316,7 +316,7 @@
                             <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}" title="Click to sort by Assigned To">Assigned To</a></th>
                             <th data-column-id="date_scheduled" {% if 'date_scheduled' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_scheduled' %}sort=-date_scheduled{% else %}sort=date_scheduled{% endif %}" title="Click to sort by Scheduled">Scheduled</a></th>
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}" title="Click to sort by Tier">Tier</a></th>
-                            <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
+                            <th data-column-id="reviewed_by" style="display: none;" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
                             <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
                             <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}" title="Click to sort by Completed">Completed</a></th>
                         </tr>
@@ -402,6 +402,9 @@
                             </td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
+                                <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case" style="margin-right: 0.5rem;">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
                                 {% if case.assigned_to %}
                                     {% if case.assigned_to.first_name %}
                                         {{ case.assigned_to.first_name }}
@@ -410,15 +413,6 @@
                                     {% endif %}
                                 {% else %}
                                     <span class="text-muted">Unassigned</span>
-                                {% endif %}
-                                {% if case.assigned_to %}
-                                    <button type="button" class="btn btn-sm btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                {% else %}
-                                    <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
                                 {% endif %}
                             </td>
                             <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
@@ -430,12 +424,12 @@
                             </td>
                             <td class="column-tier {% if 'tier' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.tier %}
-                                    <span class="badge bg-info">{{ case.get_tier_display }}</span>
+                                    {{ case.get_tier_display }}
                                 {% else %}
                                     —
                                 {% endif %}
                             </td>
-                            <td class="column-reviewed_by {% if 'reviewed_by' not in visible_columns %}column-hidden{% endif %}">
+                            <td class="column-reviewed_by" style="display: none;" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.reviewed_by %}
                                     {% if case.reviewed_by.get_full_name %}
                                         {{ case.reviewed_by.get_full_name }}
