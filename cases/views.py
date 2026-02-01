@@ -3208,6 +3208,7 @@ def request_modification(request, pk):
     
     try:
         reason = request.POST.get('reason', '').strip()
+        is_profeds_error = request.POST.get('is_profeds_error', 'false').lower() == 'true'
         
         if not reason:
             return JsonResponse({'error': 'Reason is required'}, status=400)
@@ -3231,8 +3232,25 @@ def request_modification(request, pk):
         
         logger.info(f'New modification case {new_case.external_case_id} created for case {case.external_case_id} by member {user.username}')
         
+        # If member flagged as ProFeds error, mark original case and log to audit trail
+        if is_profeds_error:
+            case.has_profeds_error = True
+            case.error_modification_count += 1
+            case.save()
+            
+            # Log to audit trail
+            from cases.models import AuditLog
+            AuditLog.objects.create(
+                case=case,
+                user=user,
+                action='case_modification_error_flagged',
+                notes=f'Member flagged modification as ProFeds error. Original technician: {case.assigned_to.username if case.assigned_to else "Unassigned"}. Modification case: {new_case.external_case_id}'
+            )
+            logger.warning(f'ProFeds error flagged on case {case.external_case_id} (assigned to: {case.assigned_to}). Modification: {new_case.external_case_id}')
+        
         # Store the modification request in the original case's messages
-        modification_message = f"**MODIFICATION REQUESTED BY MEMBER**\n\nReason: {reason}\n\nNew case created: {new_case.external_case_id}"
+        error_flag_text = "\n\n⚠️ **MEMBER FLAGGED AS PROFEDS ERROR**" if is_profeds_error else ""
+        modification_message = f"**MODIFICATION REQUESTED BY MEMBER**\n\nReason: {reason}\n\nNew case created: {new_case.external_case_id}{error_flag_text}"
         msg = CaseMessage.objects.create(
             case=case,
             author=user,
@@ -3248,6 +3266,16 @@ def request_modification(request, pk):
             )
             # Send email notification about modification request
             send_modification_created_email(case, new_case, case.assigned_to)
+            
+            # Send additional notification if error flagged
+            if is_profeds_error:
+                from cases.models import Notification
+                Notification.objects.create(
+                    user=case.assigned_to,
+                    case=case,
+                    notification_type='case_modification_error',
+                    message=f'Member flagged modification request for case {case.external_case_id} as a ProFeds error'
+                )
         
         return JsonResponse({
             'success': True,

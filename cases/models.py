@@ -443,6 +443,17 @@ class Case(models.Model):
         help_text='Flag indicating member has uploaded new documents that technician should review'
     )
     
+    # Error Tracking (for modification requests)
+    has_profeds_error = models.BooleanField(
+        default=False,
+        help_text='Flag indicating member flagged this case as having ProFeds/technician error in modification request'
+    )
+    
+    error_modification_count = models.PositiveIntegerField(
+        default=0,
+        help_text='Count of modification requests flagged as ProFeds errors - used for metrics'
+    )
+    
     # Additional fields for internal tracking
     notes = models.TextField(blank=True, help_text='Internal notes not visible to member')
     created_at = models.DateTimeField(auto_now_add=True)
