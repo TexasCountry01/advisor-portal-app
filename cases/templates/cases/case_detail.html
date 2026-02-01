@@ -889,8 +889,8 @@
             </div>
             {% endif %}
 
-            <!-- Technician Notes PDF Download - ONLY for Members when case is completed -->
-            {% if user.role == 'member' and case.status == 'completed' and case.actual_release_date and case.report_notes_to_member %}
+            <!-- Technician Notes - ONLY for Members when case is released -->
+            {% if user.role == 'member' and case.actual_release_date and case.report_notes_to_member %}
             <div class="card mb-4 border-info">
                 <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -898,16 +898,16 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted mb-3">
+                    <p class="text-muted mb-2">
                         <i class="bi bi-info-circle"></i> 
                         Formatted notes compiled by the technician reviewing your case.
                     </p>
-                    <a href="{% url 'cases:generate_report_notes_pdf' case.id %}" class="btn btn-info" download>
+                    <div class="bg-light p-3 rounded mb-3 border-start border-info border-3" style="line-height: 1.6;">
+                        {{ case.report_notes_to_member|safe }}
+                    </div>
+                    <a href="{% url 'cases:generate_report_notes_pdf' case.id %}" class="btn btn-info btn-sm" download>
                         <i class="bi bi-file-earmark-pdf"></i> Download Notes as PDF
                     </a>
-                    <small class="text-muted d-block mt-2">
-                        PDF generated with full formatting and all images
-                    </small>
                 </div>
             </div>
             {% endif %}
