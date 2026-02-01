@@ -3241,10 +3241,10 @@ def request_modification(request, pk):
             # Log to audit trail
             from core.models import AuditLog
             AuditLog.objects.create(
-                case=case,
                 user=user,
-                action='case_modification_error_flagged',
-                notes=f'Member flagged modification as ProFeds error. Original technician: {case.assigned_to.username if case.assigned_to else "Unassigned"}. Modification case: {new_case.external_case_id}'
+                case=case,
+                action_type='case_updated',
+                description=f'Member flagged modification request as ProFeds error. Modification case: {new_case.external_case_id}. Original technician: {case.assigned_to.username if case.assigned_to else "Unassigned"}'
             )
             logger.warning(f'ProFeds error flagged on case {case.external_case_id} (assigned to: {case.assigned_to}). Modification: {new_case.external_case_id}')
         
