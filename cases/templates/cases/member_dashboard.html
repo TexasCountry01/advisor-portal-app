@@ -275,13 +275,7 @@
                                 {% elif case.status == 'draft' %}
                                     <span class="badge bg-danger" title="Draft case not yet submitted">Draft</span>
                                 {% elif case.status == 'completed' %}
-                                    {% if case.actual_release_date %}
-                                        <span class="badge bg-success" title="Case released - report is ready to download">✓ Released</span>
-                                    {% elif case.scheduled_release_date %}
-                                        <span class="badge bg-warning" title="Case complete but scheduled for release on {{ case.scheduled_release_date|date:'M j, Y' }}">⏳ Scheduled {{ case.scheduled_release_date|date:"m/d" }}</span>
-                                    {% else %}
-                                        <span class="badge bg-info" title="Currently being worked on">In Progress</span>
-                                    {% endif %}
+                                    <span class="badge bg-success" title="Case completed">Completed</span>
                                 {% endif %}
                             </td>
                             <td class="column-credit {% if 'credit' not in visible_columns %}column-hidden{% endif %}">
