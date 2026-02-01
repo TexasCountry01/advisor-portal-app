@@ -504,7 +504,8 @@
                 </div>
             {% endif %}
 
-            <!-- Supporting Documents -->
+            <!-- Supporting Documents - HIDDEN: Redundant section, all docs visible in Additional Documents -->
+            {% if False %}
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -611,6 +612,7 @@
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
 
             <!-- Additional Documents (Tech/Admin/Manager only OR Member if released) -->
             {% if can_view_report %}
