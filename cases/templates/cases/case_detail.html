@@ -612,6 +612,49 @@
                 </div>
             </div>
 
+            <!-- Additional Documents (Tech/Admin/Manager only OR Member if released) -->
+            {% if can_view_report %}
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Additional Documents</h5>
+                    {% if can_edit %}
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
+                        <i class="bi bi-upload"></i> Upload Document
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if tech_documents %}
+                    <div class="list-group">
+                        {% for doc in tech_documents %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1">
+                                    <i class="bi bi-file-earmark"></i>
+                                    <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
+                                        <strong>{{ doc.original_filename }}</strong>
+                                    </a>
+                                    <br><small class="text-muted">
+                                        {% if doc.notes %}{{ doc.notes|truncatewords:15 }}<br>{% endif %}
+                                        Uploaded by {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }} on {{ doc.uploaded_at|date:"m/d/Y H:i" }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                        <i class="bi bi-download"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No technician documents uploaded yet. Click "Upload Document" to add supporting files.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Member Request Modification Section (for completed cases within 60 days) -->
             {% if case.status == 'completed' and case.actual_release_date and user.role == 'member' and case.member == user %}
             <div class="card mb-4 border-info">
@@ -813,47 +856,6 @@
             </div>
             {% endif %}
 
-            <!-- Additional Documents (Tech/Admin/Manager only OR Member if released) -->
-            {% if can_view_report %}
-            <div class="card mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Additional Documents</h5>
-                    {% if can_edit %}
-                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
-                        <i class="bi bi-upload"></i> Upload Document
-                    </button>
-                    {% endif %}
-                </div>
-                <div class="card-body">
-                    {% if tech_documents %}
-                    <div class="list-group">
-                        {% for doc in tech_documents %}
-                        <div class="list-group-item">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="flex-grow-1">
-                                    <i class="bi bi-file-earmark"></i>
-                                    <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
-                                        <strong>{{ doc.original_filename }}</strong>
-                                    </a>
-                                    <br><small class="text-muted">
-                                        {% if doc.notes %}{{ doc.notes|truncatewords:15 }}<br>{% endif %}
-                                        Uploaded by {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }} on {{ doc.uploaded_at|date:"m/d/Y H:i" }}
-                                    </small>
-                                </div>
-                                <div class="text-end">
-                                    <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
-                                        <i class="bi bi-download"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No technician documents uploaded yet. Click "Upload Document" to add supporting files.</p>
-                    {% endif %}
-                </div>
-            </div>
             {% endif %}
 
         </div>
