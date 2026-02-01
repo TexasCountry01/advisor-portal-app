@@ -656,7 +656,8 @@
             {% endif %}
 
             <!-- Member Request Modification Section (for completed cases within 60 days) -->
-            {% if case.status == 'completed' and case.actual_release_date and user.role == 'member' and case.member == user %}
+            <!-- HIDDEN: Redundant with Request a Mod button at top right -->
+            {% if False %}
             <div class="card mb-4 border-info">
                 <div class="card-header bg-info bg-opacity-10">
                     <h5 class="mb-0">
