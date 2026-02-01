@@ -29,9 +29,9 @@
 # Configuration
 $prodServerHost = "104.248.126.74"
 $prodServerUser = "dev"
-$projectPath = "/home/dev/advisor-portal-app"
-$venvPath = "/home/dev/advisor-portal-app/venv"
-$gunicornSocket = "/home/dev/advisor-portal-app/gunicorn.sock"
+$projectPath = "/var/www/advisor-portal"
+$venvPath = "/var/www/advisor-portal/venv"
+$gunicornSocket = "/var/www/advisor-portal/gunicorn.sock"
 
 # ⚠️ PRODUCTION DATABASE - DigitalOcean Managed MySQL/MariaDB
 # (NOT SQLite - only use SQLite for LOCAL development)
