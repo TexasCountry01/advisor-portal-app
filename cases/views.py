@@ -1760,13 +1760,6 @@ def take_case_ownership(request, case_id):
                     'error': 'Only technicians can take ownership of cases'
                 }, status=403)
             
-            # Check if case is already assigned
-            if case.assigned_to is not None:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Case is already assigned to {case.assigned_to.get_full_name()}'
-                }, status=400)
-            
             # Assign the case to the current technician and mark as accepted
             case.assigned_to = user
             case.status = 'accepted'
