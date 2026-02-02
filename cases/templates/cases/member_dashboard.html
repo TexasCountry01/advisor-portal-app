@@ -1248,7 +1248,7 @@ function handleMemberDocumentUpload(caseId) {
      * Display hold cases alert
      * - Shows in prominent alert at top of dashboard
      * - Lists each case with reason
-     * - Quick link to upload documents (opens modal directly)
+     * - Quick link to see case details
      * - NOTE: Content display state is controlled by loadHoldCases()
      */
     function displayHoldCases(cases) {
@@ -1264,9 +1264,9 @@ function handleMemberDocumentUpload(caseId) {
                 <li>
                     <strong>${caseObj.employee}</strong>
                     <br><small class="text-muted">Reason: ${caseObj.hold_reason}</small>
-                    <br><button type="button" class="btn btn-sm btn-warning mt-1" onclick="openUploadDocumentsModal(${caseObj.id})">
+                    <br><a href="/cases/${caseObj.id}/" class="btn btn-sm btn-warning mt-1">
                         <i class="bi bi-file-text"></i> See Case Details
-                    </button>
+                    </a>
                 </li>
             `;
         });
