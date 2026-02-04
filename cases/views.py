@@ -764,6 +764,7 @@ def accept_case(request, case_id):
             acceptance_notes = body_data.get('acceptance_notes', '').strip()
             docs_verified = body_data.get('docs_verified', 'no')
             tech_override_reason = body_data.get('tech_override_reason', '').strip()
+            credit_value = body_data.get('credit_value', '')  # Handle credit_value from form
             
             # Validation
             if not tier:
@@ -858,7 +859,7 @@ def accept_case(request, case_id):
             # Build comprehensive metadata for audit trail and display
             metadata = {
                 'tier': tier,
-                'credit': body_data.get('credit', ''),
+                'credit_value': credit_value,  # Store the credit value
                 'docs_verified': docs_verified,
                 'acceptance_notes': acceptance_notes,
                 'accepted_by_username': user.username,

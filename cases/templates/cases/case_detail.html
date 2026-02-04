@@ -1104,9 +1104,9 @@
                                                 <p class="mb-2">
                                                     <strong>Tier:</strong> {{ acceptance_details.tier }}
                                                 </p>
-                                                {% if acceptance_details.credit %}
+                                                {% if acceptance_details.credit_value %}
                                                 <p class="mb-2">
-                                                    <strong>Credit:</strong> {{ acceptance_details.credit }}
+                                                    <strong>Credit:</strong> {{ acceptance_details.credit_value }} Credits
                                                 </p>
                                                 {% endif %}
                                                 <p class="mb-2">
@@ -1264,13 +1264,11 @@
                                 {% endif %}
                             </div>
                         </div>
-                        {% if acceptance_details.credit %}
                         <hr class="my-2">
                         <p class="mb-0">
                             <small class="text-muted">Credit:</small> 
-                            <strong>{{ acceptance_details.credit }}</strong>
+                            <strong>{{ acceptance_details.credit_value }} Credits</strong>
                         </p>
-                        {% endif %}
                         {% if acceptance_details.tech_override_reason or acceptance_details.acceptance_notes %}
                         <hr class="my-2">
                         <small class="text-muted d-block mb-1">
