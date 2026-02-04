@@ -731,7 +731,7 @@ def delete_case(request, pk):
 
 
 @login_required
-def accept_case(request, case_id):
+def accept_case(request, pk):
     """Accept a submitted case - technician/admin initial review"""
     import json
     from django.http import JsonResponse
@@ -740,7 +740,7 @@ def accept_case(request, case_id):
     from cases.services.email_service import send_case_accepted_email, send_new_case_assigned_email
     
     user = request.user
-    case = get_object_or_404(Case, id=case_id)
+    case = get_object_or_404(Case, id=pk)
     
     # Permission check - only technician, manager, or admin
     if user.role not in ['technician', 'administrator', 'manager']:
