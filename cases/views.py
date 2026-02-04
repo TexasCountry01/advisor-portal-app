@@ -855,10 +855,16 @@ def accept_case(request, case_id):
             if acceptance_notes:
                 description += f" - Notes: {acceptance_notes[:100]}"
             
-            # Build metadata with override info
+            # Build comprehensive metadata for audit trail and display
             metadata = {
+                'tier': tier,
+                'credit': body_data.get('credit', ''),
                 'docs_verified': docs_verified,
-                'acceptance_notes': acceptance_notes
+                'acceptance_notes': acceptance_notes,
+                'accepted_by_username': user.username,
+                'accepted_by_name': user.get_full_name() or user.username,
+                'assigned_to_username': case.assigned_to.username if case.assigned_to else None,
+                'assigned_to_name': case.assigned_to.get_full_name() if case.assigned_to else None,
             }
             
             if tech_override_reason:
@@ -1065,12 +1071,23 @@ def case_detail(request, pk):
     
     # Get audit history for this case (Manager/Admin only)
     audit_logs = []
+    acceptance_details = None
     if user.role in ['manager', 'administrator']:
         from core.models import AuditLog
         from django.db.models import Q
         audit_logs = AuditLog.objects.filter(
             Q(case=case) | Q(document__case=case)
         ).select_related('user', 'case', 'document').order_by('-timestamp')[:15]
+    
+    # Get acceptance details for display (available to assigned tech and managers/admins)
+    if case.status in ['accepted', 'pending_review', 'completed']:
+        from core.models import AuditLog
+        acceptance_log = AuditLog.objects.filter(
+            case=case,
+            action_type='case_accepted'
+        ).first()
+        if acceptance_log and acceptance_log.metadata:
+            acceptance_details = acceptance_log.metadata
     
     # Get resubmitted/modification cases linked to this case
     resubmitted_cases = Case.objects.filter(original_case=case).order_by('-created_at')
@@ -1088,6 +1105,7 @@ def case_detail(request, pk):
         'reports': reports,
         'available_techs': available_techs,
         'audit_logs': audit_logs,
+        'acceptance_details': acceptance_details,
         'user': user,
     }
     
