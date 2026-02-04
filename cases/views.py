@@ -2766,65 +2766,7 @@ def case_review_for_acceptance(request, pk):
 
 
 @login_required
-def accept_case(request, pk):
-    """
-    Accept a case and assign it to a technician.
-    Updates: status → accepted, credit_value, tier, assigned_to, date_accepted
-    """
-    if request.method != 'POST':
-        return HttpResponseForbidden('POST required.')
-    
-    case = get_object_or_404(Case, pk=pk)
-    user = request.user
-    
-    # Permission check
-    if user.role not in ['technician', 'administrator', 'manager']:
-        return JsonResponse({'error': 'Access denied'}, status=403)
-    
-    try:
-        # Handle both JSON and form data
-        if request.content_type == 'application/json':
-            import json
-            data = json.loads(request.body)
-            credit_value = data.get('credit_value')
-            tier = data.get('tier')
-            assigned_to_id = data.get('assigned_to')
-        else:
-            credit_value = request.POST.get('credit_value')
-            tier = request.POST.get('tier')
-            assigned_to_id = request.POST.get('assigned_to')
-        
-        # Validate - provide specific error messages
-        if not credit_value:
-            return JsonResponse({'error': 'Please select a credit value before accepting'}, status=400)
-        if not tier:
-            return JsonResponse({'error': 'Please assign a case tier before accepting'}, status=400)
-        if not assigned_to_id:
-            return JsonResponse({'error': 'Please assign a technician before accepting'}, status=400)
-        
-        # Get assigned technician
-        assigned_to = get_object_or_404(User, pk=assigned_to_id, role='technician')
-        
-        # Update case
-        case.credit_value = credit_value
-        case.tier = tier
-        case.assigned_to = assigned_to
-        case.status = 'accepted'
-        case.date_accepted = timezone.now()
-        case.save()
-        
-        logger.info(f'Case {case.external_case_id} accepted by {user.username}. '
-                   f'Assigned to {assigned_to.username}, Tier: {tier}, Credit: {credit_value}')
-        
-        messages.success(request, f'✓ Case {case.external_case_id} accepted and assigned to {assigned_to.get_full_name()}')
-        return JsonResponse({'success': True, 'redirect': f'/cases/{case.id}/'})
-        
-    except User.DoesNotExist:
-        logger.error(f'Technician not found: {assigned_to_id}')
-        return JsonResponse({'error': 'Technician not found'}, status=404)
-    except Exception as e:
-        logger.error(f'Error accepting case: {str(e)}')
-        return JsonResponse({'error': str(e)}, status=500)
+
 
 
 @login_required
