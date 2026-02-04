@@ -761,9 +761,9 @@ def accept_case(request, pk):
             body_data = json.loads(request.body) if request.body else {}
             tier = body_data.get('tier')
             assigned_to_id = body_data.get('assigned_to')
-            acceptance_notes = body_data.get('acceptance_notes', '').strip()
+            acceptance_notes = (body_data.get('acceptance_notes') or '').strip()
             docs_verified = body_data.get('docs_verified', 'no')
-            tech_override_reason = body_data.get('tech_override_reason', '').strip()
+            tech_override_reason = (body_data.get('tech_override_reason') or '').strip()
             credit_value = body_data.get('credit_value', '')  # Handle credit_value from form
             
             # Validation
