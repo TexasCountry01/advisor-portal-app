@@ -1,0 +1,34 @@
+# Server Configuration Reference
+# This file centralizes server paths and IPs to prevent confusion
+# DO NOT HARDCODE PATHS IN DEPLOYMENT SCRIPTS - SOURCE THIS FILE INSTEAD
+
+# TEST Server Configuration
+TEST_SERVER_IP="157.245.141.42"
+TEST_DEPLOY_USER="dev"
+TEST_DEPLOY_PATH="/home/dev/advisor-portal-app"
+TEST_VENV_PATH="/home/dev/advisor-portal-app/venv"
+TEST_GUNICORN_SOCKET="/home/dev/advisor-portal-app/gunicorn.sock"
+TEST_STATIC_ROOT="/home/dev/advisor-portal-app/staticfiles"
+TEST_MEDIA_ROOT="/home/dev/advisor-portal-app/media"
+
+# PRODUCTION Server Configuration
+PROD_SERVER_IP="104.248.126.74"
+PROD_DEPLOY_USER="dev"
+PROD_DEPLOY_PATH="/var/www/advisor-portal"
+PROD_VENV_PATH="/var/www/advisor-portal/venv"
+PROD_GUNICORN_SOCKET="/var/www/advisor-portal/gunicorn.sock"
+PROD_STATIC_ROOT="/var/www/advisor-portal/staticfiles"
+PROD_MEDIA_ROOT="/var/www/advisor-portal/media"
+
+# Git Repository
+GITHUB_REPO="https://github.com/TexasCountry01/advisor-portal-app.git"
+GITHUB_BRANCH="main"
+
+# Database (adjust these as needed)
+TEST_DB_NAME="test_db"
+PROD_DB_NAME="production_db"
+
+# Important: If a server path changes, update THIS FILE and all references
+# Example usage in bash:
+#   source .server-config
+#   ssh ${TEST_DEPLOY_USER}@${TEST_SERVER_IP} "cd ${TEST_DEPLOY_PATH} && git pull"

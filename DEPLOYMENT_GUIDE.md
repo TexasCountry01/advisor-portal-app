@@ -1,5 +1,10 @@
 # Quick Deployment Guide - UI/UX Enhancements
 
+## ⚠️ Important: Server Paths
+**See [SERVER_PATHS_REFERENCE.md](SERVER_PATHS_REFERENCE.md) for authoritative information on server locations.**
+- **TEST Server (157.245.141.42):** `/home/dev/advisor-portal-app/` (CURRENT PATH - CORRECT)
+- **PRODUCTION Server (104.248.126.74):** `/var/www/advisor-portal/` (different path)
+
 ## For TEST Server (157.245.141.42)
 
 ### Prerequisites

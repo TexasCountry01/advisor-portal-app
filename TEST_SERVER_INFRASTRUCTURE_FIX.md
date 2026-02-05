@@ -1,8 +1,14 @@
-# TEST Server Infrastructure Fix - Step by Step
+# ⚠️ PLANNED INFRASTRUCTURE MIGRATION - NOT YET IMPLEMENTED
+
+**Status as of February 2026:** This document outlines a *proposed* infrastructure consolidation to align TEST server with PRODUCTION's directory structure. **The migration described below has NOT been executed.** TEST server currently still uses `/home/dev/advisor-portal-app/`.
+
+**See [SERVER_PATHS_REFERENCE.md](SERVER_PATHS_REFERENCE.md) for current actual paths and clarification.**
+
+---
 
 ## Summary
 
-Fix the TEST server to match PRODUCTION's correct architecture by consolidating to single `/var/www/advisor-portal/` directory.
+Proposed consolidation to make TEST server match PRODUCTION's correct architecture by migrating to `/var/www/advisor-portal/` directory.
 
 ---
 
