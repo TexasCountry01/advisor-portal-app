@@ -308,9 +308,9 @@
                             </td>
                             <td data-column-id="member" {% if 'member' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.member.get_full_name %}
-                                    <span class="badge bg-primary">{{ case.member.get_full_name }}</span>
+                                    {{ case.member.get_full_name }}
                                 {% else %}
-                                    <span class="badge bg-primary">{{ case.member.username }}</span>
+                                    {{ case.member.username }}
                                 {% endif %}
                             </td>
                             <td data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
