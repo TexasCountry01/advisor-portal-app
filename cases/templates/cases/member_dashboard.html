@@ -440,8 +440,11 @@
                                         </form>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                        <button type="button" class="btn btn-info" onclick="submitUpdateCaseRequest({{ case.id }})">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn{{ case.id }}">Cancel</button>
+                                        <button type="button" class="btn btn-success d-none" id="doneBtn{{ case.id }}" onclick="location.reload()">
+                                            <i class="bi bi-check-circle"></i> Done
+                                        </button>
+                                        <button type="button" class="btn btn-info" id="sendRequestBtn{{ case.id }}" onclick="submitUpdateCaseRequest({{ case.id }})" disabled title="Select an option above to send a request">
                                             <i class="bi bi-check-circle"></i> Send Request
                                         </button>
                                     </div>
@@ -605,6 +608,13 @@ function selectUpdateOption(caseId, optionType) {
     } else {
         extFields.style.display = 'none';
         cancelFields.style.display = 'none';
+    }
+    
+    // Enable the Send Request button when an option is selected
+    const sendBtn = document.getElementById(`sendRequestBtn${caseId}`);
+    if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.title = '';
     }
 }
 
@@ -787,6 +797,12 @@ function handleMemberDocumentUpload(caseId) {
             const uploadModalInstance = bootstrap.Modal.getInstance(uploadModal) || new bootstrap.Modal(uploadModal);
             uploadModalInstance.hide();
             console.log('DEBUG: Upload modal closed');
+            
+            // Show the Done button in the Update modal
+            const doneBtn = document.getElementById(`doneBtn${caseId}`);
+            if (doneBtn) {
+                doneBtn.classList.remove('d-none');
+            }
             
             // Reopen Update modal (bring it back to front)
             setTimeout(() => {
