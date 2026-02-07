@@ -777,13 +777,11 @@ def accept_case(request, pk):
                     'error': 'Tier must be specified.'
                 }, status=400)
             
-            # Tier validation - check if accepting tech level matches tier capability
-            if user.role == 'technician':
-                # Tier 1 can be handled by any tech
-                # Tier 2 requires level 2+ 
-                # Tier 3 requires level 3
+            # Tier validation - only check accepting tech's level if they are assigning to themselves
+            # If leaving unassigned or assigning to someone else, the accepting tech's level doesn't matter
+            if user.role == 'technician' and not leave_unassigned and not assigned_to_id:
+                # Tech is implicitly assigning to themselves - check level
                 if tier == '2' and user.user_level == 'level_1':
-                    # Check if they provided a note for override
                     if not acceptance_notes:
                         return JsonResponse({
                             'success': False,
@@ -791,7 +789,6 @@ def accept_case(request, pk):
                         }, status=400)
                 
                 if tier == '3' and user.user_level in ['level_1', 'level_2']:
-                    # Check if they provided a note for override
                     if not acceptance_notes:
                         return JsonResponse({
                             'success': False,
