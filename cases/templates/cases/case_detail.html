@@ -1169,7 +1169,7 @@
                                                                     <span class="badge bg-danger">Admin Ownership</span>
                                                                 {% endif %}
                                                             </td>
-                                                            <td class="small">
+                                                            <td class="small" style="font-size: 0.85rem;">
                                                                 {% if event.user %}
                                                                     {{ event.user.get_full_name|default:event.user.username }}
                                                                 {% else %}
@@ -1274,61 +1274,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Acceptance Review Quick Reference (Option 3: Bottom Info Card) -->
-                {% if acceptance_details %}
-                <div class="card mt-4">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0">
-                            <i class="bi bi-info-circle"></i> Acceptance Review Summary
-                        </h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <small class="text-muted d-block">Tier</small>
-                                <strong class="fs-6">{{ acceptance_details.tier }}</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Accepted By</small>
-                                <strong class="fs-6">{{ acceptance_details.accepted_by_name|truncatewords:2 }}</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Date Accepted</small>
-                                <strong class="fs-6">{{ case.date_accepted|date:"m/d/Y" }}</strong>
-                            </div>
-                            <div class="col-6">
-                                <small class="text-muted d-block">Docs Verified</small>
-                                {% if acceptance_details.docs_verified == 'yes' %}
-                                    <strong class="fs-6"><span class="badge bg-success">Yes</span></strong>
-                                {% else %}
-                                    <strong class="fs-6"><span class="badge bg-warning">No</span></strong>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <hr class="my-2">
-                        <p class="mb-0">
-                            <small class="text-muted">Credit:</small> 
-                            <strong>{{ acceptance_details.credit_value }} Credits</strong>
-                        </p>
-                        {% if acceptance_details.tech_override_reason or acceptance_details.acceptance_notes %}
-                        <hr class="my-2">
-                        <small class="text-muted d-block mb-1">
-                            <i class="bi bi-chat-quote"></i> Notes:
-                        </small>
-                        <small class="d-block" style="max-height: 80px; overflow-y: auto;">
-                            {% if acceptance_details.tech_override_reason %}
-                                <strong>Override:</strong> {{ acceptance_details.tech_override_reason }}
-                                {% if acceptance_details.acceptance_notes %}<br><br>{% endif %}
-                            {% endif %}
-                            {% if acceptance_details.acceptance_notes %}
-                                <strong>Notes:</strong> {{ acceptance_details.acceptance_notes }}
-                            {% endif %}
-                        </small>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
             {% endif %}
         </div>
     </div>
