@@ -710,7 +710,7 @@ def delete_case(request, pk):
         return redirect(redirect_to)
     
     if request.method == 'POST':
-        case_id = case.external_case_id
+        employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
         
         # Get counts before deletion for the success message
         documents = case.documents.count()
@@ -720,7 +720,7 @@ def delete_case(request, pk):
         # Delete the case (cascade will handle related objects)
         case.delete()
         
-        messages.success(request, f'Case {case_id} and all related data ({documents} documents, {reports} reports, {notes} notes) have been permanently deleted.')
+        messages.success(request, f'Case for {employee_name} and all related data ({documents} documents, {reports} reports, {notes} notes) have been permanently deleted.')
         return redirect(redirect_to)
     
     # GET request - show confirmation page
