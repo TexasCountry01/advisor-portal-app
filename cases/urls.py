@@ -86,8 +86,8 @@ urlpatterns = [
     
     # API - Member change requests (extend date, cancel, add info)
     path('<int:case_id>/request-update/', views.create_case_change_request, name='create_case_change_request'),
-    path('change-request/<int:request_id>/approve/', views.approve_case_change_request, name='approve_change_request'),
-    path('change-request/<int:request_id>/deny/', views.deny_case_change_request, name='deny_change_request'),
+    path('change-request/<int:request_id>/approve/', views.approve_change_request, name='approve_change_request'),
+    path('change-request/<int:request_id>/deny/', views.deny_change_request, name='deny_change_request'),
     
     # API - Member document upload
     path('<int:case_id>/upload-member-documents/', views.upload_member_documents, name='upload_member_documents'),

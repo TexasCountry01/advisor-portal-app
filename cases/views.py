@@ -150,6 +150,7 @@ def member_dashboard(request):
         'accepted': all_cases.filter(status='accepted').count(),
         'resubmitted': all_cases.filter(status='resubmitted').count(),
         'completed': all_cases.filter(status='completed').count(),
+        'cancelled': all_cases.filter(status='cancelled').count(),
         'rush': all_cases.filter(urgency='rush').count(),
     }
     
@@ -4825,7 +4826,7 @@ def approve_case_change_request(request, request_id):
             case.status = 'cancelled'
             case.save()
             
-            logger.info(f'Tech {user.id} approved cancellation for case {case_id}')
+            logger.info(f'Tech {user.id} approved cancellation for case {case.id}')
         
         # Clear the change request flag if no more pending requests
         pending_count = CaseChangeRequest.objects.filter(case=case, status='pending').count()
@@ -4997,3 +4998,16 @@ def upload_member_documents(request, case_id):
     except Exception as e:
         logger.error(f'Error uploading member document: {str(e)}', exc_info=True)
         return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# URL Routing Wrappers - connect URL names to view functions
+@login_required
+def approve_change_request(request, request_id):
+    """Wrapper for approve_case_change_request for URL routing"""
+    return approve_case_change_request(request, request_id)
+
+
+@login_required
+def deny_change_request(request, request_id):
+    """Wrapper for deny_case_change_request for URL routing"""  
+    return deny_case_change_request(request, request_id)
