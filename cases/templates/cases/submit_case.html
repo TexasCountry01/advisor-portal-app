@@ -567,7 +567,7 @@
                         <i class="bi bi-file-pdf"></i> Upload Documents
                     </h5>
                     <p style="color: #666; margin-bottom: 15px;">
-                        Upload your completed <a href="https://www.profeds.com/FFF" target="_blank" style="color: #0066cc; text-decoration: underline;">Federal Fact Finder</a> and all supporting documents (pay stub, TSP statement and Social Security statement, etc.).
+                        Upload your completed <a href="{% static 'documents/FactFinder.pdf' %}" target="_blank" style="color: #0066cc; text-decoration: underline;">Federal Fact Finder</a> and all supporting documents (pay stub, TSP statement and Social Security statement, etc.).
                     </p>
                     
                     <div class="file-upload-section" id="documentUploadArea" onclick="document.getElementById('documentFileInput').click();" style="margin-bottom: 15px;">
@@ -598,7 +598,7 @@
                 <h4>📥 Federal Fact Finder Template</h4>
                 <p>You can download the blank Federal Fact Finder PDF template now to preview it, or after creating your case.</p>
                 <p>Fill it out (you can print and scan if you prefer) and upload it with your supporting documents.</p>
-                <a href="https://www.profeds.com/FFF" class="btn-download" target="_blank">
+                <a href="{% static 'documents/FactFinder.pdf' %}" class="btn-download" target="_blank">
                     <i class="bi bi-download"></i> Download Blank Template PDF
                 </a>
             </div>
