@@ -503,8 +503,7 @@
                 </div>
             {% endif %}
 
-            <!-- Supporting Documents - HIDDEN: Redundant section, all docs visible in Additional Documents -->
-            {% if False %}
+            <!-- Submitted Documents -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -514,48 +513,34 @@
                 </div>
                 <div class="card-body">
                     {% if documents %}
-                        {% regroup documents by document_type as docs_by_type %}
-                        
-                        <!-- Supporting Documents -->
-                        {% for doc_type_group in docs_by_type %}
-                            {% if doc_type_group.grouper == 'supporting' %}
-                            <div class="mb-4">
-                                <h6 class="mb-3">
-                                    <i class="bi bi-file-earmark" style="color: #6c757d;"></i> 
-                                    Supporting Documents
-                                    <span class="badge bg-secondary">{{ doc_type_group.list|length }}</span>
-                                </h6>
-                                <div class="list-group">
-                                    {% for doc in doc_type_group.list %}
-                                    <div class="list-group-item">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <i class="bi bi-file-earmark"></i>
-                                                {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
-                                                    <strong>{{ doc.original_filename }}</strong>
-                                                {% if doc.file %}</a>{% endif %}
-                                                <br><small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
-                                            </div>
-                                            <div class="text-end">
-                                                {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download title="Download document">
-                                                    <i class="bi bi-download"></i>
-                                                </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
-                                                {% if can_edit and case.status != 'submitted' %}
-                                                <form method="post" action="{% url 'cases:delete_document' doc.id %}" style="display: inline;">
-                                                    {% csrf_token %}
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this document?');" title="Delete document">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
-                                                {% endif %}
-                                            </div>
-                                        </div>
+                        <div class="list-group">
+                            {% for doc in documents %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="bi bi-file-earmark"></i>
+                                        {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
+                                            <strong>{{ doc.original_filename }}</strong>
+                                        {% if doc.file %}</a>{% endif %}
+                                        <br><small class="text-muted">Uploaded {{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
                                     </div>
-                                    {% endfor %}
+                                    <div class="text-end">
+                                        {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download title="Download document">
+                                            <i class="bi bi-download"></i>
+                                        </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
+                                        {% if can_edit and case.status != 'submitted' %}
+                                        <form method="post" action="{% url 'cases:delete_document' doc.id %}" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this document?');" title="Delete document">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
-                            {% endif %}
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                         
                         {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
                         <div class="mt-4 pt-3 border-top">
@@ -570,7 +555,6 @@
                     {% endif %}
                 </div>
             </div>
-            {% endif %}
 
             <!-- Additional Documents (Tech/Admin/Manager only OR Member if released) -->
             {% if can_view_report %}
