@@ -121,24 +121,21 @@
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
-                {% if not case.assigned_to or case.assigned_to != user %}
-                    <!-- Unassigned or assigned to someone else - show Take Ownership button -->
-                    <button type="button" class="btn btn-outline-success" onclick="takeOwnership({{ case.id }})">
-                        <i class="bi bi-hand-thumbs-up"></i> Take Ownership
-                    </button>
-                {% else %}
-                    <!-- You own this case -->
-                    <span class="badge bg-success">
-                        <i class="bi bi-check-circle"></i> You own this case
-                    </span>
-                    {% if case.status in 'submitted,resubmitted' %}
-                        <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
-                            <i class="bi bi-clipboard-check"></i> Review & Accept
-                        </a>
-                    {% endif %}
-                    {% if case.status in 'accepted,hold' %}
+                
+                {# Show Take Ownership button only for accepted cases that aren't assigned to this tech #}
+                {% if case.status in 'accepted,hold' %}
+                    {% if case.assigned_to and case.assigned_to.id == user.id %}
+                        {# You own this case #}
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> You own this case
+                        </span>
                         <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
                             <i class="bi bi-arrow-repeat"></i> Reassign
+                        </button>
+                    {% else %}
+                        {# Case is accepted but unassigned or assigned to someone else #}
+                        <button type="button" class="btn btn-outline-success" onclick="takeOwnership({{ case.id }})">
+                            <i class="bi bi-hand-thumbs-up"></i> Take Ownership
                         </button>
                     {% endif %}
                 {% endif %}
@@ -146,11 +143,6 @@
                 <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
-                {% if case.status in 'submitted,resubmitted' %}
-                    <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
-                        <i class="bi bi-clipboard-check"></i> Review & Accept
-                    </a>
-                {% endif %}
                 {% if case.status in 'accepted,hold' %}
                     <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
                         <i class="bi bi-arrow-repeat"></i> Reassign
@@ -160,11 +152,6 @@
                 <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
-                {% if case.status in 'submitted,resubmitted' %}
-                    <a href="{% url 'cases:case_review_for_acceptance' case.id %}" class="btn btn-primary">
-                        <i class="bi bi-clipboard-check"></i> Review & Accept
-                    </a>
-                {% endif %}
                 {% if case.status in 'accepted,hold' %}
                     <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
                         <i class="bi bi-arrow-repeat"></i> Reassign
@@ -3043,13 +3030,28 @@ document.addEventListener('DOMContentLoaded', function() {
             const docsAllChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
             const overrideReason = techOverrideReason.value.trim();
             
-            // Validation
+            // Validation - check in this order: docs → tier → credit → tech compatibility
+            
+            // 1. Check if all documents are confirmed (first)
+            if (!docsAllChecked && !notes.trim()) {
+                alert('Please check all documents or add a note explaining why you\'re accepting without them.');
+                return;
+            }
+            
+            // 2. Check tier selection
             if (!tier) {
                 alert('Please select a tier level.');
                 return;
             }
             
-            // Validate tech/tier compatibility
+            // 3. Check credit value is selected
+            const creditValue = document.getElementById('assignCreditValue').value;
+            if (!creditValue) {
+                alert('Please select a credit value.');
+                return;
+            }
+            
+            // 4. Validate tech/tier compatibility (last)
             if (tech) {
                 const selectedTechOption = assignTechSelect.options[assignTechSelect.selectedIndex];
                 const techLevel = getTechLevel(selectedTechOption);
@@ -3067,21 +3069,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Warning if docs not all checked but no note
-            if (!docsAllChecked && !notes.trim()) {
-                alert('Please check all documents or add a note explaining why you\'re accepting without them.');
-                return;
-            }
-            
             // Submit acceptance
             const caseId = {{ case.id }};
-            const creditValue = document.getElementById('assignCreditValue').value;
-            
-            // Validate credit value is selected
-            if (!creditValue) {
-                alert('Please select a credit value.');
-                return;
-            }
             
             const data = {
                 'tier': tier,
@@ -3089,7 +3078,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'credit_value': creditValue,
                 'acceptance_notes': notes,
                 'docs_verified': docsAllChecked ? 'yes' : 'no',
-                'tech_override_reason': overrideReason || null
+                'tech_override_reason': overrideReason || null,
+                'leave_unassigned': !tech  // true if no tech selected, false if tech selected
             };
             
             fetch(`/cases/${caseId}/accept/`, {

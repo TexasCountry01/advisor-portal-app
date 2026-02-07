@@ -761,6 +761,7 @@ def accept_case(request, pk):
             body_data = json.loads(request.body) if request.body else {}
             tier = body_data.get('tier')
             assigned_to_id = body_data.get('assigned_to')
+            leave_unassigned = body_data.get('leave_unassigned', False)  # New: option to leave unassigned
             acceptance_notes = (body_data.get('acceptance_notes') or '').strip()
             docs_verified = body_data.get('docs_verified', 'no')
             tech_override_reason = (body_data.get('tech_override_reason') or '').strip()
@@ -779,15 +780,20 @@ def accept_case(request, pk):
                 # Tier 2 requires level 2+ 
                 # Tier 3 requires level 3
                 if tier == '2' and user.user_level == 'level_1':
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Your technician level (Level 1) cannot handle Tier 2 cases. Can be overridden with a note.'
-                    }, status=400)
+                    # Check if they provided a note for override
+                    if not acceptance_notes:
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Your technician level (Level 1) cannot handle Tier 2 cases. Add a note to override.'
+                        }, status=400)
+                
                 if tier == '3' and user.user_level in ['level_1', 'level_2']:
-                    return JsonResponse({
-                        'success': False,
-                        'error': f'Your technician level ({user.user_level.replace("_", " ").title()}) cannot handle Tier 3 cases. Can be overridden with a note.'
-                    }, status=400)
+                    # Check if they provided a note for override
+                    if not acceptance_notes:
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'Your technician level ({user.user_level.replace("_", " ").title()}) cannot handle Tier 3 cases. Add a note to override.'
+                        }, status=400)
             
             # Tier validation - check if assigned tech level matches tier capability
             assigned_tech = None
@@ -830,14 +836,19 @@ def accept_case(request, pk):
             case.status = 'accepted'
             case.tier = tier
             case.date_accepted = timezone.now()
-            case.accepted_by = user
+            case.accepted_by = user  # Track who did the acceptance (validation review)
             
-            if assigned_tech:
+            # Handle assignment
+            if leave_unassigned:
+                # Case is accepted (reviewed) but not assigned to anyone yet
+                case.assigned_to = None
+            elif assigned_to_id:
+                # Explicit assignment to selected technician
                 case.assigned_to = assigned_tech
-            elif user.role == 'technician':
-                # If no explicit assignment but accepting tech is a technician, 
-                # they should be automatically assigned
-                case.assigned_to = user
+            else:
+                # This shouldn't happen with normal flow, but be safe
+                # If they didn't say leave unassigned and didn't select someone, leave it unassigned
+                case.assigned_to = None
             
             case.save()
             
@@ -888,6 +899,7 @@ def accept_case(request, pk):
             )
             
             # Send notification to assigned technician (if any and different from accepter)
+            # Only send if case was actually assigned to someone
             if case.assigned_to and case.assigned_to != user:
                 try:
                     from django.core.mail import send_mail
@@ -1482,14 +1494,39 @@ def admin_take_ownership(request, case_id):
         case.status = 'accepted'
         case.save()
         
+        # Create audit log entry
+        from core.models import AuditLog
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+        
+        previous_owner_name = previous_owner.get_full_name() if previous_owner else 'Unassigned'
+        description = f"Admin took ownership of case (was: {previous_owner_name})"
+        
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_ownership_taken',
+            description=description,
+            case=case,
+            changes={
+                'assigned_to': (previous_owner.username if previous_owner else None, user.username)
+            },
+            ip_address=ip_address,
+            metadata={
+                'previous_assignee': previous_owner_name,
+                'new_assignee': user.get_full_name() or user.username,
+                'case_tier': case.tier,
+                'accepted_by': case.accepted_by.get_full_name() if case.accepted_by else None,
+                'admin_override': True
+            }
+        )
+        
         # Log the action
-        previous_owner_name = f"{previous_owner.first_name} {previous_owner.last_name}" if previous_owner else "None"
         messages.success(
             request, 
             f'You have taken ownership of case {case.external_case_id}. Previous owner: {previous_owner_name}. Status: Accepted'
         )
         
-        return redirect('cases:case_detail', pk=case_id)
+        return redirect('cases:admin_dashboard')
     
     # GET request - show confirmation page
     context = {
@@ -1766,7 +1803,13 @@ def submit_case_final(request, case_id):
 
 @login_required
 def take_case_ownership(request, case_id):
-    """API endpoint for a technician to take ownership of an unassigned case"""
+    """
+    API endpoint for a technician to take ownership of an accepted-but-unassigned case.
+    
+    IMPORTANT: This only works on cases that have already been through the acceptance process.
+    If a case is still in 'submitted' status, it must go through Review & Accept first.
+    This endpoint is for claiming an already-reviewed case without re-reviewing.
+    """
     if request.method == 'POST':
         try:
             user = request.user
@@ -1779,10 +1822,78 @@ def take_case_ownership(request, case_id):
                     'error': 'Only technicians can take ownership of cases'
                 }, status=403)
             
-            # Assign the case to the current technician and mark as accepted
+            # Case must already be accepted (not submitted/resubmitted)
+            # This ensures the case has been reviewed for tier, docs, etc.
+            if case.status not in ['accepted', 'hold']:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'This case must be accepted first. Current status: {case.get_status_display()}. Please use "Review & Accept" to formally accept the case before claiming ownership.'
+                }, status=400)
+            
+            # Case must not already be assigned to this technician
+            if case.assigned_to == user:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'You already own this case'
+                }, status=400)
+            
+            # Verify case has been formally accepted (has tier and accepted_by)
+            if not case.tier or not case.accepted_by:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'This case has not been properly accepted yet. Please contact an administrator.'
+                }, status=400)
+            
+            # Technician level check - can they handle this tier?
+            try:
+                tier_num = int(case.tier) if case.tier else 0
+            except (ValueError, TypeError):
+                tier_num = 0
+            
+            tech_level_map = {
+                'level_1': 1,
+                'level_2': 2,
+                'level_3': 3
+            }
+            tech_level_num = tech_level_map.get(user.user_level, 0)
+            
+            if tech_level_num < tier_num:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'You are Level {tech_level_num} but this Tier {tier_num} case requires Level {tier_num}. Contact your administrator if you have concerns.'
+                }, status=403)
+            
+            # Get the old assignee for audit logging
+            old_assignee = case.assigned_to
+            
+            # Assign the case to the current technician
             case.assigned_to = user
-            case.status = 'accepted'
             case.save()
+            
+            # Log the ownership change
+            from core.models import AuditLog
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+            
+            old_assignee_name = old_assignee.get_full_name() if old_assignee else 'Unassigned'
+            description = f"Claimed ownership of case (was: {old_assignee_name})"
+            
+            AuditLog.log_activity(
+                user=user,
+                action_type='case_ownership_taken',
+                description=description,
+                case=case,
+                changes={
+                    'assigned_to': (old_assignee.username if old_assignee else None, user.username)
+                },
+                ip_address=ip_address,
+                metadata={
+                    'previous_assignee': old_assignee_name,
+                    'new_assignee': user.get_full_name() or user.username,
+                    'case_tier': case.tier,
+                    'accepted_by': case.accepted_by.get_full_name() if case.accepted_by else None
+                }
+            )
             
             return JsonResponse({
                 'success': True,
