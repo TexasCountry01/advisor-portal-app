@@ -2143,8 +2143,8 @@ def upload_technician_document(request, case_id):
             messages.error(request, 'You can only upload documents to cases you are assigned to.')
             return redirect('cases:case_detail', pk=case_id)
         can_upload = True
-    elif user.role == 'member' and case.member == user and case.status == 'draft':
-        # Members can upload to their own draft cases
+    elif user.role == 'member' and case.member == user and case.status in ['draft', 'submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:
+        # Members can upload to their own cases in active statuses
         can_upload = True
     
     if not can_upload:
@@ -2167,10 +2167,14 @@ def upload_technician_document(request, case_id):
         filename_with_employee = f"{fed_last_name}_{document_file.name}"
         
         # For members uploading to draft cases, use 'fact_finder' type
+        # For members uploading after submission, use 'supporting' type
         # For technicians, use 'report' type
-        doc_type = 'fact_finder' if user.role == 'member' else 'report'
+        if user.role == 'member':
+            doc_type = 'fact_finder' if case.status == 'draft' else 'supporting'
+        else:
+            doc_type = 'report'
         
-        CaseDocument.objects.create(
+        doc = CaseDocument.objects.create(
             case=case,
             document_type=doc_type,
             original_filename=filename_with_employee,
@@ -2179,6 +2183,27 @@ def upload_technician_document(request, case_id):
             file=document_file,
             notes=document_notes,
         )
+        
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='document_uploaded',
+            case=case,
+            description=f'{"Member" if user.role == "member" else "Technician"} uploaded document: {filename_with_employee}',
+            metadata={
+                'document_id': doc.id,
+                'original_filename': document_file.name,
+                'file_size': document_file.size,
+                'document_type': doc_type,
+                'notes': document_notes
+            }
+        )
+        
+        # If member uploads after submission, flag for technician
+        if user.role == 'member' and case.status != 'draft':
+            case.has_member_new_info = True
+            case.save()
         
         # Show updated document count
         from cases.services.document_count_service import get_document_count_message
