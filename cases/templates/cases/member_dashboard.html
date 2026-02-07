@@ -1074,6 +1074,11 @@ function handleMemberDocumentUpload(caseId) {
     }
 
     function getCsrfToken() {
+        // First try to get from form input (most reliable)
+        const tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (tokenInput) return tokenInput.value;
+        
+        // Fallback to cookie
         const name = 'csrftoken';
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -1165,10 +1170,16 @@ function handleMemberDocumentUpload(caseId) {
         fetch(`{% url "cases:mark_notification_read" 0 %}`.replace('0', notificationId), {
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRFToken': getCsrfToken(),
+                'Content-Type': 'application/x-www-form-urlencoded'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 loadNotifications();
@@ -1183,16 +1194,30 @@ function handleMemberDocumentUpload(caseId) {
      * - Reloads notification display
      */
     function markAllNotificationsRead() {
+        const csrfToken = getCsrfToken();
+        console.log('markAllNotificationsRead called, CSRF token present:', !!csrfToken);
+        
         fetch('{% url "cases:mark_all_notifications_read" %}', {
             method: 'POST',
             headers: {
-                'X-CSRFToken': getCsrfToken()
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded'
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Mark all read response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`Server returned ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Mark all read response:', data);
             if (data.success) {
+                // Reload notifications to refresh display and badge
                 loadNotifications();
+            } else {
+                console.error('Mark all read failed:', data.error);
             }
         })
         .catch(error => console.error('Error marking all as read:', error));
@@ -1364,13 +1389,35 @@ function handleMemberDocumentUpload(caseId) {
         loadNotifications();
         
         // Set up Mark All Read button
-        document.getElementById('mark-all-read-btn').addEventListener('click', markAllNotificationsRead);
+        const markAllBtn = document.getElementById('mark-all-read-btn');
+        if (markAllBtn) {
+            markAllBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Mark All as Read button clicked');
+                markAllNotificationsRead();
+            });
+            console.log('DEBUG: Mark All Read button listener attached');
+        } else {
+            console.error('DEBUG: mark-all-read-btn element NOT FOUND');
+        }
         
         // Reload notifications when offcanvas is shown
         const notificationOffcanvas = document.getElementById('notificationOffcanvas');
         if (notificationOffcanvas) {
             notificationOffcanvas.addEventListener('show.bs.offcanvas', loadNotifications);
         }
+        
+        // Refresh notification badge every 30 seconds to catch updates
+        setInterval(function() {
+            fetch('{% url "cases:get_member_notifications" %}')
+                .then(response => response.ok ? response.json() : null)
+                .then(data => {
+                    if (data && data.success) {
+                        updateNotificationBadge(data.unread_count);
+                    }
+                })
+                .catch(() => {});
+        }, 30000);
         
         // Enhance sort links to preserve all filter parameters
         const filterForm = document.getElementById('filter-row');

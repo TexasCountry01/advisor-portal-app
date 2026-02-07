@@ -1264,6 +1264,10 @@
                                                                     <span class="badge bg-success">Accepted{% if event.metadata.tier %} - Tier {{ event.metadata.tier }}{% endif %}</span>
                                                                 {% elif event.action_type == 'case_put_on_hold' %}
                                                                     <span class="badge bg-warning">Put on Hold</span>
+                                                                {% elif event.action_type == 'case_held' %}
+                                                                    <span class="badge bg-warning">Put on Hold</span>
+                                                                {% elif event.action_type == 'case_resumed' %}
+                                                                    <span class="badge bg-info">Resumed from Hold</span>
                                                                 {% elif event.action_type == 'case_ownership_taken' %}
                                                                     <span class="badge bg-primary">Ownership Claimed</span>
                                                                 {% elif event.action_type == 'admin_ownership' %}
@@ -2017,15 +2021,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check if we should focus on messages (from notification click)
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('focus') === 'messages') {
-        // If notification_id is present, mark it as read
+        // If notification_id is present, mark it as read (backend also auto-marks all for this case)
         const notificationId = urlParams.get('notification_id');
         if (notificationId) {
             fetch(`/cases/api/notifications/${notificationId}/mark-read/`, {
                 method: 'POST',
                 headers: {
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 }
-            }).catch(err => console.log('Notification marked as read'));
+            }).catch(err => console.log('Notification mark-read request sent'));
         }
         
         // Scroll to messages area
@@ -2839,6 +2844,9 @@ tinymce.init({
     relative_urls: false,
     content_style: 'body { font-size: 14px; } img { max-width: 100%; height: auto; cursor: nwse-resize; }',
     file_picker_types: 'image',
+    images_file_types: 'jpg,jpeg,png,gif,webp,bmp,svg,heic,heif,tiff',
+    block_unsupported_drop: false,
+    paste_data_images: true,
     license_key: 'gpl',
     images_upload_handler: function(blobInfo, progress) {
         const editor = tinymce.activeEditor;

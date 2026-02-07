@@ -220,5 +220,6 @@ TINYMCE_DEFAULT_CONFIG = {
     'automatic_uploads': True,
     'images_upload_url': '/cases/upload-image/',
     'file_picker_types': 'image',
+    'image_description': False,  # Simplify image dialog
 }
 

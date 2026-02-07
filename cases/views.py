@@ -8,6 +8,7 @@ from django.http import HttpResponseForbidden, JsonResponse
 from django.urls import reverse
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 from accounts.models import User
 from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage, UnreadMessage
 import logging
@@ -50,6 +51,7 @@ def form_preview(request):
 
 
 @login_required
+@ensure_csrf_cookie
 def member_dashboard(request):
     """Dashboard view for Member role"""
     from django.db.models import Q
@@ -1007,10 +1009,25 @@ def case_detail(request, pk):
             user=user,
             action_type='member_updates_viewed',
             case=case,
-            details={
+            metadata={
                 'message': 'Technician/Admin viewed case with member updates, flag reset'
             }
         )
+    
+    # Auto-mark all notifications for this case as read when member views the case
+    if user.role == 'member' and case.member == user:
+        from cases.models import CaseNotification
+        unread_notifications = CaseNotification.objects.filter(
+            case=case,
+            member=user,
+            is_read=False
+        )
+        marked_count = 0
+        for notif in unread_notifications:
+            notif.mark_as_read()
+            marked_count += 1
+        if marked_count > 0:
+            logger.info(f'Auto-marked {marked_count} notification(s) as read for member {user.username} on case {case.external_case_id}')
     
     # Handle draft edit POST requests
     if request.method == 'POST' and request.POST.get('edit_draft'):
@@ -1119,7 +1136,9 @@ def case_detail(request, pk):
             'case_submitted',
             'case_resubmitted',
             'case_accepted',
+            'case_held',
             'case_put_on_hold',
+            'case_resumed',
             'case_ownership_taken',
             'admin_ownership'
         ]
@@ -1318,15 +1337,15 @@ def put_case_on_hold(request, case_id):
                 AuditLog.objects.create(
                     case=case,
                     user=user,
-                    action_type='notification_created',
-                    status='case_put_on_hold',
-                    description=f'In-app notification created for member ({case.member.email})',
-                    details={
+                    action_type='other',
+                    description=f'In-app notification created for member ({case.member.email}) - case put on hold',
+                    metadata={
                         'notification_id': notification.id,
                         'notification_type': 'case_put_on_hold',
                         'hold_reason': reason,
                         'recipient': case.member.email,
-                        'message': notification.message
+                        'message': notification.message,
+                        'sub_action': 'notification_created'
                     }
                 )
                 
@@ -1372,10 +1391,9 @@ def put_case_on_hold(request, case_id):
                     AuditLog.objects.create(
                         case=case,
                         user=user,
-                        action_type='email_sent',
-                        status='case_put_on_hold',
-                        description=f'Member notification email sent to {case.member.email}',
-                        details={
+                        action_type='email_notification_sent',
+                        description=f'Member notification email sent to {case.member.email} - case put on hold',
+                        metadata={
                             'email_to': case.member.email,
                             'email_subject': email_subject,
                             'hold_reason': reason,
@@ -1390,13 +1408,13 @@ def put_case_on_hold(request, case_id):
                     AuditLog.objects.create(
                         case=case,
                         user=user,
-                        action_type='email_failed',
-                        status='case_put_on_hold',
-                        description=f'Failed to send member notification email to {case.member.email}',
-                        details={
+                        action_type='other',
+                        description=f'Failed to send member notification email to {case.member.email} - case put on hold',
+                        metadata={
                             'email_to': case.member.email,
                             'error': str(email_error),
-                            'notification_id': notification.id
+                            'notification_id': notification.id,
+                            'sub_action': 'email_failed'
                         }
                     )
             
@@ -1675,16 +1693,20 @@ def edit_case(request, pk):
             }
             AuditLog.objects.create(
                 user=user,
-                action_type='case_edited_by_member',
+                action_type='case_updated',
                 case=case,
-                details=audit_details
+                metadata=audit_details
             )
         
         messages.success(request, 'Case details updated successfully.')
         return redirect('cases:case_detail', pk=pk)
     
+    # Get existing documents for this case
+    documents = CaseDocument.objects.filter(case=case).order_by('-uploaded_at')
+    
     context = {
         'case': case,
+        'documents': documents,
     }
     return render(request, 'cases/edit_case.html', context)
 
@@ -2558,7 +2580,7 @@ def upload_member_document_to_completed_case(request, case_id):
                 user=user,
                 action_type='member_document_uploaded',
                 case=case,
-                details={
+                metadata={
                     'filename': filename_with_employee,
                     'file_size': document_file.size,
                     'document_notes': document_notes,
@@ -3412,6 +3434,7 @@ def upload_image_for_notes(request):
 
     """
     Upload image for TinyMCE editor (notes).
+    Images are automatically compressed to reduce file size.
     Called by TinyMCE's image upload feature.
     """
     if request.method != 'POST':
@@ -3435,28 +3458,77 @@ def upload_image_for_notes(request):
         if uploaded_file.content_type not in allowed_types:
             return JsonResponse({'error': 'Invalid file type. Only images allowed.'}, status=400)
         
-        # Validate file size (5MB max)
-        if uploaded_file.size > 5 * 1024 * 1024:
-            return JsonResponse({'error': 'File too large. Max 5MB.'}, status=400)
+        # Validate file size (10MB max - will be compressed to ~2MB or less)
+        if uploaded_file.size > 10 * 1024 * 1024:
+            return JsonResponse({'error': 'File too large. Max 10MB.'}, status=400)
         
-        # Save file to media/notes_images/
-        import uuid
-        from django.core.files.storage import default_storage
+        # Compress image
+        from PIL import Image
+        from io import BytesIO
+        from django.core.files.base import ContentFile
         
-        # Generate unique filename
-        filename = f'notes_{uuid.uuid4().hex}_{uploaded_file.name}'
-        file_path = f'notes_images/{filename}'
+        try:
+            # Open image
+            img = Image.open(uploaded_file)
+            
+            # Apply EXIF orientation (fixes rotated phone photos)
+            from PIL import ImageOps
+            img = ImageOps.exif_transpose(img)
+            
+            # Always convert to RGB for JPEG output (best compression for notes)
+            if img.mode in ('RGBA', 'LA', 'P'):
+                background = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'RGBA':
+                    background.paste(img, mask=img.split()[3])
+                elif img.mode == 'P' and 'transparency' in img.info:
+                    img = img.convert('RGBA')
+                    background.paste(img, mask=img.split()[3])
+                else:
+                    background.paste(img)
+                img = background
+            elif img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # Resize if larger than max dimensions (1200x900 for notes - no need for huge images)
+            max_width, max_height = 1200, 900
+            if img.width > max_width or img.height > max_height:
+                img.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
+            
+            # Save as JPEG with good compression (best size reduction for notes/screenshots)
+            compressed_io = BytesIO()
+            img.save(compressed_io, format='JPEG', quality=70, optimize=True)
+            compressed_io.seek(0)
+            
+            # Create new file with compressed data
+            import uuid
+            import os
+            base_name = os.path.splitext(uploaded_file.name)[0]
+            filename = f'notes_{uuid.uuid4().hex}_{base_name}.jpg'
+            compressed_file = ContentFile(compressed_io.getvalue(), name=filename)
+            
+            # Save file to media/notes_images/
+            from django.core.files.storage import default_storage
+            file_path = f'notes_images/{filename}'
+            
+            # Save to storage
+            path = default_storage.save(file_path, compressed_file)
+            url = default_storage.url(path)
+            
+            # Log compression details
+            original_size_mb = uploaded_file.size / (1024 * 1024)
+            compressed_size = len(compressed_io.getvalue()) / (1024 * 1024)
+            compression_ratio = (1 - (len(compressed_io.getvalue()) / uploaded_file.size)) * 100
+            
+            logger.info(f'Image uploaded & compressed by {user.username}: {filename} - Original: {original_size_mb:.2f}MB → Compressed: {compressed_size:.2f}MB ({compression_ratio:.1f}% reduction)')
+            
+            return JsonResponse({
+                'location': url,
+                'success': True
+            })
         
-        # Save to storage
-        path = default_storage.save(file_path, uploaded_file)
-        url = default_storage.url(path)
-        
-        logger.info(f'Image uploaded for notes by {user.username}: {filename}')
-        
-        return JsonResponse({
-            'location': url,
-            'success': True
-        })
+        except Exception as compress_error:
+            logger.error(f'Error compressing image: {str(compress_error)}')
+            return JsonResponse({'error': f'Failed to process image: {str(compress_error)}'}, status=400)
         
     except Exception as e:
         logger.error(f'Error uploading image for notes: {str(e)}')
@@ -3772,7 +3844,7 @@ def edit_case_details(request, pk):
                 user=user,
                 action_type='case_details_edited',
                 case=case,
-                details=audit_details
+                metadata=audit_details
             )
             
             logger.info(f'Case {case.external_case_id} details edited by {user.username}. Changes: {changes}')
@@ -4529,13 +4601,13 @@ def mark_notification_read(request, notification_id):
             AuditLog.objects.create(
                 case=notification.case,
                 user=user,
-                action_type='notification_viewed',
-                status=notification.case.status,
+                action_type='other',
                 description=f'Member viewed notification for case {notification.case.external_case_id}',
-                details={
+                metadata={
                     'notification_id': notification.id,
                     'notification_type': notification.notification_type,
-                    'read_at': notification.read_at.isoformat()
+                    'read_at': notification.read_at.isoformat(),
+                    'sub_action': 'notification_viewed'
                 }
             )
         
@@ -4603,12 +4675,12 @@ def mark_all_notifications_read(request):
             AuditLog.objects.create(
                 case=None,  # Bulk action - no specific case
                 user=user,
-                action_type='all_notifications_viewed',
-                status='bulk',
+                action_type='other',
                 description=f'Member marked all {count} notifications as read',
-                details={
+                metadata={
                     'notifications_marked_read': count,
-                    'timestamp': timezone.now().isoformat()
+                    'timestamp': timezone.now().isoformat(),
+                    'sub_action': 'all_notifications_viewed'
                 }
             )
         
