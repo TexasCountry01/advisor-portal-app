@@ -2110,7 +2110,7 @@ function submitRequestModification(event, caseId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`New case created: ${data.new_case_id}\n\nYou will be redirected to the new case.`);
+            alert(`New case created for ${data.employee_name}.\n\nYou will be redirected to the new case.`);
             // Close modal and redirect
             const modal = bootstrap.Modal.getInstance(document.getElementById('requestModModal'));
             modal.hide();

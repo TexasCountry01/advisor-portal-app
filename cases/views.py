@@ -3418,7 +3418,8 @@ def request_modification(request, pk):
             'success': True,
             'new_case_id': new_case.external_case_id,
             'new_case_pk': new_case.pk,
-            'message': f'New case {new_case.external_case_id} created and linked to original case'
+            'employee_name': f'{new_case.employee_first_name} {new_case.employee_last_name}'.strip(),
+            'message': f'New case created for {new_case.employee_first_name} {new_case.employee_last_name} and linked to original case'
         })
         
     except Exception as e:
