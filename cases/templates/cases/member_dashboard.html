@@ -230,7 +230,7 @@
                         <tr>
                             <th data-column-id="workshop" {% if 'workshop' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}" title="Click to sort by Code">Code</a></th>
                             <th data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}" title="Click to sort by Employee Name">Employee Name</a></th>
-                            <th data-column-id="reports" {% if 'reports' not in visible_columns %}class="column-hidden"{% endif %}>Reports</th>
+                            <th data-column-id="scenarios" {% if 'scenarios' not in visible_columns %}class="column-hidden"{% endif %}>Scenarios</th>
                             <th data-column-id="due_date" {% if 'due_date' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}" title="Click to sort by Due Date">Due Date</a></th>
                             <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}" title="Click to sort by Urgency">Urgency</a></th>
                             <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
@@ -246,7 +246,7 @@
                         <tr>
                             <td class="column-workshop {% if 'workshop' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
-                            <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}">{{ case.num_reports_requested }}</td>
+                            <td class="column-scenarios {% if 'scenarios' not in visible_columns %}column-hidden{% endif %}">{{ case.num_reports_requested }}</td>
                             <td class="column-due_date {% if 'due_date' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_due %}
                                     {{ case.date_due|date:"m/d/y" }}
@@ -309,14 +309,14 @@
                             </td>
                             <td style="min-width: 280px; white-space: nowrap;">
                                 {% if case.status == 'completed' and case.actual_release_date %}
-                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-success" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible; font-weight: 500;" title="Your report is ready to download!">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-success" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible; font-weight: 500;" title="Your scenarios are ready to download!">
                                     <i class="bi bi-download"></i> Download
                                     {% if case.unread_message_count > 0 %}
                                     <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
                                     {% endif %}
                                 </a>
                                 {% elif case.status == 'completed' and case.scheduled_release_date and not case.actual_release_date %}
-                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" title="Report will be available on {{ case.scheduled_release_date|date:'M j, Y' }}">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" title="Scenarios will be available on {{ case.scheduled_release_date|date:'M j, Y' }}">
                                     <i class="bi bi-clock"></i> Pending
                                     {% if case.unread_message_count > 0 %}
                                     <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
@@ -392,7 +392,7 @@
                                                 <input class="form-check-input" type="radio" name="request_type{{ case.id }}" id="cancel{{ case.id }}" value="cancellation" required>
                                                 <label class="form-check-label" for="cancel{{ case.id }}" style="cursor: pointer; flex: 1; margin-bottom: 0.5rem;">
                                                     <strong>❌ Cancel This Case</strong>
-                                                    <div class="text-muted small">No longer need this report?</div>
+                                                    <div class="text-muted small">No longer need these scenarios?</div>
                                                 </label>
                                             </div>
                                             <div id="cancelFields{{ case.id }}" style="display: none; margin-left: 2rem; margin-bottom: 1rem;">
