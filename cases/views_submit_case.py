@@ -212,21 +212,21 @@ def submit_case(request):
             if urgency == 'rush':
                 messages.warning(
                     request,
-                    f'WARNING: This report has been marked as RUSHED (due date less than 7 days). '
-                    f'A rush fee may apply. Case ID: {external_case_id}. '
+                    f'WARNING: Case for {fed_first_name} {fed_last_name} has been marked as RUSHED (due date less than 7 days). '
+                    f'A rush fee may apply. '
                     f'{doc_count_msg}'
                 )
             else:
                 if action == 'draft':
                     messages.success(
                         request,
-                        f'Case saved as draft! Case ID: {external_case_id}. '
+                        f'Case for {fed_first_name} {fed_last_name} saved as draft! '
                         f'{doc_count_msg} You can submit it later.'
                     )
                 else:
                     messages.success(
                         request,
-                        f'Case submitted successfully! Case ID: {external_case_id}. '
+                        f'Case for {fed_first_name} {fed_last_name} submitted successfully! '
                         f'{doc_count_msg}'
                     )
             
