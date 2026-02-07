@@ -122,7 +122,7 @@
                         </a>
                         <form method="post" style="display: inline;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-lg btn-danger" onclick="return confirm('Are you absolutely sure? This cannot be undone.\n\nCase ID: {{ case.external_case_id }}\n\nDocuments: {{ documents_count }}\nReports: {{ reports_count }}\nNotes: {{ notes_count }}')">
+                            <button type="submit" class="btn btn-lg btn-danger" onclick="return confirm('Are you absolutely sure? This cannot be undone.\n\nCase for: {{ case.employee_first_name }} {{ case.employee_last_name }}\n\nDocuments: {{ documents_count }}\nReports: {{ reports_count }}\nNotes: {{ notes_count }}')">
                                 <i class="bi bi-trash"></i> Yes, Permanently Delete This Case
                             </button>
                         </form>
