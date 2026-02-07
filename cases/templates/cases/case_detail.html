@@ -503,13 +503,19 @@
                 </div>
             {% endif %}
 
-            <!-- Submitted Documents -->
+            <!-- Submitted Documents - for members: only show card if documents exist, otherwise show just upload button -->
+            {% if user.role != 'member' or documents|length > 0 %}
             <div class="card mb-4">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         Submitted Documents
                         <span class="badge bg-info">{{ documents|length }} Total</span>
                     </h5>
+                    {% if user.role == 'member' and case.member == user and documents|length > 0 %}
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
+                        <i class="bi bi-upload"></i> Upload Documents
+                    </button>
+                    {% endif %}
                 </div>
                 <div class="card-body">
                     {% if documents %}
@@ -541,23 +547,25 @@
                             </div>
                             {% endfor %}
                         </div>
-                        
-                        {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
-                        <div class="mt-4 pt-3 border-top">
-                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
-                                <i class="bi bi-upload"></i> Add More Documents
-                            </button>
-                        </div>
-                        {% endif %}
-                        
                     {% else %}
-                    <p class="text-muted">No supporting documents uploaded yet. Download the Federal Fact Finder template below and upload it with your supporting documents.</p>
+                    <p class="text-muted">No supporting documents submitted yet.</p>
                     {% endif %}
                 </div>
             </div>
+            {% endif %}
 
-            <!-- Additional Documents (Tech/Admin/Manager only OR Member if released) -->
-            {% if can_view_report %}
+            <!-- For members with no submitted documents: show simple upload button -->
+            {% if user.role == 'member' and case.member == user and documents|length == 0 %}
+            <div class="mb-4">
+                <p class="text-muted mb-3">No documents uploaded yet. Download the Federal Fact Finder template below and upload it with your supporting documents.</p>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
+                    <i class="bi bi-upload"></i> Upload Documents
+                </button>
+            </div>
+            {% endif %}
+
+            <!-- Additional Documents (Tech/Admin/Manager only) -->
+            {% if user.role != 'member' and can_view_report %}
             <div class="card mb-4">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Additional Documents</h5>
@@ -593,7 +601,7 @@
                         {% endfor %}
                     </div>
                     {% else %}
-                    <p class="text-muted">No technician documents uploaded yet. Click "Upload Document" to add supporting files.</p>
+                    <p class="text-muted">Click "Upload Document" to add supporting files.</p>
                     {% endif %}
                 </div>
             </div>
