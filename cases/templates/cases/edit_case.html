@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Edit Case {{ case.external_case_id }}{% endblock %}
+{% block title %}Edit Case {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -12,12 +12,12 @@
                         <a href="{% url 'cases:member_dashboard' %}">Dashboard</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'cases:case_detail' case.id %}">{{ case.external_case_id }}</a>
+                        <a href="{% url 'cases:case_detail' case.id %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</a>
                     </li>
                     <li class="breadcrumb-item active">Edit</li>
                 </ol>
             </nav>
-            <h2>Edit Case: {{ case.external_case_id }}</h2>
+            <h2>Edit Case: {{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
         </div>
         <div class="col-auto d-flex align-items-center">
             <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary">
@@ -38,22 +38,6 @@
 
                         <!-- Urgency is automatically determined by due date -->
                         <input type="hidden" id="urgency" name="urgency" value="{{ case.urgency }}">
-
-                        <!-- Employee Name Fields -->
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> These fields can only be edited if there are corrections needed to the employee information.
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="employee_first_name" class="form-label">Employee First Name</label>
-                                <input type="text" id="employee_first_name" name="employee_first_name" class="form-control" value="{{ case.employee_first_name }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="employee_last_name" class="form-label">Employee Last Name</label>
-                                <input type="text" id="employee_last_name" name="employee_last_name" class="form-control" value="{{ case.employee_last_name }}">
-                            </div>
-                        </div>
 
                         <!-- Due Date -->
                         <div class="mb-3">
@@ -115,30 +99,6 @@
                     </form>
                 </div>
             </div>
-
-            <!-- Case Summary Card -->
-            <div class="card mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Case Summary</h5>
-                </div>
-                <div class="card-body">
-                    <dl class="row">
-                        <dt class="col-sm-6">Case ID:</dt>
-                        <dd class="col-sm-6">{{ case.external_case_id }}</dd>
-                        
-                        <dt class="col-sm-6">Employee:</dt>
-                        <dd class="col-sm-6">{{ case.employee_first_name }} {{ case.employee_last_name }}</dd>
-                        
-                        <dt class="col-sm-6">Status:</dt>
-                        <dd class="col-sm-6">
-                            <span class="badge bg-secondary">{{ case.get_status_display }}</span>
-                        </dd>
-                        
-                        <dt class="col-sm-6">Created:</dt>
-                        <dd class="col-sm-6">{{ case.created_at|date:"m/d/Y H:i" }}</dd>
-                    </dl>
-                </div>
-            </div>
         </div>
 
         <!-- Right Column: Instructions -->
@@ -152,7 +112,7 @@
                     <ul class="small">
                         <li>Urgency status</li>
                         <li>Due date</li>
-                        <li>Number of reports</li>
+                        <li>Number of scenarios</li>
                         <li>Member notes</li>
                     </ul>
                     
