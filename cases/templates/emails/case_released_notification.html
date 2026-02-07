@@ -99,13 +99,13 @@
         
         <p>Dear {{ member.first_name|default:member.username }},</p>
         
-        <p>Your case <strong>{{ case.external_case_id }}</strong> has been completed and is now available for your review.</p>
+        <p>Your case for <strong>{{ case.employee_first_name }} {{ case.employee_last_name }}</strong> has been completed and is now available for your review.</p>
         
         <div class="section-title">Case Details</div>
         <div class="case-info">
             <div class="case-info-row">
                 <span class="case-info-label">Employee Name:</span>
-                <span class="case-info-value">{{ employee_name }}</span>
+                <span class="case-info-value">{{ case.employee_first_name }} {{ case.employee_last_name }}</span>
             </div>
             <div class="case-info-row">
                 <span class="case-info-label">Case ID:</span>

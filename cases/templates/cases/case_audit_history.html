@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Case Audit History - {{ case.external_case_id }}{% endblock %}
+{% block title %}Case Audit History - {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -12,13 +12,13 @@
                         <a href="{% url 'cases:case_list' %}">Cases</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'cases:case_detail' case.id %}">{{ case.external_case_id }}</a>
+                        <a href="{% url 'cases:case_detail' case.id %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</a>
                     </li>
                     <li class="breadcrumb-item active">Audit History</li>
                 </ol>
             </nav>
             <h2>Audit History - {{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
-            <p class="text-muted">Case ID: {{ case.external_case_id }}</p>
+            <p class="text-muted">Employee: {{ case.employee_first_name }} {{ case.employee_last_name }}</p>
         </div>
         <div class="col-auto">
             <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-outline-primary">

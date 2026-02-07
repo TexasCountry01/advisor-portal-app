@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Review Case: {{ case.external_case_id }}{% endblock %}
+{% block title %}Review Case: {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -10,7 +10,7 @@
         <div class="col-md-8">
             <h1 class="mb-2">
                 <i class="fas fa-magnifying-glass text-primary"></i>
-                Case Review: <span class="text-primary">{{ case.external_case_id }}</span>
+                Case Review: <span class="text-primary">{{ case.employee_first_name }} {{ case.employee_last_name }}</span>
             </h1>
             <p class="text-muted">Quality Review for {{ assigned_technician.get_user_level_display }} Technician</p>
         </div>

@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Case {{ case.external_case_id }}{% endblock %}
+{% block title %}Case {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -203,7 +203,7 @@
                             <span class="badge bg-info"><i class="bi bi-link-45deg"></i> Modification</span>
                             <span class="ms-2">This is a modification of:</span>
                             <a href="{% url 'cases:case_detail' case.original_case.id %}" class="btn btn-sm btn-outline-info ms-1">
-                                <i class="bi bi-arrow-left"></i> {{ case.original_case.external_case_id }}
+                                <i class="bi bi-arrow-left"></i> {{ case.original_case.employee_first_name }} {{ case.original_case.employee_last_name }}
                             </a>
                         </div>
                         {% endif %}
@@ -216,7 +216,7 @@
                             {% for resubmitted in case.resubmitted_cases.all %}
                             <div class="ms-3 mt-1">
                                 <a href="{% url 'cases:case_detail' resubmitted.id %}" class="btn btn-sm btn-outline-warning">
-                                    <i class="bi bi-arrow-right"></i> {{ resubmitted.external_case_id }}
+                                    <i class="bi bi-arrow-right"></i> {{ resubmitted.employee_first_name }} {{ resubmitted.employee_last_name }}
                                 </a>
                                 <small class="text-muted ms-2">{{ resubmitted.get_status_display }}</small>
                             </div>
@@ -261,8 +261,8 @@
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <strong>Case ID:</strong><br>
-                            {{ case.external_case_id }}
+                            <strong>Case Employee:</strong><br>
+                            {{ case.employee_first_name }} {{ case.employee_last_name }}
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -2162,7 +2162,7 @@ function deleteNote(noteId, caseId) {
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>You are about to take ownership of case <strong>{{ case.external_case_id }}</strong>.</p>
+                <p>You are about to take ownership of case <strong>{{ case.employee_first_name }} {{ case.employee_last_name }}</strong>.</p>
                 
                 {% if case.assigned_to %}
                 <div class="alert alert-warning">

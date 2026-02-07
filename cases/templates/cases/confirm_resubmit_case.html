@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Confirm Resubmission - Case {{ case.external_case_id }}{% endblock %}
+{% block title %}Confirm Resubmission - Case {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -13,7 +13,7 @@
                         <a href="{% url 'cases:member_dashboard' %}">Dashboard</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'cases:case_detail' case.pk %}">{{ case.external_case_id }}</a>
+                        <a href="{% url 'cases:case_detail' case.pk %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</a>
                     </li>
                     <li class="breadcrumb-item active">Confirm Resubmission</li>
                 </ol>
@@ -28,7 +28,7 @@
                 </div>
                 <div class="card-body">
                     <p class="lead">
-                        You are about to resubmit case <strong>{{ case.external_case_id }}</strong> for further processing.
+                        You are about to resubmit case <strong>{{ case.employee_first_name }} {{ case.employee_last_name }}</strong> for further processing.
                     </p>
                     <p class="text-muted">
                         This is resubmission #{{ resubmission_count }}.
@@ -70,8 +70,8 @@
                 <div class="card-body">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>Case ID:</strong><br>
-                            {{ case.external_case_id }}
+                            <strong>Case Employee:</strong><br>
+                            {{ case.employee_first_name }} {{ case.employee_last_name }}
                         </div>
                         <div class="col-md-6">
                             <strong>Employee:</strong><br>

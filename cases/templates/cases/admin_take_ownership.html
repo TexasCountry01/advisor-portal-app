@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Take Case Ownership - {{ case.external_case_id }}{% endblock %}
+{% block title %}Take Case Ownership - {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -24,8 +24,8 @@
                     <h6>Case Information</h6>
                     <table class="table table-sm mb-4">
                         <tr>
-                            <td><strong>Case ID:</strong></td>
-                            <td>{{ case.external_case_id }}</td>
+                            <td><strong>Employee:</strong></td>
+                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
                         </tr>
                         <tr>
                             <td><strong>Employee:</strong></td>
