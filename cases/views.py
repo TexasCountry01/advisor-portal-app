@@ -1056,11 +1056,26 @@ def case_detail(request, pk):
         case_notes = CaseNote.objects.filter(case=case, is_internal=False).order_by('-created_at')
     
     # Check if member can view technician's report and documents
-    # Members can only see these if case is completed AND released
+    # Members can ONLY see reports/notes when case is completed AND released to them
     can_view_report = True
     if user.role == 'member' and case.member == user:
-        # For members: only show report/docs if case is completed AND actual_release_date is set
-        if case.status == 'completed' and case.actual_release_date is None:
+        # For members: only show report/docs if case is completed AND has been released
+        # A case is "released" when:
+        # 1. actual_release_date is set (released now or in the past), OR
+        # 2. scheduled_release_date has passed (scheduled release is now ready)
+        from datetime import date
+        case_is_released = False
+        
+        if case.status == 'completed':
+            if case.actual_release_date:
+                # Case was released immediately or the scheduled release time has passed
+                case_is_released = True
+            elif case.scheduled_release_date and case.scheduled_release_date <= date.today():
+                # Case has a scheduled release date that has already passed
+                case_is_released = True
+        
+        # Members can only view if case is completed AND released
+        if not case_is_released:
             can_view_report = False
     
     # Get technician documents only

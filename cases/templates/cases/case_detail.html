@@ -760,7 +760,7 @@
             {% endif %}
 
             <!-- Technician Notes - ONLY for Members when case is released -->
-            {% if user.role == 'member' and case.actual_release_date and case.report_notes_to_member %}
+            {% if user.role == 'member' and can_view_report and case.report_notes_to_member %}
             <div class="card mb-4 border-info">
                 <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
