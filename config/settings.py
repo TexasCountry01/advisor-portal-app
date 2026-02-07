@@ -198,6 +198,9 @@ LOGOUT_REDIRECT_URL = '/admin/login/'
 csrf_origins = config('CSRF_TRUSTED_ORIGINS', default='')
 CSRF_TRUSTED_ORIGINS = csrf_origins.split(',') if csrf_origins else []
 
+# Trust X-Forwarded-Proto header from nginx reverse proxy (SSL termination)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # benefits-software API Integration
 BENEFITS_SOFTWARE_API_URL = config('BENEFITS_SOFTWARE_API_URL', default='https://benefits-software.example.com/api')
 BENEFITS_SOFTWARE_API_KEY = config('BENEFITS_SOFTWARE_API_KEY', default='placeholder-api-key-change-in-production')
