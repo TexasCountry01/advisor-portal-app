@@ -77,17 +77,17 @@
                             </div>
                         </div>
 
-                        <!-- Number of Reports -->
+                        <!-- Number of Scenarios -->
                         <div class="mb-3">
-                            <label for="num_reports_requested" class="form-label">Number of Reports Requested <span class="text-danger">*</span></label>
+                            <label for="num_reports_requested" class="form-label">Number of Scenarios you are requesting <span class="text-danger">*</span></label>
                             <select id="num_reports_requested" name="num_reports_requested" class="form-select" required>
                                 {% for i in "x1x2x3x4x5x6x7x8x9x10"|make_list %}
                                     <option value="{{ forloop.counter }}" {% if case.num_reports_requested == forloop.counter %}selected{% endif %}>
-                                        {{ forloop.counter }} Report{{ forloop.counter|pluralize }}
+                                        {{ forloop.counter }} Scenario{{ forloop.counter|pluralize }}
                                     </option>
                                 {% endfor %}
                             </select>
-                            <small class="form-text text-muted">How many retirement benefit reports are needed for this employee</small>
+                            <small class="form-text text-muted">How many scenarios are needed for this employee</small>
                         </div>
 
                         <!-- Member Notes (Add New Notes Only) -->
