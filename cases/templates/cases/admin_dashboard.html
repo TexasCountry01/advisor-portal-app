@@ -338,6 +338,10 @@
                                     <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'hold' %}
                                     <span class="badge bg-danger" title="Case temporarily paused">On Hold</span>
+                                {% elif case.status == 'resubmitted' %}
+                                    <span class="badge bg-warning text-dark" title="Case resubmitted by member">Resubmitted</span>
+                                {% elif case.status == 'needs_resubmission' %}
+                                    <span class="badge bg-warning text-dark" title="Case needs resubmission from member">Needs Resubmission</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
                                         <span class="badge bg-success" title="Case completed and released to member">Completed</span>
@@ -346,6 +350,8 @@
                                     {% else %}
                                         <span class="badge bg-info" title="Currently being worked on">Working</span>
                                     {% endif %}
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ case.get_status_display }}</span>
                                 {% endif %}
                             </td>
                             <td data-column-id="release_date" class="column-release_date {% if 'release_date' not in visible_columns %}column-hidden{% endif %}">

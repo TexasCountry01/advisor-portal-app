@@ -314,8 +314,8 @@ def admin_dashboard(request):
         messages.error(request, 'Access denied. Administrators only.')
         return redirect('home')
     
-    # Get all cases with all related data
-    cases = Case.objects.all().prefetch_related(
+    # Get all cases with all related data - exclude drafts (only visible to members)
+    cases = Case.objects.exclude(status='draft').prefetch_related(
         'documents'
     ).select_related(
         'member', 'assigned_to', 'reviewed_by'
@@ -474,8 +474,8 @@ def manager_dashboard(request):
         messages.error(request, 'Access denied. Managers only.')
         return redirect('home')
     
-    # Get all cases with all related data (read-only)
-    cases = Case.objects.all().prefetch_related(
+    # Get all cases with all related data (read-only) - exclude drafts
+    cases = Case.objects.exclude(status='draft').prefetch_related(
         'documents'
     ).select_related(
         'member', 'assigned_to', 'reviewed_by'
