@@ -88,10 +88,12 @@
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
                 {% if case.status == 'completed' and case.actual_release_date %}
-                    <!-- Request Modification Button - only within 60 days of release -->
+                    {% if not case.resubmitted_cases.exists %}
+                    <!-- Request Modification Button - only within 60 days of release, hidden if already has resubmission -->
                     <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#requestModModal" id="requestModBtn">
                         <i class="bi bi-pencil-square"></i> Request a Mod
                     </button>
+                    {% endif %}
                     <!-- Ask a Question Button - no expiration -->
                     <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#askQuestionModal">
                         <i class="bi bi-chat-dots"></i> Ask a Question
