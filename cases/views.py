@@ -1085,12 +1085,29 @@ def case_detail(request, pk):
     # Get audit history for this case (Manager/Admin only)
     audit_logs = []
     acceptance_details = None
+    case_event_logs = []  # Track all significant case events
+    
     if user.role in ['manager', 'administrator']:
         from core.models import AuditLog
         from django.db.models import Q
         audit_logs = AuditLog.objects.filter(
             Q(case=case) | Q(document__case=case)
         ).select_related('user', 'case', 'document').order_by('-timestamp')[:15]
+    
+    # Get ALL case events for comprehensive audit trail (available to all roles)
+    # Include: submission, acceptance, hold, ownership changes
+    from core.models import AuditLog
+    case_event_logs = AuditLog.objects.filter(
+        case=case,
+        action_type__in=[
+            'case_submitted',
+            'case_resubmitted',
+            'case_accepted',
+            'case_put_on_hold',
+            'case_ownership_taken',
+            'admin_ownership'
+        ]
+    ).select_related('user').order_by('-timestamp')
     
     # Get acceptance details for display (available to assigned tech and managers/admins)
     if case.status in ['accepted', 'pending_review', 'completed']:
@@ -1119,6 +1136,7 @@ def case_detail(request, pk):
         'available_techs': available_techs,
         'audit_logs': audit_logs,
         'acceptance_details': acceptance_details,
+        'case_event_logs': case_event_logs,
         'user': user,
     }
     
