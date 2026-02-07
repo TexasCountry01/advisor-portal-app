@@ -204,9 +204,9 @@ def submit_case(request):
                         file=file,
                     )
             
-            # Get document count message using helper function
-            from cases.services.document_count_service import get_document_count_message
-            doc_count_msg = get_document_count_message(case, include_breakdown=True)
+            # Get document count
+            doc_count = case.documents.count()
+            doc_count_msg = f'Documents uploaded: {doc_count}.' if doc_count > 0 else 'No documents uploaded.'
             
             # Determine if this is rushed
             if urgency == 'rush':
