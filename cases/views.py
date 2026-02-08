@@ -1298,11 +1298,11 @@ def put_case_on_hold(request, case_id):
             'error': 'You do not have permission to put this case on hold.'
         }, status=403)
     
-    # Only cases in 'accepted' status can be placed on hold
-    if case.status not in ['accepted']:
+    # Only cases in 'submitted' or 'accepted' status can be placed on hold
+    if case.status not in ['submitted', 'accepted']:
         return JsonResponse({
             'success': False,
-            'error': f'Only cases in "Accepted" status can be put on hold. Current status: {case.get_status_display()}'
+            'error': f'Only cases in "Submitted" or "Accepted" status can be put on hold. Current status: {case.get_status_display()}'
         }, status=400)
     
     if request.method == 'POST':
