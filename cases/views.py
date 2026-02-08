@@ -3640,12 +3640,14 @@ def upload_image_for_notes(request):
 def generate_report_notes_pdf(request, pk):
     """
     Generate and download report notes as PDF.
-    Converts HTML notes to formatted PDF with case details.
+    Converts HTML notes to formatted PDF with case details and embedded images.
     """
     from django.http import HttpResponse
-    from weasyprint import HTML, CSS
+    from weasyprint import HTML
     from io import BytesIO
     import base64
+    import re
+    import os
     
     case = get_object_or_404(Case, pk=pk)
     user = request.user
@@ -3669,6 +3671,55 @@ def generate_report_notes_pdf(request, pk):
         return redirect('cases:case_detail', pk=pk)
     
     try:
+        # Convert image URLs in notes to base64 data URIs so they embed in the PDF
+        notes_html = case.report_notes_to_member
+        
+        from django.conf import settings as django_settings
+        
+        def resolve_image_to_base64(match):
+            """Convert an img src URL to a base64 data URI for PDF embedding."""
+            full_tag = match.group(0)
+            src = match.group(1)
+            
+            try:
+                file_path = None
+                
+                # Handle relative URLs like /media/notes_images/...
+                if src.startswith('/media/'):
+                    file_path = os.path.join(str(django_settings.BASE_DIR), src.lstrip('/'))
+                elif src.startswith('media/'):
+                    file_path = os.path.join(str(django_settings.BASE_DIR), src)
+                elif 'notes_images/' in src:
+                    # Try to extract the path from full URL
+                    parts = src.split('notes_images/')
+                    if len(parts) > 1:
+                        file_path = os.path.join(str(django_settings.BASE_DIR), 'media', 'notes_images', parts[1])
+                
+                if file_path and os.path.exists(file_path):
+                    with open(file_path, 'rb') as f:
+                        img_data = f.read()
+                    b64 = base64.b64encode(img_data).decode('utf-8')
+                    # Detect mime type
+                    ext = os.path.splitext(file_path)[1].lower()
+                    mime = {'jpg': 'image/jpeg', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.gif': 'image/gif', '.webp': 'image/webp'}.get(ext, 'image/jpeg')
+                    return full_tag.replace(src, f'data:{mime};base64,{b64}')
+                
+                return full_tag
+            except Exception as e:
+                logger.warning(f'Could not embed image {src}: {e}')
+                return full_tag
+        
+        # Replace all img src attributes with base64 data URIs
+        notes_html = re.sub(r'<img[^>]+src=["\']([^"\']+)["\']', resolve_image_to_base64, notes_html)
+        
+        # Build employee name
+        employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+        
+        # Get technician name
+        tech_name = 'N/A'
+        if case.assigned_to:
+            tech_name = case.assigned_to.get_full_name() or case.assigned_to.username
+        
         # Prepare HTML content with professional styling
         html_content = f"""
         <!DOCTYPE html>
@@ -3676,130 +3727,169 @@ def generate_report_notes_pdf(request, pk):
         <head>
             <meta charset="UTF-8">
             <style>
+                @page {{
+                    size: letter;
+                    margin: 0.75in 0.75in 1in 0.75in;
+                    @bottom-center {{
+                        content: "Page " counter(page) " of " counter(pages);
+                        font-size: 9pt;
+                        color: #999;
+                    }}
+                }}
                 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
                 body {{
                     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    font-size: 12pt;
-                    line-height: 1.6;
+                    font-size: 11pt;
+                    line-height: 1.5;
                     color: #333;
                     background-color: white;
                 }}
+                
+                /* Header */
                 .header {{
-                    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+                    background-color: #1a3a5c;
                     color: white;
-                    padding: 30px;
-                    margin-bottom: 30px;
-                    border-radius: 4px;
+                    padding: 25px 30px;
+                    margin-bottom: 25px;
                 }}
                 .header h1 {{
-                    font-size: 24pt;
-                    margin-bottom: 10px;
+                    font-size: 20pt;
+                    margin-bottom: 4px;
+                    letter-spacing: 0.5px;
                 }}
-                .header p {{
-                    margin: 5px 0;
-                    font-size: 11pt;
+                .header .subtitle {{
+                    font-size: 10pt;
+                    color: #b0c4de;
                 }}
-                .meta-info {{
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 20px;
-                    margin-bottom: 20px;
-                    padding: 15px;
-                    background-color: #f8f9fa;
-                    border-left: 4px solid #007bff;
+                
+                /* Case Info Table */
+                .case-info {{
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 25px;
+                    font-size: 10pt;
                 }}
-                .meta-item {{
-                    font-size: 11pt;
-                }}
-                .meta-label {{
-                    font-weight: bold;
-                    color: #0056b3;
-                    margin-bottom: 3px;
-                }}
-                .notes-section {{
-                    margin-top: 30px;
-                    padding: 20px;
-                    background-color: #ffffff;
+                .case-info td {{
+                    padding: 8px 12px;
                     border: 1px solid #dee2e6;
-                    border-radius: 4px;
+                    vertical-align: top;
+                }}
+                .case-info .label {{
+                    font-weight: 600;
+                    color: #1a3a5c;
+                    background-color: #f0f4f8;
+                    width: 140px;
+                }}
+                .case-info .value {{
+                    color: #333;
+                }}
+                
+                /* Notes Section */
+                .notes-section {{
+                    margin-top: 10px;
                 }}
                 .notes-section h2 {{
-                    font-size: 16pt;
-                    color: #0056b3;
-                    margin-bottom: 15px;
-                    padding-bottom: 10px;
-                    border-bottom: 2px solid #007bff;
+                    font-size: 14pt;
+                    color: #1a3a5c;
+                    margin-bottom: 12px;
+                    padding-bottom: 8px;
+                    border-bottom: 2px solid #1a3a5c;
                 }}
                 .notes-content {{
                     font-size: 11pt;
-                    line-height: 1.8;
-                    color: #555;
+                    line-height: 1.7;
+                    color: #333;
                 }}
+                
                 /* Preserve TinyMCE formatting */
-                .notes-content p {{ margin-bottom: 10px; }}
+                .notes-content p {{ margin-bottom: 8px; }}
                 .notes-content strong {{ font-weight: bold; }}
                 .notes-content em {{ font-style: italic; }}
                 .notes-content u {{ text-decoration: underline; }}
-                .notes-content ul, .notes-content ol {{ margin-left: 20px; margin-bottom: 10px; }}
-                .notes-content li {{ margin-bottom: 5px; }}
-                .notes-content a {{ color: #007bff; text-decoration: underline; }}
-                .notes-content img {{ max-width: 100%; height: auto; margin: 15px 0; }}
+                .notes-content ul, .notes-content ol {{ margin-left: 25px; margin-bottom: 10px; }}
+                .notes-content li {{ margin-bottom: 4px; }}
+                .notes-content a {{ color: #1a3a5c; text-decoration: underline; }}
+                .notes-content h1 {{ font-size: 16pt; margin: 15px 0 8px; }}
+                .notes-content h2 {{ font-size: 14pt; margin: 12px 0 6px; }}
+                .notes-content h3 {{ font-size: 12pt; margin: 10px 0 5px; }}
+                .notes-content blockquote {{
+                    border-left: 3px solid #1a3a5c;
+                    padding-left: 12px;
+                    margin: 10px 0;
+                    color: #555;
+                    font-style: italic;
+                }}
+                .notes-content table {{
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 10px 0;
+                }}
+                .notes-content table td, .notes-content table th {{
+                    border: 1px solid #dee2e6;
+                    padding: 6px 10px;
+                }}
+                
+                /* Image handling */
+                .notes-content img {{
+                    max-width: 100%;
+                    height: auto;
+                    margin: 12px 0;
+                    border: 1px solid #dee2e6;
+                    border-radius: 3px;
+                    page-break-inside: avoid;
+                }}
+                
+                /* Footer */
                 .footer {{
-                    margin-top: 40px;
-                    padding-top: 20px;
+                    margin-top: 35px;
+                    padding-top: 15px;
                     border-top: 1px solid #dee2e6;
-                    font-size: 10pt;
+                    font-size: 9pt;
                     color: #999;
                     text-align: center;
-                }}
-                @page {{
-                    margin: 0.75in;
                 }}
             </style>
         </head>
         <body>
             <div class="header">
-                <h1>Case Notes & Advisor Information</h1>
-                <p>Generated on {timezone.now().strftime('%B %d, %Y at %I:%M %p')}</p>
+                <h1>Case Notes &amp; Advisor Information</h1>
+                <div class="subtitle">Generated {timezone.now().strftime('%B %d, %Y at %I:%M %p')}</div>
             </div>
             
-            <div class="meta-info">
-                <div class="meta-item">
-                    <div class="meta-label">Case ID:</div>
-                    <div>{case.external_case_id}</div>
-                </div>
-                <div class="meta-item">
-                    <div class="meta-label">Workshop Code:</div>
-                    <div>{case.workshop_code}</div>
-                </div>
-                <div class="meta-item">
-                    <div class="meta-label">Employee Name:</div>
-                    <div>{case.employee_first_name} {case.employee_last_name}</div>
-                </div>
-                <div class="meta-item">
-                    <div class="meta-label">Status:</div>
-                    <div>{case.get_status_display()}</div>
-                </div>
-                <div class="meta-item">
-                    <div class="meta-label">Completion Date:</div>
-                    <div>{case.date_completed.strftime('%B %d, %Y') if case.date_completed else 'N/A'}</div>
-                </div>
-                <div class="meta-item">
-                    <div class="meta-label">Report Count:</div>
-                    <div>{case.num_reports_requested}</div>
-                </div>
-            </div>
+            <table class="case-info">
+                <tr>
+                    <td class="label">Employee Name</td>
+                    <td class="value">{employee_name}</td>
+                    <td class="label">Case ID</td>
+                    <td class="value">{case.external_case_id}</td>
+                </tr>
+                <tr>
+                    <td class="label">Workshop Code</td>
+                    <td class="value">{case.workshop_code or 'N/A'}</td>
+                    <td class="label">Status</td>
+                    <td class="value">{case.get_status_display()}</td>
+                </tr>
+                <tr>
+                    <td class="label">Reports Requested</td>
+                    <td class="value">{case.num_reports_requested}</td>
+                    <td class="label">Completion Date</td>
+                    <td class="value">{case.date_completed.strftime('%B %d, %Y') if case.date_completed else 'N/A'}</td>
+                </tr>
+                <tr>
+                    <td class="label">Prepared By</td>
+                    <td class="value" colspan="3">{tech_name}</td>
+                </tr>
+            </table>
             
             <div class="notes-section">
-                <h2>Technical Notes to Advisor</h2>
+                <h2>Technical Notes</h2>
                 <div class="notes-content">
-                    {case.report_notes_to_member}
+                    {notes_html}
                 </div>
             </div>
             
             <div class="footer">
-                <p>These notes are confidential and intended for the case advisor only.</p>
-                <p>This document was automatically generated from the Advisor Portal.</p>
+                <p>Confidential &mdash; Prepared for {employee_name} | ProFeds Advisor Portal</p>
             </div>
         </body>
         </html>
