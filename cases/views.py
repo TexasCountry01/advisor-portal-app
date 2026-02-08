@@ -3715,10 +3715,26 @@ def generate_report_notes_pdf(request, pk):
         # Build employee name
         employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
         
-        # Get technician name
-        tech_name = 'N/A'
-        if case.assigned_to:
-            tech_name = case.assigned_to.get_full_name() or case.assigned_to.username
+        # Get member name with workshop code
+        member_display = 'N/A'
+        if case.member:
+            member_name = case.member.get_full_name() or case.member.username
+            member_display = f'{member_name} ({case.workshop_code})' if case.workshop_code else member_name
+        
+        # Completion date
+        completion_date = case.date_completed.strftime('%B %d, %Y') if case.date_completed else 'N/A'
+        
+        # Embed the cover page logo as base64
+        logo_b64 = ''
+        logo_path = os.path.join(str(django_settings.BASE_DIR), 'static', 'images', 'RevisedCoverPageLogo.png')
+        try:
+            if os.path.exists(logo_path):
+                with open(logo_path, 'rb') as f:
+                    logo_b64 = base64.b64encode(f.read()).decode('utf-8')
+        except Exception as e:
+            logger.warning(f'Could not load PDF logo: {e}')
+        
+        logo_img = f'<img src="data:image/png;base64,{logo_b64}" alt="FedImpact Logo" class="header-logo">' if logo_b64 else ''
         
         # Prepare HTML content with professional styling
         html_content = f"""
@@ -3747,40 +3763,48 @@ def generate_report_notes_pdf(request, pk):
                 
                 /* Header */
                 .header {{
-                    background-color: #1a3a5c;
-                    color: white;
-                    padding: 25px 30px;
-                    margin-bottom: 25px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 20px 0 20px 0;
+                    margin-bottom: 0;
+                    border-bottom: 3px solid #4a4a4a;
                 }}
-                .header h1 {{
-                    font-size: 20pt;
-                    margin-bottom: 4px;
-                    letter-spacing: 0.5px;
+                .header-text {{
+                    flex: 1;
                 }}
-                .header .subtitle {{
-                    font-size: 10pt;
-                    color: #b0c4de;
+                .header-text h1 {{
+                    font-size: 18pt;
+                    font-weight: bold;
+                    color: #333;
+                    line-height: 1.2;
+                    margin: 0;
+                }}
+                .header-logo {{
+                    height: 70px;
+                    width: auto;
+                    margin-left: 20px;
                 }}
                 
-                /* Case Info Table */
-                .case-info {{
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 25px;
-                    font-size: 10pt;
+                /* Case Info Bar */
+                .case-info-bar {{
+                    display: flex;
+                    border-left: 5px solid #2563eb;
+                    padding: 12px 20px;
+                    margin: 20px 0 25px 0;
+                    background-color: #fafafa;
                 }}
-                .case-info td {{
-                    padding: 8px 12px;
-                    border: 1px solid #dee2e6;
-                    vertical-align: top;
+                .case-info-bar .info-item {{
+                    flex: 1;
                 }}
-                .case-info .label {{
-                    font-weight: 600;
-                    color: #1a3a5c;
-                    background-color: #f0f4f8;
-                    width: 140px;
+                .case-info-bar .info-label {{
+                    font-size: 9pt;
+                    font-weight: 700;
+                    color: #333;
+                    margin-bottom: 2px;
                 }}
-                .case-info .value {{
+                .case-info-bar .info-value {{
+                    font-size: 11pt;
                     color: #333;
                 }}
                 
@@ -3852,37 +3876,28 @@ def generate_report_notes_pdf(request, pk):
         </head>
         <body>
             <div class="header">
-                <h1>Case Notes &amp; Advisor Information</h1>
-                <div class="subtitle">Generated {timezone.now().strftime('%B %d, %Y at %I:%M %p')}</div>
+                <div class="header-text">
+                    <h1>Technical Notes from the<br>ProFeds Benefits Team</h1>
+                </div>
+                {logo_img}
             </div>
             
-            <table class="case-info">
-                <tr>
-                    <td class="label">Employee Name</td>
-                    <td class="value">{employee_name}</td>
-                    <td class="label">Case ID</td>
-                    <td class="value">{case.external_case_id}</td>
-                </tr>
-                <tr>
-                    <td class="label">Workshop Code</td>
-                    <td class="value">{case.workshop_code or 'N/A'}</td>
-                    <td class="label">Status</td>
-                    <td class="value">{case.get_status_display()}</td>
-                </tr>
-                <tr>
-                    <td class="label">Reports Requested</td>
-                    <td class="value">{case.num_reports_requested}</td>
-                    <td class="label">Completion Date</td>
-                    <td class="value">{case.date_completed.strftime('%B %d, %Y') if case.date_completed else 'N/A'}</td>
-                </tr>
-                <tr>
-                    <td class="label">Prepared By</td>
-                    <td class="value" colspan="3">{tech_name}</td>
-                </tr>
-            </table>
+            <div class="case-info-bar">
+                <div class="info-item">
+                    <div class="info-label">Federal Employee:</div>
+                    <div class="info-value">{employee_name}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Completion Date:</div>
+                    <div class="info-value">{completion_date}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Member Name (Code):</div>
+                    <div class="info-value">{member_display}</div>
+                </div>
+            </div>
             
             <div class="notes-section">
-                <h2>Technical Notes</h2>
                 <div class="notes-content">
                     {notes_html}
                 </div>
