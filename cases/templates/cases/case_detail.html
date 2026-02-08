@@ -1313,6 +1313,25 @@
                                 {% endif %}
                             </div>
                             {% endif %}
+                            {% if case.status == 'hold' or hold_event_log %}
+                            <div class="timeline-item">
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-warning text-dark me-2"><i class="bi bi-pause-circle"></i></span>
+                                    <div>
+                                        <strong>On Hold:</strong><br>
+                                        {% if case.status == 'hold' and case.hold_start_date %}
+                                            Since {{ case.hold_start_date|date:"m/d/Y H:i" }}
+                                            {% if case.hold_reason %}
+                                            <br><small class="text-muted">Reason: {{ case.hold_reason }}</small>
+                                            {% endif %}
+                                        {% elif hold_event_log %}
+                                            {{ hold_event_log.timestamp|date:"m/d/Y H:i" }}
+                                            <small class="text-success ms-1">(Resumed)</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                             {% if case.date_completed %}
                             <div class="timeline-item">
                                 <strong>Completed:</strong><br>

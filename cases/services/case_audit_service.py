@@ -29,6 +29,7 @@ def hold_case(case, user, reason='', hold_duration_days=None):
     
     try:
         old_status = case.status
+        case.status_before_hold = old_status  # Save pre-hold status for resume
         case.status = 'hold'
         case.hold_reason = reason or 'Case placed on hold'
         case.hold_start_date = timezone.now()
@@ -81,10 +82,26 @@ def resume_case(case, user, reason='', previous_status='accepted'):
     """
     try:
         old_status = case.status
-        case.status = previous_status
+        
+        # Calculate hold duration BEFORE changing status (while hold_start_date is still set)
+        hold_duration_str = calculate_hold_duration(case)
+        
+        # Determine the correct status to restore
+        # Use saved status_before_hold if available, otherwise fall back to parameter
+        restore_status = case.status_before_hold or previous_status
+        
+        case.status = restore_status
         case._audit_user = user
         case._resume_reason = reason or 'Case resumed'
-        case._hold_duration = calculate_hold_duration(case)
+        case._hold_duration = hold_duration_str
+        
+        # Clear hold fields since case is no longer on hold
+        case.status_before_hold = ''
+        case.hold_reason = ''
+        case.hold_start_date = None
+        case.hold_end_date = None
+        case.hold_duration_days = None
+        
         case.save()
         
         # Explicit audit log
@@ -93,11 +110,11 @@ def resume_case(case, user, reason='', previous_status='accepted'):
             action_type='case_resumed',
             description=f'Case #{case.external_case_id} resumed from hold',
             case=case,
-            changes={'status': {'from': old_status, 'to': previous_status}},
+            changes={'status': {'from': old_status, 'to': restore_status}},
             metadata={
                 'reason': reason or 'No reason provided',
                 'resumed_at': timezone.now().isoformat(),
-                'hold_duration': calculate_hold_duration(case)
+                'hold_duration': hold_duration_str
             }
         )
         logger.info(f'Case {case.id} resumed by {user.username}. Reason: {reason}')
@@ -147,11 +164,23 @@ def change_case_tier(case, user, new_tier, reason=''):
 
 
 def calculate_hold_duration(case):
-    """Calculate how long a case was on hold"""
+    """Calculate how long a case was on hold using hold_start_date"""
     try:
-        if case.status == 'hold' and hasattr(case, '_held_since'):
-            duration = timezone.now() - case._held_since
-            return str(duration)
+        if case.hold_start_date:
+            duration = timezone.now() - case.hold_start_date
+            # Format as human-readable
+            total_seconds = int(duration.total_seconds())
+            days = total_seconds // 86400
+            hours = (total_seconds % 86400) // 3600
+            minutes = (total_seconds % 3600) // 60
+            parts = []
+            if days:
+                parts.append(f'{days}d')
+            if hours:
+                parts.append(f'{hours}h')
+            if minutes:
+                parts.append(f'{minutes}m')
+            return ' '.join(parts) if parts else 'Less than 1 minute'
         return 'N/A'
     except:
         return 'Unknown'

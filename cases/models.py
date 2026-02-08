@@ -135,6 +135,13 @@ class Case(models.Model):
         blank=True,
         help_text='Expected duration of hold in days (e.g., 0.083 for 2 hours, 1 for 1 day)'
     )
+    
+    status_before_hold = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=STATUS_CHOICES,
+        help_text='Status the case was in before being placed on hold (used to restore on resume)'
+    )
 
     # Field 10: Assigned To (Technician)
     assigned_to = models.ForeignKey(
@@ -819,6 +826,7 @@ class CaseNotification(models.Model):
     
     NOTIFICATION_TYPE_CHOICES = [
         ('case_put_on_hold', 'Case Put on Hold'),
+        ('case_resumed', 'Case Resumed from Hold'),
         ('member_update_received', 'Member Update Received'),
         ('case_released', 'Case Released'),
         ('documents_needed', 'Documents Needed'),

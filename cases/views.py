@@ -1179,6 +1179,12 @@ def case_detail(request, pk):
     # Get resubmitted/modification cases linked to this case
     resubmitted_cases = Case.objects.filter(original_case=case).order_by('-created_at')
     
+    # Get most recent hold event for timeline display (shows even after resume)
+    hold_event_log = AuditLog.objects.filter(
+        case=case,
+        action_type='case_held'
+    ).order_by('-timestamp').first()
+    
     context = {
         'case': case,
         'can_edit': can_edit,
@@ -1194,6 +1200,7 @@ def case_detail(request, pk):
         'audit_logs': audit_logs,
         'acceptance_details': acceptance_details,
         'case_event_logs': case_event_logs,
+        'hold_event_log': hold_event_log,
         'user': user,
     }
     
@@ -1240,7 +1247,8 @@ def put_case_on_hold(request, case_id):
     Put a case on hold with comprehensive notification system.
     
     FUNCTIONALITY:
-    - Changes case status from 'accepted' to 'hold'
+    - Changes case status from 'submitted' or 'accepted' to 'hold'
+    - Saves original status in status_before_hold for correct resume
     - Preserves case ownership (assigned_to unchanged)
     - Holds case INDEFINITELY until needed information is received
     - Sends email to member with hold reason
@@ -1263,7 +1271,7 @@ def put_case_on_hold(request, case_id):
     
     SECURITY:
     - Requires permission: assigned technician, manager, or admin
-    - Only cases in 'accepted' status can be placed on hold
+    - Only cases in 'submitted' or 'accepted' status can be placed on hold
     - Member email validation (case must have member)
     
     PARAMETERS (POST JSON):
@@ -1463,10 +1471,12 @@ def put_case_on_hold(request, case_id):
 
 @login_required
 def resume_case_from_hold(request, case_id):
-    """Resume a case from hold - preserves ownership, returns to 'accepted' status"""
+    """Resume a case from hold - preserves ownership, restores pre-hold status"""
     from django.http import JsonResponse
     from cases.services.case_audit_service import resume_case
     from cases.services.email_service import send_case_hold_resumed_email
+    from cases.models import CaseNotification
+    from core.models import AuditLog
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
@@ -1502,17 +1512,51 @@ def resume_case_from_hold(request, case_id):
                     'error': 'Please provide a reason for resuming the case.'
                 }, status=400)
             
+            # Use status_before_hold to restore correct pre-hold status
+            restore_status = case.status_before_hold or 'accepted'
+            
             # Use the service to resume the case
             success = resume_case(
                 case=case,
                 user=user,
                 reason=reason,
-                previous_status='accepted'
+                previous_status=restore_status
             )
             
-            # Send resume notification email to member
             if success:
-                send_case_hold_resumed_email(case)
+                # Create in-app notification for member (mirrors hold notification)
+                if case.member:
+                    try:
+                        notification = CaseNotification.objects.create(
+                            case=case,
+                            member=case.member,
+                            notification_type='case_resumed',
+                            title='Your Case Has Been Resumed',
+                            message=f'Your case {case.external_case_id} has been resumed and is now being actively worked on. Reason: {reason}',
+                            is_read=False
+                        )
+                        
+                        AuditLog.objects.create(
+                            user=user,
+                            action_type='other',
+                            description=f'Resume notification created for case #{case.external_case_id}',
+                            case=case,
+                            metadata={
+                                'sub_action': 'notification_created',
+                                'notification_type': 'case_resumed',
+                                'notification_id': notification.id,
+                                'member_id': case.member.id
+                            }
+                        )
+                    except Exception as notif_err:
+                        logger.warning(f'Failed to create resume notification for case {case_id}: {notif_err}')
+                
+                # Send resume notification email to member
+                try:
+                    send_case_hold_resumed_email(case)
+                except Exception as email_err:
+                    logger.warning(f'Failed to send resume email for case {case_id}: {email_err}')
+                
                 return JsonResponse({
                     'success': True,
                     'message': f'Case {case.external_case_id} has been resumed from hold.',
