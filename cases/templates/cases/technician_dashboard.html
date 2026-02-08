@@ -522,7 +522,7 @@
         }
         
         const formData = new FormData();
-        formData.append('technician_id', technicianId);
+        formData.append('assigned_to', technicianId);
         
         fetch(`/cases/${caseId}/reassign/`, {
             method: 'POST',
