@@ -4049,7 +4049,7 @@ def generate_report_notes_pdf(request, pk):
         
         # Create response
         response = HttpResponse(pdf_file.read(), content_type='application/pdf')
-        filename = f'Case_{case.external_case_id}_Notes_{timezone.now().strftime("%Y%m%d")}.pdf'
+        filename = f'{case.employee_last_name}_{case.employee_first_name}_Notes_{timezone.now().strftime("%Y%m%d")}.pdf'
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
         logger.info(f'Report notes PDF generated for case {case.external_case_id} by {user.username}')
