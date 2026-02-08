@@ -3810,62 +3810,88 @@ def generate_report_notes_pdf(request, pk):
                 
                 /* Notes Section */
                 .notes-section {{
-                    margin-top: 10px;
+                    margin-top: 20px;
+                    padding-top: 15px;
                 }}
                 .notes-section h2 {{
-                    font-size: 14pt;
+                    font-size: 13pt;
+                    font-weight: 700;
                     color: #1a3a5c;
-                    margin-bottom: 12px;
+                    margin-bottom: 15px;
                     padding-bottom: 8px;
-                    border-bottom: 2px solid #1a3a5c;
+                    border-bottom: 2px solid #2563eb;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
                 }}
                 .notes-content {{
                     font-size: 11pt;
-                    line-height: 1.7;
+                    line-height: 1.75;
                     color: #333;
                 }}
                 
                 /* Preserve TinyMCE formatting */
-                .notes-content p {{ margin-bottom: 8px; }}
+                .notes-content p {{ margin-bottom: 10px; }}
                 .notes-content strong {{ font-weight: bold; }}
                 .notes-content em {{ font-style: italic; }}
                 .notes-content u {{ text-decoration: underline; }}
-                .notes-content ul, .notes-content ol {{ margin-left: 25px; margin-bottom: 10px; }}
-                .notes-content li {{ margin-bottom: 4px; }}
-                .notes-content a {{ color: #1a3a5c; text-decoration: underline; }}
-                .notes-content h1 {{ font-size: 16pt; margin: 15px 0 8px; }}
-                .notes-content h2 {{ font-size: 14pt; margin: 12px 0 6px; }}
-                .notes-content h3 {{ font-size: 12pt; margin: 10px 0 5px; }}
+                .notes-content ul, .notes-content ol {{ margin-left: 25px; margin-bottom: 12px; }}
+                .notes-content li {{ margin-bottom: 5px; }}
+                .notes-content a {{ color: #2563eb; text-decoration: underline; }}
+                .notes-content h1 {{ font-size: 16pt; margin: 18px 0 10px; color: #1a3a5c; }}
+                .notes-content h2 {{ font-size: 14pt; margin: 15px 0 8px; color: #1a3a5c; }}
+                .notes-content h3 {{ font-size: 12pt; margin: 12px 0 6px; color: #1a3a5c; }}
                 .notes-content blockquote {{
-                    border-left: 3px solid #1a3a5c;
-                    padding-left: 12px;
-                    margin: 10px 0;
+                    border-left: 3px solid #2563eb;
+                    padding: 8px 15px;
+                    margin: 12px 0;
+                    background-color: #f8f9fa;
                     color: #555;
                     font-style: italic;
+                }}
+                .notes-content pre {{
+                    background-color: #f4f4f4;
+                    padding: 10px 15px;
+                    border-radius: 4px;
+                    font-family: 'Courier New', monospace;
+                    font-size: 10pt;
+                    overflow-wrap: break-word;
+                    margin: 10px 0;
                 }}
                 .notes-content table {{
                     border-collapse: collapse;
                     width: 100%;
-                    margin: 10px 0;
+                    margin: 12px 0;
                 }}
                 .notes-content table td, .notes-content table th {{
                     border: 1px solid #dee2e6;
-                    padding: 6px 10px;
+                    padding: 8px 12px;
+                    text-align: left;
+                }}
+                .notes-content table th {{
+                    background-color: #f0f4f8;
+                    font-weight: 600;
+                }}
+                .notes-content hr {{
+                    border: none;
+                    border-top: 1px solid #dee2e6;
+                    margin: 15px 0;
                 }}
                 
                 /* Image handling */
                 .notes-content img {{
                     max-width: 100%;
                     height: auto;
-                    margin: 12px 0;
+                    display: block;
+                    margin: 15px auto;
                     border: 1px solid #dee2e6;
-                    border-radius: 3px;
+                    border-radius: 4px;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
                     page-break-inside: avoid;
                 }}
                 
                 /* Footer */
                 .footer {{
-                    margin-top: 35px;
+                    margin-top: 40px;
                     padding-top: 15px;
                     border-top: 1px solid #dee2e6;
                     font-size: 9pt;
@@ -3898,6 +3924,7 @@ def generate_report_notes_pdf(request, pk):
             </div>
             
             <div class="notes-section">
+                <h2>Advisor Notes</h2>
                 <div class="notes-content">
                     {notes_html}
                 </div>
