@@ -544,14 +544,12 @@ function submitCaseFinal(caseId) {
     .then(response => response.json())
     .then(checkData => {
         if (checkData.urgency_changed) {
-            // Urgency changed from normal to rush - show warning modal
-            const message = `⚠️ RUSH ALERT\n\nThis case is now marked as RUSH. Your due date is within 7 days.\n\nYou can proceed with submission or cancel to revise the due date.`;
-            
-            if (confirm(message)) {
-                // User confirmed - proceed with actual submission
-                performActualSubmission(caseId, csrfToken);
-            }
-            // If user cancels, do nothing
+            // Urgency changed from normal to rush - show Bootstrap modal
+            window._pendingRushCaseId = caseId;
+            window._pendingRushCsrfToken = csrfToken;
+            document.getElementById('rushEditCaseLink').href = `/cases/${caseId}/edit/`;
+            const rushModal = new bootstrap.Modal(document.getElementById('rushAlertModal'));
+            rushModal.show();
         } else {
             // Urgency hasn't changed - proceed with submission
             performActualSubmission(caseId, csrfToken);
@@ -1455,6 +1453,38 @@ function handleMemberDocumentUpload(caseId) {
             });
         }
     });
+</script>
+
+<!-- RUSH Alert Modal -->
+<div class="modal fade" id="rushAlertModal" tabindex="-1" aria-labelledby="rushAlertModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="rushAlertModalLabel"><i class="bi bi-exclamation-triangle-fill"></i> RUSH ALERT</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>This case is now marked as <strong>RUSH</strong>. Your due date is within 7 days.</p>
+                <p>You can proceed with submission or cancel and <strong>edit your case</strong> to revise the due date.</p>
+            </div>
+            <div class="modal-footer">
+                <a id="rushEditCaseLink" href="#" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Edit Case &amp; Revise Due Date
+                </a>
+                <button type="button" class="btn btn-success" onclick="confirmRushSubmission()">
+                    <i class="bi bi-check-circle"></i> Submit as RUSH
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmRushSubmission() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('rushAlertModal'));
+    modal.hide();
+    performActualSubmission(window._pendingRushCaseId, window._pendingRushCsrfToken);
+}
 </script>
 
 <style>

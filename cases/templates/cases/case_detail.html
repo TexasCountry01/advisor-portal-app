@@ -113,17 +113,12 @@
                     </script>
                 {% endif %}
                 {% if case.status == 'draft' and case.member == user %}
-                <button type="button" class="btn btn-warning" id="editDraftBtn" onclick="toggleEditMode()">
-                    <i class="bi bi-pencil"></i> Edit Draft
+                <button type="button" class="btn btn-success" onclick="submitDraftFromDetail({{ case.id }})">
+                    <i class="bi bi-check-circle"></i> Submit Case
                 </button>
-                <span id="editActions" style="display: none;">
-                    <button type="button" class="btn btn-success" onclick="saveDraftChanges()">
-                        <i class="bi bi-check-circle"></i> Save Changes
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="cancelEditMode()">
-                        <i class="bi bi-x-circle"></i> Cancel
-                    </button>
-                </span>
+                <a href="{% url 'cases:edit_case' case.id %}" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Edit Draft
+                </a>
                 {% endif %}
             {% elif user.role == 'technician' %}
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
@@ -914,7 +909,7 @@
 
         <!-- Right Column: Timeline & Actions (Technician/Admin only) -->
         <div class="col-md-4">
-            <!-- Case Notes/Communication Section (Everyone can see and add) -->
+            <!-- Case Notes/Communication Section -->
             <div class="card mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">
@@ -923,6 +918,11 @@
                     </h5>
                 </div>
                 <div class="card-body">
+                    {% if case.status == 'draft' and user.role == 'member' %}
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-info-circle"></i> Messaging is available after you submit this case.
+                    </div>
+                    {% else %}
                     <!-- Messages Container -->
                     <div id="messages-container" style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; margin-bottom: 15px; border-radius: 4px;">
                         <p class="text-muted text-center py-4">Loading messages...</p>
@@ -938,6 +938,7 @@
                             <i class="bi bi-chat-left-plus"></i> Send Message
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
 
@@ -3506,5 +3507,83 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 </div>
+
+<!-- RUSH Alert Modal (for draft submission) -->
+<div class="modal fade" id="rushAlertModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill"></i> RUSH ALERT</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>This case is now marked as <strong>RUSH</strong>. Your due date is within 7 days.</p>
+                <p>You can proceed with submission or <strong>edit your case</strong> to revise the due date.</p>
+            </div>
+            <div class="modal-footer">
+                <a id="rushEditCaseLink" href="#" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Edit Case &amp; Revise Due Date
+                </a>
+                <button type="button" class="btn btn-success" id="confirmRushSubmitBtn">
+                    <i class="bi bi-check-circle"></i> Submit as RUSH
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitDraftFromDetail(caseId) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
+    const formData = new FormData();
+    formData.append('check_only', 'true');
+
+    fetch(`/cases/${caseId}/submit-final/`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken }
+    })
+    .then(response => response.json())
+    .then(checkData => {
+        if (checkData.urgency_changed) {
+            document.getElementById('rushEditCaseLink').href = `/cases/${caseId}/edit/`;
+            document.getElementById('confirmRushSubmitBtn').onclick = function() {
+                bootstrap.Modal.getInstance(document.getElementById('rushAlertModal')).hide();
+                doSubmitDraft(caseId, csrfToken);
+            };
+            new bootstrap.Modal(document.getElementById('rushAlertModal')).show();
+        } else {
+            doSubmitDraft(caseId, csrfToken);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        if (confirm('Are you sure you want to submit this case?')) {
+            doSubmitDraft(caseId, csrfToken);
+        }
+    });
+}
+
+function doSubmitDraft(caseId, csrfToken) {
+    const formData = new FormData();
+    fetch(`/cases/${caseId}/submit-final/`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': csrfToken }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = `/cases/${caseId}/`;
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting the case.');
+    });
+}
+</script>
 
 {% endblock %}
