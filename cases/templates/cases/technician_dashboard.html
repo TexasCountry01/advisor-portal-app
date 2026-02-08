@@ -491,15 +491,21 @@
                 </div>
                 <div class="modal-body">
                     <p>Employee: <strong>{{ case.employee_first_name }} {{ case.employee_last_name }}</strong></p>
-                    <label for="technician{{ case.id }}" class="form-label">Assign To:</label>
-                    <select id="technician{{ case.id }}" class="form-select">
-                        <option value="">-- Select User --</option>
-                        {% for tech in technicians %}
-                        <option value="{{ tech.id }}" {% if tech.id == case.assigned_to.id %}selected{% endif %}>
-                            {{ tech.get_full_name|default:tech.username }} ({{ tech.get_role_display }})
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <div class="mb-3">
+                        <label for="technician{{ case.id }}" class="form-label">Assign To:</label>
+                        <select id="technician{{ case.id }}" class="form-select">
+                            <option value="">-- Select User --</option>
+                            {% for tech in technicians %}
+                            <option value="{{ tech.id }}" {% if tech.id == case.assigned_to.id %}selected{% endif %}>
+                                {{ tech.get_full_name|default:tech.username }} ({{ tech.get_role_display }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reason{{ case.id }}" class="form-label">Reason (optional)</label>
+                        <textarea id="reason{{ case.id }}" class="form-control" rows="2" placeholder="Why are you reassigning this case?"></textarea>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -514,7 +520,9 @@
 <script>
     function reassignCase(caseId) {
         const selectId = `technician${caseId}`;
+        const reasonId = `reason${caseId}`;
         const technicianId = document.getElementById(selectId).value;
+        const reason = document.getElementById(reasonId)?.value || '';
         
         if (!technicianId) {
             alert('Please select a technician');
@@ -523,17 +531,22 @@
         
         const formData = new FormData();
         formData.append('assigned_to', technicianId);
+        formData.append('reason', reason);
         
         fetch(`/cases/${caseId}/reassign/`, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken')
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById(`reassignModal${caseId}`));
+                if (modal) modal.hide();
                 alert(data.message);
                 location.reload();
             } else {

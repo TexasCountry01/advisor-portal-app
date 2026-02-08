@@ -163,6 +163,70 @@ def change_case_tier(case, user, new_tier, reason=''):
         return False
 
 
+def reassign_case(case, user, new_technician, reason=''):
+    """
+    Reassign a case to a different technician and log the action.
+    
+    Args:
+        case: Case instance to reassign
+        user: User performing the reassignment
+        new_technician: User instance of the new assigned technician
+        reason: Reason for reassignment (optional)
+    
+    Returns:
+        Boolean indicating success
+    """
+    try:
+        old_technician = case.assigned_to
+        old_tech_name = old_technician.get_full_name() or old_technician.username if old_technician else 'Unassigned'
+        new_tech_name = new_technician.get_full_name() or new_technician.username
+        
+        # Update assigned_to
+        case.assigned_to = new_technician
+        
+        # Append to reassignment_history JSON field
+        history_entry = {
+            'from_tech_id': old_technician.id if old_technician else None,
+            'from_tech_name': old_tech_name,
+            'to_tech_id': new_technician.id,
+            'to_tech_name': new_tech_name,
+            'date': timezone.now().isoformat(),
+            'reason': reason or 'Manual reassignment',
+            'reassigned_by': user.get_full_name() or user.username,
+            'reassigned_by_id': user.id
+        }
+        if not case.reassignment_history:
+            case.reassignment_history = []
+        case.reassignment_history.append(history_entry)
+        
+        case.save()
+        
+        # Explicit audit log
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_reassigned',
+            description=f'Case #{case.external_case_id} reassigned from {old_tech_name} to {new_tech_name}',
+            case=case,
+            changes={
+                'assigned_to': {'from': old_tech_name, 'to': new_tech_name},
+                'from_technician_id': old_technician.id if old_technician else None,
+                'to_technician_id': new_technician.id,
+            },
+            metadata={
+                'reason': reason or 'Manual reassignment',
+                'reassigned_by': user.get_full_name() or user.username,
+                'reassigned_at': timezone.now().isoformat(),
+                'old_tech_role': old_technician.role if old_technician else None,
+                'new_tech_role': new_technician.role
+            }
+        )
+        logger.info(f'Case {case.id} reassigned from {old_tech_name} to {new_tech_name} by {user.username}. Reason: {reason}')
+        return True
+    except Exception as e:
+        logger.error(f'Error reassigning case {case.id}: {str(e)}')
+        return False
+
+
 def calculate_hold_duration(case):
     """Calculate how long a case was on hold using hold_start_date"""
     try:

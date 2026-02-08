@@ -1161,6 +1161,7 @@ def case_detail(request, pk):
             'case_held',
             'case_put_on_hold',
             'case_resumed',
+            'case_reassigned',
             'case_ownership_taken',
             'admin_ownership'
         ]
@@ -1779,13 +1780,26 @@ def edit_case(request, pk):
 
 @login_required
 def reassign_case(request, case_id):
-    """API endpoint to reassign a case to a different technician"""
+    """
+    Reassign a case to a different technician/administrator.
+    
+    REQUIREMENTS:
+    - Case must be in 'accepted', 'hold', or 'pending_review' status
+    - Technicians can only reassign cases they own
+    - Managers and administrators can reassign any qualifying case
+    - Full audit trail via case_audit_service.reassign_case()
+    - Populates reassignment_history JSON field on Case model
+    - Creates StaffNotification for the new assignee
+    - Tracks event in Case Event History
+    """
     from django.http import JsonResponse
+    from cases.services.case_audit_service import reassign_case as reassign_case_service
+    from core.models import AuditLog, StaffNotification
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - technicians can reassign only if they own the case, managers and admins can always reassign
+    # Permission check
     if user.role == 'technician':
         if case.assigned_to != user:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1798,10 +1812,17 @@ def reassign_case(request, case_id):
         messages.error(request, 'Permission denied')
         return redirect('cases:case_detail', pk=case_id)
     
+    # Status check — only accepted, hold, or pending_review cases can be reassigned
+    if case.status not in ['accepted', 'hold', 'pending_review']:
+        error_msg = f'Only cases in Accepted, On Hold, or Pending Review status can be reassigned. Current status: {case.get_status_display()}'
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': error_msg}, status=400)
+        messages.error(request, error_msg)
+        return redirect('cases:case_detail', pk=case_id)
+    
     if request.method == 'POST':
-        # Form sends 'assigned_to' parameter with technician ID
         new_technician_id = request.POST.get('assigned_to')
-        reason = request.POST.get('reason', 'Manual reassignment')
+        reason = request.POST.get('reason', '').strip() or 'Manual reassignment'
         
         if not new_technician_id:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -1810,44 +1831,65 @@ def reassign_case(request, case_id):
             return redirect('cases:case_detail', pk=case_id)
         
         try:
-            new_technician = User.objects.get(id=new_technician_id, role='technician')
-            old_technician = case.assigned_to
-            case.assigned_to = new_technician
-            case.save()
-            
-            # Log to audit trail
-            from core.models import AuditLog
-            AuditLog.objects.create(
-                action_type='case_reassigned',
-                user=user,
-                case=case,
-                description=f'Case reassigned from {old_technician.username if old_technician else "Unassigned"} to {new_technician.username}. Reason: {reason}',
-                changes={
-                    'from_technician': old_technician.username if old_technician else 'Unassigned',
-                    'to_technician': new_technician.username,
-                    'reason': reason,
-                    'reassigned_by': user.username
-                }
+            # Allow both technicians and administrators to be assigned
+            new_technician = User.objects.get(
+                id=new_technician_id,
+                role__in=['technician', 'administrator'],
+                is_active=True
             )
             
-            logger.info(f'Case {case.id} reassigned from {old_technician.username if old_technician else "Unassigned"} '
-                       f'to {new_technician.username} by {user.username}. Reason: {reason}')
+            # Don't reassign to the same person
+            if case.assigned_to and case.assigned_to.id == new_technician.id:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Case is already assigned to this person'}, status=400)
+                messages.warning(request, 'Case is already assigned to this person')
+                return redirect('cases:case_detail', pk=case_id)
             
-            # Return JSON for AJAX requests, redirect for traditional form submissions
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'success': True, 
-                    'message': f'Case reassigned to {new_technician.get_full_name() or new_technician.username}',
-                    'new_assignee': new_technician.get_full_name() or new_technician.username
-                })
+            old_technician = case.assigned_to
+            
+            # Use the service layer for reassignment (audit trail + history)
+            success = reassign_case_service(
+                case=case,
+                user=user,
+                new_technician=new_technician,
+                reason=reason
+            )
+            
+            if success:
+                # Create StaffNotification for the new assignee
+                try:
+                    StaffNotification.objects.create(
+                        user=new_technician,
+                        notification_type='case_assigned',
+                        title=f'Case {case.external_case_id} Assigned to You',
+                        message=f'Case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}) has been reassigned to you by {user.get_full_name() or user.username}. Reason: {reason}',
+                        case=case,
+                        is_read=False
+                    )
+                except Exception as notif_err:
+                    logger.warning(f'Failed to create staff notification for reassignment of case {case_id}: {notif_err}')
+                
+                new_name = new_technician.get_full_name() or new_technician.username
+                
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({
+                        'success': True,
+                        'message': f'Case reassigned to {new_name}',
+                        'new_assignee': new_name
+                    })
+                else:
+                    messages.success(request, f'Case reassigned to {new_name}')
+                    return redirect('cases:case_detail', pk=case_id)
             else:
-                messages.success(request, f'Case reassigned to {new_technician.get_full_name() or new_technician.username}')
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'success': False, 'error': 'Failed to reassign case. Please try again.'}, status=500)
+                messages.error(request, 'Failed to reassign case. Please try again.')
                 return redirect('cases:case_detail', pk=case_id)
                 
         except User.DoesNotExist:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'error': 'Technician not found'}, status=404)
-            messages.error(request, 'Technician not found')
+                return JsonResponse({'success': False, 'error': 'Selected user not found or not eligible for assignment'}, status=404)
+            messages.error(request, 'Selected user not found or not eligible for assignment')
             return redirect('cases:case_detail', pk=case_id)
     
     return redirect('cases:case_detail', pk=case_id)
