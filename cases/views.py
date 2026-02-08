@@ -3768,7 +3768,6 @@ def generate_report_notes_pdf(request, pk):
                     align-items: center;
                     padding: 20px 0 20px 0;
                     margin-bottom: 0;
-                    border-bottom: 3px solid #4a4a4a;
                 }}
                 .header-text {{
                     flex: 1;
@@ -3789,10 +3788,11 @@ def generate_report_notes_pdf(request, pk):
                 /* Case Info Bar */
                 .case-info-bar {{
                     display: flex;
+                    border: 1px solid #ccc;
                     border-left: 5px solid #2563eb;
                     padding: 12px 20px;
                     margin: 20px 0 25px 0;
-                    background-color: #fafafa;
+                    background-color: #fff;
                 }}
                 .case-info-bar .info-item {{
                     flex: 1;
@@ -3818,9 +3818,7 @@ def generate_report_notes_pdf(request, pk):
                     font-weight: 700;
                     color: #1a3a5c;
                     margin-bottom: 15px;
-                    padding-bottom: 8px;
-                    border-bottom: 2px solid #2563eb;
-                    text-transform: uppercase;
+                    padding-bottom: 0;
                     letter-spacing: 0.5px;
                 }}
                 .notes-content {{
@@ -3924,7 +3922,7 @@ def generate_report_notes_pdf(request, pk):
             </div>
             
             <div class="notes-section">
-                <h2>Advisor Notes</h2>
+                <h2>Notes to the ProFeds Member</h2>
                 <div class="notes-content">
                     {notes_html}
                 </div>
