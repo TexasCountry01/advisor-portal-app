@@ -3535,8 +3535,14 @@ def request_modification(request, pk):
             return JsonResponse({'error': 'Reason is required'}, status=400)
         
         # Create new case as a copy of the original
+        from cases.services.case_id_generator import generate_case_id
+        from datetime import date
+        
+        # Assign a default due date (7 days from now) — same threshold used for rush calculation
+        default_due_date = date.today() + timedelta(days=7)
+        
         new_case = Case.objects.create(
-            external_case_id=Case.objects.count() + 1000,  # Simplified ID generation
+            external_case_id=generate_case_id(case.workshop_code),
             workshop_code=case.workshop_code,
             member=case.member,
             created_by=user,
@@ -3544,7 +3550,8 @@ def request_modification(request, pk):
             employee_last_name=case.employee_last_name,
             client_email=case.client_email,
             num_reports_requested=case.num_reports_requested,
-            urgency=case.urgency,
+            urgency='normal',  # Default due date is exactly 7 days out → normal
+            date_due=default_due_date,
             status='submitted',  # Start as new submission
             original_case=case,  # Link to original case
             tier=case.tier,
