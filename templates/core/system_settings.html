@@ -268,6 +268,26 @@
                         <!-- Email Notification Settings -->
                         <h6 class="mb-3 mt-4"><i class="bi bi-envelope"></i> Member Email Notifications</h6>
 
+                        <!-- Master Email Toggle -->
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="email_notifications_enabled" 
+                                       name="email_notifications_enabled"
+                                       {% if settings.email_notifications_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="email_notifications_enabled">
+                                    <strong>Enable Email Notifications (Master Toggle)</strong>
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">
+                                When disabled, <strong>no emails will be sent</strong> for any case events. 
+                                This overrides all other email settings below.
+                            </small>
+                        </div>
+
+                        <div id="email-sub-settings" class="ps-3 border-start border-3 border-primary">
+
                         <div class="mb-3">
                             <div class="form-check form-switch">
                                 <input class="form-check-input" 
@@ -356,6 +376,8 @@
                             </div>
                         </div>
 
+                        </div><!-- end email-sub-settings -->
+
                         <div class="alert alert-info mt-3" role="alert">
                             <i class="bi bi-info-circle"></i> <strong>Email Notification Info:</strong>
                             <ul class="mb-0 mt-2 ms-3">
@@ -365,6 +387,24 @@
                                 <li><strong>Staff Visibility:</strong> Technicians, managers, and admins see notification status on case detail page</li>
                             </ul>
                         </div>
+
+                        <script>
+                        (function() {
+                            const masterToggle = document.getElementById('email_notifications_enabled');
+                            const subSettings = document.getElementById('email-sub-settings');
+                            function toggleSubSettings() {
+                                if (masterToggle.checked) {
+                                    subSettings.style.opacity = '1';
+                                    subSettings.style.pointerEvents = 'auto';
+                                } else {
+                                    subSettings.style.opacity = '0.5';
+                                    subSettings.style.pointerEvents = 'none';
+                                }
+                            }
+                            masterToggle.addEventListener('change', toggleSubSettings);
+                            toggleSubSettings();
+                        })();
+                        </script>
                     </div>
                 </div>
             </div>

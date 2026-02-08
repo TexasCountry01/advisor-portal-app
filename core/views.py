@@ -107,6 +107,7 @@ def system_settings(request):
             settings.batch_release_enabled = request.POST.get('batch_release_enabled') == 'on'
             
             # Email Settings
+            settings.email_notifications_enabled = request.POST.get('email_notifications_enabled') == 'on'
             settings.enable_delayed_email_notifications = request.POST.get('enable_delayed_email_notifications') == 'on'
             settings.default_email_delay_hours = int(request.POST.get('default_email_delay_hours', 0))
             settings.batch_email_enabled = request.POST.get('batch_email_enabled') == 'on'

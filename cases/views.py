@@ -929,24 +929,26 @@ def accept_case(request, pk):
                 try:
                     from django.core.mail import send_mail
                     from django.template.loader import render_to_string
+                    from cases.services.email_service import should_send_emails
                     
-                    email_context = {
-                        'case': case,
-                        'accepted_by': user.get_full_name() or user.username,
-                        'tier': tier,
-                        'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
-                    }
-                    
-                    html_message = render_to_string('cases/emails/case_accepted.html', email_context)
-                    
-                    send_mail(
-                        subject=f'Case {case.external_case_id} - Accepted and Assigned to You',
-                        message=f'Case {case.external_case_id} has been accepted as Tier {tier} and assigned to you.',
-                        from_email='noreply@advisor-portal.com',
-                        recipient_list=[case.assigned_to.email],
-                        html_message=html_message,
-                        fail_silently=True
-                    )
+                    if should_send_emails():
+                        email_context = {
+                            'case': case,
+                            'accepted_by': user.get_full_name() or user.username,
+                            'tier': tier,
+                            'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
+                        }
+                        
+                        html_message = render_to_string('cases/emails/case_accepted.html', email_context)
+                        
+                        send_mail(
+                            subject=f'Case {case.external_case_id} - Accepted and Assigned to You',
+                            message=f'Case {case.external_case_id} has been accepted as Tier {tier} and assigned to you.',
+                            from_email='noreply@advisor-portal.com',
+                            recipient_list=[case.assigned_to.email],
+                            html_message=html_message,
+                            fail_silently=True
+                        )
                 except Exception as e:
                     print(f"Error sending tech notification: {str(e)}")
             
@@ -954,24 +956,26 @@ def accept_case(request, pk):
             try:
                 from django.core.mail import send_mail
                 from django.template.loader import render_to_string
+                from cases.services.email_service import should_send_emails
                 
-                email_context = {
-                    'case': case,
-                    'tier': tier,
-                    'member_name': case.member.get_full_name() or case.member.username,
-                    'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
-                }
-                
-                html_message = render_to_string('cases/emails/case_accepted_member.html', email_context)
-                
-                send_mail(
-                    subject=f'Case {case.external_case_id} - Your Case Has Been Accepted',
-                    message=f'Your case {case.external_case_id} has been received and accepted by our team.',
-                    from_email='noreply@advisor-portal.com',
-                    recipient_list=[case.member.email],
-                    html_message=html_message,
-                    fail_silently=True
-                )
+                if should_send_emails():
+                    email_context = {
+                        'case': case,
+                        'tier': tier,
+                        'member_name': case.member.get_full_name() or case.member.username,
+                        'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
+                    }
+                    
+                    html_message = render_to_string('cases/emails/case_accepted_member.html', email_context)
+                    
+                    send_mail(
+                        subject=f'Case {case.external_case_id} - Your Case Has Been Accepted',
+                        message=f'Your case {case.external_case_id} has been received and accepted by our team.',
+                        from_email='noreply@advisor-portal.com',
+                        recipient_list=[case.member.email],
+                        html_message=html_message,
+                        fail_silently=True
+                    )
             except Exception as e:
                 print(f"Error sending member notification: {str(e)}")
             
@@ -1395,49 +1399,53 @@ def put_case_on_hold(request, case_id):
                     # Build absolute case detail URL
                     from django.urls import reverse
                     from django.contrib.sites.shortcuts import get_current_site
+                    from cases.services.email_service import should_send_emails
                     
-                    protocol = 'https' if request.is_secure() else 'http'
-                    domain = get_current_site(request).domain
-                    case_detail_url = f"{protocol}://{domain}{reverse('cases:case_detail', args=[case.id])}"
-                    
-                    # Prepare email context
-                    email_context = {
-                        'member_name': case.member.get_full_name() or case.member.username,
-                        'case_id': case.external_case_id,
-                        'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
-                        'hold_reason': reason,
-                        'case_detail_url': case_detail_url,
-                        'app_name': 'Advisor Portal'
-                    }
-                    
-                    # Render email content (both text and HTML)
-                    email_subject = f'Action Required: Your Case {case.external_case_id} Requires Additional Information'
-                    text_message = render_to_string('cases/emails/case_on_hold.txt', email_context)
-                    html_message = render_to_string('cases/emails/case_on_hold.html', email_context)
-                    
-                    # Send email with both text and HTML versions
-                    send_mail(
-                        subject=email_subject,
-                        message=text_message,
-                        from_email=settings.DEFAULT_FROM_EMAIL,
-                        recipient_list=[case.member.email],
-                        html_message=html_message,
-                        fail_silently=False
-                    )
-                    
-                    # Log successful email send in audit trail
-                    AuditLog.objects.create(
-                        case=case,
-                        user=user,
-                        action_type='email_notification_sent',
-                        description=f'Member notification email sent to {case.member.email} - case put on hold',
-                        metadata={
-                            'email_to': case.member.email,
-                            'email_subject': email_subject,
+                    if not should_send_emails():
+                        logger.info(f'Email notifications disabled. Skipped hold email for case {case_id}')
+                    else:
+                        protocol = 'https' if request.is_secure() else 'http'
+                        domain = get_current_site(request).domain
+                        case_detail_url = f"{protocol}://{domain}{reverse('cases:case_detail', args=[case.id])}"
+                        
+                        # Prepare email context
+                        email_context = {
+                            'member_name': case.member.get_full_name() or case.member.username,
+                            'case_id': case.external_case_id,
+                            'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
                             'hold_reason': reason,
-                            'notification_id': notification.id
+                            'case_detail_url': case_detail_url,
+                            'app_name': 'Advisor Portal'
                         }
-                    )
+                        
+                        # Render email content (both text and HTML)
+                        email_subject = f'Action Required: Your Case {case.external_case_id} Requires Additional Information'
+                        text_message = render_to_string('cases/emails/case_on_hold.txt', email_context)
+                        html_message = render_to_string('cases/emails/case_on_hold.html', email_context)
+                        
+                        # Send email with both text and HTML versions
+                        send_mail(
+                            subject=email_subject,
+                            message=text_message,
+                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[case.member.email],
+                            html_message=html_message,
+                            fail_silently=False
+                        )
+                        
+                        # Log successful email send in audit trail
+                        AuditLog.objects.create(
+                            case=case,
+                            user=user,
+                            action_type='email_notification_sent',
+                            description=f'Member notification email sent to {case.member.email} - case put on hold',
+                            metadata={
+                                'email_to': case.member.email,
+                                'email_subject': email_subject,
+                                'hold_reason': reason,
+                                'notification_id': notification.id
+                            }
+                        )
                     
                 except Exception as email_error:
                     # Log email failure but don't fail the entire operation
@@ -3165,30 +3173,35 @@ def reject_case(request, pk):
         from django.core.mail import send_mail
         from django.template.loader import render_to_string
         from django.conf import settings
+        from cases.services.email_service import should_send_emails
         
-        email_context = {
-            'member': case.member,
-            'case': case,
-            'rejection_reason': case.get_rejection_reason_display(),
-            'rejection_notes': rejection_notes,
-            'case_url': f'{settings.SITE_URL}/cases/{case.id}/' if hasattr(settings, 'SITE_URL') else 'https://yoursite.com/cases/',
-        }
-        
-        subject = f'Case {case.external_case_id} - Additional Information Needed'
-        text_message = render_to_string('emails/case_rejection_notification.txt', email_context)
-        html_message = render_to_string('emails/case_rejection_notification.html', email_context)
-        
-        send_mail(
-            subject=subject,
-            message=text_message,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[case.member.email],
-            html_message=html_message,
-            fail_silently=False,
-        )
-        
-        logger.info(f'Case {case.external_case_id} rejected by {user.username}. '
-                   f'Reason: {rejection_reason}. Email sent to {case.member.email}')
+        if should_send_emails():
+            email_context = {
+                'member': case.member,
+                'case': case,
+                'rejection_reason': case.get_rejection_reason_display(),
+                'rejection_notes': rejection_notes,
+                'case_url': f'{settings.SITE_URL}/cases/{case.id}/' if hasattr(settings, 'SITE_URL') else 'https://yoursite.com/cases/',
+            }
+            
+            subject = f'Case {case.external_case_id} - Additional Information Needed'
+            text_message = render_to_string('emails/case_rejection_notification.txt', email_context)
+            html_message = render_to_string('emails/case_rejection_notification.html', email_context)
+            
+            send_mail(
+                subject=subject,
+                message=text_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[case.member.email],
+                html_message=html_message,
+                fail_silently=False,
+            )
+            
+            logger.info(f'Case {case.external_case_id} rejected by {user.username}. '
+                       f'Reason: {rejection_reason}. Email sent to {case.member.email}')
+        else:
+            logger.info(f'Case {case.external_case_id} rejected by {user.username}. '
+                       f'Reason: {rejection_reason}. Email skipped (notifications disabled)')
         
         messages.success(request, f'✓ Case {case.external_case_id} moved to "Needs Resubmission". '
                         f'Notification sent to {case.member.get_full_name()}.')
@@ -4194,22 +4207,27 @@ def edit_case_details(request, pk):
             # Send optional notification email
             if send_notification and case.member:
                 try:
-                    subject = f'Case {case.external_case_id} Details Updated'
+                    from cases.services.email_service import should_send_emails
                     
-                    # Build change summary
-                    change_list = []
-                    if 'employee_first_name' in changes:
-                        change_list.append(f"Employee First Name: '{old_values['employee_first_name']}' → '{new_values['employee_first_name']}'")
-                    if 'employee_last_name' in changes:
-                        change_list.append(f"Employee Last Name: '{old_values['employee_last_name']}' → '{new_values['employee_last_name']}'")
-                    if 'date_due' in changes:
-                        change_list.append(f"Due Date: {old_values['date_due']} → {new_values['date_due']}")
-                    if 'assigned_to' in changes:
-                        change_list.append(f"Assigned To: {old_values['assigned_to']} → {new_values['assigned_to']}")
-                    
-                    change_summary = '\n'.join([f"  • {item}" for item in change_list])
-                    
-                    message = f"""Dear {case.member.first_name},
+                    if not should_send_emails():
+                        logger.info(f'Email notifications disabled. Skipped edit notification for case {case.external_case_id}')
+                    else:
+                        subject = f'Case {case.external_case_id} Details Updated'
+                        
+                        # Build change summary
+                        change_list = []
+                        if 'employee_first_name' in changes:
+                            change_list.append(f"Employee First Name: '{old_values['employee_first_name']}' → '{new_values['employee_first_name']}'")
+                        if 'employee_last_name' in changes:
+                            change_list.append(f"Employee Last Name: '{old_values['employee_last_name']}' → '{new_values['employee_last_name']}'")
+                        if 'date_due' in changes:
+                            change_list.append(f"Due Date: {old_values['date_due']} → {new_values['date_due']}")
+                        if 'assigned_to' in changes:
+                            change_list.append(f"Assigned To: {old_values['assigned_to']} → {new_values['assigned_to']}")
+                        
+                        change_summary = '\n'.join([f"  • {item}" for item in change_list])
+                        
+                        message = f"""Dear {case.member.first_name},
 
 Your case {case.external_case_id} has been updated with the following corrections:
 
@@ -4224,16 +4242,16 @@ If you have any questions about these changes, please contact your benefits admi
 
 Best regards,
 Advisor Portal System"""
-                    
-                    send_mail(
-                        subject,
-                        message,
-                        'noreply@profeds.com',
-                        [case.member.email],
-                        fail_silently=False
-                    )
-                    
-                    logger.info(f'Case edit notification email sent to {case.member.email}')
+                        
+                        send_mail(
+                            subject,
+                            message,
+                            'noreply@profeds.com',
+                            [case.member.email],
+                            fail_silently=False
+                        )
+                        
+                        logger.info(f'Case edit notification email sent to {case.member.email}')
                     
                 except Exception as e:
                     logger.error(f'Error sending case edit notification: {str(e)}')
