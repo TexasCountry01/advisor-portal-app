@@ -854,6 +854,15 @@ def accept_case(request, pk):
             case.date_accepted = timezone.now()
             case.accepted_by = user  # Track who did the acceptance (validation review)
             
+            # Set credit value from acceptance form (with audit trail)
+            if credit_value:
+                try:
+                    from decimal import Decimal
+                    from cases.services.credit_service import set_case_credit
+                    set_case_credit(case, Decimal(credit_value), user, 'acceptance', f'Set to {credit_value} during case acceptance')
+                except (ValueError, TypeError):
+                    pass  # Keep existing credit_value if invalid
+            
             # Handle assignment
             if leave_unassigned:
                 # Case is accepted (reviewed) but not assigned to anyone yet
