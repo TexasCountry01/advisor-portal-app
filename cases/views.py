@@ -1149,8 +1149,7 @@ def case_detail(request, pk):
             Q(case=case) | Q(document__case=case)
         ).select_related('user', 'case', 'document').order_by('-timestamp')[:15]
     
-    # Get ALL case events for comprehensive audit trail (available to all roles)
-    # Include: submission, acceptance, hold, ownership changes
+    # Get ALL case lifecycle events for comprehensive history (available to all roles)
     from core.models import AuditLog
     case_event_logs = AuditLog.objects.filter(
         case=case,
@@ -1158,12 +1157,20 @@ def case_detail(request, pk):
             'case_submitted',
             'case_resubmitted',
             'case_accepted',
-            'case_held',
-            'case_put_on_hold',
-            'case_resumed',
+            'case_assigned',
             'case_reassigned',
+            'case_tier_changed',
+            'case_held',
+            'case_resumed',
+            'case_completed',
+            'case_incomplete',
+            'case_review_approved',
+            'case_review_revisions',
+            'case_review_corrected',
+            'case_rejected',
+            'case_cancelled',
             'case_ownership_taken',
-            'admin_ownership'
+            'admin_ownership',
         ]
     ).select_related('user').order_by('-timestamp')
     

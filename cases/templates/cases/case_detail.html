@@ -1256,49 +1256,107 @@
                                         </div>
                                         {% endif %}
 
-                                        <!-- Case Event History Section -->
+                                        <!-- Case Lifecycle History Section -->
                                         {% if case_event_logs %}
                                         <div>
-                                            <h6 class="border-bottom pb-2 mb-3">Case Event History</h6>
+                                            <h6 class="border-bottom pb-2 mb-3"><i class="bi bi-clock-history me-1"></i>Case Lifecycle History</h6>
                                             <div class="table-responsive">
-                                                <table class="table table-sm table-hover mb-0">
+                                                <table class="table table-sm table-hover mb-0" style="font-size: 0.875rem;">
                                                     <thead class="table-light">
                                                         <tr>
-                                                            <th style="width: 35%;">Date/Time</th>
-                                                            <th style="width: 30%;">Event</th>
-                                                            <th style="width: 35%;">User</th>
+                                                            <th style="width: 22%;">Date / Time</th>
+                                                            <th style="width: 22%;">Event</th>
+                                                            <th style="width: 20%;">User</th>
+                                                            <th style="width: 36%;">Details</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
                                                         {% for event in case_event_logs %}
                                                         <tr>
-                                                            <td class="text-muted small">
-                                                                {{ event.timestamp|date:"m/d/Y H:i" }}
+                                                            <td class="text-muted">
+                                                                {{ event.timestamp|date:"m/d/Y" }}<br>
+                                                                <small>{{ event.timestamp|date:"h:i A" }}</small>
                                                             </td>
                                                             <td>
                                                                 {% if event.action_type == 'case_submitted' %}
-                                                                    <span class="badge bg-info">Submitted</span>
+                                                                    <span class="badge bg-info"><i class="bi bi-send me-1"></i>Submitted</span>
                                                                 {% elif event.action_type == 'case_resubmitted' %}
-                                                                    <span class="badge bg-info">Resubmitted</span>
+                                                                    <span class="badge bg-info"><i class="bi bi-arrow-repeat me-1"></i>Resubmitted</span>
                                                                 {% elif event.action_type == 'case_accepted' %}
-                                                                    <span class="badge bg-success">Accepted{% if event.metadata.tier %} - Tier {{ event.metadata.tier }}{% endif %}</span>
-                                                                {% elif event.action_type == 'case_put_on_hold' %}
-                                                                    <span class="badge bg-warning">Put on Hold</span>
+                                                                    <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Accepted</span>
+                                                                {% elif event.action_type == 'case_assigned' %}
+                                                                    <span class="badge bg-secondary"><i class="bi bi-person-check me-1"></i>Assigned</span>
+                                                                {% elif event.action_type == 'case_reassigned' %}
+                                                                    <span class="badge" style="background-color: #6f42c1;"><i class="bi bi-arrow-left-right me-1"></i>Reassigned</span>
+                                                                {% elif event.action_type == 'case_tier_changed' %}
+                                                                    <span class="badge bg-secondary"><i class="bi bi-layers me-1"></i>Tier Changed</span>
                                                                 {% elif event.action_type == 'case_held' %}
-                                                                    <span class="badge bg-warning">Put on Hold</span>
+                                                                    <span class="badge bg-warning text-dark"><i class="bi bi-pause-circle me-1"></i>Put on Hold</span>
                                                                 {% elif event.action_type == 'case_resumed' %}
-                                                                    <span class="badge bg-info">Resumed from Hold</span>
+                                                                    <span class="badge bg-info"><i class="bi bi-play-circle me-1"></i>Resumed</span>
+                                                                {% elif event.action_type == 'case_completed' %}
+                                                                    <span class="badge bg-success"><i class="bi bi-check2-all me-1"></i>Completed</span>
+                                                                {% elif event.action_type == 'case_incomplete' %}
+                                                                    <span class="badge bg-warning text-dark"><i class="bi bi-exclamation-circle me-1"></i>Marked Incomplete</span>
+                                                                {% elif event.action_type == 'case_review_approved' %}
+                                                                    <span class="badge bg-success"><i class="bi bi-shield-check me-1"></i>Review Approved</span>
+                                                                {% elif event.action_type == 'case_review_revisions' %}
+                                                                    <span class="badge bg-warning text-dark"><i class="bi bi-pencil-square me-1"></i>Revisions Requested</span>
+                                                                {% elif event.action_type == 'case_review_corrected' %}
+                                                                    <span class="badge bg-info"><i class="bi bi-pencil me-1"></i>Corrections Applied</span>
+                                                                {% elif event.action_type == 'case_rejected' %}
+                                                                    <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>
+                                                                {% elif event.action_type == 'case_cancelled' %}
+                                                                    <span class="badge bg-dark"><i class="bi bi-slash-circle me-1"></i>Cancelled</span>
                                                                 {% elif event.action_type == 'case_ownership_taken' %}
-                                                                    <span class="badge bg-primary">Ownership Claimed</span>
+                                                                    <span class="badge bg-primary"><i class="bi bi-person-fill me-1"></i>Ownership Claimed</span>
                                                                 {% elif event.action_type == 'admin_ownership' %}
-                                                                    <span class="badge bg-danger">Admin Ownership</span>
+                                                                    <span class="badge bg-danger"><i class="bi bi-shield-lock me-1"></i>Admin Ownership</span>
+                                                                {% else %}
+                                                                    <span class="badge bg-light text-dark">{{ event.get_action_type_display }}</span>
                                                                 {% endif %}
                                                             </td>
-                                                            <td class="small" style="font-size: 0.85rem;">
+                                                            <td>
                                                                 {% if event.user %}
                                                                     {{ event.user.get_full_name|default:event.user.username }}
                                                                 {% else %}
-                                                                    System
+                                                                    <span class="text-muted fst-italic">System</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-muted">
+                                                                {% if event.action_type == 'case_accepted' and event.metadata.tier %}
+                                                                    Tier {{ event.metadata.tier }}
+                                                                    {% if event.metadata.credit_value %} &middot; {{ event.metadata.credit_value }} Credits{% endif %}
+                                                                {% elif event.action_type == 'case_reassigned' %}
+                                                                    {% if event.changes.assigned_to.from and event.changes.assigned_to.to %}
+                                                                        {{ event.changes.assigned_to.from }} &rarr; {{ event.changes.assigned_to.to }}
+                                                                    {% endif %}
+                                                                    {% if event.metadata.reason %}<br><small>{{ event.metadata.reason }}</small>{% endif %}
+                                                                {% elif event.action_type == 'case_tier_changed' %}
+                                                                    {% if event.changes.tier.from and event.changes.tier.to %}
+                                                                        Tier {{ event.changes.tier.from }} &rarr; Tier {{ event.changes.tier.to }}
+                                                                    {% endif %}
+                                                                    {% if event.metadata.reason %}<br><small>{{ event.metadata.reason }}</small>{% endif %}
+                                                                {% elif event.action_type == 'case_held' %}
+                                                                    {% if event.metadata.reason %}{{ event.metadata.reason }}{% endif %}
+                                                                {% elif event.action_type == 'case_resumed' %}
+                                                                    {% if event.metadata.hold_duration %}Hold duration: {{ event.metadata.hold_duration }}{% endif %}
+                                                                    {% if event.metadata.reason %}<br><small>{{ event.metadata.reason }}</small>{% endif %}
+                                                                {% elif event.action_type == 'case_completed' %}
+                                                                    {% if event.metadata.release_msg %}{{ event.metadata.release_msg }}{% endif %}
+                                                                {% elif event.action_type == 'case_incomplete' %}
+                                                                    Returned to active work
+                                                                {% elif event.action_type == 'case_review_approved' %}
+                                                                    {% if event.metadata.review_notes %}{{ event.metadata.review_notes|truncatewords:15 }}{% endif %}
+                                                                {% elif event.action_type == 'case_review_revisions' %}
+                                                                    {% if event.metadata.revision_feedback %}{{ event.metadata.revision_feedback|truncatewords:15 }}{% endif %}
+                                                                {% elif event.action_type == 'case_review_corrected' %}
+                                                                    {% if event.metadata.correction_notes %}{{ event.metadata.correction_notes|truncatewords:15 }}{% endif %}
+                                                                {% elif event.action_type == 'case_rejected' %}
+                                                                    {% if event.metadata.rejection_reason %}{{ event.metadata.rejection_reason }}{% endif %}
+                                                                    {% if event.metadata.rejection_notes %}<br><small>{{ event.metadata.rejection_notes|truncatewords:12 }}</small>{% endif %}
+                                                                {% elif event.action_type == 'case_cancelled' %}
+                                                                    Via member request
                                                                 {% endif %}
                                                             </td>
                                                         </tr>
