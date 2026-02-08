@@ -2599,7 +2599,7 @@ def mark_case_incomplete(request, case_id):
     
     if request.method == 'POST':
         try:
-            case.status = 'pending_review'  # Revert to pending review status
+            case.status = 'accepted'  # Return to accepted (tech is pulling back to work on it)
             case.date_completed = None  # Clear completion date
             case.save()
             
@@ -2610,7 +2610,7 @@ def mark_case_incomplete(request, case_id):
                 action_type='case_incomplete',
                 case=case,
                 description=f'Case marked as incomplete and reactivated',
-                changes={'status': {'from': 'completed', 'to': 'pending_review'}}
+                changes={'status': {'from': 'completed', 'to': 'accepted'}}
             )
             
             messages.success(request, 'Case marked as incomplete and reactivated.')

@@ -1349,8 +1349,8 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-2">
-                            {% if case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' %}
-                                <!-- Quality Review Actions for Level 2/3 Technicians -->
+                            {% if case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' and case.assigned_to != user %}
+                                <!-- Quality Review Actions for Level 2/3 Technicians reviewing another tech's work -->
                                 <div class="alert alert-info mb-3">
                                     <strong><i class="bi bi-check-circle"></i> Quality Review Required</strong>
                                     <p class="mb-0 small">Review and approve this case from Level 1 technician {{ case.assigned_to.first_name }} {{ case.assigned_to.last_name }}</p>
@@ -3298,7 +3298,7 @@ document.addEventListener('DOMContentLoaded', function() {
 {% include 'cases/edit_case_details_modal.html' %}
 
 <!-- Quality Review Modals -->
-{% if case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' %}
+{% if case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' and case.assigned_to != user %}
 
 <!-- Approve Review Modal -->
 <div class="modal fade" id="approveReviewModal" tabindex="-1">
