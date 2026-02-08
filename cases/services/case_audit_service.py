@@ -44,6 +44,7 @@ def hold_case(case, user, reason='', hold_duration_days=None):
         case._audit_user = user
         case._hold_reason = reason or 'Case placed on hold'
         case._hold_duration_days = hold_duration_days
+        case._skip_audit_signal = True  # Service handles logging, skip signals
         case.save()
         
         # Explicit audit log
@@ -102,6 +103,7 @@ def resume_case(case, user, reason='', previous_status='accepted'):
         case.hold_end_date = None
         case.hold_duration_days = None
         
+        case._skip_audit_signal = True  # Service handles logging, skip signals
         case.save()
         
         # Explicit audit log
@@ -142,6 +144,7 @@ def change_case_tier(case, user, new_tier, reason=''):
         case.tier = new_tier
         case._audit_user = user
         case._tier_change_reason = reason or 'Tier adjustment'
+        case._skip_audit_signal = True  # Service handles logging, skip signals
         case.save()
         
         # Explicit audit log
@@ -199,6 +202,7 @@ def reassign_case(case, user, new_technician, reason=''):
             case.reassignment_history = []
         case.reassignment_history.append(history_entry)
         
+        case._skip_audit_signal = True  # Service handles logging, skip signals
         case.save()
         
         # Explicit audit log

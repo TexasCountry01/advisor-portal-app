@@ -159,6 +159,7 @@
                         {% for field, change in audit_log.changes.items %}
                             <tr>
                                 <td><strong>{{ field|title }}</strong></td>
+                                {% if change.from is not None or change.to is not None %}
                                 <td>
                                     {% if change.from %}
                                         <code>{{ change.from }}</code>
@@ -173,6 +174,9 @@
                                         <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
+                                {% else %}
+                                <td colspan="2"><code>{{ change }}</code></td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>

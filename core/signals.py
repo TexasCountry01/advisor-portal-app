@@ -86,6 +86,10 @@ def log_case_activity(sender, instance, created, **kwargs):
     if not hasattr(instance, '_state'):
         return
     
+    # Skip if service layer already handled audit logging
+    if getattr(instance, '_skip_audit_signal', False):
+        return
+    
     # Get the user from request context (set by views)
     user = getattr(instance, '_audit_user', None)
     if not user:
@@ -410,6 +414,10 @@ def log_case_hold_resume(sender, instance, created, **kwargs):
     if created:
         return
     
+    # Skip if service layer already handled audit logging
+    if getattr(instance, '_skip_audit_signal', False):
+        return
+    
     user = getattr(instance, '_audit_user', None)
     if not user:
         return
@@ -462,6 +470,10 @@ def track_case_tier_changes(sender, instance, **kwargs):
 def log_case_tier_change(sender, instance, created, **kwargs):
     """Log when case tier is changed (NEW)"""
     if created:
+        return
+    
+    # Skip if service layer already handled audit logging
+    if getattr(instance, '_skip_audit_signal', False):
         return
     
     user = getattr(instance, '_audit_user', None)
