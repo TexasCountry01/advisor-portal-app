@@ -1004,14 +1004,14 @@
                             <label for="assignCreditValue" class="form-label small">Assign Credit Value:</label>
                             <select class="form-select form-select-sm" id="assignCreditValue" name="assign_credit_value">
                                 <option value="">-- Select Credit --</option>
-                                <option value="0.5">0.5 Credits</option>
-                                <option value="1.0">1.0 Credit</option>
-                                <option value="1.5">1.5 Credits</option>
-                                <option value="2.0">2.0 Credits</option>
-                                <option value="2.5">2.5 Credits</option>
-                                <option value="3.0">3.0 Credits</option>
+                                <option value="0.5" {% if case.credit_value|floatformat:1 == "0.5" %}selected{% endif %}>0.5 Credits</option>
+                                <option value="1.0" {% if case.credit_value|floatformat:1 == "1.0" %}selected{% endif %}>1.0 Credit</option>
+                                <option value="1.5" {% if case.credit_value|floatformat:1 == "1.5" %}selected{% endif %}>1.5 Credits</option>
+                                <option value="2.0" {% if case.credit_value|floatformat:1 == "2.0" %}selected{% endif %}>2.0 Credits</option>
+                                <option value="2.5" {% if case.credit_value|floatformat:1 == "2.5" %}selected{% endif %}>2.5 Credits</option>
+                                <option value="3.0" {% if case.credit_value|floatformat:1 == "3.0" %}selected{% endif %}>3.0 Credits</option>
                             </select>
-                            <small class="text-muted d-block mt-1">Credit value for this case</small>
+                            <small class="text-muted d-block mt-1">Default based on {{ case.num_reports_requested }} report{{ case.num_reports_requested|pluralize }} requested. Adjust if needed.</small>
                         </div>
                         
                         <!-- Assign Tech -->
