@@ -141,8 +141,9 @@
                             <td>
                                 {% if log.case %}
                                     <a href="{% url 'cases:case_detail' log.case.id %}" class="text-decoration-none">
-                                        #{{ log.case.id }}
+                                        {{ log.case.employee_first_name }} {{ log.case.employee_last_name }}
                                     </a>
+                                    <br><small class="text-muted">{{ log.case.external_case_id }}</small>
                                 {% else %}
                                     <span class="text-muted">-</span>
                                 {% endif %}

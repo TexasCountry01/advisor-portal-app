@@ -101,8 +101,11 @@
                                     <h6 class="card-title">Case</h6>
                                     <p class="card-text">
                                         <a href="{% url 'cases:case_detail' audit_log.case.id %}" class="text-decoration-none">
-                                            Case #{{ audit_log.case.id }}
+                                            {{ audit_log.case.external_case_id }}
                                         </a>
+                                    </p>
+                                    <p class="card-text mb-1">
+                                        <strong>Employee:</strong> {{ audit_log.case.employee_first_name }} {{ audit_log.case.employee_last_name }}
                                     </p>
                                     <small class="text-muted">Status: {{ audit_log.case.get_status_display }}</small>
                                 </div>
