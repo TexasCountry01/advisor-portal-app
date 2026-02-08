@@ -3561,11 +3561,13 @@ def request_modification(request, pk):
             original_case=case,  # Link to original case
             tier=case.tier,
             date_submitted=tz.now(),
+            assigned_to=case.assigned_to,  # Auto-assign to original technician
+            has_profeds_error=is_profeds_error,  # Carry the error flag onto the mod case
         )
         
-        logger.info(f'New modification case {new_case.external_case_id} created for case {case.external_case_id} by member {user.username}')
+        logger.info(f'New modification case {new_case.external_case_id} created for case {case.external_case_id} by member {user.username} (assigned to: {case.assigned_to})')
         
-        # If member flagged as ProFeds error, mark original case and log to audit trail
+        # If member flagged as ProFeds error, also mark original case and log to audit trail
         if is_profeds_error:
             case.has_profeds_error = True
             case.error_modification_count += 1

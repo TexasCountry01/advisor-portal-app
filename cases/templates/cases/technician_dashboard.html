@@ -335,6 +335,15 @@
                             <td id="code-column" class="column-code {% if 'code' not in visible_columns %}column-hidden{% endif %}">
                                 <div class="d-flex align-items-center gap-2">
                                     <span>{{ case.workshop_code }}</span>
+                                    {% if case.has_profeds_error %}
+                                    <span class="badge bg-danger" title="Member flagged this as a ProFeds error — prioritize this modification">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Our Error
+                                    </span>
+                                    {% elif case.original_case and case.original_case.has_profeds_error %}
+                                    <span class="badge bg-danger" title="Member flagged this as a ProFeds error — prioritize this modification">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Our Error
+                                    </span>
+                                    {% endif %}
                                     {% if case.has_member_updates %}
                                     <span class="badge bg-warning text-dark" title="Member has provided new information">
                                         <i class="bi bi-info-circle"></i> New Info

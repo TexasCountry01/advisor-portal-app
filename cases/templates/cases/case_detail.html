@@ -338,11 +338,20 @@
             {% if user.role in 'technician,manager,administrator' and case.has_profeds_error %}
             <div class="alert alert-danger mb-4" role="alert">
                 <i class="bi bi-exclamation-triangle-fill"></i>
-                <strong> ProFeds Error Flagged:</strong> This case was returned by the member with an error flag indicating a ProFeds/technician mistake. 
+                <strong> ProFeds Error Flagged:</strong> 
+                {% if case.original_case %}
+                    This modification was flagged by the member as a ProFeds/technician error. Please prioritize this case.
+                {% else %}
+                    This case was returned by the member with an error flag indicating a ProFeds/technician mistake.
+                {% endif %}
                 {% if case.error_modification_count > 1 %}
                 <br><small class="text-muted mt-2 d-block">This is the <strong>{{ case.error_modification_count }}</strong> modification flagged with an error.</small>
                 {% endif %}
+                {% if case.original_case %}
+                <br><small class="mt-2 d-block">Original case: <a href="{% url 'cases:case_detail' case.original_case.pk %}">{{ case.original_case.external_case_id }}</a></small>
+                {% else %}
                 <br><small class="mt-2 d-block">See the modification case linked above for details on the requested changes.</small>
+                {% endif %}
             </div>
             {% endif %}
 
