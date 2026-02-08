@@ -1,5 +1,5 @@
 # Advisor Portal - Environment Configuration
-**Last Updated:** February 1, 2026
+**Last Updated:** February 8, 2026
 
 ---
 
@@ -122,7 +122,7 @@ Advisor Portal is deployed on two separate DigitalOcean droplets (TEST and PROD)
 | **MySQL Port** | 25060 | 25060 |
 | **Media Path** | /home/dev/advisor-portal-app/media/ | /var/www/advisor-portal/media/ |
 | **Status** | Active - Latest Code | Active - Latest Code |
-| **Current Commit** | 491a78b | 491a78b |
+| **Current Commit** | b644de8 | b644de8 |
 | **Users** | QA/Testing Only | Live Users (When Deployed) |
 
 ---
@@ -149,20 +149,44 @@ Advisor Portal is deployed on two separate DigitalOcean droplets (TEST and PROD)
 
 ## Current Deployed Code
 
-**Commit Hash:** `491a78b`
+**Commit Hash:** `b644de8`
 **Branch:** `main`
-**Last Updated:** February 1, 2026, 23:56 UTC
+**Last Updated:** February 8, 2026, 23:03 UTC
 
 ### Key Features Deployed
 - ✅ ProFeds error tracking system
 - ✅ StaffNotification in-app alerts
 - ✅ Error tracking report (`/reports/profeds-errors/`)
 - ✅ Case detail page enhancements
-- ✅ All UI refinements from today's work
+- ✅ Complete case acceptance workflow (inline on case detail)
+- ✅ Member document upload flow (draft + additional uploads)
+- ✅ Credit value persistence on acceptance + audit trail
+- ✅ PDF notes download with cover page, logo, embedded images (WeasyPrint)
+- ✅ Hold/resume flow with status preservation and duration tracking
+- ✅ Case reassignment with service layer, audit trail, notifications
+- ✅ Mark as Incomplete workflow
+- ✅ Case lifecycle history (17 event types with colored badges)
+- ✅ Modification case flow (due dates, auto-assign, ProFeds error badges)
+- ✅ Member cancellation workflow with audit trail
+- ✅ CSRF/SSL proxy header fix for nginx
+- ✅ Auto-dismiss alert banners
+- ✅ Report/notes visibility gated on completion + release
+- ✅ Employee name display throughout (dashboards, PDFs, audit trail)
+- ✅ Fact Finder PDF link in case submission
+- ✅ Screenshot/image support in technical notes editor
 
 ### Database Migrations Applied
 - ✅ `cases.0032_case_error_modification_count_case_has_profeds_error`
 - ✅ `core.0009_staffnotification`
+- ✅ `cases.0033_hold_flow_improvements`
+- ✅ `core.0010_audit_log_action_choices_update`
+
+### System Dependencies Installed (Feb 8)
+- ✅ libpango-1.0-0, libpangocairo-1.0-0, libpangoft2-1.0-0 (text rendering)
+- ✅ libcairo2 (2D graphics for WeasyPrint PDF)
+- ✅ libgdk-pixbuf-2.0-0, libgdk-pixbuf2.0-0/bin/common (image loading)
+- ✅ libharfbuzz0b (OpenType text shaping)
+- ✅ libffi-dev (Foreign Function Interface)
 
 ---
 
@@ -252,6 +276,6 @@ mysql -h [MYSQL_HOST] -u doadmin -p -D advisor_portal -e "SELECT VERSION();"
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Created:** February 1, 2026
-**Last Modified:** February 1, 2026
+**Last Modified:** February 8, 2026
