@@ -3745,7 +3745,7 @@ def generate_report_notes_pdf(request, pk):
             <style>
                 @page {{
                     size: letter;
-                    margin: 0.75in 0.75in 1in 0.75in;
+                    margin: 0.4in 0.75in 1in 0.75in;
                     @bottom-center {{
                         content: "Page " counter(page) " of " counter(pages);
                         font-size: 9pt;
@@ -3766,7 +3766,7 @@ def generate_report_notes_pdf(request, pk):
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 20px 0 20px 0;
+                    padding: 0 0 10px 0;
                     margin-bottom: 0;
                 }}
                 .header-text {{
@@ -3791,7 +3791,7 @@ def generate_report_notes_pdf(request, pk):
                     border: 1px solid #ccc;
                     border-left: 5px solid #2563eb;
                     padding: 12px 20px;
-                    margin: 20px 0 25px 0;
+                    margin: 8px 0 25px 0;
                     background-color: #fff;
                 }}
                 .case-info-bar .info-item {{
