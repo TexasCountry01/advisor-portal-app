@@ -51,6 +51,18 @@ class AuditLog(models.Model):
         ('bulk_export', 'Bulk Data Export'),
         ('settings_updated', 'Settings Updated'),
         ('export_generated', 'Export Generated'),
+        ('case_ownership_taken', 'Case Ownership Taken'),
+        ('case_completed', 'Case Completed'),
+        ('case_incomplete', 'Case Marked Incomplete'),
+        ('case_rejected', 'Case Rejected'),
+        ('case_cancelled', 'Case Cancelled'),
+        ('case_deleted', 'Case Deleted'),
+        ('case_review_approved', 'Case Review Approved'),
+        ('case_review_revisions', 'Case Review Revisions Requested'),
+        ('case_review_corrected', 'Case Review Corrected'),
+        ('member_change_request_created', 'Member Change Request Created'),
+        ('member_change_request_approved', 'Member Change Request Approved'),
+        ('member_change_request_denied', 'Member Change Request Denied'),
         ('other', 'Other Activity'),
     ]
     

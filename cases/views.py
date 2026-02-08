@@ -717,6 +717,22 @@ def delete_case(request, pk):
         reports = case.reports.count()
         notes = case.case_notes.count()
         
+        # Log deletion to audit trail BEFORE deleting
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=request.user,
+            action_type='case_deleted',
+            description=f'Case for {employee_name} permanently deleted ({documents} documents, {reports} reports, {notes} notes)',
+            metadata={
+                'case_id': case.id,
+                'external_case_id': case.external_case_id,
+                'employee_name': employee_name,
+                'documents_count': documents,
+                'reports_count': reports,
+                'notes_count': notes,
+            }
+        )
+        
         # Delete the case (cascade will handle related objects)
         case.delete()
         
@@ -1839,6 +1855,20 @@ def submit_case_final(request, case_id):
             case.date_submitted = timezone.now()
             case.save()
             
+            # Log case submission to audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=request.user,
+                action_type='case_submitted',
+                case=case,
+                description=f'Case submitted for {case.employee_first_name} {case.employee_last_name}',
+                metadata={
+                    'urgency': case.urgency,
+                    'urgency_changed': current_urgency != stored_urgency,
+                    'document_count': case.documents.count(),
+                }
+            )
+            
             return JsonResponse({
                 'success': True,
                 'message': f'Case {case.external_case_id} has been submitted successfully',
@@ -2425,6 +2455,22 @@ def mark_case_completed(request, case_id):
             
             case.save()
             
+            # Log case completion to audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=request.user,
+                action_type='case_completed',
+                case=case,
+                description=f'Case marked as {case.status} - {release_msg}',
+                metadata={
+                    'status': case.status,
+                    'release_msg': release_msg,
+                    'release_option': release_option,
+                    'scheduled_release_date': str(case.scheduled_release_date) if case.scheduled_release_date else None,
+                    'actual_release_date': str(case.actual_release_date) if case.actual_release_date else None,
+                }
+            )
+            
             messages.success(request, f'Case marked as completed and {release_msg}.')
             return JsonResponse({
                 'success': True, 
@@ -2461,6 +2507,16 @@ def mark_case_incomplete(request, case_id):
             case.status = 'pending_review'  # Revert to pending review status
             case.date_completed = None  # Clear completion date
             case.save()
+            
+            # Log to audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=request.user,
+                action_type='case_incomplete',
+                case=case,
+                description=f'Case marked as incomplete and reactivated',
+                changes={'status': {'from': 'completed', 'to': 'pending_review'}}
+            )
             
             messages.success(request, 'Case marked as incomplete and reactivated.')
             return JsonResponse({
@@ -2989,6 +3045,19 @@ def reject_case(request, pk):
         case.date_rejected = timezone.now()
         case.rejected_by = user
         case.save()
+        
+        # Log rejection to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_rejected',
+            case=case,
+            description=f'Case rejected - needs resubmission. Reason: {rejection_reason}',
+            metadata={
+                'rejection_reason': rejection_reason,
+                'rejection_notes': rejection_notes,
+            }
+        )
         
         # Send rejection email to member
         from django.core.mail import send_mail
@@ -4346,6 +4415,17 @@ def approve_case_review(request, case_id):
         # TODO: Send email notification to technician
         messages.success(request, f'Case {case.external_case_id} approved and marked as completed.')
         
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_review_approved',
+            case=case,
+            description=f'Case review approved by {user.get_full_name() or user.username}',
+            changes={'status': {'from': 'pending_review', 'to': 'completed'}},
+            metadata={'review_notes': review_notes, 'reviewed_by': user.username}
+        )
+        
         return JsonResponse({
             'success': True,
             'message': f'Case approved successfully',
@@ -4399,6 +4479,17 @@ def request_case_revisions(request, case_id):
         
         # TODO: Send email notification to technician with feedback
         messages.success(request, f'Revisions requested for case {case.external_case_id}.')
+        
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_review_revisions',
+            case=case,
+            description=f'Revisions requested by {user.get_full_name() or user.username}',
+            changes={'status': {'from': 'pending_review', 'to': 'accepted'}},
+            metadata={'revision_feedback': revision_feedback, 'reviewed_by': user.username}
+        )
         
         return JsonResponse({
             'success': True,
@@ -4456,6 +4547,17 @@ def correct_case_review(request, case_id):
         
         # TODO: Send email notification to technician about corrections
         messages.success(request, f'Corrections noted for case {case.external_case_id} - case marked as completed.')
+        
+        # Log to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_review_corrected',
+            case=case,
+            description=f'Case review corrected by {user.get_full_name() or user.username}',
+            changes={'status': {'from': 'pending_review', 'to': 'completed'}},
+            metadata={'correction_notes': correction_notes, 'reviewed_by': user.username}
+        )
         
         return JsonResponse({
             'success': True,
@@ -4920,6 +5022,17 @@ def approve_case_change_request(request, request_id):
             # Change case status to cancelled (new status)
             case.status = 'cancelled'
             case.save()
+            
+            # Log cancellation to audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=user,
+                action_type='case_cancelled',
+                case=case,
+                description=f'Case cancelled via approved member request',
+                changes={'status': {'from': 'submitted', 'to': 'cancelled'}},
+                metadata={'change_request_id': change_req.id}
+            )
             
             logger.info(f'Tech {user.id} approved cancellation for case {case.id}')
         
