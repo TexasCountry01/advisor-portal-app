@@ -4503,6 +4503,14 @@ def review_case_detail(request, case_id):
 
 @login_required
 @require_http_methods(["POST"])
+def _review_error(request, case_id, error_msg, status_code=400):
+    """Helper to return error for review actions - redirect for form POST, JSON for AJAX."""
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({'success': False, 'error': error_msg}, status=status_code)
+    messages.error(request, error_msg)
+    return redirect('cases:case_detail', pk=case_id)
+
+
 def approve_case_review(request, case_id):
     """Approve a case pending quality review and mark as completed"""
     from cases.models import CaseReviewHistory
@@ -4512,13 +4520,13 @@ def approve_case_review(request, case_id):
     
     # Permission check - only Level 2/3 technicians and admins
     if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
-        return JsonResponse({'success': False, 'error': 'You do not have permission to approve cases.'}, status=403)
+        return _review_error(request, case_id, 'You do not have permission to approve cases.', 403)
     elif user.role not in ['technician', 'administrator', 'manager']:
-        return JsonResponse({'success': False, 'error': 'You do not have permission to approve cases.'}, status=403)
+        return _review_error(request, case_id, 'You do not have permission to approve cases.', 403)
     
     # Check if case is pending review
     if case.status != 'pending_review':
-        return JsonResponse({'success': False, 'error': 'This case is not pending review.'}, status=400)
+        return _review_error(request, case_id, 'This case is not pending review.')
     
     try:
         review_notes = request.POST.get('review_notes', '').strip()
@@ -4567,13 +4575,19 @@ def approve_case_review(request, case_id):
             metadata={'review_notes': review_notes, 'reviewed_by': user.username}
         )
         
-        return JsonResponse({
-            'success': True,
-            'message': f'Case approved successfully',
-            'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
-        })
+        # Return redirect for standard form POST, JSON for AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Case approved successfully',
+                'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
+            })
+        return redirect('cases:case_detail', pk=case_id)
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        messages.error(request, f'Error approving case: {str(e)}')
+        return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
@@ -4587,19 +4601,19 @@ def request_case_revisions(request, case_id):
     
     # Permission check - only Level 2/3 technicians and admins
     if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
-        return JsonResponse({'success': False, 'error': 'You do not have permission to request revisions.'}, status=403)
+        return _review_error(request, case_id, 'You do not have permission to request revisions.', 403)
     elif user.role not in ['technician', 'administrator', 'manager']:
-        return JsonResponse({'success': False, 'error': 'You do not have permission to request revisions.'}, status=403)
+        return _review_error(request, case_id, 'You do not have permission to request revisions.', 403)
     
     # Check if case is pending review
     if case.status != 'pending_review':
-        return JsonResponse({'success': False, 'error': 'This case is not pending review.'}, status=400)
+        return _review_error(request, case_id, 'This case is not pending review.')
     
     try:
         revision_feedback = request.POST.get('revision_feedback', '').strip()
         
         if not revision_feedback:
-            return JsonResponse({'success': False, 'error': 'Revision feedback is required.'}, status=400)
+            return _review_error(request, case_id, 'Revision feedback is required.')
         
         # Return case to accepted status with feedback
         case.status = 'accepted'
@@ -4632,13 +4646,19 @@ def request_case_revisions(request, case_id):
             metadata={'revision_feedback': revision_feedback, 'reviewed_by': user.username}
         )
         
-        return JsonResponse({
-            'success': True,
-            'message': f'Revisions requested - case returned to technician',
-            'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
-        })
+        # Return redirect for standard form POST, JSON for AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Revisions requested - case returned to technician',
+                'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
+            })
+        return redirect('cases:case_detail', pk=case_id)
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        messages.error(request, f'Error requesting revisions: {str(e)}')
+        return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
@@ -4652,19 +4672,19 @@ def correct_case_review(request, case_id):
     
     # Permission check - only Level 2/3 technicians and admins
     if user.role == 'technician' and user.user_level not in ['level_2', 'level_3']:
-        return JsonResponse({'success': False, 'error': 'You do not have permission to correct cases.'}, status=403)
+        return _review_error(request, case_id, 'You do not have permission to correct cases.', 403)
     elif user.role not in ['technician', 'administrator', 'manager']:
-        return JsonResponse({'success': False, 'error': 'You do not have permission to correct cases.'}, status=403)
+        return _review_error(request, case_id, 'You do not have permission to correct cases.', 403)
     
     # Check if case is pending review
     if case.status != 'pending_review':
-        return JsonResponse({'success': False, 'error': 'This case is not pending review.'}, status=400)
+        return _review_error(request, case_id, 'This case is not pending review.')
     
     try:
         correction_notes = request.POST.get('correction_notes', '').strip()
         
         if not correction_notes:
-            return JsonResponse({'success': False, 'error': 'Correction notes are required.'}, status=400)
+            return _review_error(request, case_id, 'Correction notes are required.')
         
         # Mark case as completed with corrections
         case.status = 'completed'
@@ -4700,13 +4720,19 @@ def correct_case_review(request, case_id):
             metadata={'correction_notes': correction_notes, 'reviewed_by': user.username}
         )
         
-        return JsonResponse({
-            'success': True,
-            'message': f'Corrections applied and case completed',
-            'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
-        })
+        # Return redirect for standard form POST, JSON for AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Corrections applied and case completed',
+                'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
+            })
+        return redirect('cases:case_detail', pk=case_id)
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        messages.error(request, f'Error applying corrections: {str(e)}')
+        return redirect('cases:case_detail', pk=case_id)
 
 
 @login_required
