@@ -3766,8 +3766,12 @@ def generate_report_notes_pdf(request, pk):
         can_access = True
     elif user.role == 'member' and case.member == user:
         # Member can only access if case is completed and released
-        if case.status == 'completed' and case.actual_release_date is not None:
-            can_access = True
+        from datetime import date
+        if case.status == 'completed':
+            if case.actual_release_date is not None:
+                can_access = True
+            elif case.scheduled_release_date and case.scheduled_release_date <= date.today():
+                can_access = True
     
     if not can_access:
         return HttpResponseForbidden('Access denied')
