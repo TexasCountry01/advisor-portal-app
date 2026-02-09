@@ -1404,24 +1404,13 @@ def put_case_on_hold(request, case_id):
                     if not should_send_emails():
                         logger.info(f'Email notifications disabled. Skipped hold email for case {case_id}')
                     else:
-                        import os
-                        import base64
                         from django.conf import settings as django_settings
                         
                         protocol = 'https' if request.is_secure() else 'http'
                         domain = get_current_site(request).domain
-                        case_detail_url = f"{protocol}://{domain}{reverse('cases:case_detail', args=[case.id])}"
-                        
-                        # Encode logo as base64 for email embedding
-                        logo_data_uri = ''
-                        try:
-                            logo_path = os.path.join(str(django_settings.BASE_DIR), 'static', 'images', 'RevisedCoverPageLogo.png')
-                            if os.path.exists(logo_path):
-                                with open(logo_path, 'rb') as f:
-                                    logo_b64 = base64.b64encode(f.read()).decode('utf-8')
-                                    logo_data_uri = f'data:image/png;base64,{logo_b64}'
-                        except Exception as e:
-                            logger.warning(f'Could not load email logo: {e}')
+                        base_url = f"{protocol}://{domain}"
+                        case_detail_url = f"{base_url}{reverse('cases:case_detail', args=[case.id])}"
+                        logo_url = f"{base_url}/static/images/RevisedCoverPageLogo.png"
                         
                         # Prepare email context
                         email_context = {
@@ -1430,7 +1419,7 @@ def put_case_on_hold(request, case_id):
                             'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
                             'hold_reason': reason,
                             'case_detail_url': case_detail_url,
-                            'logo_data_uri': logo_data_uri,
+                            'logo_url': logo_url,
                             'app_name': 'Advisor Portal'
                         }
                         

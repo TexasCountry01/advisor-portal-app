@@ -18,19 +18,14 @@
             background-color: #ffffff;
         }
         .header {
-            background-color: #1a3c6e;
-            padding: 30px 20px;
+            background-color: #ffffff;
+            padding: 25px 20px 15px 20px;
             text-align: center;
+            border-bottom: 2px solid #1a3c6e;
         }
         .header img {
-            max-width: 200px;
+            max-width: 180px;
             height: auto;
-        }
-        .header h1 {
-            color: #ffffff;
-            margin: 15px 0 0 0;
-            font-size: 22px;
-            font-weight: normal;
         }
         .body-content {
             padding: 30px 30px 20px 30px;
@@ -84,10 +79,8 @@
     <div class="wrapper">
         <!-- Header -->
         <div class="header">
-            {% if logo_data_uri %}
-            <img src="{{ logo_data_uri }}" alt="ProFeds Benefits" style="max-width: 150px; height: auto; margin-bottom: 10px;">
-            {% else %}
-            <h1>ProFeds Benefits</h1>
+            {% if logo_url %}
+            <img src="{{ logo_url }}" alt="FedImpact" style="max-width: 180px; height: auto;">
             {% endif %}
         </div>
 
