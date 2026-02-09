@@ -1408,6 +1408,18 @@ def put_case_on_hold(request, case_id):
                         domain = get_current_site(request).domain
                         case_detail_url = f"{protocol}://{domain}{reverse('cases:case_detail', args=[case.id])}"
                         
+                        # Encode logo as base64 for email embedding
+                        import base64
+                        logo_data_uri = ''
+                        try:
+                            logo_path = os.path.join(str(settings.BASE_DIR), 'static', 'images', 'RevisedCoverPageLogo.png')
+                            if os.path.exists(logo_path):
+                                with open(logo_path, 'rb') as f:
+                                    logo_b64 = base64.b64encode(f.read()).decode('utf-8')
+                                    logo_data_uri = f'data:image/png;base64,{logo_b64}'
+                        except Exception as e:
+                            logger.warning(f'Could not load email logo: {e}')
+                        
                         # Prepare email context
                         email_context = {
                             'member_name': case.member.get_full_name() or case.member.username,
@@ -1415,11 +1427,12 @@ def put_case_on_hold(request, case_id):
                             'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
                             'hold_reason': reason,
                             'case_detail_url': case_detail_url,
+                            'logo_data_uri': logo_data_uri,
                             'app_name': 'Advisor Portal'
                         }
                         
                         # Render email content (both text and HTML)
-                        email_subject = f'Action Required: Your Case {case.external_case_id} Requires Additional Information'
+                        email_subject = f'ON HOLD: The case for {case.employee_first_name} {case.employee_last_name} needs your attention!'
                         text_message = render_to_string('cases/emails/case_on_hold.txt', email_context)
                         html_message = render_to_string('cases/emails/case_on_hold.html', email_context)
                         
