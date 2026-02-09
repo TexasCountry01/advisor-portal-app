@@ -939,7 +939,7 @@ def accept_case(request, pk):
                             'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
                         }
                         
-                        html_message = render_to_string('cases/emails/case_accepted.html', email_context)
+                        html_message = render_to_string('emails/case_accepted.html', email_context)
                         
                         send_mail(
                             subject=f'Case {case.external_case_id} - Accepted and Assigned to You',
@@ -966,7 +966,7 @@ def accept_case(request, pk):
                         'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
                     }
                     
-                    html_message = render_to_string('cases/emails/case_accepted_member.html', email_context)
+                    html_message = render_to_string('emails/case_accepted_member.html', email_context)
                     
                     send_mail(
                         subject=f'Case {case.external_case_id} - Your Case Has Been Accepted',
@@ -1433,8 +1433,8 @@ def put_case_on_hold(request, case_id):
                         
                         # Render email content (both text and HTML)
                         email_subject = f'ON HOLD: The case for {case.employee_first_name} {case.employee_last_name} needs your attention!'
-                        text_message = render_to_string('cases/emails/case_on_hold.txt', email_context)
-                        html_message = render_to_string('cases/emails/case_on_hold.html', email_context)
+                        text_message = render_to_string('emails/case_on_hold.txt', email_context)
+                        html_message = render_to_string('emails/case_on_hold.html', email_context)
                         
                         # Send email with both text and HTML versions
                         send_mail(
