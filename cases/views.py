@@ -1415,6 +1415,7 @@ def put_case_on_hold(request, case_id):
                         # Prepare email context
                         email_context = {
                             'member_name': case.member.get_full_name() or case.member.username,
+                            'member_first_name': case.member.first_name or case.member.username,
                             'case_id': case.external_case_id,
                             'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
                             'hold_reason': reason,

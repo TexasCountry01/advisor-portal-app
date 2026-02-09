@@ -19,8 +19,8 @@
         }
         .header {
             background-color: #ffffff;
-            padding: 25px 20px 15px 20px;
-            text-align: center;
+            padding: 25px 20px 15px 30px;
+            text-align: left;
             border-bottom: 2px solid #1a3c6e;
         }
         .header img {
@@ -86,7 +86,7 @@
 
         <!-- Body -->
         <div class="body-content">
-            <p>Hi {{ member_name }},</p>
+            <p>Hi {{ member_first_name }},</p>
 
             <p>Uh oh! It looks like we need some additional information to complete the report for <strong>{{ employee_name }}</strong>.</p>
 
@@ -101,12 +101,15 @@
                 <a href="{{ case_detail_url }}" class="cta-button">CLICK HERE</a>
             </p>
 
-            <p>If you have any questions, feel free to use the <strong>chat box</strong> on the case details page to communicate directly with your advisor.</p>
+            <p>If you have any questions, feel free to use the <strong>chat box</strong> on the case details page to communicate directly with the Benefits Team.</p>
 
             <p>Please provide the requested information as quickly as possible so we can stay on track with your due date.</p>
 
+            <br>
             <p>
-                Thank you,<br>
+                Thank you,
+            </p>
+            <p>
                 <strong>The ProFeds Benefits Team</strong>
             </p>
         </div>

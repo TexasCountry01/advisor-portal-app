@@ -1,4 +1,4 @@
-Hi {{ member_name }},
+Hi {{ member_first_name }},
 
 Uh oh! It looks like we need some additional information to complete the report for {{ employee_name }}.
 
@@ -8,9 +8,11 @@ Reason for hold:
 Please log in to your account and review the details of this case:
 {{ case_detail_url }}
 
-If you have any questions, feel free to use the chat box on the case details page to communicate directly with your advisor.
+If you have any questions, feel free to use the chat box on the case details page to communicate directly with the Benefits Team.
 
 Please provide the requested information as quickly as possible so we can stay on track with your due date.
 
+
 Thank you,
+
 The ProFeds Benefits Team
