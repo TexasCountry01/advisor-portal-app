@@ -1404,15 +1404,18 @@ def put_case_on_hold(request, case_id):
                     if not should_send_emails():
                         logger.info(f'Email notifications disabled. Skipped hold email for case {case_id}')
                     else:
+                        import os
+                        import base64
+                        from django.conf import settings as django_settings
+                        
                         protocol = 'https' if request.is_secure() else 'http'
                         domain = get_current_site(request).domain
                         case_detail_url = f"{protocol}://{domain}{reverse('cases:case_detail', args=[case.id])}"
                         
                         # Encode logo as base64 for email embedding
-                        import base64
                         logo_data_uri = ''
                         try:
-                            logo_path = os.path.join(str(settings.BASE_DIR), 'static', 'images', 'RevisedCoverPageLogo.png')
+                            logo_path = os.path.join(str(django_settings.BASE_DIR), 'static', 'images', 'RevisedCoverPageLogo.png')
                             if os.path.exists(logo_path):
                                 with open(logo_path, 'rb') as f:
                                     logo_b64 = base64.b64encode(f.read()).decode('utf-8')
@@ -1440,7 +1443,7 @@ def put_case_on_hold(request, case_id):
                         send_mail(
                             subject=email_subject,
                             message=text_message,
-                            from_email=settings.DEFAULT_FROM_EMAIL,
+                            from_email=django_settings.DEFAULT_FROM_EMAIL,
                             recipient_list=[case.member.email],
                             html_message=html_message,
                             fail_silently=False
