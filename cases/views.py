@@ -3268,10 +3268,9 @@ def add_case_message(request, pk):
     user = request.user
     logger.info(f'add_case_message called: user={user.username} ({user.role}), case={case.external_case_id}')
     
-    # Permission check: Only member or assigned technician can message
+    # Permission check: Only member or staff (technician/admin/manager) can message
     is_member = (user.role == 'member' and case.member == user)
-    is_technician = (user.role in ['technician', 'administrator', 'manager'] and 
-                     (case.assigned_to == user or user.role in ['administrator', 'manager']))
+    is_technician = (user.role in ['technician', 'administrator', 'manager'])
     
     logger.info(f'Permission check: is_member={is_member}, is_technician={is_technician}')
     
@@ -3377,10 +3376,9 @@ def get_case_messages(request, pk):
     case = get_object_or_404(Case, pk=pk)
     user = request.user
     
-    # Permission check: Only member or assigned technician can view messages
+    # Permission check: Only member or staff can view messages
     is_member = (user.role == 'member' and case.member == user)
-    is_technician = (user.role in ['technician', 'administrator', 'manager'] and 
-                     (case.assigned_to == user or user.role in ['administrator', 'manager']))
+    is_technician = (user.role in ['technician', 'administrator', 'manager'])
     
     if not (is_member or is_technician):
         return JsonResponse({'error': 'Access denied'}, status=403)
@@ -3436,10 +3434,9 @@ def mark_messages_as_read(request, pk):
     case = get_object_or_404(Case, pk=pk)
     user = request.user
     
-    # Permission check: Only member or assigned technician can mark as read
+    # Permission check: Only member or staff can mark as read
     is_member = (user.role == 'member' and case.member == user)
-    is_technician = (user.role in ['technician', 'administrator', 'manager'] and 
-                     (case.assigned_to == user or user.role in ['administrator', 'manager']))
+    is_technician = (user.role in ['technician', 'administrator', 'manager'])
     
     if not (is_member or is_technician):
         return JsonResponse({'error': 'Access denied'}, status=403)
