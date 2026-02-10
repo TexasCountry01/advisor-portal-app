@@ -269,17 +269,17 @@
                                 {% if case.status == 'pending_review' %}
                                     <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'submitted' %}
-                                    <span class="badge bg-secondary" title="Case received and waiting for technician to start">Submitted</span>
+                                    <span class="badge bg-secondary" title="Case awaiting initial review by Benefits Team">Submitted</span>
                                 {% elif case.status == 'resubmitted' %}
                                     <span class="badge bg-info" title="Case re-submitted after member revisions">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
-                                    <span class="badge bg-primary" title="Case accepted by technician">Accepted</span>
+                                    <span class="badge bg-primary" title="Case accepted by Benefits Team">Accepted</span>
                                 {% elif case.status == 'hold' %}
-                                    <span class="badge bg-danger" title="Case temporarily paused">On Hold</span>
+                                    <span class="badge bg-danger" title="Case paused awaiting Member input">On Hold</span>
                                 {% elif case.status == 'draft' %}
                                     <span class="badge bg-danger" title="Draft case not yet submitted">Draft</span>
                                 {% elif case.status == 'completed' %}
-                                    <span class="badge bg-success" title="Case completed">Completed</span>
+                                    <span class="badge bg-success" title="Case completed and ready for download">Completed</span>
                                 {% elif case.status == 'cancelled' %}
                                     <span class="badge bg-danger" title="Case cancelled by technician">Cancelled</span>
                                 {% endif %}
