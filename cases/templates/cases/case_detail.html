@@ -632,9 +632,9 @@
                         Submitted Documents
                         <span class="badge bg-info">{{ documents|length }} Total</span>
                     </h5>
-                    {% if user.role == 'member' and case.member == user and case.status == 'draft' and documents|length > 0 %}
+                    {% if user.role == 'member' and case.member == user and case.status in 'draft,submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' %}
                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
-                        <i class="bi bi-upload"></i> Upload Documents
+                        <i class="bi bi-upload"></i> Upload Document
                     </button>
                     {% endif %}
                 </div>
@@ -685,22 +685,7 @@
             </div>
             {% endif %}
 
-            <!-- Upload Additional Documents (Member only, after submission) -->
-            {% if user.role == 'member' and case.member == user %}
-                {% if case.status == 'submitted' or case.status == 'accepted' or case.status == 'hold' %}
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Upload Additional Documents</h5>
-                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
-                            <i class="bi bi-upload"></i> Upload Document
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted mb-0">Click "Upload Document" to add supporting files.</p>
-                    </div>
-                </div>
-                {% endif %}
-            {% endif %}
+            <!-- Upload Additional Documents section removed - upload button now integrated into Submitted Documents card above -->
 
             <!-- Additional Documents (Tech/Admin/Manager only) -->
             {% if user.role != 'member' and can_view_report %}
