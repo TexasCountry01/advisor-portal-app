@@ -201,6 +201,7 @@ class SystemSettings(models.Model):
     
     # Credits Management
     CREDIT_CHOICES = [
+        ('0.0', '0.0'),
         ('0.5', '0.5'),
         ('1.0', '1.0'),
         ('1.5', '1.5'),
@@ -212,8 +213,8 @@ class SystemSettings(models.Model):
     # Default available credit values (comma-separated)
     available_credits = models.CharField(
         max_length=50,
-        default='0.5,1.0,1.5,2.0,2.5,3.0',
-        help_text='Comma-separated list of available credit values (e.g., 0.5,1.0,1.5,2.0,2.5,3.0)'
+        default='0.0,0.5,1.0,1.5,2.0,2.5,3.0',
+        help_text='Comma-separated list of available credit values (e.g., 0.0,0.5,1.0,1.5,2.0,2.5,3.0)'
     )
     
     # Default Case Settings

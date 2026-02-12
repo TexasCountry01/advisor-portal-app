@@ -103,7 +103,11 @@ def system_settings(request):
             # Release Settings
             settings.enable_scheduled_releases = request.POST.get('enable_scheduled_releases') == 'on'
             settings.default_completion_delay_hours = int(request.POST.get('default_completion_delay_hours', 0))
-            settings.batch_release_time = request.POST.get('batch_release_time', '09:00')
+            batch_time_str = request.POST.get('batch_release_time', '09:00').strip()
+            if batch_time_str:
+                from datetime import time as dt_time
+                parts = batch_time_str.split(':')
+                settings.batch_release_time = dt_time(int(parts[0]), int(parts[1]))
             settings.batch_release_enabled = request.POST.get('batch_release_enabled') == 'on'
             
             # Email Settings
