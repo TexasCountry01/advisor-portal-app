@@ -155,6 +155,7 @@
                             <label for="creditValue" class="form-label"><strong>Assign Credit</strong></label>
                             <select class="form-select form-select-lg" id="creditValue" name="credit_value" required>
                                 <option value="">Select credit value...</option>
+                                <option value="0.0" {% if case.credit_value == "0.0" %}selected{% endif %}>0.0 Credits</option>
                                 <option value="0.5" {% if case.credit_value == "0.5" %}selected{% endif %}>0.5 Credits</option>
                                 <option value="1.0" {% if case.credit_value == "1.0" %}selected{% endif %}>1.0 Credit</option>
                                 <option value="1.5" {% if case.credit_value == "1.5" %}selected{% endif %}>1.5 Credits</option>

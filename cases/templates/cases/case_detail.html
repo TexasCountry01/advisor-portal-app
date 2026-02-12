@@ -1015,6 +1015,7 @@
                             <label for="assignCreditValue" class="form-label small">Assign Credit Value:</label>
                             <select class="form-select form-select-sm" id="assignCreditValue" name="assign_credit_value">
                                 <option value="">-- Select Credit --</option>
+                                <option value="0.0" {% if case.credit_value|floatformat:1 == "0.0" %}selected{% endif %}>0.0 Credits</option>
                                 <option value="0.5" {% if case.credit_value|floatformat:1 == "0.5" %}selected{% endif %}>0.5 Credits</option>
                                 <option value="1.0" {% if case.credit_value|floatformat:1 == "1.0" %}selected{% endif %}>1.0 Credit</option>
                                 <option value="1.5" {% if case.credit_value|floatformat:1 == "1.5" %}selected{% endif %}>1.5 Credits</option>
@@ -2692,6 +2693,7 @@ function releaseImmediately(caseId) {
                 <div class="mb-3">
                     <label for="creditAdjustSelect" class="form-label">Credit Value</label>
                     <select class="form-select" id="creditAdjustSelect">
+                        <option value="0.0" {% if case.credit_value|add:0 == 0 %}selected{% endif %}>0.0</option>
                         <option value="0.5" {% if case.credit_value|add:0 == 0.5 %}selected{% endif %}>0.5</option>
                         <option value="1.0" {% if case.credit_value|add:0 == 1.0 %}selected{% endif %}>1.0</option>
                         <option value="1.5" {% if case.credit_value|add:0 == 1.5 %}selected{% endif %}>1.5</option>
