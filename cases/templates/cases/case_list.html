@@ -134,7 +134,7 @@
                         <tr>
                             <td><strong>{{ case.external_case_id }}</strong></td>
                             <td>{{ case.workshop_code }}</td>
-                            <td>{{ case.member.username }}</td>
+                            <td>{{ case.member.get_full_name|default:case.member.username }}</td>
                             <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
                             <td>{{ case.client_email|truncatechars:25 }}</td>
                             <td>{{ case.num_reports_requested }}</td>
