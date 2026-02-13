@@ -3008,8 +3008,8 @@ def adjust_case_credit(request, case_id):
             credit_value = Decimal(credit_value)
             
             # Validate range
-            if credit_value < Decimal('0.5') or credit_value > Decimal('3.0'):
-                return JsonResponse({'success': False, 'error': 'Credit must be between 0.5 and 3.0'})
+            if credit_value < Decimal('0.0') or credit_value > Decimal('3.0'):
+                return JsonResponse({'success': False, 'error': 'Credit must be between 0.0 and 3.0'})
             
             # Get current credit before update
             old_credit = case.credit_value

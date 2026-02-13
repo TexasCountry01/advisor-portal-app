@@ -373,13 +373,14 @@ class Case(models.Model):
         help_text='When the case was successfully synced to benefits-software'
     )
     
-    # Credit value assigned by technician (0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
+    # Credit value assigned by technician (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0)
     credit_value = models.DecimalField(
         max_digits=3,
         decimal_places=1,
         null=True,
         blank=True,
         choices=[
+            (0.0, '0.0'),
             (0.5, '0.5'),
             (1.0, '1.0'),
             (1.5, '1.5'),

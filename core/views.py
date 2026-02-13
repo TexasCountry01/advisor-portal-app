@@ -94,7 +94,7 @@ def system_settings(request):
         # Handle form submission
         try:
             # Credits
-            settings.available_credits = request.POST.get('available_credits', '0.5,1.0,1.5,2.0,2.5,3.0')
+            settings.available_credits = request.POST.get('available_credits', '0.0,0.5,1.0,1.5,2.0,2.5,3.0')
             
             # Default Case Settings
             settings.default_case_due_days = int(request.POST.get('default_case_due_days', 7))
