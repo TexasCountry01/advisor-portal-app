@@ -4506,6 +4506,8 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'date_scheduled', 'label': 'Date Scheduled'},
             {'id': 'tier', 'label': 'Tier'},
             {'id': 'reviewed_by', 'label': 'Reviewed By'},
+            {'id': 'on_time', 'label': 'On-Time/Late'},
+            {'id': 'date_completed', 'label': 'Date Completed'},
             {'id': 'notes', 'label': 'Notes'},
             {'id': 'actions', 'label': 'Actions'},
         ],
@@ -4526,6 +4528,8 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'date_scheduled', 'label': 'Date Scheduled'},
             {'id': 'tier', 'label': 'Tier'},
             {'id': 'reviewed_by', 'label': 'Reviewed By'},
+            {'id': 'on_time', 'label': 'On-Time/Late'},
+            {'id': 'date_completed', 'label': 'Date Completed'},
             {'id': 'notes', 'label': 'Notes'},
             {'id': 'actions', 'label': 'Actions'},
         ],
@@ -4546,6 +4550,8 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'date_scheduled', 'label': 'Date Scheduled'},
             {'id': 'tier', 'label': 'Tier'},
             {'id': 'reviewed_by', 'label': 'Reviewed By'},
+            {'id': 'on_time', 'label': 'On-Time/Late'},
+            {'id': 'date_completed', 'label': 'Date Completed'},
             {'id': 'notes', 'label': 'Notes'},
             {'id': 'actions', 'label': 'Actions'},
         ],
@@ -4606,7 +4612,19 @@ def get_user_visible_columns(user, dashboard_name):
             user=user,
             preference_key=f'{dashboard_name}_visible_columns'
         )
-        return pref.preference_value.get('visible_columns', [])
+        saved_columns = pref.preference_value.get('visible_columns', [])
+        
+        # Auto-include any new columns added to config that the user hasn't seen yet
+        # (i.e. columns not in their saved list AND not default-hidden)
+        if dashboard_name in DASHBOARD_COLUMN_CONFIG:
+            config = DASHBOARD_COLUMN_CONFIG[dashboard_name]
+            all_ids = [col['id'] for col in config['available_columns']]
+            hidden = config.get('default_hidden', [])
+            for col_id in all_ids:
+                if col_id not in saved_columns and col_id not in hidden:
+                    saved_columns.append(col_id)
+        
+        return saved_columns
     except UserPreference.DoesNotExist:
         pass
     
