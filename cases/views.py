@@ -2991,10 +2991,9 @@ def adjust_case_credit(request, case_id):
     case = get_object_or_404(Case, pk=case_id)
     user = request.user
     
-    # Check permissions - only technician/admin assigned to case or admin/manager
-    if user not in [case.assigned_to, case.created_by]:
-        if not user.is_staff or user.groups.filter(name__in=['admin', 'manager']).count() == 0:
-            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    # Check permissions - any technician, admin, or manager can adjust credit
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
     
     if request.method == 'POST':
         try:
