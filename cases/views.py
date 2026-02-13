@@ -77,7 +77,11 @@ def member_dashboard(request):
     status_filter = request.GET.getlist('status')  # Use getlist for multiple values
     urgency_filter = request.GET.get('urgency')
     search_query = request.GET.get('search')
-    sort_by = request.GET.get('sort', '-date_submitted')
+    sort_by = request.GET.get('sort')
+    if sort_by:
+        save_user_sort_preference(user, 'member_dashboard', sort_by)
+    else:
+        sort_by = get_user_sort_preference(user, 'member_dashboard', 'date_due')
     
     if status_filter:
         cases = cases.filter(status__in=status_filter)
@@ -213,7 +217,11 @@ def technician_dashboard(request):
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
     search_query = request.GET.get('search')
-    sort_by = request.GET.get('sort', '-date_submitted')
+    sort_by = request.GET.get('sort')
+    if sort_by:
+        save_user_sort_preference(user, 'technician_dashboard', sort_by)
+    else:
+        sort_by = get_user_sort_preference(user, 'technician_dashboard', 'date_due')
     assigned_filter = request.GET.get('assigned', default_view)  # Use saved preference as default
     
     # Apply "My Cases" filter
@@ -332,7 +340,11 @@ def admin_dashboard(request):
     custom_date_from = request.GET.get('date_from')
     custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
-    sort_by = request.GET.get('sort', '-date_submitted')
+    sort_by = request.GET.get('sort')
+    if sort_by:
+        save_user_sort_preference(user, 'admin_dashboard', sort_by)
+    else:
+        sort_by = get_user_sort_preference(user, 'admin_dashboard', '-date_submitted')
     
     if status_filter:
         cases = cases.filter(status__in=status_filter)
@@ -491,7 +503,11 @@ def manager_dashboard(request):
     custom_date_from = request.GET.get('date_from')
     custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
-    sort_by = request.GET.get('sort', '-date_submitted')
+    sort_by = request.GET.get('sort')
+    if sort_by:
+        save_user_sort_preference(user, 'manager_dashboard', sort_by)
+    else:
+        sort_by = get_user_sort_preference(user, 'manager_dashboard', '-date_submitted')
     
     if status_filter:
         cases = cases.filter(status__in=status_filter)
@@ -4552,6 +4568,32 @@ DASHBOARD_COLUMN_CONFIG = {
         'default_hidden': ['accepted', 'credit', 'submitted']
     }
 }
+
+
+def get_user_sort_preference(user, dashboard_name, default='-date_submitted'):
+    """Get saved sort preference for user on a specific dashboard"""
+    from accounts.models import UserPreference
+    try:
+        pref = UserPreference.objects.get(
+            user=user,
+            preference_key=f'{dashboard_name}_sort'
+        )
+        return pref.preference_value.get('sort', default)
+    except UserPreference.DoesNotExist:
+        return default
+
+
+def save_user_sort_preference(user, dashboard_name, sort_value):
+    """Save sort preference for user on a specific dashboard"""
+    from accounts.models import UserPreference
+    try:
+        UserPreference.objects.update_or_create(
+            user=user,
+            preference_key=f'{dashboard_name}_sort',
+            defaults={'preference_value': {'sort': sort_value}}
+        )
+    except Exception:
+        pass  # Don't break the page if preference save fails
 
 
 def get_user_visible_columns(user, dashboard_name):
