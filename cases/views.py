@@ -4615,9 +4615,9 @@ DASHBOARD_COLUMN_CONFIG = {
     # Due, Completed, Status, Assigned To, Tier, Actions (with Release Date, Date Scheduled, Notes,
     # Reviewed By, and On-Time/Late removed entirely).
     #
-    # IMPORTANT DISTINCTION - Release Date vs Date Completed:
-    #   - 'date_completed' = The date the technician finishes working on the case (e.g., day 4)
-    #   - 'release_date' = The date the case is released/available to the member (e.g., day 6)
+    # IMPORTANT DISTINCTION - Release Date vs Date Finalized:
+    #   - 'date_completed' (labeled "Date Finalized") = The date the technician finishes working on the case (e.g., day 4)
+    #   - 'release_date' (labeled "Release Date") = The date the case is released/available to the member (e.g., day 6)
     #   These are two different dates. A tech might finalize a case on day 4 but schedule it
     #   for release on day 6. Both are important for productivity tracking.
     #   Admin/Manager dashboards retain both columns for this reason.
@@ -4641,7 +4641,7 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'tier', 'label': 'Tier'},
             {'id': 'reviewed_by', 'label': 'Reviewed By'},
             {'id': 'on_time', 'label': 'On-Time/Late'},
-            {'id': 'date_completed', 'label': 'Date Completed'},
+            {'id': 'date_completed', 'label': 'Date Finalized'},
             {'id': 'notes', 'label': 'Notes'},
             {'id': 'actions', 'label': 'Actions'},
         ],
@@ -4666,7 +4666,7 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'tier', 'label': 'Tier'},
             {'id': 'reviewed_by', 'label': 'Reviewed By'},
             {'id': 'on_time', 'label': 'On-Time/Late'},
-            {'id': 'date_completed', 'label': 'Date Completed'},
+            {'id': 'date_completed', 'label': 'Date Finalized'},
             {'id': 'notes', 'label': 'Notes'},
             {'id': 'actions', 'label': 'Actions'},
         ],

@@ -312,7 +312,7 @@
                             <th data-column-id="reviewed_by" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
                             <th data-column-id="notes" {% if 'notes' not in visible_columns %}class="column-hidden"{% endif %}>Notes</th>
                             <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
-                            <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}" title="Click to sort by Completed">Completed</a></th>
+                            <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}{%if search_query%}&search={{ search_query }}{%endif%}" title="Click to sort by Date Finalized">Finalized</a></th>
                             <th data-column-id="actions" {% if 'actions' not in visible_columns %}class="column-hidden"{% endif %}>Actions</th>
                         </tr>
                     </thead>
