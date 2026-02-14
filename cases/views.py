@@ -4494,19 +4494,17 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'code', 'label': 'Code'},
             {'id': 'member', 'label': 'Member'},
             {'id': 'employee', 'label': 'Employee Name'},
+            {'id': 'reports', 'label': 'Reports'},
+            {'id': 'urgency', 'label': 'Urgency'},
             {'id': 'submitted', 'label': 'Submitted'},
             {'id': 'due', 'label': 'Due Date'},
-            {'id': 'urgency', 'label': 'Urgency'},
+            {'id': 'date_completed', 'label': 'Completed'},
             {'id': 'status', 'label': 'Status'},
-            {'id': 'reports', 'label': 'Reports'},
             {'id': 'assigned_to', 'label': 'Assigned To'},
             {'id': 'tier', 'label': 'Tier'},
-            {'id': 'reviewed_by', 'label': 'Reviewed By'},
-            {'id': 'on_time', 'label': 'On-Time/Late'},
-            {'id': 'date_completed', 'label': 'Date Completed'},
             {'id': 'actions', 'label': 'Actions'},
         ],
-        'default_hidden': ['reviewed_by', 'tier', 'reports']
+        'default_hidden': []
     },
     'admin_dashboard': {
         'available_columns': [
