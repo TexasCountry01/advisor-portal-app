@@ -241,9 +241,9 @@ def delete_document(request, doc_id):
     
     case = doc.case
     
-    # Check permissions - only member can delete their own case documents
-    if request.user.role == 'member' and case.member != request.user:
-        messages.error(request, 'Access denied - this is not your case.')
+    # Check permissions - only managers and administrators can delete documents
+    if request.user.role not in ['administrator', 'manager']:
+        messages.error(request, 'Only administrators and managers can delete documents.')
         return redirect('cases:case_detail', pk=case.id)
     
     # Check case status - cannot delete documents from submitted cases

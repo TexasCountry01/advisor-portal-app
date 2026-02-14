@@ -662,7 +662,7 @@
                                         {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download title="Download document">
                                             <i class="bi bi-download"></i>
                                         </a>{% else %}<span class="badge bg-warning">No file</span>{% endif %}
-                                        {% if can_edit and case.status != 'submitted' %}
+                                        {% if user.role in 'administrator,manager' and case.status != 'submitted' %}
                                         <form method="post" action="{% url 'cases:delete_document' doc.id %}" style="display: inline;">
                                             {% csrf_token %}
                                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this document?');" title="Delete document">
