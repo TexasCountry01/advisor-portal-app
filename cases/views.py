@@ -4674,19 +4674,18 @@ DASHBOARD_COLUMN_CONFIG = {
     },
     'member_dashboard': {
         'available_columns': [
-            {'id': 'workshop', 'label': 'Workshop'},
+            {'id': 'workshop', 'label': 'Code'},
             {'id': 'employee', 'label': 'Employee Name'},
             {'id': 'reports', 'label': 'Reports'},
-            {'id': 'due_date', 'label': 'Due Date'},
             {'id': 'urgency', 'label': 'Urgency'},
+            {'id': 'submitted', 'label': 'Submitted'},
+            {'id': 'due_date', 'label': 'Due Date'},
+            {'id': 'completed', 'label': 'Completed'},
             {'id': 'status', 'label': 'Status'},
             {'id': 'credit', 'label': 'Credit'},
-            {'id': 'submitted', 'label': 'Submitted'},
-            {'id': 'accepted', 'label': 'Accepted'},
-            {'id': 'completed', 'label': 'Completed'},
             {'id': 'actions', 'label': 'Actions'},
         ],
-        'default_hidden': ['accepted', 'credit', 'submitted']
+        'default_hidden': ['workshop']
     }
 }
 
