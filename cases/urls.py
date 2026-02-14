@@ -58,6 +58,7 @@ urlpatterns = [
     path('<int:case_id>/mark-completed/', views.mark_case_completed, name='mark_case_completed'),
     path('<int:case_id>/mark-incomplete/', views.mark_case_incomplete, name='mark_case_incomplete'),
     path('<int:case_id>/release-immediately/', views.release_case_immediately, name='release_case_immediately'),
+    path('<int:case_id>/change-release-date/', views.change_release_date, name='change_release_date'),
     path('<int:case_id>/put-on-hold/', views.put_case_on_hold, name='put_on_hold'),
     path('<int:case_id>/resume-from-hold/', views.resume_case_from_hold, name='resume_from_hold'),
     

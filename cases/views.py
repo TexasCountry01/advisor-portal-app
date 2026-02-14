@@ -1269,6 +1269,99 @@ def release_case_immediately(request, case_id):
 
 
 @login_required
+def change_release_date(request, case_id):
+    """Change the scheduled release date for a completed case, or release immediately"""
+    from django.http import JsonResponse
+    from django.utils import timezone
+    from core.models import AuditLog
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - case must be completed and not yet released
+    if case.status != 'completed' or case.actual_release_date is not None:
+        return JsonResponse({
+            'success': False,
+            'error': 'This case is not pending release.'
+        }, status=400)
+    
+    # Permission check - only assigned tech, manager, or admin
+    if user.role == 'technician' and case.assigned_to != user:
+        return JsonResponse({'success': False, 'error': 'You can only modify cases you own.'}, status=403)
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Not authorized.'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            body_data = json.loads(request.body) if request.body else {}
+            action = body_data.get('action', 'reschedule')  # 'reschedule' or 'release_now'
+            
+            old_release_date = case.scheduled_release_date
+            
+            if action == 'release_now':
+                # Release immediately
+                case.actual_release_date = timezone.now()
+                case.scheduled_release_date = None
+                case.actual_email_sent_date = timezone.now()
+                case.scheduled_email_date = None
+                case.date_completed = timezone.now()
+                case.save()
+                
+                AuditLog.log_activity(
+                    user=user,
+                    action_type='other',
+                    case=case,
+                    description=f'Release date changed: released immediately (was scheduled for {old_release_date})',
+                    metadata={'old_release_date': str(old_release_date), 'new_action': 'release_now'}
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Case released immediately to member.'
+                })
+            else:
+                # Reschedule
+                new_datetime_str = body_data.get('release_datetime')
+                if not new_datetime_str:
+                    return JsonResponse({'success': False, 'error': 'Please provide a release date and time.'}, status=400)
+                
+                from datetime import datetime
+                import pytz
+                
+                release_dt_naive = datetime.strptime(new_datetime_str, '%Y-%m-%d %H:%M')
+                cst = pytz.timezone('US/Central')
+                release_dt_cst = cst.localize(release_dt_naive)
+                release_dt_utc = release_dt_cst.astimezone(pytz.UTC)
+                
+                case.scheduled_release_date = release_dt_utc.date()
+                case.scheduled_email_date = release_dt_utc.date()
+                case.save()
+                
+                release_date_str = release_dt_cst.strftime('%b %d, %Y at %I:%M %p %Z')
+                
+                AuditLog.log_activity(
+                    user=user,
+                    action_type='other',
+                    case=case,
+                    description=f'Release date changed from {old_release_date} to {release_dt_utc.date()}',
+                    metadata={'old_release_date': str(old_release_date), 'new_release_date': str(release_dt_utc.date())}
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Release date updated to {release_date_str}.'
+                })
+                
+        except (ValueError, AttributeError) as e:
+            return JsonResponse({'success': False, 'error': f'Invalid date format: {str(e)}'}, status=400)
+        except Exception as e:
+            logger.error(f'Error changing release date for case {case_id}: {str(e)}', exc_info=True)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'POST required.'}, status=405)
+
+
+@login_required
 def put_case_on_hold(request, case_id):
     """
     Put a case on hold with comprehensive notification system.

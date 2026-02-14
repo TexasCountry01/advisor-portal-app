@@ -1389,6 +1389,11 @@
                                     <button type="button" class="btn btn-secondary" id="markCompletedBtn" onclick="markCaseIncomplete()">
                                         <i class="bi bi-arrow-counterclockwise"></i> Mark as Incomplete
                                     </button>
+                                    {% if not case.actual_release_date and case.scheduled_release_date %}
+                                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#changeReleaseDateModal">
+                                        <i class="bi bi-calendar-event"></i> Change Release Date
+                                    </button>
+                                    {% endif %}
                                     <p class="text-muted small mt-2 mb-0">
                                         <i class="bi bi-info-circle"></i> This case was completed on {{ case.date_completed|date:"m/d/Y H:i" }}
                                     </p>
@@ -1809,6 +1814,101 @@ function updateReleaseSummary() {
         <small class="text-muted">(${daysText})</small>
     `;
 }
+
+function submitChangeReleaseDate() {
+    const action = document.querySelector('input[name="changeReleaseAction"]:checked').value;
+    const btn = document.getElementById('confirmChangeReleaseBtn');
+    
+    let bodyData = { action: action };
+    
+    if (action === 'reschedule') {
+        const newDate = document.getElementById('newReleaseDateInput').value;
+        const newTime = document.getElementById('newReleaseTimeInput').value;
+        
+        if (!newDate) {
+            alert('Please select a new release date.');
+            return;
+        }
+        if (!newTime) {
+            alert('Please select a release time.');
+            return;
+        }
+        
+        // Validate release date is not after the due date
+        const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
+        if (caseDueDate && newDate > caseDueDate) {
+            alert('Error: The release date cannot be after the case due date. Please select an earlier date.');
+            return;
+        }
+        
+        bodyData.release_datetime = `${newDate} ${newTime}`;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+    
+    fetch('{% url "cases:change_release_date" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(bodyData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('changeReleaseDateModal')).hide();
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirm';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirm';
+    });
+}
+
+// Toggle change release date fields based on radio
+document.addEventListener('DOMContentLoaded', function() {
+    const rescheduleRadio = document.getElementById('changeReleaseReschedule');
+    const releaseNowRadio = document.getElementById('changeReleaseNow');
+    const dateFields = document.getElementById('changeReleaseDateFields');
+    
+    if (rescheduleRadio) {
+        rescheduleRadio.addEventListener('change', function() {
+            if (dateFields) dateFields.style.display = 'block';
+        });
+    }
+    if (releaseNowRadio) {
+        releaseNowRadio.addEventListener('change', function() {
+            if (dateFields) dateFields.style.display = 'none';
+        });
+    }
+    
+    // Set min date for change release date modal
+    const changeModal = document.getElementById('changeReleaseDateModal');
+    if (changeModal) {
+        changeModal.addEventListener('show.bs.modal', function() {
+            const today = new Date();
+            const minDate = new Date(today);
+            minDate.setDate(minDate.getDate() + 1);
+            const dateInput = document.getElementById('newReleaseDateInput');
+            if (dateInput) {
+                dateInput.min = minDate.toISOString().split('T')[0];
+                const maxDate = new Date(today);
+                maxDate.setDate(maxDate.getDate() + 60);
+                dateInput.max = maxDate.toISOString().split('T')[0];
+            }
+        });
+    }
+});
 
 function markCaseIncomplete() {
     // Show confirmation dialog
@@ -3459,6 +3559,57 @@ document.addEventListener('DOMContentLoaded', function() {
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-warning" onclick="submitPutOnHold()">
                     <i class="bi bi-pause-circle"></i> Place on Hold
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Release Date Modal -->
+<div class="modal fade" id="changeReleaseDateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-calendar-event"></i> Change Release Date</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if case.scheduled_release_date %}
+                <p>Current release date: <strong>{{ case.scheduled_release_date|date:"F j, Y" }}</strong></p>
+                {% endif %}
+                
+                <div class="form-check mb-3 p-3 border rounded bg-light">
+                    <input class="form-check-input" type="radio" name="changeReleaseAction" id="changeReleaseReschedule" value="reschedule" checked>
+                    <label class="form-check-label" for="changeReleaseReschedule">
+                        <strong>Reschedule</strong>
+                        <div class="text-muted small">Set a new release date and time</div>
+                    </label>
+                </div>
+                
+                <div id="changeReleaseDateFields" class="ms-4 mb-3">
+                    <div class="mb-2">
+                        <label for="newReleaseDateInput" class="form-label">New Release Date <span class="text-danger">*</span></label>
+                        <input type="date" id="newReleaseDateInput" class="form-control">
+                        <small class="text-muted">Select a date at least 1 day from today</small>
+                    </div>
+                    <div class="mb-2">
+                        <label for="newReleaseTimeInput" class="form-label">Release Time (CST)</label>
+                        <input type="time" id="newReleaseTimeInput" class="form-control" value="09:00">
+                    </div>
+                </div>
+                
+                <div class="form-check mb-3 p-3 border rounded bg-light">
+                    <input class="form-check-input" type="radio" name="changeReleaseAction" id="changeReleaseNow" value="release_now">
+                    <label class="form-check-label" for="changeReleaseNow">
+                        <strong><i class="bi bi-lightning"></i> Release Now</strong>
+                        <div class="text-muted small">Release immediately to the member</div>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info" id="confirmChangeReleaseBtn" onclick="submitChangeReleaseDate()">
+                    <i class="bi bi-check-circle"></i> Confirm
                 </button>
             </div>
         </div>
