@@ -206,8 +206,6 @@
                             <option value="date_submitted" {% if sort_by == 'date_submitted' %}selected{% endif %}>Oldest Submitted</option>
                             <option value="-date_due" {% if sort_by == '-date_due' %}selected{% endif %}>Due Date (Latest)</option>
                             <option value="date_due" {% if sort_by == 'date_due' %}selected{% endif %}>Due Date (Earliest)</option>
-                            <option value="-date_scheduled" {% if sort_by == '-date_scheduled' %}selected{% endif %}>Scheduled (Latest)</option>
-                            <option value="date_scheduled" {% if sort_by == 'date_scheduled' %}selected{% endif %}>Scheduled (Earliest)</option>
                             <option value="external_case_id" {% if sort_by == 'external_case_id' %}selected{% endif %}>Case ID (A-Z)</option>
                             <option value="-external_case_id" {% if sort_by == '-external_case_id' %}selected{% endif %}>Case ID (Z-A)</option>
                             <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Status (A-Z)</option>
@@ -311,10 +309,8 @@
                             <th data-column-id="due" {% if 'due' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}" title="Click to sort by Due Date">Due Date</a></th>
                             <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}" title="Click to sort by Urgency">Urgency</a></th>
                             <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
-                            <th data-column-id="release_date" {% if 'release_date' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'scheduled_release_date' %}sort=-scheduled_release_date{% else %}sort=scheduled_release_date{% endif %}" title="Click to sort by Completed">Completed</a></th>
                             <th data-column-id="reports" {% if 'reports' not in visible_columns %}class="column-hidden"{% endif %}>Reports</th>
                             <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}" title="Click to sort by Assigned To">Assigned To</a></th>
-                            <th data-column-id="date_scheduled" {% if 'date_scheduled' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_scheduled' %}sort=-date_scheduled{% else %}sort=date_scheduled{% endif %}" title="Click to sort by Scheduled">Scheduled</a></th>
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}" title="Click to sort by Tier">Tier</a></th>
                             <th data-column-id="reviewed_by" style="display: none;" {% if 'reviewed_by' not in visible_columns %}class="column-hidden"{% endif %}>Reviewed By</th>
                             <th data-column-id="on_time" {% if 'on_time' not in visible_columns %}class="column-hidden"{% endif %}>On-Time/Late</th>
@@ -399,15 +395,6 @@
                                     <span class="badge bg-secondary">{{ case.get_status_display }}</span>
                                 {% endif %}
                             </td>
-                            <td class="column-release_date {% if 'release_date' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.scheduled_release_date %}
-                                    <span class="badge bg-danger">Scheduled {{ case.scheduled_release_date|date:"m/d/y" }}</span>
-                                {% elif case.actual_release_date %}
-                                    <span class="text-muted">{{ case.actual_release_date|date:"m/d/y" }}</span>
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-assigned_to {% if 'assigned_to' not in visible_columns %}column-hidden{% endif %}">
                                 <button type="button" class="btn btn-sm btn-link p-0" data-bs-toggle="modal" data-bs-target="#reassignModal{{ case.id }}" title="Reassign case" style="margin-right: 0.5rem;">
@@ -421,13 +408,6 @@
                                     {% endif %}
                                 {% else %}
                                     <span class="text-muted">Unassigned</span>
-                                {% endif %}
-                            </td>
-                            <td class="column-date_scheduled {% if 'date_scheduled' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.date_scheduled %}
-                                    {{ case.date_scheduled|date:"m/d/y" }}
-                                {% else %}
-                                    —
                                 {% endif %}
                             </td>
                             <td class="column-tier {% if 'tier' not in visible_columns %}column-hidden{% endif %}">

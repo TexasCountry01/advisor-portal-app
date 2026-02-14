@@ -256,8 +256,6 @@ def technician_dashboard(request):
         'employee_last_name', '-employee_last_name',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
-        'date_scheduled', '-date_scheduled',
-        'scheduled_release_date', '-scheduled_release_date',
         'status', '-status',
         'urgency', '-urgency',
         'tier', '-tier',
@@ -4500,18 +4498,15 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'due', 'label': 'Due Date'},
             {'id': 'urgency', 'label': 'Urgency'},
             {'id': 'status', 'label': 'Status'},
-            {'id': 'release_date', 'label': 'Release Date'},
             {'id': 'reports', 'label': 'Reports'},
             {'id': 'assigned_to', 'label': 'Assigned To'},
-            {'id': 'date_scheduled', 'label': 'Date Scheduled'},
             {'id': 'tier', 'label': 'Tier'},
             {'id': 'reviewed_by', 'label': 'Reviewed By'},
             {'id': 'on_time', 'label': 'On-Time/Late'},
             {'id': 'date_completed', 'label': 'Date Completed'},
-            {'id': 'notes', 'label': 'Notes'},
             {'id': 'actions', 'label': 'Actions'},
         ],
-        'default_hidden': ['reviewed_by', 'notes', 'tier', 'date_scheduled', 'reports']
+        'default_hidden': ['reviewed_by', 'tier', 'reports']
     },
     'admin_dashboard': {
         'available_columns': [
