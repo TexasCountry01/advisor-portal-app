@@ -1379,11 +1379,12 @@ def put_case_on_hold(request, case_id):
             
             # Only create notification if case has a member
             if case.member:
+                employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
                 notification = CaseNotification.objects.create(
                     case=case,
                     member=case.member,
                     notification_type='case_put_on_hold',
-                    title=f'Your case {case.external_case_id} has been placed on hold',
+                    title=f'Your case for {employee_name} has been placed on hold',
                     message=f'Your case requires additional attention. Please see the hold reason below for details.',
                     hold_reason=reason,
                     is_read=False,
