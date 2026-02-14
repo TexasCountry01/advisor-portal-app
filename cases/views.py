@@ -2882,8 +2882,8 @@ def upload_member_document_to_completed_case(request, case_id):
             notes=document_notes if document_notes else 'Member supplementary document',
         )
         
-        # Set member updates flag if case is after submission (submitted, accepted, pending_review, resubmitted, completed)
-        if case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted', 'completed']:
+        # Set member updates flag if case is after submission (submitted, accepted, pending_review, resubmitted, completed, hold)
+        if case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted', 'completed', 'hold']:
             case.has_member_updates = True
             case.member_last_update_date = timezone.now()
             case.save(update_fields=['has_member_updates', 'member_last_update_date'])

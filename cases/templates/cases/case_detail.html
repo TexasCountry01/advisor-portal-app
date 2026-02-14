@@ -493,6 +493,8 @@
                                     <span class="badge bg-success">Accepted</span>
                                 {% elif case.status == 'pending_review' %}
                                     <span class="badge bg-warning">Pending Review</span>
+                                {% elif case.status == 'hold' %}
+                                    <span class="badge bg-danger">Hold</span>
                                 {% elif case.status == 'completed' %}
                                     {% if case.actual_release_date %}
                                         <span class="badge bg-success">Completed</span>
@@ -958,6 +960,96 @@
                     {% endif %}
                 </div>
             </div>
+
+            <!-- Member-visible: Hold Notice -->
+            {% if user.role == 'member' and case.status == 'hold' %}
+            <div class="card mb-4 border-warning">
+                <div class="card-header bg-warning bg-opacity-25">
+                    <h5 class="mb-0 text-dark">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i> Your Case Is on Hold
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if case.hold_reason %}
+                    <div class="mb-2">
+                        <strong>Reason for Hold:</strong>
+                        <p class="mt-1 mb-0 border-start border-warning border-3 ps-3 py-1 bg-light rounded">{{ case.hold_reason }}</p>
+                    </div>
+                    {% endif %}
+                    <hr class="my-2">
+                    <small class="text-muted"><i class="bi bi-info-circle me-1"></i>Please review the reason above and upload any requested documents using the document upload section.</small>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Member-visible: Timeline -->
+            {% if user.role == 'member' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Timeline</h5>
+                </div>
+                <div class="card-body">
+                    {% if case_event_logs %}
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0" style="font-size: 0.85rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 30%;">Date / Time</th>
+                                    <th style="width: 35%;">Event</th>
+                                    <th style="width: 35%;">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for event in case_event_logs %}
+                                {% if event.action_type in 'case_submitted,case_resubmitted,case_accepted,case_held,case_resumed,case_completed,member_document_uploaded' %}
+                                <tr>
+                                    <td class="text-muted">
+                                        {{ event.timestamp|date:"m/d/Y" }}<br>
+                                        <small>{{ event.timestamp|date:"h:i A" }}</small>
+                                    </td>
+                                    <td>
+                                        {% if event.action_type == 'case_submitted' %}
+                                            <span class="badge bg-info"><i class="bi bi-send me-1"></i>Submitted</span>
+                                        {% elif event.action_type == 'case_resubmitted' %}
+                                            <span class="badge bg-info"><i class="bi bi-arrow-repeat me-1"></i>Resubmitted</span>
+                                        {% elif event.action_type == 'case_accepted' %}
+                                            <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Accepted</span>
+                                        {% elif event.action_type == 'case_held' %}
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-pause-circle me-1"></i>Put on Hold</span>
+                                        {% elif event.action_type == 'case_resumed' %}
+                                            <span class="badge bg-info"><i class="bi bi-play-circle me-1"></i>Resumed</span>
+                                        {% elif event.action_type == 'case_completed' %}
+                                            <span class="badge bg-success"><i class="bi bi-check2-all me-1"></i>Completed</span>
+                                        {% elif event.action_type == 'member_document_uploaded' %}
+                                            <span class="badge bg-info"><i class="bi bi-file-earmark-arrow-up me-1"></i>Document Uploaded</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-muted">
+                                        {% if event.action_type == 'case_held' and event.metadata.reason %}
+                                            {{ event.metadata.reason|truncatewords:10 }}
+                                        {% elif event.action_type == 'member_document_uploaded' and event.metadata.filename %}
+                                            {{ event.metadata.filename|truncatewords:5 }}
+                                        {% else %}
+                                            —
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-muted small">
+                        <p class="mb-1"><strong>Submitted:</strong> {{ case.date_submitted|date:"m/d/Y h:i A" }}</p>
+                        {% if case.date_completed %}
+                        <p class="mb-0"><strong>Completed:</strong> {{ case.date_completed|date:"m/d/Y h:i A" }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
 
             {% if user.role != 'member' %}
                 <!-- Initial Case Review (only show if status is submitted and not yet accepted) -->
