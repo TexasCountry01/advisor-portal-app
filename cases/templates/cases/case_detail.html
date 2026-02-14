@@ -1647,6 +1647,13 @@ function confirmCaseCompletion() {
             return;
         }
         
+        // Validate release date is not after the due date
+        const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
+        if (caseDueDate && releaseDate > caseDueDate) {
+            alert('Error: The release date cannot be after the case due date (' + new Date(caseDueDate + 'T00:00:00').toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}) + '). Please select an earlier date.');
+            return;
+        }
+        
         // Combine date and time: "2026-02-15 14:30" (the backend will interpret as CST)
         releaseDateTime = `${releaseDate} ${releaseTime}`;
     }
@@ -1752,7 +1759,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeInput = document.getElementById('releaseTime');
     
     if (dateInput) {
-        dateInput.addEventListener('change', updateReleaseSummary);
+        dateInput.addEventListener('change', function() {
+            updateReleaseSummary();
+            // Check if release date is after due date
+            const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
+            const releaseDateWarning = document.getElementById('releaseDateWarning');
+            if (caseDueDate && dateInput.value > caseDueDate) {
+                if (!releaseDateWarning) {
+                    const warning = document.createElement('div');
+                    warning.id = 'releaseDateWarning';
+                    warning.className = 'alert alert-danger mt-2 mb-0';
+                    warning.innerHTML = '<i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> This release date is after the case due date (' + new Date(caseDueDate + 'T00:00:00').toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}) + '). Please select an earlier date.';
+                    dateInput.parentElement.appendChild(warning);
+                }
+            } else if (releaseDateWarning) {
+                releaseDateWarning.remove();
+            }
+        });
     }
     
     if (timeInput) {
