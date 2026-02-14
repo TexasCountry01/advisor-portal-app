@@ -1319,8 +1319,8 @@ def put_case_on_hold(request, case_id):
     # PERMISSION CHECKS
     # ============================================================================
     
-    # Technicians can only hold their own assigned cases
-    if user.role == 'technician' and case.assigned_to != user:
+    # Technicians can only hold their own assigned cases (or unassigned submitted cases)
+    if user.role == 'technician' and case.assigned_to and case.assigned_to != user:
         return JsonResponse({
             'success': False,
             'error': 'You can only put cases you are assigned to on hold.'
