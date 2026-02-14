@@ -127,9 +127,9 @@ def member_dashboard(request):
     elif sort_by == '-date_submitted':
         cases = sorted(cases, key=lambda x: x.date_submitted or timezone.now(), reverse=True)
     elif sort_by == 'date_due':
-        cases = sorted(cases, key=lambda x: x.date_due or timezone.now())
+        cases = sorted(cases, key=lambda x: x.date_due or timezone.now().date())
     elif sort_by == '-date_due':
-        cases = sorted(cases, key=lambda x: x.date_due or timezone.now(), reverse=True)
+        cases = sorted(cases, key=lambda x: x.date_due or timezone.now().date(), reverse=True)
     elif sort_by == 'date_accepted':
         cases = sorted(cases, key=lambda x: x.date_accepted or timezone.now())
     elif sort_by == '-date_accepted':
