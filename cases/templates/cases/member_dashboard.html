@@ -279,7 +279,7 @@
                             </td>
                             <td class="column-status {% if 'status' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.status == 'pending_review' %}
-                                    <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
+                                    <span class="badge bg-primary" title="Case accepted by Benefits Team">Accepted</span>
                                 {% elif case.status == 'submitted' %}
                                     <span class="badge bg-secondary" title="Case awaiting initial review by Benefits Team">Submitted</span>
                                 {% elif case.status == 'resubmitted' %}
