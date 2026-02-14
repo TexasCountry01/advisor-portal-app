@@ -2080,6 +2080,15 @@ def submit_case_final(request, case_id):
             case.date_submitted = timezone.now()
             case.save()
             
+            # If member included notes for benefits team, add as first chat message
+            if case.special_notes and case.special_notes.strip():
+                from cases.models import CaseMessage
+                CaseMessage.objects.create(
+                    case=case,
+                    author=user,
+                    message=case.special_notes.strip()
+                )
+            
             # Log case submission to audit trail
             from core.models import AuditLog
             AuditLog.log_activity(
