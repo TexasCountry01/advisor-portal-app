@@ -279,7 +279,11 @@
                                 {% elif case.status == 'draft' %}
                                     <span class="badge bg-danger" title="Draft case not yet submitted">Draft</span>
                                 {% elif case.status == 'completed' %}
+                                    {% if case.actual_release_date %}
                                     <span class="badge bg-success" title="Case completed and ready for download">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-primary" title="Case accepted by Benefits Team">Accepted</span>
+                                    {% endif %}
                                 {% elif case.status == 'cancelled' %}
                                     <span class="badge bg-danger" title="Case cancelled by technician">Cancelled</span>
                                 {% endif %}
@@ -321,9 +325,9 @@
                                     <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
                                     {% endif %}
                                 </a>
-                                {% elif case.status == 'completed' and case.scheduled_release_date and not case.actual_release_date %}
-                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-warning" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;" title="Scenarios will be available on {{ case.scheduled_release_date|date:'M j, Y' }}">
-                                    <i class="bi bi-clock"></i> Pending
+                                {% elif case.status == 'completed' and not case.actual_release_date %}
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 85px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
+                                    <i class="bi bi-eye"></i> View
                                     {% if case.unread_message_count > 0 %}
                                     <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
                                     {% endif %}
