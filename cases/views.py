@@ -1299,12 +1299,13 @@ def change_release_date(request, case_id):
             old_release_date = case.scheduled_release_date
             
             if action == 'release_now':
-                # Release immediately
+                # Release immediately - preserve original date_completed from when tech finished
                 case.actual_release_date = timezone.now()
                 case.scheduled_release_date = None
                 case.actual_email_sent_date = timezone.now()
                 case.scheduled_email_date = None
-                case.date_completed = timezone.now()
+                if not case.date_completed:
+                    case.date_completed = timezone.now()  # Fallback only
                 case.save()
                 
                 AuditLog.log_activity(
@@ -2606,7 +2607,7 @@ def mark_case_completed(request, case_id):
                             case.scheduled_email_date = release_dt_utc.date()
                             case.actual_release_date = None
                             case.actual_email_sent_date = None
-                            case.date_completed = None
+                            case.date_completed = timezone.now()  # Tech completed now, release scheduled for later
                             
                             # Format for user display
                             release_date_str = release_dt_cst.strftime('%b %d, %Y at %I:%M %p %Z')
@@ -2648,7 +2649,7 @@ def mark_case_completed(request, case_id):
                             case.scheduled_email_date = convert_to_scheduled_date_cst(release_time_cst)
                             case.actual_release_date = None
                             case.actual_email_sent_date = None
-                            case.date_completed = None
+                            case.date_completed = timezone.now()  # Tech completed now, release delayed
                             delay_label = get_delay_label(completion_delay_hours)
                             release_msg = f"scheduled for release in {delay_label} (CST)"
             else:
