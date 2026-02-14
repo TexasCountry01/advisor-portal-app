@@ -1821,7 +1821,19 @@ def edit_case(request, pk):
         # Get form data
         urgency = request.POST.get('urgency', case.urgency)
         num_reports = request.POST.get('num_reports_requested', case.num_reports_requested)
-        due_date = request.POST.get('date_due', case.date_due)
+        # Only allow due date changes on draft cases
+        if case.status == 'draft':
+            due_date_str = request.POST.get('date_due', '')
+            if due_date_str:
+                try:
+                    from datetime import datetime as dt
+                    due_date = dt.strptime(due_date_str, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    due_date = case.date_due
+            else:
+                due_date = case.date_due
+        else:
+            due_date = case.date_due  # Preserve existing due date for non-draft cases
         special_notes_new = request.POST.get('special_notes', '')  # New notes only
         employee_first_name = request.POST.get('employee_first_name', case.employee_first_name)
         employee_last_name = request.POST.get('employee_last_name', case.employee_last_name)

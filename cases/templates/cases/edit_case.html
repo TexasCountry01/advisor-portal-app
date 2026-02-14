@@ -41,10 +41,16 @@
 
                         <!-- Due Date -->
                         <div class="mb-3">
-                            <label for="date_due" class="form-label">Due Date <span class="text-danger">*</span></label>
+                            <label for="date_due" class="form-label">Due Date {% if case.status == 'draft' %}<span class="text-danger">*</span>{% endif %}</label>
+                            {% if case.status == 'draft' %}
                             <input type="date" id="date_due" name="date_due" class="form-control" 
                                    value="{{ case.date_due|date:'Y-m-d' }}" required onchange="updateUrgencyFromDueDate()">
                             <small class="form-text text-muted">Date when this case should be completed. Dates less than 7 days from now will be automatically marked as "rushed" with a $20 fee.</small>
+                            {% else %}
+                            <input type="text" class="form-control" value="{{ case.date_due|date:'m/d/Y' }}" disabled>
+                            <small class="form-text text-muted">Due date cannot be changed after submission. Contact your technician if you need an extension.</small>
+                            {% endif %}
+                            {% if case.status == 'draft' %}
                             <!-- Rushed Status Alert -->
                             <div id="rushAlertContainerEdit" style="max-height: 0; overflow: hidden; margin-top: 15px; transition: max-height 0.3s ease-out;">
                                 <div class="alert alert-danger alert-permanent" id="rushAlertEdit" style="border: 3px solid #dc3545; font-size: 1.1em; margin: 0;">
@@ -59,6 +65,7 @@
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
 
                         <!-- Number of Scenarios -->
@@ -179,6 +186,7 @@
 </div>
 
 <script>
+    {% if case.status == 'draft' %}
     function updateUrgencyFromDueDate() {
         const dueDateInput = document.getElementById('date_due').value;
         const urgencyInput = document.getElementById('urgency');
@@ -212,6 +220,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         updateUrgencyFromDueDate();
     });
+    {% endif %}
 </script>
 
 <!-- Upload Document Modal -->
