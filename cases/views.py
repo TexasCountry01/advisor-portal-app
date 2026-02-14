@@ -84,7 +84,10 @@ def member_dashboard(request):
         sort_by = get_user_sort_preference(user, 'member_dashboard', 'date_due')
     
     if status_filter:
-        cases = cases.filter(status__in=status_filter)
+        # Override: always include cases with unread notifications regardless of filter
+        from django.db.models import Exists, OuterRef
+        has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+        cases = cases.filter(Q(status__in=status_filter) | has_unread)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
@@ -228,9 +231,11 @@ def technician_dashboard(request):
     if assigned_filter == 'mine':
         cases = cases.filter(assigned_to=user)
     
-    # Apply multi-status filter
+    # Apply multi-status filter (override: always include cases with unread notifications)
     if status_filters:
-        cases = cases.filter(status__in=status_filters)
+        from django.db.models import Exists, OuterRef
+        has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+        cases = cases.filter(Q(status__in=status_filters) | has_unread)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
@@ -256,6 +261,7 @@ def technician_dashboard(request):
         'employee_last_name', '-employee_last_name',
         'date_submitted', '-date_submitted',
         'date_due', '-date_due',
+        'date_completed', '-date_completed',
         'status', '-status',
         'urgency', '-urgency',
         'tier', '-tier',
@@ -1930,14 +1936,8 @@ def reassign_case(request, case_id):
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check
-    if user.role == 'technician':
-        if case.assigned_to != user:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'success': False, 'error': 'You can only reassign cases you own'}, status=403)
-            messages.error(request, 'You can only reassign cases you own')
-            return redirect('cases:case_detail', pk=case_id)
-    elif user.role not in ['administrator', 'manager']:
+    # Permission check - technicians, managers, and administrators can reassign cases
+    if user.role not in ['technician', 'administrator', 'manager']:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
         messages.error(request, 'Permission denied')
@@ -4603,6 +4603,7 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'urgency', 'label': 'Urgency'},
             {'id': 'submitted', 'label': 'Submitted'},
             {'id': 'due', 'label': 'Due Date'},
+            {'id': 'completed', 'label': 'Completed'},
             {'id': 'status', 'label': 'Status'},
             {'id': 'assigned_to', 'label': 'Assigned To'},
             {'id': 'tier', 'label': 'Tier'},
