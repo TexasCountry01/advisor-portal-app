@@ -4506,6 +4506,21 @@ DASHBOARD_COLUMN_CONFIG = {
         ],
         'default_hidden': []
     },
+    # NOTE - 02/14/2026: Admin dashboard columns have NOT been reordered to match the tech dashboard spec.
+    # The tech dashboard was reordered to: Code, Member, Employee Name, Reports, Urgency, Submitted,
+    # Due, Completed, Status, Assigned To, Tier, Actions (with Release Date, Date Scheduled, Notes,
+    # Reviewed By, and On-Time/Late removed entirely).
+    #
+    # IMPORTANT DISTINCTION - Release Date vs Date Completed:
+    #   - 'date_completed' = The date the technician finishes working on the case (e.g., day 4)
+    #   - 'release_date' = The date the case is released/available to the member (e.g., day 6)
+    #   These are two different dates. A tech might finalize a case on day 4 but schedule it
+    #   for release on day 6. Both are important for productivity tracking.
+    #   Admin/Manager dashboards retain both columns for this reason.
+    #
+    # TODO: If admin/manager dashboards need the same reorder treatment, follow the tech dashboard
+    # pattern: reorder config below, reorder <th> and <td> in admin_dashboard.html/manager_dashboard.html,
+    # and remove unwanted columns from allowed_sorts in admin_dashboard()/manager_dashboard() views.
     'admin_dashboard': {
         'available_columns': [
             {'id': 'code', 'label': 'Code'},
@@ -4528,6 +4543,9 @@ DASHBOARD_COLUMN_CONFIG = {
         ],
         'default_hidden': ['reviewed_by', 'notes', 'tier', 'date_scheduled', 'reports']
     },
+    # NOTE - 02/14/2026: Manager dashboard columns have NOT been reordered (same as admin above).
+    # See admin_dashboard comment block for full context on Release Date vs Date Completed distinction
+    # and future reorder instructions.
     'manager_dashboard': {
         'available_columns': [
             {'id': 'code', 'label': 'Code'},
