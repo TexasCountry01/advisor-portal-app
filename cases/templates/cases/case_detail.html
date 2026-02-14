@@ -37,7 +37,11 @@
                 {% elif case.status == 'hold' %}
                     <span class="badge bg-danger fs-5" title="Case paused awaiting Member input">On Hold</span>
                 {% elif case.status == 'completed' %}
+                    {% if case.actual_release_date %}
                     <span class="badge bg-success fs-5" title="Case completed and ready for download">Completed</span>
+                    {% else %}
+                    <span class="badge bg-primary fs-5" title="Case accepted by Benefits Team">Accepted</span>
+                    {% endif %}
                 {% elif case.status == 'cancelled' %}
                     <span class="badge bg-danger fs-5" title="Case has been cancelled">Cancelled</span>
                 {% else %}
@@ -493,7 +497,7 @@
                                     {% if case.actual_release_date %}
                                         <span class="badge bg-success">Completed</span>
                                     {% else %}
-                                        <span class="badge bg-info">Working</span>
+                                        <span class="badge bg-success">Accepted</span>
                                     {% endif %}
                                 {% else %}
                                     <span class="badge bg-secondary">{{ case.get_status_display }}</span>
@@ -578,14 +582,7 @@
             </div>
             {% endif %}
 
-            <!-- Pending Release Notice (Members only) -->
-            {% if user.role == 'member' and case.status == 'completed' and case.actual_release_date is None %}
-                <div class="alert alert-info mb-4">
-                    <i class="bi bi-clock-history"></i>
-                    <strong>This case is complete and will be released on {{ case.scheduled_release_date|date:"F j, Y" }}</strong>
-                    <p class="mt-2 mb-0">The report and supporting documents will be displayed once the release date arrives.</p>
-                </div>
-            {% endif %}
+            <!-- Pending Release Notice removed - members should not see release scheduling info -->
 
             <!-- Release Status (if applicable) - HIDDEN: Redundant section, date completion already shown above -->
             {% if False %}
