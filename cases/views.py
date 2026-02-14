@@ -259,8 +259,7 @@ def technician_dashboard(request):
         'status', '-status',
         'urgency', '-urgency',
         'tier', '-tier',
-        'assigned_to', '-assigned_to',
-        'date_completed', '-date_completed'
+        'assigned_to', '-assigned_to'
     ]
     if sort_by in allowed_sorts:
         cases = cases.order_by(sort_by)
@@ -4498,7 +4497,6 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'urgency', 'label': 'Urgency'},
             {'id': 'submitted', 'label': 'Submitted'},
             {'id': 'due', 'label': 'Due Date'},
-            {'id': 'date_completed', 'label': 'Completed'},
             {'id': 'status', 'label': 'Status'},
             {'id': 'assigned_to', 'label': 'Assigned To'},
             {'id': 'tier', 'label': 'Tier'},

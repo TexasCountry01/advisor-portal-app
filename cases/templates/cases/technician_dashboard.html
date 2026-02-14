@@ -309,7 +309,6 @@
                             <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}" title="Click to sort by Urgency">Urgency</a></th>
                             <th data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_submitted' %}sort=-date_submitted{% else %}sort=date_submitted{% endif %}" title="Click to sort by Submitted">Submitted</a></th>
                             <th data-column-id="due" {% if 'due' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_due' %}sort=-date_due{% else %}sort=date_due{% endif %}" title="Click to sort by Due Date">Due Date</a></th>
-                            <th data-column-id="date_completed" {% if 'date_completed' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'date_completed' %}sort=-date_completed{% else %}sort=date_completed{% endif %}" title="Click to sort by Completed">Completed</a></th>
                             <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
                             <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}" title="Click to sort by Assigned To">Assigned To</a></th>
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}" title="Click to sort by Tier">Tier</a></th>
@@ -365,13 +364,6 @@
                             <td class="column-due {% if 'due' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.date_due %}
                                     {{ case.date_due|date:"m/d/y" }}
-                                {% else %}
-                                    —
-                                {% endif %}
-                            </td>
-                            <td class="column-date_completed {% if 'date_completed' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.date_completed %}
-                                    {{ case.date_completed|date:"m/d/y" }}
                                 {% else %}
                                     —
                                 {% endif %}
