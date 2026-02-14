@@ -1985,14 +1985,26 @@ function loadMessages() {
             'X-CSRFToken': '{{ csrf_token }}'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             displayMessages(data.messages);
             document.getElementById('message-count').textContent = data.total_messages;
+        } else {
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '<p class="text-danger text-center py-4"><i class="bi bi-exclamation-circle"></i> Unable to load messages: ' + (data.error || 'Unknown error') + '</p>';
         }
     })
-    .catch(error => console.error('Error loading messages:', error));
+    .catch(error => {
+        console.error('Error loading messages:', error);
+        const container = document.getElementById('messages-container');
+        container.innerHTML = '<p class="text-danger text-center py-4"><i class="bi bi-exclamation-circle"></i> Failed to load messages. <a href="#" onclick="loadMessages(); return false;">Retry</a></p>';
+    });
 }
 
 // Display messages in the container
