@@ -178,6 +178,29 @@ def submit_case(request):
             )
             case.save()
             
+            # If member included notes for benefits team, add as first chat message
+            if action == 'submit' and notes and notes.strip():
+                from cases.models import CaseMessage
+                CaseMessage.objects.create(
+                    case=case,
+                    author=user,
+                    message=notes.strip()
+                )
+            
+            # Log case submission to audit trail
+            if action == 'submit':
+                from core.models import AuditLog
+                AuditLog.log_activity(
+                    user=user,
+                    action_type='case_submitted',
+                    case=case,
+                    description=f'Case submitted for {fed_first_name} {fed_last_name}',
+                    metadata={
+                        'urgency': urgency,
+                        'document_count': 0,  # Will be updated after file uploads
+                    }
+                )
+            
             # Calculate and set default credit value
             from cases.services.credit_service import calculate_default_credit, set_case_credit
             default_credit = calculate_default_credit(num_reports)

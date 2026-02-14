@@ -12,6 +12,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.utils import timezone
 
 from cases.models import Case, CaseDocument
 from cases.forms import CaseDocumentForm
@@ -267,7 +268,30 @@ def submit_case(request, case_id):
     if request.method == 'POST':
         # Update case status to submitted
         case.status = 'submitted'
+        case.date_submitted = timezone.now()
         case.save()
+        
+        # If member included notes for benefits team, add as first chat message
+        if case.special_notes and case.special_notes.strip():
+            from cases.models import CaseMessage
+            CaseMessage.objects.create(
+                case=case,
+                author=request.user,
+                message=case.special_notes.strip()
+            )
+        
+        # Log case submission to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=request.user,
+            action_type='case_submitted',
+            case=case,
+            description=f'Case submitted for {case.employee_first_name} {case.employee_last_name}',
+            metadata={
+                'urgency': case.urgency,
+                'document_count': case.documents.count(),
+            }
+        )
         
         messages.success(
             request, 
