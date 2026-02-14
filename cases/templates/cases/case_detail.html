@@ -1417,21 +1417,18 @@
                                     </small>
                                 {% endif %}
                             {% elif not case.assigned_to or case.assigned_to != user %}
-                                <!-- Case is unassigned or assigned to someone else -->
-                                <button type="button" class="btn btn-outline-success btn-lg" onclick="takeOwnership({{ case.id }})">
-                                    <i class="bi bi-hand-thumbs-up"></i> Take Ownership
-                                </button>
-                                <p class="text-muted small mt-3 mb-0">
-                                    <i class="bi bi-info-circle"></i> Click to take ownership of this case and begin processing.
-                                </p>
+                                <!-- Take Ownership button is at top of page - only show admin hold option here -->
                                 {% if user.role in 'administrator,manager' and case.status in 'submitted,accepted' %}
-                                <hr>
                                 <button type="button" class="btn btn-warning" onclick="showPutOnHoldModal()">
                                     <i class="bi bi-pause-circle"></i> Put on Hold
                                 </button>
                                 <small class="text-muted d-block mt-2">
                                     <i class="bi bi-info-circle"></i> Admin/Manager: You can put this case on hold without taking ownership.
                                 </small>
+                                {% else %}
+                                <div class="alert alert-info mb-0">
+                                    <i class="bi bi-info-circle"></i> Use the "Take Ownership" button at the top to begin processing this case.
+                                </div>
                                 {% endif %}
                             {% else %}
                                 <!-- Fallback - should not normally reach here -->
