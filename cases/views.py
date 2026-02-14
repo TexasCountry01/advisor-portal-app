@@ -2468,7 +2468,24 @@ def upload_technician_document(request, case_id):
         # If member uploads after submission, flag for technician
         if user.role == 'member' and case.status != 'draft':
             case.has_member_new_info = True
-            case.save()
+            case.has_member_updates = True
+            case.member_last_update_date = timezone.now()
+            case.save(update_fields=['has_member_new_info', 'has_member_updates', 'member_last_update_date'])
+            
+            # Create StaffNotification for the assigned technician
+            if case.assigned_to:
+                try:
+                    from core.models import StaffNotification
+                    StaffNotification.objects.create(
+                        user=case.assigned_to,
+                        notification_type='member_document_uploaded',
+                        title=f'New Document on Case {case.external_case_id}',
+                        message=f'Member {user.get_full_name() or user.username} uploaded a document to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                        case=case,
+                        is_read=False
+                    )
+                except Exception as notif_err:
+                    logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
         
         # Show updated document count
         from cases.services.document_count_service import get_document_count_message
@@ -2836,7 +2853,7 @@ def upload_member_document_to_completed_case(request, case_id):
     """Allow members to upload supplementary documents to their cases"""
     from cases.models import CaseDocument
     from django.utils import timezone
-    from core.models import AuditLog
+    from core.models import AuditLog, StaffNotification
     import os
     
     user = request.user
@@ -2885,8 +2902,23 @@ def upload_member_document_to_completed_case(request, case_id):
         # Set member updates flag if case is after submission (submitted, accepted, pending_review, resubmitted, completed, hold)
         if case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted', 'completed', 'hold']:
             case.has_member_updates = True
+            case.has_member_new_info = True
             case.member_last_update_date = timezone.now()
-            case.save(update_fields=['has_member_updates', 'member_last_update_date'])
+            case.save(update_fields=['has_member_updates', 'has_member_new_info', 'member_last_update_date'])
+            
+            # Create StaffNotification for the assigned technician
+            if case.assigned_to:
+                try:
+                    StaffNotification.objects.create(
+                        user=case.assigned_to,
+                        notification_type='member_document_uploaded',
+                        title=f'New Document on Case {case.external_case_id}',
+                        message=f'Member {user.get_full_name() or user.username} uploaded a document to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                        case=case,
+                        is_read=False
+                    )
+                except Exception as notif_err:
+                    logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
             
             # Create audit log entry
             AuditLog.objects.create(
@@ -5639,9 +5671,26 @@ def upload_member_documents(request, case_id):
             notes=document_notes,
         )
         
-        # Set flag to notify technician
+        # Set flags to notify technician (has_member_updates drives "New Info" badge)
         case.has_member_new_info = True
-        case.save()
+        case.has_member_updates = True
+        case.member_last_update_date = timezone.now()
+        case.save(update_fields=['has_member_new_info', 'has_member_updates', 'member_last_update_date'])
+        
+        # Create StaffNotification for the assigned technician
+        if case.assigned_to:
+            try:
+                from core.models import StaffNotification
+                StaffNotification.objects.create(
+                    user=case.assigned_to,
+                    notification_type='member_document_uploaded',
+                    title=f'New Document on Case {case.external_case_id}',
+                    message=f'Member {user.get_full_name() or user.username} uploaded a document to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                    case=case,
+                    is_read=False
+                )
+            except Exception as notif_err:
+                logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
         
         # Log to audit trail
         from core.models import AuditLog

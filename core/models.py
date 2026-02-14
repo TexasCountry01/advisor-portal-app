@@ -357,6 +357,7 @@ class StaffNotification(models.Model):
         ('case_assigned', 'Case Assigned to You'),
         ('quality_review_feedback', 'Quality Review Feedback'),
         ('case_on_hold', 'Case Placed on Hold'),
+        ('member_document_uploaded', 'Member Uploaded Document'),
         ('system_alert', 'System Alert'),
     ]
     
