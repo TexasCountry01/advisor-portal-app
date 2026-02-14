@@ -1262,6 +1262,8 @@
                                                 <span class="badge bg-primary"><i class="bi bi-person-fill me-1"></i>Ownership Claimed</span>
                                             {% elif event.action_type == 'admin_ownership' %}
                                                 <span class="badge bg-danger"><i class="bi bi-shield-lock me-1"></i>Admin Ownership</span>
+                                            {% elif event.action_type == 'document_uploaded' or event.action_type == 'member_document_uploaded' %}
+                                                <span class="badge bg-info"><i class="bi bi-file-earmark-arrow-up me-1"></i>Doc Uploaded</span>
                                             {% else %}
                                                 <span class="badge bg-light text-dark">{{ event.get_action_type_display }}</span>
                                             {% endif %}
@@ -1307,6 +1309,10 @@
                                                 {% if event.metadata.rejection_notes %}<br><small>{{ event.metadata.rejection_notes|truncatewords:12 }}</small>{% endif %}
                                             {% elif event.action_type == 'case_cancelled' %}
                                                 Via member request
+                                            {% elif event.action_type == 'document_uploaded' %}
+                                                {% if event.metadata.original_filename %}{{ event.metadata.original_filename|truncatewords:5 }}{% endif %}
+                                            {% elif event.action_type == 'member_document_uploaded' %}
+                                                {% if event.metadata.filename %}{{ event.metadata.filename|truncatewords:5 }}{% endif %}
                                             {% endif %}
                                         </td>
                                     </tr>

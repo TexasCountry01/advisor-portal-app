@@ -1188,6 +1188,8 @@ def case_detail(request, pk):
             'case_cancelled',
             'case_ownership_taken',
             'admin_ownership',
+            'document_uploaded',
+            'member_document_uploaded',
         ]
     ).select_related('user').order_by('-timestamp')
     
