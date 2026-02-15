@@ -943,6 +943,12 @@
 
             <!-- Technical Notes - for Admin/Manager/Technician -->
             {% if user.role in 'technician,administrator,manager' %}
+            <style>
+                #techNotesPreviewContent h1 { font-size: 16px; margin: 10px 0 5px; }
+                #techNotesPreviewContent h2 { font-size: 15px; margin: 8px 0 4px; }
+                #techNotesPreviewContent h3 { font-size: 14px; margin: 6px 0 3px; }
+                #techNotesPreviewContent p { margin: 0 0 6px; }
+            </style>
             <div class="card mb-4 border-info" id="techNotesPreviewCard" {% if not case.report_notes_to_member %}style="display:none;"{% endif %}>
                 <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
@@ -957,7 +963,7 @@
                         <i class="bi bi-info-circle"></i> 
                         Formatted notes visible to the member once the case is released.
                     </p>
-                    <div id="techNotesPreviewContent" class="bg-light p-3 rounded border-start border-info border-3" style="line-height: 1.6;">
+                    <div id="techNotesPreviewContent" class="bg-light p-3 rounded border-start border-info border-3" style="line-height: 1.6; font-size: 13px;">
                         {{ case.report_notes_to_member|safe }}
                     </div>
                 </div>
@@ -3272,7 +3278,7 @@ tinymce.init({
     promotion: false,
     convert_urls: false,
     relative_urls: false,
-    content_style: 'body { font-size: 13px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; } img { max-width: 100%; height: auto; cursor: nwse-resize; }',
+    content_style: 'body { font-size: 13px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; } h1 { font-size: 16px; margin: 10px 0 5px; } h2 { font-size: 15px; margin: 8px 0 4px; } h3 { font-size: 14px; margin: 6px 0 3px; } p { margin: 0 0 6px; } img { max-width: 100%; height: auto; cursor: nwse-resize; }',
     file_picker_types: 'image',
     images_file_types: 'jpg,jpeg,png,gif,webp,bmp,svg,heic,heif,tiff',
     block_unsupported_drop: false,
