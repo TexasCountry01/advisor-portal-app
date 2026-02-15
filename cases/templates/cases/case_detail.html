@@ -1189,13 +1189,19 @@
                             <small class="form-text text-muted">Admin override: explaining the business reason is required for audit trail</small>
                         </div>
                         
+                        <!-- Hold Reason (for Accept & Put on Hold) -->
+                        <div class="mb-3" id="holdReasonContainer">
+                            <label for="acceptHoldReason" class="form-label small">Hold Reason <small class="text-muted">(required if putting on hold)</small>:</label>
+                            <textarea class="form-control form-control-sm" id="acceptHoldReason" rows="2" placeholder="Explain why this case is being put on hold (e.g., missing documents)..."></textarea>
+                        </div>
+
                         <!-- Buttons -->
                         <div class="d-grid gap-2">
                             <button type="button" class="btn btn-success btn-sm" id="acceptCaseBtn">
                                 <i class="bi bi-check-circle"></i> Accept Case
                             </button>
-                            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#putOnHoldModal">
-                                <i class="bi bi-pause-circle"></i> Put on Hold
+                            <button type="button" class="btn btn-warning btn-sm" id="acceptAndHoldBtn" onclick="acceptAndPutOnHold()">
+                                <i class="bi bi-pause-circle"></i> Accept & Put on Hold
                             </button>
                         </div>
                     </div>
@@ -3592,7 +3598,7 @@ document.addEventListener('DOMContentLoaded', function() {
             checkbox.addEventListener('change', checkDocuments);
         }
     });
-    
+
     // Handle Accept Case button click
     if (acceptBtn) {
         acceptBtn.addEventListener('click', function() {
@@ -3678,6 +3684,80 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Accept and Put on Hold - combined action
+function acceptAndPutOnHold() {
+    const assignTierSelect = document.getElementById('assignTier');
+    const assignTechSelect = document.getElementById('assignTechInit');
+    const tier = assignTierSelect ? assignTierSelect.value : '';
+    const tech = assignTechSelect ? assignTechSelect.value : '';
+    const notes = document.getElementById('acceptanceNotes').value;
+    const holdReason = document.getElementById('acceptHoldReason').value.trim();
+    const overrideReason = document.getElementById('techOverrideReason') ? document.getElementById('techOverrideReason').value.trim() : '';
+    const creditValue = document.getElementById('assignCreditValue').value;
+    const docCheckboxes = ['doc_fact_finder', 'doc_pay_stub', 'doc_social_security', 'doc_tsp_statement'];
+    const docsAllChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
+
+    // Validation
+    if (!docsAllChecked && !notes.trim()) {
+        alert('Please check all documents or add a note explaining why you\'re accepting without them.');
+        return;
+    }
+    if (!tier) {
+        alert('Please select a tier level.');
+        return;
+    }
+    if (!creditValue) {
+        alert('Please select a credit value.');
+        return;
+    }
+    if (!holdReason) {
+        alert('Please enter a reason for putting this case on hold.');
+        return;
+    }
+
+    const btn = document.getElementById('acceptAndHoldBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+
+    const data = {
+        'tier': tier,
+        'assigned_to': tech || null,
+        'credit_value': creditValue,
+        'acceptance_notes': notes,
+        'docs_verified': docsAllChecked ? 'yes' : 'no',
+        'tech_override_reason': overrideReason || null,
+        'leave_unassigned': !tech,
+        'put_on_hold': true,
+        'hold_reason': holdReason
+    };
+
+    fetch(`/cases/{{ case.id }}/accept/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        if (response.ok) {
+            location.reload();
+        } else {
+            return response.json().then(data => {
+                alert('Error: ' + (data.error || 'Failed to accept and hold case'));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-pause-circle"></i> Accept & Put on Hold';
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-pause-circle"></i> Accept & Put on Hold';
+    });
+}
 </script>
 
 {% include 'cases/edit_case_details_modal.html' %}

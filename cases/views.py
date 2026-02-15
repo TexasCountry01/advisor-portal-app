@@ -780,6 +780,7 @@ def accept_case(request, pk):
     from django.http import JsonResponse
     from django.utils import timezone
     from core.models import AuditLog
+    from cases.models import CaseNotification
     from cases.services.email_service import send_case_accepted_email, send_new_case_assigned_email
     
     user = request.user
@@ -946,6 +947,48 @@ def accept_case(request, pk):
                 ip_address=ip_address,
                 metadata=metadata
             )
+            
+            # Handle "Accept & Put on Hold" combined action
+            put_on_hold = body_data.get('put_on_hold', False)
+            hold_reason = (body_data.get('hold_reason') or '').strip()
+            
+            if put_on_hold and hold_reason:
+                from cases.services.case_audit_service import hold_case as hold_case_service
+                hold_case_service(
+                    case=case,
+                    user=user,
+                    reason=hold_reason,
+                    hold_duration_days=None
+                )
+                
+                # Create hold notification for member
+                if case.member:
+                    employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+                    CaseNotification.objects.create(
+                        case=case,
+                        member=case.member,
+                        notification_type='case_put_on_hold',
+                        title=f'Your case for {employee_name} has been placed on hold',
+                        message=f'Your case requires additional attention. Please see the hold reason below for details.',
+                        hold_reason=hold_reason,
+                        is_read=False,
+                        created_at=timezone.now()
+                    )
+                
+                AuditLog.log_activity(
+                    user=user,
+                    action_type='case_put_on_hold',
+                    description=f'Case accepted and immediately put on hold: {hold_reason[:100]}',
+                    case=case,
+                    changes={'status': ('accepted', 'hold')},
+                    ip_address=ip_address,
+                    metadata={'hold_reason': hold_reason, 'combined_accept_hold': True}
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Case {case.external_case_id} has been accepted and placed on hold.'
+                })
             
             # Send notification to assigned technician (if any and different from accepter)
             # Only send if case was actually assigned to someone
