@@ -1438,11 +1438,12 @@ def put_case_on_hold(request, case_id):
             'error': 'You do not have permission to put this case on hold.'
         }, status=403)
     
-    # Only cases in 'submitted' or 'accepted' status can be placed on hold
-    if case.status not in ['submitted', 'accepted']:
+    # Cases in active working statuses can be placed on hold
+    holdable_statuses = ['submitted', 'accepted', 'resubmitted', 'pending_review']
+    if case.status not in holdable_statuses:
         return JsonResponse({
             'success': False,
-            'error': f'Only cases in "Submitted" or "Accepted" status can be put on hold. Current status: {case.get_status_display()}'
+            'error': f'This case cannot be put on hold because its current status is "{case.get_status_display()}". Please refresh the page to see the latest status.'
         }, status=400)
     
     if request.method == 'POST':

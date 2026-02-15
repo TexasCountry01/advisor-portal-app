@@ -2242,7 +2242,8 @@ function submitPutOnHold() {
                 location.reload();
             }, 2000);
         } else {
-            // Show error message
+            // Show error message and reload to reflect current status
+            bootstrap.Modal.getInstance(document.getElementById('putOnHoldModal')).hide();
             const alertHtml = `
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     <i class="bi bi-exclamation-circle"></i> ${data.error}
@@ -2251,8 +2252,10 @@ function submitPutOnHold() {
             `;
             document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
             
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-pause-circle"></i> Place on Hold';
+            // Reload page after 3 seconds to show current status
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
         }
     })
     .catch(error => {
