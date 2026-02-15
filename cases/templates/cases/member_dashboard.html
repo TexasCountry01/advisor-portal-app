@@ -18,18 +18,7 @@
             <h2>Member Dashboard</h2>
             <p class="text-muted">Workshop Code: <strong>{{ user.workshop_code }}</strong></p>
         </div>
-        <div class="col-auto">
-            <a href="{% url 'cases:case_submit' %}" class="btn btn-primary me-2">
-                <i class="bi bi-plus-circle"></i> Submit New Case
-            </a>
-            <button type="button" class="btn btn-outline-info me-2" data-bs-toggle="offcanvas" data-bs-target="#notificationOffcanvas" id="notification-toggle">
-                <i class="bi bi-bell"></i> Notifications
-                <span class="badge bg-danger" id="unread-badge" style="display:none;"></span>
-            </button>
-            <a href="{% url 'logout' %}" class="btn btn-outline-danger">
-                <i class="bi bi-box-arrow-right"></i> Logout
-            </a>
-        </div>
+
     </div>
 
     <!-- Cases on Hold Alert Section (Collapsible) -->
@@ -796,12 +785,14 @@ function getCookie(name) {
      * - Hides if no unread notifications
      */
     function updateNotificationBadge(count) {
-        const badge = document.getElementById('unread-badge');
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'inline-block';
-        } else {
-            badge.style.display = 'none';
+        const badge = document.getElementById('navbar-unread-badge');
+        if (badge) {
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
         }
     }
     
