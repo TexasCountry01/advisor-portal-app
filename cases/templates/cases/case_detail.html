@@ -685,7 +685,12 @@
                                         {% if doc.file %}<a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">{% endif %}
                                             <strong>{{ doc.original_filename }}</strong>
                                         {% if doc.file %}</a>{% endif %}
-                                        <br><small class="text-muted">Uploaded {{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
+                                        <br><small class="text-muted">
+                                            {% if doc.notes and doc.notes != 'Member supplementary document' %}
+                                                <i class="bi bi-chat-left-text"></i> {{ doc.notes|truncatewords:20 }}<br>
+                                            {% endif %}
+                                            Uploaded {{ doc.uploaded_at|date:"m/d/Y H:i" }}
+                                        </small>
                                     </div>
                                     <div class="text-end">
                                         {% if doc.file %}<a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download title="Download document">
