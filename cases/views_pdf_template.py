@@ -19,7 +19,7 @@ from cases.forms import CaseDocumentForm
 
 logger = logging.getLogger(__name__)
 
-TEMPLATE_PDF_PATH = 'cases/static/documents/Federal-Fact-Finder-Template.pdf'
+TEMPLATE_PDF_PATH = 'cases/static/documents/FactFinder.pdf'
 
 @login_required
 @require_http_methods(["GET", "POST"])
@@ -199,7 +199,7 @@ def download_template(request):
         os.path.dirname(__file__),
         'static',
         'documents',
-        'Federal-Fact-Finder-Template.pdf'
+        'FactFinder.pdf'
     )
     
     if not os.path.exists(pdf_path):
@@ -208,7 +208,7 @@ def download_template(request):
     return FileResponse(
         open(pdf_path, 'rb'),
         as_attachment=True,
-        filename='Federal-Fact-Finder-Template.pdf'
+        filename='Federal-Fact-Finder-2026.pdf'
     )
 
 @login_required  

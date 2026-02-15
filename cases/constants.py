@@ -90,7 +90,7 @@ USER_LEVEL_CHOICES = [
 # ============================================================================
 PDF_UPLOAD_LIMIT = 10 * 1024 * 1024  # 10MB in bytes
 PDF_TEMP_DIR = 'cases/static/documents/temp/'
-PDF_TEMPLATE_PATH = 'cases/static/documents/Federal-Fact-Finder-Template.pdf'
+PDF_TEMPLATE_PATH = 'cases/static/documents/FactFinder.pdf'
 PDF_FORM_FIELD_COUNT = 209  # Number of fields in Federal Fact Finder
 
 # ============================================================================
