@@ -50,6 +50,31 @@
         </div>
     </div>
 
+    <!-- Draft Cases Reminder Banner -->
+    {% if draft_cases %}
+    <div class="alert alert-danger fade show" role="alert" style="margin-bottom: 1rem;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-1">
+                    <i class="bi bi-file-earmark-text"></i> You Have {{ draft_cases|length }} Unsubmitted Draft{{ draft_cases|length|pluralize }}
+                </h5>
+                <p class="mb-2 small">The following case{{ draft_cases|length|pluralize }} {{ draft_cases|length|pluralize:"has,have" }} not been submitted yet. Please complete and submit {{ draft_cases|length|pluralize:"it,them" }} to begin processing.</p>
+                <ul class="mb-0">
+                    {% for draft in draft_cases %}
+                    <li>
+                        <strong>{{ draft.employee_first_name }} {{ draft.employee_last_name }}</strong>
+                        <small class="text-muted">(Created {{ draft.date_created|date:'m/d/Y' }})</small>
+                        <a href="{% url 'cases:case_detail' draft.id %}" class="btn btn-sm btn-outline-danger ms-2">
+                            <i class="bi bi-pencil"></i> Edit &amp; Submit
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Notification Offcanvas Sidebar -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="notificationOffcanvas" aria-labelledby="notificationOffcanvasLabel">
         <div class="offcanvas-header bg-info text-white">
