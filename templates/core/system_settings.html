@@ -49,6 +49,11 @@
                     <i class="bi bi-cloud-check"></i> API Configuration
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="notes-template-tab" data-bs-toggle="tab" data-bs-target="#notes-template" type="button" role="tab" aria-controls="notes-template" aria-selected="false">
+                    <i class="bi bi-file-earmark-text"></i> Notes Template
+                </button>
+            </li>
         </ul>
 
         <!-- Tab Content -->
@@ -474,6 +479,40 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Notes Template Tab -->
+            <div class="tab-pane fade" id="notes-template" role="tabpanel" aria-labelledby="notes-template-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Technical Notes Template</h5>
+                        <p class="text-muted mb-3">
+                            This template is auto-populated into the "Notes to the ProFeds Member" field when a technician accepts a case.
+                            Technicians can also insert it manually via the <strong>Insert Template</strong> button in the notes editor.
+                        </p>
+
+                        <div class="mb-3">
+                            <label for="technical_notes_template" class="form-label">
+                                Template Content <span class="badge bg-info ms-2">Rich Text</span>
+                            </label>
+                            <textarea id="technical_notes_template" 
+                                      name="technical_notes_template" 
+                                      class="form-control"
+                                      rows="20"
+                                      style="min-height: 400px;">{{ settings.technical_notes_template }}</textarea>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> <strong>Template Tips:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Use <strong>&lt;h3&gt;&lt;u&gt;HEADER&lt;/u&gt;&lt;/h3&gt;</strong> for section headers (underlined)</li>
+                                <li>Use <strong>&lt;a href="..." target="_blank"&gt;CLICK HERE&lt;/a&gt;</strong> for links</li>
+                                <li>Use <strong>&lt;p&gt;&amp;nbsp;&lt;/p&gt;</strong> for empty placeholder sections</li>
+                                <li>Changes take effect immediately for new case acceptances and template insertions</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Form Actions -->
@@ -531,4 +570,50 @@
         font-weight: 500;
     }
 </style>
+
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize TinyMCE on the Notes Template tab when it's shown
+    const notesTemplateTab = document.getElementById('notes-template-tab');
+    let templateEditorInitialized = false;
+    
+    function initTemplateEditor() {
+        if (templateEditorInitialized) return;
+        templateEditorInitialized = true;
+        
+        tinymce.init({
+            selector: '#technical_notes_template',
+            plugins: 'link lists code',
+            toolbar: 'formatselect | bold italic underline | link | bullist numlist | code',
+            menubar: false,
+            statusbar: true,
+            height: 450,
+            branding: false,
+            promotion: false,
+            license_key: 'gpl',
+            content_style: 'body { font-size: 11px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
+            setup: function(editor) {
+                // Before form submit, sync TinyMCE content to textarea
+                const form = document.getElementById('settingsForm');
+                form.addEventListener('submit', function() {
+                    editor.save();
+                });
+            }
+        });
+    }
+    
+    // If Notes Template tab is already visible, init immediately
+    if (notesTemplateTab && notesTemplateTab.classList.contains('active')) {
+        initTemplateEditor();
+    }
+    
+    // Init when tab is shown
+    if (notesTemplateTab) {
+        notesTemplateTab.addEventListener('shown.bs.tab', function() {
+            initTemplateEditor();
+        });
+    }
+});
+</script>
 {% endblock %}

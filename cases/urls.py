@@ -45,6 +45,7 @@ urlpatterns = [
     path('<int:pk>/request-modification/', views.request_modification, name='request_modification'),
     path('unread-message-count/', views.get_unread_message_count, name='get_unread_message_count'),
     path('upload-image/', views.upload_image_for_notes, name='upload_image_for_notes'),
+    path('get-notes-template/', views.get_notes_template, name='get_notes_template'),
     path('credit-audit-trail/', views.credit_audit_trail, name='credit_audit_trail_report'),
     path('<int:case_id>/credit-audit-trail/', views.credit_audit_trail, name='credit_audit_trail'),
     path('<int:case_id>/submit-final/', views.submit_case_final, name='submit_case_final'),

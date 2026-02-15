@@ -313,6 +313,13 @@ class SystemSettings(models.Model):
         help_text='Enable benefits-software API integration'
     )
     
+    # Technical Notes Template (configurable by admin)
+    technical_notes_template = models.TextField(
+        blank=True,
+        default='',
+        help_text='HTML template pre-populated into Technical Notes when a case is accepted. Editable by admins.'
+    )
+    
     # Metadata
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.ForeignKey(

@@ -774,49 +774,24 @@ def delete_case(request, pk):
 
 
 def get_technical_notes_template():
-    """Return the pre-populated technical notes HTML template for technicians."""
-    return """<h3>2026 FIGURES</h3>
-<p>You will notice that the date on the front cover of the report is December 2025. We have shown this because we are working with a December pay stub. This report reflects all new 2026 figures (pay raises, COLAs, TSP contribution limits, etc.). Our software uses a 10-year average for pay raises (currently 2.11%) and the 2026 pay raise is set at 1% for most employees. See the ProFeds Annual Update for a summary of these changes. Once the employee has received the pay stub which reflects the first full pay period in January, we can revise the report.</p>
+    """Return the technical notes HTML template from database settings."""
+    from core.models import SystemSettings
+    settings = SystemSettings.get_settings()
+    if settings.technical_notes_template:
+        return settings.technical_notes_template
+    # Fallback if DB is empty
+    return """<h3><u>GENERAL</u></h3>
+<p>&nbsp;</p>"""
 
-<h3>2026 FACT FINDER</h3>
-<p>The new 2026 ProFeds Federal Fact Finder is now available!</p>
 
-<h3>GENERAL</h3>
-<p>&nbsp;</p>
-
-<h3>RETIREMENT DATE</h3>
-<p>&nbsp;</p>
-
-<h3>PAY</h3>
-<p>&nbsp;</p>
-
-<h3>MILITARY SERVICE - ACTIVE DUTY</h3>
-<p>&nbsp;</p>
-
-<h3>MILITARY SERVICE - RESERVES</h3>
-<p>&nbsp;</p>
-
-<h3>SOCIAL SECURITY</h3>
-<p>&nbsp;</p>
-
-<h3>FEGLI</h3>
-<p>&nbsp;</p>
-
-<h3>FEHB</h3>
-<p>&nbsp;</p>
-
-<h3>TSP BALANCE</h3>
-<p>&nbsp;</p>
-
-<h3>TSP CONTRIBUTION</h3>
-<p>&nbsp;</p>
-
-<h3>TSP FUTURE CONTRIBUTION ALLOCATION</h3>
-<p>&nbsp;</p>
-
-<h3>BENEFICIARIES</h3>
-<p>It is always wise to ensure that employees have their beneficiaries up-to-date.</p>
-"""
+@login_required
+def get_notes_template(request):
+    """AJAX endpoint: return the technical notes template from SystemSettings."""
+    from django.http import JsonResponse
+    if request.user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+    template_html = get_technical_notes_template()
+    return JsonResponse({'success': True, 'template': template_html})
 
 
 def accept_case(request, pk):
@@ -4204,7 +4179,7 @@ def generate_report_notes_pdf(request, pk):
                 .notes-section h2 {{
                     font-size: 13pt;
                     font-weight: 700;
-                    color: #1a3a5c;
+                    color: #000000;
                     margin-bottom: 15px;
                     padding-bottom: 0;
                     letter-spacing: 0.5px;
@@ -4223,9 +4198,9 @@ def generate_report_notes_pdf(request, pk):
                 .notes-content ul, .notes-content ol {{ margin-left: 25px; margin-bottom: 12px; }}
                 .notes-content li {{ margin-bottom: 5px; }}
                 .notes-content a {{ color: #2563eb; text-decoration: underline; }}
-                .notes-content h1 {{ font-size: 16pt; margin: 18px 0 10px; color: #1a3a5c; }}
-                .notes-content h2 {{ font-size: 14pt; margin: 15px 0 8px; color: #1a3a5c; }}
-                .notes-content h3 {{ font-size: 12pt; margin: 12px 0 6px; color: #1a3a5c; }}
+                .notes-content h1 {{ font-size: 16pt; margin: 18px 0 10px; color: #000000; }}
+                .notes-content h2 {{ font-size: 14pt; margin: 15px 0 8px; color: #000000; }}
+                .notes-content h3 {{ font-size: 12pt; margin: 12px 0 6px; color: #000000; }}
                 .notes-content blockquote {{
                     border-left: 3px solid #2563eb;
                     padding: 8px 15px;

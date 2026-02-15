@@ -122,6 +122,9 @@ def system_settings(request):
             settings.benefits_software_api_key = request.POST.get('benefits_software_api_key', '')
             settings.benefits_software_api_enabled = request.POST.get('benefits_software_api_enabled') == 'on'
             
+            # Technical Notes Template
+            settings.technical_notes_template = request.POST.get('technical_notes_template', '')
+            
             settings.updated_by = request.user
             settings.save()
             
