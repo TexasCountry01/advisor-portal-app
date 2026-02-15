@@ -63,7 +63,7 @@
                     {% for draft in draft_cases %}
                     <li>
                         <strong>{{ draft.employee_first_name }} {{ draft.employee_last_name }}</strong>
-                        <small class="text-muted">(Created {{ draft.date_created|date:'m/d/Y' }})</small>
+                        <small class="text-muted">(Created {{ draft.created_at|date:'m/d/Y' }})</small>
                         <a href="{% url 'cases:case_detail' draft.id %}" class="btn btn-sm btn-outline-danger ms-2">
                             <i class="bi bi-pencil"></i> Edit &amp; Submit
                         </a>

@@ -167,7 +167,7 @@ def member_dashboard(request):
     visible_columns = get_user_visible_columns(user, 'member_dashboard')
     
     # Get draft cases for banner
-    draft_cases = all_cases.filter(status='draft').order_by('-date_created')
+    draft_cases = all_cases.filter(status='draft').order_by('-created_at')
     
     context = {
         'cases': cases,
