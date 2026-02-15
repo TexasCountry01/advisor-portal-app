@@ -4988,7 +4988,7 @@ def approve_case_review(request, case_id):
             except Exception as e:
                 print(f'Error sending approval email: {str(e)}')
         
-        messages.success(request, f'Case {case.external_case_id} approved and {release_msg}.')
+        messages.success(request, f'Case for {case.employee_first_name} {case.employee_last_name} approved and {release_msg}.')
         
         # Log to audit trail
         from core.models import AuditLog
@@ -5098,7 +5098,7 @@ def request_case_revisions(request, case_id):
             except Exception as e:
                 print(f'Error sending revision request email: {str(e)}')
         
-        messages.success(request, f'Revisions requested for case {case.external_case_id}.')
+        messages.success(request, f'Revisions requested for {case.employee_first_name} {case.employee_last_name} case.')
         
         # Log to audit trail
         from core.models import AuditLog
@@ -5211,7 +5211,7 @@ def correct_case_review(request, case_id):
             except Exception as e:
                 print(f'Error sending corrections email: {str(e)}')
         
-        messages.success(request, f'Corrections applied to case {case.external_case_id} - case marked as completed.')
+        messages.success(request, f'Corrections applied to {case.employee_first_name} {case.employee_last_name} case - marked as completed.')
         
         # Log to audit trail
         from core.models import AuditLog
@@ -5302,7 +5302,7 @@ def submit_for_review(request, case_id):
             
             return JsonResponse({
                 'success': True,
-                'message': f'Case {case.external_case_id} submitted for quality review.'
+                'message': f'Case for {case.employee_first_name} {case.employee_last_name} submitted for quality review.'
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
