@@ -283,6 +283,7 @@ def technician_dashboard(request):
         'accepted': cases.filter(status='accepted').count(),
         'resubmitted': cases.filter(status='resubmitted').count(),
         'pending_review': cases.filter(status='pending_review').count(),
+        'needs_revision': cases.filter(status='accepted', review_status='revisions_requested').count(),
         'completed': cases.filter(status='completed').count(),
         'rush': cases.filter(urgency='rush').count(),
     }
@@ -4863,8 +4864,10 @@ def _review_error(request, case_id, error_msg, status_code=400):
     return redirect('cases:case_detail', pk=case_id)
 
 
+@login_required
+@require_http_methods(["POST"])
 def approve_case_review(request, case_id):
-    """Approve a case pending quality review and mark as completed"""
+    """Approve a case pending quality review and mark as completed with release scheduling"""
     from cases.models import CaseReviewHistory
     
     user = request.user
@@ -4882,6 +4885,9 @@ def approve_case_review(request, case_id):
     
     try:
         review_notes = request.POST.get('review_notes', '').strip()
+        release_option = request.POST.get('release_option', 'now')
+        release_date = request.POST.get('release_date', '')
+        release_time = request.POST.get('release_time', '09:00')
         
         # Mark case as completed
         case.status = 'completed'
@@ -4890,8 +4896,36 @@ def approve_case_review(request, case_id):
         case.review_status = 'approved'
         case.review_notes = review_notes
         case.date_completed = timezone.now()
-        case.actual_release_date = timezone.now()
-        case.actual_email_sent_date = timezone.now()
+        
+        # Handle release scheduling
+        if release_option == 'schedule' and release_date:
+            try:
+                from datetime import datetime as dt
+                import pytz
+                release_dt_naive = dt.strptime(f'{release_date} {release_time}', '%Y-%m-%d %H:%M')
+                cst = pytz.timezone('US/Central')
+                release_dt_cst = cst.localize(release_dt_naive)
+                release_dt_utc = release_dt_cst.astimezone(pytz.UTC)
+                case.scheduled_release_date = release_dt_utc.date()
+                case.scheduled_email_date = release_dt_utc.date()
+                case.actual_release_date = None
+                case.actual_email_sent_date = None
+                release_date_str = release_dt_cst.strftime('%b %d, %Y at %I:%M %p %Z')
+                release_msg = f'scheduled for release on {release_date_str}'
+            except (ValueError, AttributeError):
+                case.actual_release_date = timezone.now()
+                case.actual_email_sent_date = timezone.now()
+                case.scheduled_release_date = None
+                case.scheduled_email_date = None
+                release_msg = 'released immediately'
+        else:
+            # Immediate release
+            case.actual_release_date = timezone.now()
+            case.actual_email_sent_date = timezone.now()
+            case.scheduled_release_date = None
+            case.scheduled_email_date = None
+            release_msg = 'released immediately'
+        
         case.save()
         
         # Create audit trail entry
@@ -4903,18 +4937,58 @@ def approve_case_review(request, case_id):
             review_notes=review_notes
         )
         
-        # Create notification for member that case is released
+        # Create notification for member that case is released (only if immediate)
         from cases.models import CaseNotification
-        CaseNotification.objects.create(
-            case=case,
-            member=case.member,
-            notification_type='case_released',
-            title='Your Case is Completed',
-            message=f'Case {case.external_case_id} has been completed and is ready for you to review.'
-        )
+        if case.actual_release_date:
+            CaseNotification.objects.create(
+                case=case,
+                member=case.member,
+                notification_type='case_released',
+                title='Your Case is Completed',
+                message=f'Case {case.external_case_id} has been completed and is ready for you to review.'
+            )
         
-        # TODO: Send email notification to technician
-        messages.success(request, f'Case {case.external_case_id} approved and marked as completed.')
+        # Send StaffNotification to Level 1 technician
+        if case.assigned_to:
+            from core.models import StaffNotification
+            StaffNotification.objects.create(
+                user=case.assigned_to,
+                case=case,
+                notification_type='quality_review_feedback',
+                title=f'Case Approved: {case.external_case_id}',
+                message=f'Your case {case.external_case_id} has been approved by {user.get_full_name() or user.username} and {release_msg}.{" Notes: " + review_notes if review_notes else ""}'
+            )
+        
+        # Send email notification to Level 1 technician
+        if case.assigned_to and case.assigned_to.email:
+            try:
+                from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                from cases.services.email_service import should_send_emails
+                
+                if should_send_emails():
+                    email_context = {
+                        'technician_name': case.assigned_to.get_full_name() or case.assigned_to.username,
+                        'case_id': case.external_case_id,
+                        'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
+                        'reviewer_name': user.get_full_name() or user.username,
+                        'reviewed_at': timezone.now(),
+                        'review_notes': review_notes,
+                        'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
+                    }
+                    html_message = render_to_string('emails/case_approved_notification.html', email_context)
+                    send_mail(
+                        subject=f'Case {case.external_case_id} - Approved by Quality Review',
+                        message=f'Your case {case.external_case_id} has been approved and {release_msg}.',
+                        from_email='noreply@advisor-portal.com',
+                        recipient_list=[case.assigned_to.email],
+                        html_message=html_message,
+                        fail_silently=True
+                    )
+            except Exception as e:
+                print(f'Error sending approval email: {str(e)}')
+        
+        messages.success(request, f'Case {case.external_case_id} approved and {release_msg}.')
         
         # Log to audit trail
         from core.models import AuditLog
@@ -4922,9 +4996,9 @@ def approve_case_review(request, case_id):
             user=user,
             action_type='case_review_approved',
             case=case,
-            description=f'Case review approved by {user.get_full_name() or user.username}',
+            description=f'Case review approved by {user.get_full_name() or user.username} - {release_msg}',
             changes={'status': {'from': 'pending_review', 'to': 'completed'}},
-            metadata={'review_notes': review_notes, 'reviewed_by': user.username}
+            metadata={'review_notes': review_notes, 'reviewed_by': user.username, 'release': release_msg}
         )
         
         # Return redirect for standard form POST, JSON for AJAX
@@ -4984,7 +5058,46 @@ def request_case_revisions(request, case_id):
             review_notes=revision_feedback
         )
         
-        # TODO: Send email notification to technician with feedback
+        # Send StaffNotification to Level 1 technician
+        if case.assigned_to:
+            from core.models import StaffNotification
+            StaffNotification.objects.create(
+                user=case.assigned_to,
+                case=case,
+                notification_type='quality_review_feedback',
+                title=f'Revisions Requested: {case.external_case_id}',
+                message=f'Your case {case.external_case_id} has been reviewed by {user.get_full_name() or user.username} and revisions are requested. Feedback: {revision_feedback}'
+            )
+        
+        # Send email notification to Level 1 technician
+        if case.assigned_to and case.assigned_to.email:
+            try:
+                from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                from cases.services.email_service import should_send_emails
+                
+                if should_send_emails():
+                    email_context = {
+                        'technician_name': case.assigned_to.get_full_name() or case.assigned_to.username,
+                        'case_id': case.external_case_id,
+                        'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
+                        'reviewer_name': user.get_full_name() or user.username,
+                        'reviewed_at': timezone.now(),
+                        'revision_feedback': revision_feedback,
+                        'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
+                    }
+                    html_message = render_to_string('emails/case_revisions_needed_notification.html', email_context)
+                    send_mail(
+                        subject=f'Case {case.external_case_id} - Revisions Requested',
+                        message=f'Revisions have been requested for case {case.external_case_id}. Feedback: {revision_feedback}',
+                        from_email='noreply@advisor-portal.com',
+                        recipient_list=[case.assigned_to.email],
+                        html_message=html_message,
+                        fail_silently=True
+                    )
+            except Exception as e:
+                print(f'Error sending revision request email: {str(e)}')
+        
         messages.success(request, f'Revisions requested for case {case.external_case_id}.')
         
         # Log to audit trail
@@ -5058,8 +5171,47 @@ def correct_case_review(request, case_id):
             review_notes=correction_notes
         )
         
-        # TODO: Send email notification to technician about corrections
-        messages.success(request, f'Corrections noted for case {case.external_case_id} - case marked as completed.')
+        # Send StaffNotification to Level 1 technician
+        if case.assigned_to:
+            from core.models import StaffNotification
+            StaffNotification.objects.create(
+                user=case.assigned_to,
+                case=case,
+                notification_type='quality_review_feedback',
+                title=f'Corrections Applied: {case.external_case_id}',
+                message=f'Your case {case.external_case_id} has been completed with corrections applied by {user.get_full_name() or user.username}. Notes: {correction_notes}'
+            )
+        
+        # Send email notification to Level 1 technician
+        if case.assigned_to and case.assigned_to.email:
+            try:
+                from django.core.mail import send_mail
+                from django.template.loader import render_to_string
+                from cases.services.email_service import should_send_emails
+                
+                if should_send_emails():
+                    email_context = {
+                        'technician_name': case.assigned_to.get_full_name() or case.assigned_to.username,
+                        'case_id': case.external_case_id,
+                        'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
+                        'reviewer_name': user.get_full_name() or user.username,
+                        'reviewed_at': timezone.now(),
+                        'correction_notes': correction_notes,
+                        'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
+                    }
+                    html_message = render_to_string('emails/case_corrections_notification.html', email_context)
+                    send_mail(
+                        subject=f'Case {case.external_case_id} - Completed with Corrections',
+                        message=f'Case {case.external_case_id} has been completed with corrections by the reviewer. Notes: {correction_notes}',
+                        from_email='noreply@advisor-portal.com',
+                        recipient_list=[case.assigned_to.email],
+                        html_message=html_message,
+                        fail_silently=True
+                    )
+            except Exception as e:
+                print(f'Error sending corrections email: {str(e)}')
+        
+        messages.success(request, f'Corrections applied to case {case.external_case_id} - case marked as completed.')
         
         # Log to audit trail
         from core.models import AuditLog
@@ -5067,7 +5219,7 @@ def correct_case_review(request, case_id):
             user=user,
             action_type='case_review_corrected',
             case=case,
-            description=f'Case review corrected by {user.get_full_name() or user.username}',
+            description=f'Case corrected and completed by {user.get_full_name() or user.username}',
             changes={'status': {'from': 'pending_review', 'to': 'completed'}},
             metadata={'correction_notes': correction_notes, 'reviewed_by': user.username}
         )
@@ -5085,6 +5237,75 @@ def correct_case_review(request, case_id):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
         messages.error(request, f'Error applying corrections: {str(e)}')
         return redirect('cases:case_detail', pk=case_id)
+
+
+@login_required
+@require_http_methods(["POST"])
+def submit_for_review(request, case_id):
+    """Level 1 technician submits case for quality review (without release scheduling)"""
+    from cases.models import CaseReviewHistory
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    
+    # Permission check - only the assigned technician can submit for review
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+    if user.role == 'technician' and case.assigned_to != user:
+        return JsonResponse({'success': False, 'error': 'You can only submit cases assigned to you.'}, status=403)
+    
+    # Case must be in accepted status (or accepted after revision)
+    if case.status not in ['accepted']:
+        return JsonResponse({'success': False, 'error': f'Case must be in Accepted status to submit for review. Current: {case.get_status_display()}'}, status=400)
+    
+    if request.method == 'POST':
+        try:
+            # Set case to pending_review
+            case.status = 'pending_review'
+            case.review_status = None  # Clear any previous revision status
+            case.scheduled_release_date = None
+            case.actual_release_date = None
+            case.scheduled_email_date = None
+            case.actual_email_sent_date = None
+            case.date_completed = None
+            case.save()
+            
+            # Determine if this is a resubmission after revisions
+            previous_reviews = CaseReviewHistory.objects.filter(
+                case=case, review_action='revisions_requested'
+            ).count()
+            
+            if previous_reviews > 0:
+                review_notes = f'Case resubmitted for review by {user.get_full_name() or user.username} after revisions (revision #{previous_reviews})'
+                action = 'resubmitted'
+            else:
+                review_notes = f'Case submitted for review by Level 1 technician {user.get_full_name() or user.username}'
+                action = 'submitted_for_review'
+            
+            CaseReviewHistory.objects.create(
+                case=case,
+                original_technician=user,
+                review_action=action,
+                review_notes=review_notes
+            )
+            
+            # Log to audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=user,
+                action_type='case_submitted_for_review',
+                case=case,
+                description=review_notes,
+                changes={'status': {'from': 'accepted', 'to': 'pending_review'}},
+                metadata={'submitted_by': user.username, 'resubmission': previous_reviews > 0}
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Case {case.external_case_id} submitted for quality review.'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
 
 
 @login_required

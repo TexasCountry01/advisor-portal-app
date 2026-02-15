@@ -191,6 +191,35 @@
         </div>
     </div>
 
+    <!-- REVISION REQUESTED BANNER - Show to Level 1 tech when their case was returned with feedback -->
+    {% if case.review_status == 'revisions_requested' and case.status == 'accepted' and user.role == 'technician' and case.assigned_to == user %}
+    <div class="alert alert-warning border-2 border-warning mb-4" role="alert">
+        <div class="d-flex align-items-start">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mt-0">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <strong>Revisions Requested by Senior Technician</strong>
+                </h5>
+                {% if case.reviewed_by %}
+                <p class="mb-2"><strong>Reviewed by:</strong> {{ case.reviewed_by.get_full_name|default:case.reviewed_by.username }}</p>
+                {% endif %}
+                {% if case.reviewed_at %}
+                <p class="mb-2"><strong>Review date:</strong> {{ case.reviewed_at|date:"m/d/Y H:i" }}</p>
+                {% endif %}
+                {% if case.review_notes %}
+                <div class="p-3 bg-white border rounded mb-3">
+                    <strong>Reviewer Feedback:</strong>
+                    <p class="mb-0 mt-1">{{ case.review_notes }}</p>
+                </div>
+                {% endif %}
+                <p class="mb-0 small text-muted">
+                    <i class="bi bi-info-circle"></i> Please make the requested revisions and click <strong>"Submit for Review"</strong> when ready.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- PENDING MEMBER CHANGE REQUESTS - Technician only alert -->
     {% if user.role in 'technician,manager,administrator' and case.change_requests.all %}
         {% for change_req in case.change_requests.all %}
@@ -1484,7 +1513,7 @@
                                     <i class="bi bi-pencil"></i> Request Revisions
                                 </button>
                                 <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#correctionsModal">
-                                    <i class="bi bi-wrench"></i> Apply Corrections
+                                    <i class="bi bi-wrench"></i> Fix & Complete Myself
                                 </button>
                             {% elif case.assigned_to == user %}
                                 <!-- Standard Technician Actions -->
@@ -1512,20 +1541,38 @@
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle"></i> This case is currently on hold. You can resume processing or mark it as completed.
                                     </small>
+                                {% elif case.status == 'pending_review' %}
+                                    <!-- Case is pending quality review -->
+                                    <div class="alert alert-info mb-0">
+                                        <strong><i class="bi bi-hourglass-split"></i> Awaiting Quality Review</strong>
+                                        <p class="mb-0 small mt-1">This case has been submitted for review by a senior technician. You'll be notified when it's reviewed.</p>
+                                    </div>
                                 {% else %}
+                                    {% if user.user_level == 'level_1' %}
+                                    <!-- Level 1 Tech: Submit for Review (primary action) -->
+                                    <button type="button" class="btn btn-primary" id="submitForReviewBtn" onclick="submitForReview()">
+                                        <i class="bi bi-arrow-right-circle"></i> Submit for Review
+                                    </button>
+                                    <button type="button" class="btn btn-warning" onclick="showPutOnHoldModal()">
+                                        <i class="bi bi-pause-circle"></i> Put on Hold
+                                    </button>
+                                    <hr>
+                                    <small class="text-muted" id="actionHelp">
+                                        <i class="bi bi-info-circle"></i> Upload reports and add technical notes, then submit for senior tech review.
+                                    </small>
+                                    {% else %}
+                                    <!-- Level 2/3 Tech: Mark as Completed (direct) -->
                                     <button type="button" class="btn btn-success" id="markCompletedBtn" onclick="markCaseCompleted()">
                                         <i class="bi bi-check-circle"></i> Mark as Completed
                                     </button>
                                     <button type="button" class="btn btn-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
-                                    <button class="btn btn-primary" disabled>
-                                        <i class="bi bi-arrow-right-circle"></i> Submit for Review
-                                    </button>
                                     <hr>
                                     <small class="text-muted" id="actionHelp">
                                         <i class="bi bi-info-circle"></i> At least one report must be uploaded before marking as completed.
                                     </small>
+                                    {% endif %}
                                 {% endif %}
                             {% elif not case.assigned_to or case.assigned_to != user %}
                                 <!-- Take Ownership button is at top of page - only show admin hold option here -->
@@ -1662,6 +1709,78 @@
 </div>
 
 <script>
+function submitForReview() {
+    const btn = document.getElementById('submitForReviewBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Validating...';
+    
+    // First validate the case can be completed (reports uploaded, etc.)
+    fetch('{% url "cases:validate_case_completion" case.id %}', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.valid) {
+            if (data.canOverride) {
+                if (confirm(data.error + '\n\n' + data.warning + '\n\nSubmit for review anyway?')) {
+                    doSubmitForReview();
+                    return;
+                }
+            } else {
+                alert(data.error);
+            }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+            return;
+        }
+        doSubmitForReview();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while validating.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+    });
+}
+
+function doSubmitForReview() {
+    const btn = document.getElementById('submitForReviewBtn');
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
+    
+    fetch('{% url "cases:submit_for_review" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const alertHtml = `
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle"></i> ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+            setTimeout(() => { location.reload(); }, 2000);
+        } else {
+            alert(data.error || 'An error occurred.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting for review.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+    });
+}
+
 function markCaseCompleted() {
     const btn = document.getElementById('markCompletedBtn');
     btn.disabled = true;
@@ -3565,7 +3684,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Approve Review Modal -->
 <div class="modal fade" id="approveReviewModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
                 <h5 class="modal-title">Approve Case Review</h5>
@@ -3575,6 +3694,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 {% csrf_token %}
                 <div class="modal-body">
                     <p>Approving this case will mark it as <strong>Completed</strong> and release it to the member.</p>
+                    
+                    <!-- Release Scheduling Options -->
+                    <h6 class="mt-3 mb-2"><i class="bi bi-calendar-check"></i> When should this case be released?</h6>
+                    
+                    <div class="form-check mb-3 p-3 border rounded">
+                        <input class="form-check-input" type="radio" name="release_option" id="approveReleaseNow" value="now" checked onchange="document.getElementById('approveReleaseDateGroup').style.display='none'">
+                        <label class="form-check-label" for="approveReleaseNow">
+                            <strong><i class="bi bi-lightning-fill text-warning"></i> Release Now (ASAP)</strong>
+                            <br><small class="text-muted">Member can view and download results immediately</small>
+                        </label>
+                    </div>
+                    
+                    <div class="form-check mb-3 p-3 border rounded">
+                        <input class="form-check-input" type="radio" name="release_option" id="approveScheduleRelease" value="schedule" onchange="document.getElementById('approveReleaseDateGroup').style.display='block'">
+                        <label class="form-check-label" for="approveScheduleRelease">
+                            <strong><i class="bi bi-hourglass-split text-info"></i> Schedule Release</strong>
+                            <br><small class="text-muted">Member will see the case on a specific date and time</small>
+                        </label>
+                    </div>
+                    
+                    <div id="approveReleaseDateGroup" style="display: none;" class="ms-4 mb-3">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="approveReleaseDate" class="form-label">Release Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="approveReleaseDate" name="release_date">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="approveReleaseTime" class="form-label">Release Time (CST)</label>
+                                <input type="time" class="form-control" id="approveReleaseTime" name="release_time" value="09:00">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
                     <div class="form-group">
                         <label for="approveNotes" class="form-label">Review Notes (Optional)</label>
                         <textarea class="form-control" id="approveNotes" name="review_notes" rows="3" placeholder="Add quality review notes..."></textarea>
@@ -3620,15 +3773,18 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title">Apply Corrections</h5>
+                <h5 class="modal-title">Fix & Complete Case Myself</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" action="{% url 'cases:correct_case_review' case.id %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <p>Applying corrections will complete this case with the corrections documented in the audit trail.</p>
+                    <p>Use this option when <strong>you (the reviewer) made the corrections yourself</strong> instead of sending it back to the original technician. The case will be completed and released immediately.</p>
+                    <div class="alert alert-info small">
+                        <i class="bi bi-info-circle"></i> The corrections you document here will be recorded in the audit trail so the original technician can learn from them.
+                    </div>
                     <div class="form-group">
-                        <label for="correctionNotes" class="form-label">Corrections Applied <span class="text-danger">*</span></label>
+                        <label for="correctionNotes" class="form-label">What corrections did you make? <span class="text-danger">*</span></label>
                         <textarea class="form-control" id="correctionNotes" name="correction_notes" rows="4" placeholder="Document what corrections were applied..." required></textarea>
                     </div>
                 </div>

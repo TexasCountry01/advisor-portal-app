@@ -80,6 +80,7 @@ urlpatterns = [
     path('<int:case_id>/review/approve/', views.approve_case_review, name='approve_case_review'),
     path('<int:case_id>/review/request-revisions/', views.request_case_revisions, name='request_case_revisions'),
     path('<int:case_id>/review/correct/', views.correct_case_review, name='correct_case_review'),
+    path('<int:case_id>/submit-for-review/', views.submit_for_review, name='submit_for_review'),
     
     # Audit trails
     path('audit/', views.audit_log_dashboard, name='audit_log_dashboard'),

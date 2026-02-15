@@ -118,6 +118,12 @@
                             <div class="stat-mini-value">{{ stats.pending_review }}</div>
                             <div class="stat-mini-label">Pending</div>
                         </div>
+                        {% if stats.needs_revision %}
+                        <div class="stat-mini" style="background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);">
+                            <div class="stat-mini-value">{{ stats.needs_revision }}</div>
+                            <div class="stat-mini-label">Needs Revision</div>
+                        </div>
+                        {% endif %}
                         <div class="stat-mini">
                             <div class="stat-mini-value">{{ stats.completed }}</div>
                             <div class="stat-mini-label">Completed</div>
@@ -382,7 +388,13 @@
                                 {% elif case.status == 'resubmitted' %}
                                     <span class="badge bg-warning text-dark" title="Case resubmitted by member">Resubmitted</span>
                                 {% elif case.status == 'accepted' %}
+                                    {% if case.review_status == 'revisions_requested' %}
+                                    <span class="badge bg-warning text-dark" title="Returned from quality review - revisions needed">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Needs Revision
+                                    </span>
+                                    {% else %}
                                     <span class="badge bg-primary" title="Case accepted by Benefits Team">Accepted</span>
+                                    {% endif %}
                                 {% elif case.status == 'pending_review' %}
                                     <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'hold' %}
