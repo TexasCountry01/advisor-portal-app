@@ -773,7 +773,52 @@ def delete_case(request, pk):
     return render(request, 'cases/confirm_delete_case.html', context)
 
 
-@login_required
+def get_technical_notes_template():
+    """Return the pre-populated technical notes HTML template for technicians."""
+    return """<h3>2026 FIGURES</h3>
+<p>You will notice that the date on the front cover of the report is December 2025. We have shown this because we are working with a December pay stub. This report reflects all new 2026 figures (pay raises, COLAs, TSP contribution limits, etc.). Our software uses a 10-year average for pay raises (currently 2.11%) and the 2026 pay raise is set at 1% for most employees. See the ProFeds Annual Update for a summary of these changes. Once the employee has received the pay stub which reflects the first full pay period in January, we can revise the report.</p>
+
+<h3>2026 FACT FINDER</h3>
+<p>The new 2026 ProFeds Federal Fact Finder is now available!</p>
+
+<h3>GENERAL</h3>
+<p>&nbsp;</p>
+
+<h3>RETIREMENT DATE</h3>
+<p>&nbsp;</p>
+
+<h3>PAY</h3>
+<p>&nbsp;</p>
+
+<h3>MILITARY SERVICE - ACTIVE DUTY</h3>
+<p>&nbsp;</p>
+
+<h3>MILITARY SERVICE - RESERVES</h3>
+<p>&nbsp;</p>
+
+<h3>SOCIAL SECURITY</h3>
+<p>&nbsp;</p>
+
+<h3>FEGLI</h3>
+<p>&nbsp;</p>
+
+<h3>FEHB</h3>
+<p>&nbsp;</p>
+
+<h3>TSP BALANCE</h3>
+<p>&nbsp;</p>
+
+<h3>TSP CONTRIBUTION</h3>
+<p>&nbsp;</p>
+
+<h3>TSP FUTURE CONTRIBUTION ALLOCATION</h3>
+<p>&nbsp;</p>
+
+<h3>BENEFICIARIES</h3>
+<p>It is always wise to ensure that employees have their beneficiaries up-to-date.</p>
+"""
+
+
 def accept_case(request, pk):
     """Accept a submitted case - technician/admin initial review"""
     import json
@@ -947,6 +992,11 @@ def accept_case(request, pk):
                 ip_address=ip_address,
                 metadata=metadata
             )
+            
+            # Auto-populate Technical Notes template if empty
+            if not case.report_notes_to_member or not case.report_notes_to_member.strip():
+                case.report_notes_to_member = get_technical_notes_template()
+                case.save(update_fields=['report_notes_to_member'])
             
             # Handle "Accept & Put on Hold" combined action
             put_on_hold = body_data.get('put_on_hold', False)
