@@ -1737,14 +1737,15 @@ def resume_case_from_hold(request, case_id):
             
             if success:
                 # Create in-app notification for member (mirrors hold notification)
+                employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
                 if case.member:
                     try:
                         notification = CaseNotification.objects.create(
                             case=case,
                             member=case.member,
                             notification_type='case_resumed',
-                            title='Your Case Has Been Resumed',
-                            message=f'Your case {case.external_case_id} has been resumed and is now being actively worked on. Reason: {reason}',
+                            title=f'Your case for {employee_name} has been resumed',
+                            message=f'Your case for {employee_name} has been resumed and is now being actively worked on. Reason: {reason}',
                             is_read=False
                         )
                         
@@ -5009,12 +5010,13 @@ def approve_case_review(request, case_id):
         # Create notification for member that case is released (only if immediate)
         from cases.models import CaseNotification
         if case.actual_release_date:
+            employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
             CaseNotification.objects.create(
                 case=case,
                 member=case.member,
                 notification_type='case_released',
-                title='Your Case is Completed',
-                message=f'Case {case.external_case_id} has been completed and is ready for you to review.'
+                title=f'Your case for {employee_name} is completed',
+                message=f'Your case for {employee_name} has been completed and is ready for you to review.'
             )
         
         # Send StaffNotification to Level 1 technician
