@@ -2694,6 +2694,13 @@ def mark_case_completed(request, case_id):
             release_datetime_str = body_data.get('release_datetime')  # NEW: format "YYYY-MM-DD HH:MM"
             completion_delay_hours = body_data.get('completion_delay_hours')  # OLD: backward compatibility
             
+            # If scheduled releases are disabled globally, force immediate release
+            global_settings = SystemSettings.get_settings()
+            if not global_settings.enable_scheduled_releases:
+                release_option = 'now'
+                release_datetime_str = None
+                completion_delay_hours = None
+            
             # Only apply release scheduling if case is actually completed (not pending review)
             if case.status == 'completed':
                 if release_option == 'now' or (not release_datetime_str and not completion_delay_hours):

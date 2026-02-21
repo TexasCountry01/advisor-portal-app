@@ -152,266 +152,266 @@
 
             <!-- Release Settings Tab -->
             <div class="tab-pane fade" id="release" role="tabpanel" aria-labelledby="release-tab">
-                <div class="card">
+
+                <!-- ═══════════════════════════════════════════
+                     SECTION 1: CASE RELEASE SCHEDULING
+                     ═══════════════════════════════════════════ -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white d-flex align-items-center">
+                        <i class="bi bi-calendar-event text-primary me-2 fs-5"></i>
+                        <h5 class="mb-0">Case Release Scheduling</h5>
+                        <span class="ms-2 text-muted" data-bs-toggle="tooltip" data-bs-placement="right"
+                              title="Controls when completed cases become visible to members. When a tech completes a case, you can delay when the member sees it.">
+                            <i class="bi bi-question-circle"></i>
+                        </span>
+                    </div>
                     <div class="card-body">
-                        <h5 class="card-title mb-4">Case Completion & Release Configuration</h5>
-                        
-                        <!-- Default Completion Delay -->
-                        <div class="mb-4 p-3 bg-light rounded">
-                            <h6 class="mb-3">Default Member Release Delay</h6>
-                            <p class="text-muted small">When a technician marks a case as completed, how long should the member wait to see it?</p>
-                            
-                            <div class="mb-3">
-                                <label for="default_completion_delay_hours" class="form-label">
-                                    Default Delay (Hours, CST)
-                                    <span class="text-danger">*</span>
-                                </label>
-                                <select class="form-select" 
-                                        id="default_completion_delay_hours" 
-                                        name="default_completion_delay_hours"
-                                        required>
-                                    <option value="0" {% if settings.default_completion_delay_hours == 0 %}selected{% endif %}>
-                                        Immediately (0 hours) - Show right away
-                                    </option>
-                                    <option value="1" {% if settings.default_completion_delay_hours == 1 %}selected{% endif %}>
-                                        1 Hour Delay - Let member know it's coming
-                                    </option>
-                                    <option value="2" {% if settings.default_completion_delay_hours == 2 %}selected{% endif %}>
-                                        2 Hours Delay - Standard hold period
-                                    </option>
-                                    <option value="3" {% if settings.default_completion_delay_hours == 3 %}selected{% endif %}>
-                                        3 Hours Delay - Quality review period
-                                    </option>
-                                    <option value="4" {% if settings.default_completion_delay_hours == 4 %}selected{% endif %}>
-                                        4 Hours Delay - Extended hold
-                                    </option>
-                                    <option value="5" {% if settings.default_completion_delay_hours == 5 %}selected{% endif %}>
-                                        5 Hours Delay - Maximum hold
-                                    </option>
-                                </select>
-                                <small class="text-muted d-block mt-2">
-                                    <i class="bi bi-info-circle"></i> All times use Central Standard Time (CST).
-                                    Technicians can override this default when completing each case.
-                                </small>
-                            </div>
-                        </div>
 
-                        <hr>
-
-                        <!-- Scheduled Release Settings -->
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="enable_scheduled_releases" 
+                        <!-- Toggle: Enable Scheduled Releases -->
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="form-check form-switch me-3 mt-1">
+                                <input class="form-check-input" type="checkbox"
+                                       id="enable_scheduled_releases"
                                        name="enable_scheduled_releases"
                                        {% if settings.enable_scheduled_releases %}checked{% endif %}>
-                                <label class="form-check-label" for="enable_scheduled_releases">
-                                    <strong>Enable Scheduled Releases</strong>
+                            </div>
+                            <div>
+                                <label for="enable_scheduled_releases" class="fw-bold mb-0" style="cursor:pointer;">
+                                    Allow Delayed Releases
                                 </label>
+                                <span data-bs-toggle="tooltip" data-bs-placement="right"
+                                      title="When ON, technicians can choose to delay when a completed case appears to the member (e.g., 1-5 hours or a specific date). When OFF, all completed cases are released immediately — no delay options are shown.">
+                                    <i class="bi bi-question-circle text-muted"></i>
+                                </span>
+                                <div class="text-muted small mt-1">
+                                    When OFF, all completed cases are released to the member immediately.
+                                </div>
                             </div>
-                            <small class="text-muted d-block mt-1">Allow technicians to schedule delayed releases for cases</small>
                         </div>
 
-                        <hr>
+                        <!-- Sub-settings: shown only when scheduled releases are ON -->
+                        <div id="release-sub-settings" class="ps-3 border-start border-3 border-primary ms-2 mt-3">
 
-                        <!-- Batch Processing -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="batch_release_time" class="form-label">
-                                        <strong>Batch Release Processing Time (UTC)</strong>
+                            <!-- Default Release Delay -->
+                            <div class="mb-3">
+                                <label for="default_completion_delay_hours" class="form-label fw-semibold">
+                                    Default Release Delay
+                                    <span data-bs-toggle="tooltip" data-bs-placement="right"
+                                          title="The default delay pre-selected for technicians when they complete a case. They can override this per-case. Set to 'Immediately' if most cases should release right away.">
+                                        <i class="bi bi-question-circle text-muted"></i>
+                                    </span>
+                                </label>
+                                <select class="form-select" id="default_completion_delay_hours"
+                                        name="default_completion_delay_hours" style="max-width: 400px;">
+                                    <option value="0" {% if settings.default_completion_delay_hours == 0 %}selected{% endif %}>
+                                        Immediately — no delay
+                                    </option>
+                                    <option value="1" {% if settings.default_completion_delay_hours == 1 %}selected{% endif %}>
+                                        1 Hour
+                                    </option>
+                                    <option value="2" {% if settings.default_completion_delay_hours == 2 %}selected{% endif %}>
+                                        2 Hours
+                                    </option>
+                                    <option value="3" {% if settings.default_completion_delay_hours == 3 %}selected{% endif %}>
+                                        3 Hours
+                                    </option>
+                                    <option value="4" {% if settings.default_completion_delay_hours == 4 %}selected{% endif %}>
+                                        4 Hours
+                                    </option>
+                                    <option value="5" {% if settings.default_completion_delay_hours == 5 %}selected{% endif %}>
+                                        5 Hours
+                                    </option>
+                                </select>
+                                <div class="text-muted small mt-1">
+                                    Technicians can override this when completing each case. All times are in CST.
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <!-- Batch Processing -->
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="form-check form-switch me-3 mt-1">
+                                    <input class="form-check-input" type="checkbox"
+                                           id="batch_release_enabled"
+                                           name="batch_release_enabled"
+                                           {% if settings.batch_release_enabled %}checked{% endif %}>
+                                </div>
+                                <div>
+                                    <label for="batch_release_enabled" class="fw-bold mb-0" style="cursor:pointer;">
+                                        Automated Daily Release Processing
                                     </label>
-                                    <input type="time" 
-                                           class="form-control" 
-                                           id="batch_release_time" 
-                                           name="batch_release_time"
-                                           value="{{ settings.batch_release_time }}">
-                                    <small class="text-muted">
-                                        Time of day (in UTC) to automatically process all scheduled releases.
-                                        <br><em>Note: Individual case delays are calculated in CST, not UTC.</em>
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <div class="form-check form-switch mt-4">
-                                        <input class="form-check-input" 
-                                               type="checkbox" 
-                                               id="batch_release_enabled" 
-                                               name="batch_release_enabled"
-                                               {% if settings.batch_release_enabled %}checked{% endif %}>
-                                        <label class="form-check-label" for="batch_release_enabled">
-                                            <strong>Enable Automated Batch Processing</strong>
-                                        </label>
+                                    <span data-bs-toggle="tooltip" data-bs-placement="right"
+                                          title="When ON, a daily cron job automatically releases any cases whose scheduled release date has arrived. When OFF, delayed cases will NOT be released until you turn this back on or manually release them.">
+                                        <i class="bi bi-question-circle text-muted"></i>
+                                    </span>
+                                    <div class="text-muted small mt-1">
+                                        Runs daily via cron job. When OFF, delayed cases must be released manually.
                                     </div>
-                                    <small class="text-muted d-block">
-                                        Automatically process all eligible scheduled releases at the specified time via cron job
-                                    </small>
                                 </div>
                             </div>
+
+                            <div id="batch-time-setting" class="ms-4 mb-3">
+                                <label for="batch_release_time" class="form-label fw-semibold">
+                                    Processing Time (UTC)
+                                    <span data-bs-toggle="tooltip" data-bs-placement="right"
+                                          title="The time of day (in UTC) when the cron job checks for cases ready to be released. Currently set to run at 12:00 UTC = 6:00 AM CST.">
+                                        <i class="bi bi-question-circle text-muted"></i>
+                                    </span>
+                                </label>
+                                <input type="time" class="form-control" id="batch_release_time"
+                                       name="batch_release_time"
+                                       value="{{ settings.batch_release_time }}"
+                                       style="max-width: 200px;">
+                                <div class="text-muted small mt-1">
+                                    Server is UTC. 12:00 UTC = 6:00 AM CST.
+                                </div>
+                            </div>
+
+                        </div><!-- end release-sub-settings -->
+
+                        <div class="alert alert-light border mt-4 mb-0" role="alert">
+                            <i class="bi bi-lightbulb text-warning"></i> <strong>How It Works:</strong>
+                            <ol class="mb-0 mt-2 small">
+                                <li>Technician completes a case and chooses release timing (immediate, delay, or specific date)</li>
+                                <li>If delayed, the case is marked "completed" but stays hidden from the member</li>
+                                <li>The daily cron job releases cases whose scheduled date has arrived and sends the completion email</li>
+                            </ol>
                         </div>
+                    </div>
+                </div>
 
-                        <div class="alert alert-info mt-4" role="alert">
-                            <i class="bi bi-info-circle"></i> <strong>Release Delay Overview:</strong>
-                            <ul class="mb-0 mt-2">
-                                <li><strong>Immediately:</strong> Case shows to member right away (useful for urgent cases)</li>
-                                <li><strong>1-2 Hour Delay:</strong> Brief hold for initial quality checks or notifications</li>
-                                <li><strong>3-5 Hour Delay:</strong> Extended review period or coordinated release times</li>
-                                <li><strong>Custom Dates:</strong> Use the "Release Date Picker" option for specific future dates</li>
-                            </ul>
-                        </div>
-
-                        <div class="alert alert-warning mt-3" role="alert">
-                            <i class="bi bi-exclamation-triangle"></i> <strong>Timezone Important:</strong>
-                            <br>All hour-based delays are calculated using <strong>Central Standard Time (CST)</strong>, not server time.
-                            The batch processing time is in UTC and needs to be scheduled via cron job.
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Email Notification Settings -->
-                        <h6 class="mb-3 mt-4"><i class="bi bi-envelope"></i> Member Email Notifications</h6>
+                <!-- ═══════════════════════════════════════════
+                     SECTION 2: EMAIL NOTIFICATIONS
+                     ═══════════════════════════════════════════ -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white d-flex align-items-center">
+                        <i class="bi bi-envelope text-primary me-2 fs-5"></i>
+                        <h5 class="mb-0">Email Notifications</h5>
+                        <span class="ms-2 text-muted" data-bs-toggle="tooltip" data-bs-placement="right"
+                              title="Controls ALL automated email notifications sent by the system — to members and staff. Turning this off is a global kill switch.">
+                            <i class="bi bi-question-circle"></i>
+                        </span>
+                    </div>
+                    <div class="card-body">
 
                         <!-- Master Email Toggle -->
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="email_notifications_enabled" 
+                        <div class="d-flex align-items-start mb-3">
+                            <div class="form-check form-switch me-3 mt-1">
+                                <input class="form-check-input" type="checkbox"
+                                       id="email_notifications_enabled"
                                        name="email_notifications_enabled"
                                        {% if settings.email_notifications_enabled %}checked{% endif %}>
-                                <label class="form-check-label" for="email_notifications_enabled">
-                                    <strong>Enable Email Notifications (Master Toggle)</strong>
-                                </label>
                             </div>
-                            <small class="text-muted d-block mt-1">
-                                When disabled, <strong>no emails will be sent</strong> for any case events. 
-                                This overrides all other email settings below.
-                            </small>
-                        </div>
-
-                        <div id="email-sub-settings" class="ps-3 border-start border-3 border-primary">
-
-                        <div class="mb-3">
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" 
-                                       type="checkbox" 
-                                       id="enable_delayed_email_notifications" 
-                                       name="enable_delayed_email_notifications"
-                                       {% if settings.enable_delayed_email_notifications %}checked{% endif %}>
-                                <label class="form-check-label" for="enable_delayed_email_notifications">
-                                    <strong>Enable Delayed Email Notifications</strong>
+                            <div>
+                                <label for="email_notifications_enabled" class="fw-bold mb-0" style="cursor:pointer;">
+                                    Enable Email Notifications
                                 </label>
-                            </div>
-                            <small class="text-muted d-block mt-1">Send members notification emails when their cases are released/completed</small>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="default_email_delay_hours" class="form-label">
-                                        <strong>Default Email Delay</strong>
-                                    </label>
-                                    <select class="form-select" id="default_email_delay_hours" name="default_email_delay_hours">
-                                        <option value="0" {% if settings.default_email_delay_hours == 0 %}selected{% endif %}>
-                                            Immediately
-                                        </option>
-                                        <option value="1" {% if settings.default_email_delay_hours == 1 %}selected{% endif %}>
-                                            1 Hour Delay
-                                        </option>
-                                        <option value="2" {% if settings.default_email_delay_hours == 2 %}selected{% endif %}>
-                                            2 Hours Delay
-                                        </option>
-                                        <option value="3" {% if settings.default_email_delay_hours == 3 %}selected{% endif %}>
-                                            3 Hours Delay
-                                        </option>
-                                        <option value="4" {% if settings.default_email_delay_hours == 4 %}selected{% endif %}>
-                                            4 Hours Delay
-                                        </option>
-                                        <option value="5" {% if settings.default_email_delay_hours == 5 %}selected{% endif %}>
-                                            5 Hours Delay
-                                        </option>
-                                        <option value="6" {% if settings.default_email_delay_hours == 6 %}selected{% endif %}>
-                                            6 Hours Delay
-                                        </option>
-                                        <option value="12" {% if settings.default_email_delay_hours == 12 %}selected{% endif %}>
-                                            12 Hours Delay
-                                        </option>
-                                        <option value="24" {% if settings.default_email_delay_hours == 24 %}selected{% endif %}>
-                                            24 Hours Delay
-                                        </option>
-                                    </select>
-                                    <small class="text-muted">
-                                        Default delay before sending member notification email (0-24 hours, CST).
-                                        Technicians can override this when completing each case.
-                                    </small>
+                                <span class="badge bg-danger ms-2">Master Switch</span>
+                                <span data-bs-toggle="tooltip" data-bs-placement="right"
+                                      title="This is the global ON/OFF switch for ALL emails. When OFF, absolutely no emails are sent — not to members, not to technicians, not to admins. Use this to stop all emails during maintenance or testing.">
+                                    <i class="bi bi-question-circle text-muted"></i>
+                                </span>
+                                <div class="text-muted small mt-1">
+                                    When OFF, <strong>no emails are sent</strong> for any case events — no exceptions.
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <div class="form-check form-switch mt-4">
-                                        <input class="form-check-input" 
-                                               type="checkbox" 
-                                               id="batch_email_enabled" 
-                                               name="batch_email_enabled"
-                                               {% if settings.batch_email_enabled %}checked{% endif %}>
-                                        <label class="form-check-label" for="batch_email_enabled">
-                                            <strong>Enable Automated Email Sending</strong>
-                                        </label>
+                        </div>
+
+                        <!-- Email sub-settings -->
+                        <div id="email-sub-settings" class="ps-3 border-start border-3 border-primary ms-2 mt-3">
+
+                            <!-- Reply-To Address -->
+                            <div class="mb-3">
+                                <label for="reply_email_address" class="form-label fw-semibold">
+                                    Reply-To Email Address
+                                    <span data-bs-toggle="tooltip" data-bs-placement="right"
+                                          title="When a member replies to a notification email, their reply goes to this address. Should be a monitored inbox.">
+                                        <i class="bi bi-question-circle text-muted"></i>
+                                    </span>
+                                </label>
+                                <input type="email" class="form-control" id="reply_email_address"
+                                       name="reply_email_address"
+                                       value="{{ settings.reply_email_address }}"
+                                       placeholder="reports@profeds.com"
+                                       style="max-width: 400px;">
+                            </div>
+
+                            <!-- What emails are sent -->
+                            <div class="alert alert-light border mb-0" role="alert">
+                                <i class="bi bi-info-circle text-primary"></i> <strong>Emails Sent Automatically:</strong>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <div class="small fw-semibold mb-1">Member Emails:</div>
+                                        <ul class="small mb-0">
+                                            <li>Case Accepted</li>
+                                            <li>Case On Hold (action needed)</li>
+                                            <li>Hold Resumed</li>
+                                            <li>New Message from Technician</li>
+                                            <li>Case Needs Resubmission</li>
+                                            <li>Case Completed / Ready for Review</li>
+                                        </ul>
                                     </div>
-                                    <small class="text-muted d-block">
-                                        Automatically send scheduled emails via daily/hourly cron job
-                                    </small>
+                                    <div class="col-md-6">
+                                        <div class="small fw-semibold mb-1">Staff Emails:</div>
+                                        <ul class="small mb-0">
+                                            <li>New Case Assigned</li>
+                                            <li>Member Response Received</li>
+                                            <li>Case Resubmitted</li>
+                                            <li>Modification Requested</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="reply_email_address" class="form-label">
-                                        <strong>Reply-To Email Address</strong>
-                                    </label>
-                                    <input type="email" class="form-control" id="reply_email_address" name="reply_email_address" 
-                                           value="{{ settings.reply_email_address }}" 
-                                           placeholder="reports@profeds.com">
-                                    <small class="text-muted">Email address to use as Reply-To in member notifications. Admin only.</small>
-                                </div>
-                            </div>
-                        </div>
 
                         </div><!-- end email-sub-settings -->
 
-                        <div class="alert alert-info mt-3" role="alert">
-                            <i class="bi bi-info-circle"></i> <strong>Email Notification Info:</strong>
-                            <ul class="mb-0 mt-2 ms-3">
-                                <li><strong>Email Delay Tied to Release:</strong> Emails send on the same date/time as the case is released</li>
-                                <li><strong>Member Email:</strong> Pulled from member profile (future: WP Fusion integration)</li>
-                                <li><strong>Notification Contains:</strong> Case ID, employee name, completion date, and link to case</li>
-                                <li><strong>Staff Visibility:</strong> Technicians, managers, and admins see notification status on case detail page</li>
-                            </ul>
-                        </div>
-
-                        <script>
-                        (function() {
-                            const masterToggle = document.getElementById('email_notifications_enabled');
-                            const subSettings = document.getElementById('email-sub-settings');
-                            function toggleSubSettings() {
-                                if (masterToggle.checked) {
-                                    subSettings.style.opacity = '1';
-                                    subSettings.style.pointerEvents = 'auto';
-                                } else {
-                                    subSettings.style.opacity = '0.5';
-                                    subSettings.style.pointerEvents = 'none';
-                                }
-                            }
-                            masterToggle.addEventListener('change', toggleSubSettings);
-                            toggleSubSettings();
-                        })();
-                        </script>
                     </div>
                 </div>
+
+                <!-- Hidden fields: preserve removed toggle values without showing them -->
+                <input type="hidden" name="enable_delayed_email_notifications" value="{{ settings.enable_delayed_email_notifications|yesno:'on,' }}">
+                <input type="hidden" name="default_email_delay_hours" value="{{ settings.default_email_delay_hours }}">
+                <input type="hidden" name="batch_email_enabled" value="{{ settings.batch_email_enabled|yesno:'on,' }}">
+
+                <!-- JavaScript for this tab -->
+                <script>
+                (function() {
+                    // Tooltip initialization
+                    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.forEach(function(el) { new bootstrap.Tooltip(el); });
+
+                    // Scheduled releases toggle → show/hide sub-settings
+                    var relToggle = document.getElementById('enable_scheduled_releases');
+                    var relSub = document.getElementById('release-sub-settings');
+                    function syncRelease() {
+                        relSub.style.opacity = relToggle.checked ? '1' : '0.4';
+                        relSub.style.pointerEvents = relToggle.checked ? 'auto' : 'none';
+                    }
+                    relToggle.addEventListener('change', syncRelease);
+                    syncRelease();
+
+                    // Batch release toggle → show/hide time picker
+                    var batchToggle = document.getElementById('batch_release_enabled');
+                    var batchTime = document.getElementById('batch-time-setting');
+                    function syncBatch() {
+                        batchTime.style.opacity = batchToggle.checked ? '1' : '0.4';
+                        batchTime.style.pointerEvents = batchToggle.checked ? 'auto' : 'none';
+                    }
+                    batchToggle.addEventListener('change', syncBatch);
+                    syncBatch();
+
+                    // Master email toggle → show/hide email sub-settings
+                    var emailToggle = document.getElementById('email_notifications_enabled');
+                    var emailSub = document.getElementById('email-sub-settings');
+                    function syncEmail() {
+                        emailSub.style.opacity = emailToggle.checked ? '1' : '0.4';
+                        emailSub.style.pointerEvents = emailToggle.checked ? 'auto' : 'none';
+                    }
+                    emailToggle.addEventListener('change', syncEmail);
+                    syncEmail();
+                })();
+                </script>
             </div>
 
             <!-- API Configuration Tab -->
@@ -529,6 +529,23 @@
             </div>
         </div>
 
+        <!-- Sticky Save Bar (visible when scrolled past the main save button) -->
+        <div id="sticky-save-bar" class="sticky-save-bar d-none">
+            <div class="container-fluid">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="text-white fw-semibold">
+                        <i class="bi bi-exclamation-circle me-1"></i> Unsaved changes
+                    </span>
+                    <div>
+                        <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-light btn-sm me-2">Cancel</a>
+                        <button type="submit" class="btn btn-light btn-sm fw-bold">
+                            <i class="bi bi-check-circle"></i> Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Last Updated Info -->
         {% if settings.updated_at %}
         <div class="alert alert-light mt-4 border" role="alert">
@@ -568,6 +585,23 @@
     .btn-lg {
         padding: 12px 24px;
         font-weight: 500;
+    }
+
+    /* Sticky save bar */
+    .sticky-save-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+        padding: 12px 24px;
+        z-index: 1050;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
+        animation: slideUp 0.3s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to   { transform: translateY(0); }
     }
 </style>
 
@@ -614,6 +648,37 @@ document.addEventListener('DOMContentLoaded', function() {
             initTemplateEditor();
         });
     }
+    
+    // ─── Sticky Save Bar: show when form is dirty ───
+    var form = document.getElementById('settingsForm');
+    var stickyBar = document.getElementById('sticky-save-bar');
+    var formDirty = false;
+    var initialState = new FormData(form);
+    
+    // Serialize FormData for comparison
+    function serializeFormData(fd) {
+        var entries = [];
+        fd.forEach(function(v, k) { entries.push(k + '=' + v); });
+        return entries.sort().join('&');
+    }
+    var initialSerialized = serializeFormData(initialState);
+    
+    function checkDirty() {
+        // Sync TinyMCE content to textarea before checking
+        if (typeof tinymce !== 'undefined' && tinymce.activeEditor) {
+            tinymce.activeEditor.save();
+        }
+        var current = serializeFormData(new FormData(form));
+        formDirty = (current !== initialSerialized);
+        if (formDirty) {
+            stickyBar.classList.remove('d-none');
+        } else {
+            stickyBar.classList.add('d-none');
+        }
+    }
+    
+    form.addEventListener('input', checkDirty);
+    form.addEventListener('change', checkDirty);
 });
 </script>
 {% endblock %}

@@ -25,6 +25,13 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run', False)
         today = date.today()
         
+        # Check if batch processing is enabled
+        from core.models import SystemSettings
+        settings = SystemSettings.get_settings()
+        if not settings.batch_release_enabled:
+            self.stdout.write(self.style.WARNING('Automated batch processing is disabled in System Settings. Skipping.'))
+            return
+        
         # Find all completed cases that are scheduled for release on or before today
         cases_to_release = Case.objects.filter(
             status='completed',
