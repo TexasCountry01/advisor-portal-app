@@ -264,3 +264,92 @@ def send_modification_created_email(original_case, modification_case, tech_user)
         case=modification_case,
         user=tech_user,
     )
+
+
+def send_case_completed_email(case, request=None, user=None):
+    """
+    Send email to member when their case is completed and released.
+    Can be called from views (with request) or from cron job (without request).
+    
+    Args:
+        case: The Case object that has been completed/released
+        request: Optional HttpRequest (for URL building in views)
+        user: Optional User who triggered the completion (for audit logging)
+    
+    Returns:
+        True if sent, False if skipped/failed
+    """
+    if not should_send_emails():
+        logger.info(f'Email notifications disabled. Skipped completed email for case {case.external_case_id}')
+        return False
+
+    if not case.member or not case.member.email:
+        logger.warning(f'No member email for case {case.external_case_id}. Skipped completed email.')
+        return False
+
+    try:
+        from django.urls import reverse
+
+        # Build base URL from request if available, otherwise from settings
+        if request:
+            from django.contrib.sites.shortcuts import get_current_site
+            protocol = 'https' if request.is_secure() else 'http'
+            domain = get_current_site(request).domain
+            base_url = f"{protocol}://{domain}"
+        else:
+            base_url = getattr(settings, 'SITE_URL', 'https://portal.profeds.com')
+
+        case_detail_url = f"{base_url}{reverse('cases:case_detail', args=[case.id])}"
+        logo_url = f"{base_url}/static/images/RevisedCoverPageLogo.png"
+        employee_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+
+        email_context = {
+            'member_first_name': case.member.first_name or case.member.username,
+            'employee_name': employee_name,
+            'case_detail_url': case_detail_url,
+            'logo_url': logo_url,
+        }
+
+        email_subject = f'COMPLETE: The case for {employee_name} is ready for you!'
+        text_message = render_to_string('emails/case_completed.txt', email_context)
+        html_message = render_to_string('emails/case_completed.html', email_context)
+
+        send_mail(
+            subject=email_subject,
+            message=text_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[case.member.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+
+        # Audit trail
+        AuditLog.log_activity(
+            user=user,
+            action_type='email_notification_sent',
+            description=f'Case completed email sent to {case.member.email} for case {case.external_case_id}',
+            case=case,
+            metadata={
+                'email_to': case.member.email,
+                'email_subject': email_subject,
+                'trigger': 'case_completed_released',
+            }
+        )
+
+        logger.info(f'Case completed email sent to {case.member.email} for case {case.external_case_id}')
+        return True
+
+    except Exception as e:
+        logger.error(f'Failed to send case completed email for {case.external_case_id}: {str(e)}')
+
+        AuditLog.log_activity(
+            user=user,
+            action_type='email_notification_failed',
+            description=f'Case completed email failed for {case.external_case_id} to {case.member.email}: {str(e)}',
+            case=case,
+            metadata={
+                'email_to': case.member.email if case.member else 'N/A',
+                'error': str(e),
+            }
+        )
+        return False

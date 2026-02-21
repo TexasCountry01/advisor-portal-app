@@ -6,6 +6,9 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from datetime import date
 from cases.models import Case
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
@@ -52,6 +55,15 @@ class Command(BaseCommand):
                     f'✓ Released case {case.external_case_id} (was scheduled for {case.scheduled_release_date})'
                 )
             )
+            
+            # Send case completed email to member
+            try:
+                from cases.services.email_service import send_case_completed_email
+                send_case_completed_email(case)
+                self.stdout.write(f'  ✉ Completed email sent to {case.member.email}')
+            except Exception as e:
+                logger.error(f'Failed to send case completed email for {case.external_case_id}: {str(e)}')
+                self.stdout.write(self.style.WARNING(f'  ✗ Email failed for {case.external_case_id}: {str(e)}'))
         
         self.stdout.write(
             self.style.SUCCESS(f'\nSuccessfully released {count} case(s).')

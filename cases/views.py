@@ -1336,6 +1336,13 @@ def release_case_immediately(request, case_id):
         case.scheduled_release_date = None
         case.save()
         
+        # Send case completed email to member
+        try:
+            from cases.services.email_service import send_case_completed_email
+            send_case_completed_email(case, request=request, user=user)
+        except Exception as email_error:
+            logger.error(f'Failed to send case completed email for case {case_id}: {str(email_error)}')
+        
         return JsonResponse({
             'success': True,
             'message': f'Case {case.external_case_id} has been released immediately to the member.'
@@ -1394,6 +1401,13 @@ def change_release_date(request, case_id):
                     description=f'Release date changed: released immediately (was scheduled for {old_release_date})',
                     metadata={'old_release_date': str(old_release_date), 'new_action': 'release_now'}
                 )
+                
+                # Send case completed email to member
+                try:
+                    from cases.services.email_service import send_case_completed_email
+                    send_case_completed_email(case, request=request, user=user)
+                except Exception as email_error:
+                    logger.error(f'Failed to send case completed email for case {case_id}: {str(email_error)}')
                 
                 return JsonResponse({
                     'success': True,
@@ -2809,6 +2823,14 @@ def mark_case_completed(request, case_id):
                     'actual_release_date': str(case.actual_release_date) if case.actual_release_date else None,
                 }
             )
+            
+            # Send case completed email to member (only if immediately released)
+            if case.actual_release_date and case.status == 'completed':
+                try:
+                    from cases.services.email_service import send_case_completed_email
+                    send_case_completed_email(case, request=request, user=request.user)
+                except Exception as email_error:
+                    logger.error(f'Failed to send case completed email for case {case_id}: {str(email_error)}')
             
             messages.success(request, f'Case marked as completed and {release_msg}.')
             return JsonResponse({
@@ -5086,6 +5108,13 @@ def approve_case_review(request, case_id):
                 title=f'Your case for {employee_name} is completed',
                 message=f'Your case for {employee_name} has been completed and is ready for you to review.'
             )
+            
+            # Send case completed email to member
+            try:
+                from cases.services.email_service import send_case_completed_email
+                send_case_completed_email(case, request=request, user=user)
+            except Exception as email_error:
+                logger.error(f'Failed to send case completed email for case {case_id}: {str(email_error)}')
         
         # Send StaffNotification to Level 1 technician
         if case.assigned_to:
