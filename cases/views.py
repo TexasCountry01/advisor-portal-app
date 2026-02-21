@@ -3592,6 +3592,74 @@ def add_case_message(request, pk):
                     logger.error(f'Error creating CaseNotification for member: {str(e)}')
                     import traceback
                     logger.error(traceback.format_exc())
+                
+                # ============================================================
+                # SEND EMAIL TO MEMBER — Tech Comment Notification
+                # ============================================================
+                try:
+                    from cases.services.email_service import should_send_emails
+                    
+                    if not should_send_emails():
+                        logger.info(f'Email notifications disabled. Skipped tech comment email for case {case.external_case_id}')
+                    elif case.member and case.member.email:
+                        from django.core.mail import send_mail
+                        from django.template.loader import render_to_string
+                        from django.conf import settings as django_settings
+                        from django.contrib.sites.shortcuts import get_current_site
+                        
+                        protocol = 'https' if request.is_secure() else 'http'
+                        domain = get_current_site(request).domain
+                        base_url = f"{protocol}://{domain}"
+                        case_detail_url = f"{base_url}{reverse('cases:case_detail', args=[case.id])}"
+                        logo_url = f"{base_url}/static/images/RevisedCoverPageLogo.png"
+                        
+                        employee_name = f"{case.employee_first_name} {case.employee_last_name}"
+                        email_subject = f'UPDATE: The case for {employee_name} has a new note!'
+                        
+                        email_context = {
+                            'member_first_name': case.member.first_name or case.member.username,
+                            'employee_name': employee_name,
+                            'case_detail_url': case_detail_url,
+                            'logo_url': logo_url,
+                        }
+                        
+                        text_message = render_to_string('emails/tech_comment_notification.txt', email_context)
+                        html_message = render_to_string('emails/tech_comment_notification.html', email_context)
+                        
+                        send_mail(
+                            subject=email_subject,
+                            message=text_message,
+                            from_email=django_settings.DEFAULT_FROM_EMAIL,
+                            recipient_list=[case.member.email],
+                            html_message=html_message,
+                            fail_silently=False
+                        )
+                        
+                        AuditLog.objects.create(
+                            case=case,
+                            user=user,
+                            action_type='email_notification_sent',
+                            description=f'Tech comment email sent to {case.member.email} for case {case.external_case_id}',
+                            metadata={
+                                'email_to': case.member.email,
+                                'email_subject': email_subject,
+                            }
+                        )
+                        logger.info(f'Tech comment email sent to {case.member.email} for case {case.external_case_id}')
+                    
+                except Exception as email_error:
+                    logger.error(f'Failed to send tech comment email for case {case.external_case_id}: {str(email_error)}')
+                    AuditLog.objects.create(
+                        case=case,
+                        user=user,
+                        action_type='other',
+                        description=f'Failed to send tech comment email to {case.member.email}',
+                        metadata={
+                            'email_to': case.member.email if case.member else 'unknown',
+                            'error': str(email_error),
+                            'sub_action': 'email_failed'
+                        }
+                    )
         
         logger.info(f'Message added to case {case.external_case_id} by {user.username}')
         

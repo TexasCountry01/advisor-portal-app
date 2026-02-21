@@ -1,0 +1,13 @@
+Hi {{ member_first_name }},
+
+We have added a note for you regarding the case for {{ employee_name }}.
+
+Click the link below to view the note and respond:
+{{ case_detail_url }}
+
+If you have any questions about this case, please add them in the chat box.
+
+
+Thank you,
+
+The ProFeds Benefits Team
