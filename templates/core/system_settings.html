@@ -11,6 +11,9 @@
             <p class="text-muted">Configure global system parameters (Admin Only)</p>
         </div>
         <div class="col-md-4 text-end">
+            <button type="submit" form="settingsForm" class="btn btn-primary me-2">
+                <i class="bi bi-check-circle"></i> Save Settings
+            </button>
             <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
         </div>
     </div>
@@ -26,6 +29,7 @@
 
     <form method="post" id="settingsForm">
         {% csrf_token %}
+        <input type="hidden" name="active_tab" id="active_tab" value="credits">
 
         <!-- Nav Tabs -->
         <ul class="nav nav-tabs mb-4" role="tablist">
@@ -515,19 +519,7 @@
             </div>
         </div>
 
-        <!-- Form Actions -->
-        <div class="mt-4">
-            <div class="row">
-                <div class="col-md-12">
-                    <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-check-circle"></i> Save Settings
-                    </button>
-                    <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-secondary btn-lg ms-2">
-                        <i class="bi bi-x-circle"></i> Cancel
-                    </a>
-                </div>
-            </div>
-        </div>
+        <!-- Save button is in the page header (top-right) -->
 
         <!-- Sticky Save Bar (visible when scrolled past the main save button) -->
         <div id="sticky-save-bar" class="sticky-save-bar d-none">
@@ -608,6 +600,34 @@
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // ─── Tab Persistence: track active tab and restore after save ───
+    var activeTabInput = document.getElementById('active_tab');
+    
+    // When any tab is clicked, update the hidden input
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(function(tabBtn) {
+        tabBtn.addEventListener('shown.bs.tab', function(e) {
+            var target = e.target.getAttribute('data-bs-target'); // e.g. "#release"
+            if (target) {
+                activeTabInput.value = target.replace('#', '');
+            }
+        });
+    });
+    
+    // On page load, check for ?tab= query param and activate that tab
+    var urlParams = new URLSearchParams(window.location.search);
+    var tabParam = urlParams.get('tab');
+    if (tabParam) {
+        var tabBtn = document.querySelector('[data-bs-target="#' + tabParam + '"]');
+        if (tabBtn) {
+            var bsTab = new bootstrap.Tab(tabBtn);
+            bsTab.show();
+            activeTabInput.value = tabParam;
+        }
+        // Clean up URL (remove ?tab= without reloading)
+        var cleanUrl = window.location.pathname;
+        window.history.replaceState({}, '', cleanUrl);
+    }
+
     // Initialize TinyMCE on the Notes Template tab when it's shown
     const notesTemplateTab = document.getElementById('notes-template-tab');
     let templateEditorInitialized = false;

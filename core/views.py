@@ -129,7 +129,9 @@ def system_settings(request):
             settings.save()
             
             messages.success(request, 'System settings updated successfully!')
-            return redirect('system_settings')
+            # Preserve the active tab after save
+            active_tab = request.POST.get('active_tab', 'credits')
+            return redirect(reverse('system_settings') + f'?tab={active_tab}')
         except (ValueError, Exception) as e:
             messages.error(request, f'Error updating settings: {str(e)}')
     
