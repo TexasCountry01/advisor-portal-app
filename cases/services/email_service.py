@@ -19,6 +19,13 @@ def should_send_emails():
     return system_settings.email_notifications_enabled
 
 
+def _build_case_detail_url(case):
+    """Build absolute URL to case detail page using numeric PK."""
+    from django.urls import reverse
+    base_url = getattr(settings, 'SITE_URL', 'https://portal.profeds.com')
+    return f"{base_url}{reverse('cases:case_detail', args=[case.id])}"
+
+
 def send_email_notification(
     subject,
     template_name,
@@ -115,6 +122,7 @@ def send_case_accepted_email(case):
         'case_id': case.external_case_id,
         'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
         'portal_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://portal.example.com',
+        'case_detail_url': _build_case_detail_url(case),
     }
     
     return send_email_notification(
@@ -137,6 +145,7 @@ def send_case_question_asked_email(case, question_text):
         'case_id': case.external_case_id,
         'question': question_text,
         'portal_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://portal.example.com',
+        'case_detail_url': _build_case_detail_url(case),
     }
     
     return send_email_notification(
@@ -159,6 +168,7 @@ def send_case_hold_resumed_email(case):
         'case_id': case.external_case_id,
         'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
         'portal_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://portal.example.com',
+        'case_detail_url': _build_case_detail_url(case),
     }
     
     return send_email_notification(
@@ -185,6 +195,7 @@ def send_member_response_email(case, tech_user):
         'case_id': case.external_case_id,
         'member_name': case.member.get_full_name() if case.member else 'Member',
         'portal_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://portal.example.com',
+        'case_detail_url': _build_case_detail_url(case),
     }
     
     return send_email_notification(
@@ -207,6 +218,7 @@ def send_case_resubmitted_email(case, tech_user):
         'case_id': case.external_case_id,
         'member_name': case.member.get_full_name() if case.member else 'Member',
         'portal_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://portal.example.com',
+        'case_detail_url': _build_case_detail_url(case),
     }
     
     return send_email_notification(
@@ -231,6 +243,7 @@ def send_new_case_assigned_email(case, tech_user):
         'urgency': case.get_urgency_display(),
         'tier': case.get_tier_display() if case.tier else 'Not set',
         'portal_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://portal.example.com',
+        'case_detail_url': _build_case_detail_url(case),
     }
     
     return send_email_notification(
@@ -254,6 +267,7 @@ def send_modification_created_email(original_case, modification_case, tech_user)
         'modification_case_id': modification_case.external_case_id,
         'member_name': original_case.member.get_full_name() if original_case.member else 'Member',
         'portal_url': settings.SITE_URL if hasattr(settings, 'SITE_URL') else 'https://portal.example.com',
+        'case_detail_url': _build_case_detail_url(modification_case),
     }
     
     return send_email_notification(
