@@ -117,10 +117,15 @@ be2c3cc  Workspace cleanup: organize docs and scripts into archive folders
 
 ## 4. Deployment Process
 
+> **⚠️ IMPORTANT:** Only pull to servers when there are actual **code changes**.
+> Documentation-only commits (markdown files, PROJECT_STATE.md, etc.) do NOT need
+> a server pull or gunicorn restart. Just `git push origin main` and leave the servers alone.
+> The docs exist in the Git repo for reference but have no effect on the running application.
+
 ### Deploy to TEST
 
 ```powershell
-# From local Windows machine:
+# From local Windows machine (CODE CHANGES ONLY):
 git push origin main
 ssh dev@157.245.141.42 "cd /home/dev/advisor-portal-app && git pull origin main && sudo systemctl restart gunicorn"
 ```
@@ -128,7 +133,7 @@ ssh dev@157.245.141.42 "cd /home/dev/advisor-portal-app && git pull origin main 
 ### Deploy to PROD
 
 ```powershell
-# From local Windows machine:
+# From local Windows machine (CODE CHANGES ONLY):
 git push origin main
 ssh dev@104.248.126.74 "cd /var/www/advisor-portal && git pull origin main && echo 'ProFeds2025Prod!' | sudo -S systemctl restart gunicorn"
 ```
