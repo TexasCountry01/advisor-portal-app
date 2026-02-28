@@ -99,15 +99,21 @@ def member_dashboard(request):
             Q(employee_last_name__icontains=search_query)
         )
     
-    # Add unread message count to each case
+    # Add unread message count to each case (includes both chat messages and case notifications)
+    from cases.models import CaseNotification
     for case in cases:
-        unread_count = UnreadMessage.objects.filter(
+        unread_msg_count = UnreadMessage.objects.filter(
             case=case,
             user=user
         ).count()
-        case.unread_message_count = unread_count
-        if unread_count > 0:
-            logger.info(f'Member dashboard: Case {case.external_case_id} has {unread_count} unread messages for {user.username}')
+        unread_notif_count = CaseNotification.objects.filter(
+            case=case,
+            member=user,
+            is_read=False
+        ).count()
+        case.unread_message_count = unread_msg_count + unread_notif_count
+        if case.unread_message_count > 0:
+            logger.info(f'Member dashboard: Case {case.external_case_id} has {case.unread_message_count} unread items for {user.username}')
     
     # Convert to list to preserve the modified case objects with unread_message_count
     cases = list(cases)
@@ -1335,6 +1341,17 @@ def release_case_immediately(request, case_id):
         case.actual_release_date = timezone.now()
         case.scheduled_release_date = None
         case.save()
+        
+        # Create in-app notification for member
+        from cases.models import CaseNotification
+        employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+        CaseNotification.objects.create(
+            case=case,
+            member=case.member,
+            notification_type='case_released',
+            title=f'Your case for {employee_name} is completed',
+            message=f'Your case for {employee_name} has been completed and is ready for you to review.'
+        )
         
         # Send case completed email to member
         try:
@@ -2831,8 +2848,20 @@ def mark_case_completed(request, case_id):
                 }
             )
             
-            # Send case completed email to member (only if immediately released)
+            # Create notification and send email to member (only if immediately released)
             if case.actual_release_date and case.status == 'completed':
+                # Create in-app notification for member
+                from cases.models import CaseNotification
+                employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+                CaseNotification.objects.create(
+                    case=case,
+                    member=case.member,
+                    notification_type='case_released',
+                    title=f'Your case for {employee_name} is completed',
+                    message=f'Your case for {employee_name} has been completed and is ready for you to review.'
+                )
+                
+                # Send case completed email to member
                 try:
                     from cases.services.email_service import send_case_completed_email
                     send_case_completed_email(case, request=request, user=request.user)
