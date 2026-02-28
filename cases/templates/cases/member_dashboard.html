@@ -247,6 +247,7 @@
                     <thead>
                         <tr>
                             <th data-column-id="workshop" {% if 'workshop' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'workshop_code' %}sort=-workshop_code{% else %}sort=workshop_code{% endif %}" title="Click to sort by Code">Code</a></th>
+                            <th data-column-id="member" {% if 'member' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'member__first_name' %}sort=-member__first_name{% else %}sort=member__first_name{% endif %}" title="Click to sort by Member Name">Member Name</a></th>
                             <th data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'employee_first_name' %}sort=-employee_first_name{% else %}sort=employee_first_name{% endif %}" title="Click to sort by Employee Name">Employee Name</a></th>
                             <th data-column-id="reports" {% if 'reports' not in visible_columns %}class="column-hidden"{% endif %}>Reports</th>
                             <th data-column-id="urgency" {% if 'urgency' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'urgency' %}sort=-urgency{% else %}sort=urgency{% endif %}" title="Click to sort by Urgency">Urgency</a></th>
@@ -262,6 +263,7 @@
                         {% for case in cases %}
                         <tr>
                             <td class="column-workshop {% if 'workshop' not in visible_columns %}column-hidden{% endif %}">{{ case.workshop_code }}</td>
+                            <td class="column-member {% if 'member' not in visible_columns %}column-hidden{% endif %}">{{ case.member.first_name }} {{ case.member.last_name }}</td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}">{{ case.num_reports_requested }}</td>
                             <td class="column-urgency {% if 'urgency' not in visible_columns %}column-hidden{% endif %}">

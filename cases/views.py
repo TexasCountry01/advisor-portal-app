@@ -4892,6 +4892,7 @@ DASHBOARD_COLUMN_CONFIG = {
     'member_dashboard': {
         'available_columns': [
             {'id': 'workshop', 'label': 'Code'},
+            {'id': 'member', 'label': 'Member Name'},
             {'id': 'employee', 'label': 'Employee Name'},
             {'id': 'reports', 'label': 'Reports'},
             {'id': 'urgency', 'label': 'Urgency'},
