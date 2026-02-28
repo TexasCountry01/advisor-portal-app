@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.contrib import messages
 from django.urls import reverse
-from .models import SystemSettings
+from django.http import JsonResponse
+from .models import SystemSettings, BetaFeedback
 
 
 def is_admin(user):
@@ -167,3 +168,18 @@ def update_font_size(request):
             messages.error(request, 'Invalid font size value')
     
     return redirect('profile')
+
+
+@login_required
+def submit_beta_feedback(request):
+    """Handle beta feedback submissions via AJAX"""
+    if request.method == 'POST':
+        feedback_text = request.POST.get('feedback', '').strip()
+        if feedback_text:
+            BetaFeedback.objects.create(
+                user=request.user,
+                feedback=feedback_text
+            )
+            return JsonResponse({'success': True, 'message': 'Thank you for your feedback!'})
+        return JsonResponse({'success': False, 'message': 'Please enter some feedback.'}, status=400)
+    return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=405)

@@ -423,20 +423,6 @@
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <strong>Case Employee:</strong><br>
-                            {{ case.employee_first_name }} {{ case.employee_last_name }}
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Date Submitted:</strong><br>
-                            {% if case.created_at %}
-                                {{ case.created_at|date:"m/d/Y" }}
-                            {% else %}
-                                <span class="text-muted">Not set</span>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-6">
                             <strong>Reports requested:</strong><br>
                             {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
                                 <span id="reportDisplay">{{ case.num_reports_requested }}</span>
@@ -452,22 +438,11 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>Date Due:</strong><br>
-                            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
-                                <span id="dueDateDisplay">
-                                    {% if case.date_due %}
-                                        {{ case.date_due|date:"m/d/Y" }}
-                                    {% else %}
-                                        <span class="text-muted">Not set</span>
-                                    {% endif %}
-                                </span>
-                                <input type="date" id="dueDateEdit" name="date_due" class="form-control" style="display: none;" value="{% if case.date_due %}{{ case.date_due|date:'Y-m-d' }}{% endif %}">
+                            <strong>Date Submitted:</strong><br>
+                            {% if case.created_at %}
+                                {{ case.created_at|date:"m/d/Y" }}
                             {% else %}
-                                {% if case.date_due %}
-                                    {{ case.date_due|date:"m/d/Y" }}
-                                {% else %}
-                                    <span class="text-muted">Not set</span>
-                                {% endif %}
+                                <span class="text-muted">Not set</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
@@ -494,11 +469,22 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>Date Modified:</strong><br>
-                            {% if case.updated_at %}
-                                {{ case.updated_at|date:"m/d/Y" }}
+                            <strong>Date Due:</strong><br>
+                            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+                                <span id="dueDateDisplay">
+                                    {% if case.date_due %}
+                                        {{ case.date_due|date:"m/d/Y" }}
+                                    {% else %}
+                                        <span class="text-muted">Not set</span>
+                                    {% endif %}
+                                </span>
+                                <input type="date" id="dueDateEdit" name="date_due" class="form-control" style="display: none;" value="{% if case.date_due %}{{ case.date_due|date:'Y-m-d' }}{% endif %}">
                             {% else %}
-                                <span class="text-muted">Not set</span>
+                                {% if case.date_due %}
+                                    {{ case.date_due|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">Not set</span>
+                                {% endif %}
                             {% endif %}
                         </div>
                         <div class="col-md-6">
@@ -512,11 +498,11 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>Date Completed:</strong><br>
-                            {% if case.date_completed %}
-                                {{ case.date_completed|date:"m/d/Y" }}
+                            <strong>Date Modified:</strong><br>
+                            {% if case.updated_at %}
+                                {{ case.updated_at|date:"m/d/Y" }}
                             {% else %}
-                                <span class="text-muted">Not completed</span>
+                                <span class="text-muted">Not set</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
@@ -573,6 +559,16 @@
                                 {% else %}
                                     <span class="badge bg-secondary">{{ case.get_status_display }}</span>
                                 {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Date Completed:</strong><br>
+                            {% if case.date_completed %}
+                                {{ case.date_completed|date:"m/d/Y" }}
+                            {% else %}
+                                <span class="text-muted">Not completed</span>
                             {% endif %}
                         </div>
                     </div>

@@ -12,6 +12,7 @@ from datetime import timedelta
 import csv
 from cases.models import Case
 from accounts.models import User
+from core.models import BetaFeedback
 
 
 def is_admin(user):
@@ -415,3 +416,19 @@ def export_error_tracking_csv(error_cases, date_from, date_to):
         ])
     
     return response
+
+
+@login_required
+def beta_feedback_report(request):
+    """View all beta feedback - Admin and Manager only"""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+    
+    feedback_list = BetaFeedback.objects.select_related('user').all()
+    
+    context = {
+        'feedback_list': feedback_list,
+        'total_count': feedback_list.count(),
+    }
+    return render(request, 'core/beta_feedback_report.html', context)

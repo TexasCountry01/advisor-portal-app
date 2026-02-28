@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block title %}Member Beta Feedback - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1><i class="bi bi-chat-dots"></i> Member Beta Feedback</h1>
+            <p class="text-muted">{{ total_count }} feedback submission{{ total_count|pluralize }}</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'view_reports' %}" class="btn btn-outline-info me-2">
+                <i class="bi bi-graph-up"></i> Reports
+            </a>
+            <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-secondary">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% if feedback_list %}
+    <div class="card">
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+                        <th style="width: 12%;">Member</th>
+                        <th style="width: 12%;">Email</th>
+                        <th style="width: 8%;">Workshop Code</th>
+                        <th style="width: 8%;">Phone</th>
+                        <th style="width: 12%;">Date</th>
+                        <th style="width: 43%;">Feedback</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in feedback_list %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ item.user.get_full_name|default:"Unknown" }}</td>
+                        <td><a href="mailto:{{ item.user.email }}">{{ item.user.email|default:"N/A" }}</a></td>
+                        <td>{{ item.user.workshop_code|default:"N/A" }}</td>
+                        <td>{{ item.user.phone|default:"N/A" }}</td>
+                        <td>{{ item.created_at|date:"m/d/Y g:i A" }}</td>
+                        <td style="white-space: pre-wrap;">{{ item.feedback }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+            <h4 class="text-muted mt-3">No feedback yet</h4>
+            <p class="text-muted">Member feedback will appear here once submitted.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

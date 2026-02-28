@@ -10,9 +10,11 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('update-font-size/', views.update_font_size, name='update_font_size'),
     path('system-settings/', views.system_settings, name='system_settings'),
+    path('beta-feedback/', views.submit_beta_feedback, name='submit_beta_feedback'),
     path('reports/', views_reports.view_reports, name='view_reports'),
     path('reports/export-csv/', views_reports.export_reports_csv, name='export_reports_csv'),
     path('reports/profeds-errors/', views_reports.profeds_error_tracking_report, name='profeds_error_tracking_report'),
+    path('reports/beta-feedback/', views_reports.beta_feedback_report, name='beta_feedback_report'),
     # Audit Log URLs
     path('audit-log/', views_audit.view_audit_log, name='view_audit_log'),
     path('audit-log/<int:log_id>/', views_audit.audit_log_detail, name='audit_log_detail'),

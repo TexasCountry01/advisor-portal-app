@@ -424,3 +424,28 @@ class StaffNotification(models.Model):
     
     def __str__(self):
         return f"{self.get_notification_type_display()} for {self.user.username} - {self.title}"
+
+
+class BetaFeedback(models.Model):
+    """Store freeform beta feedback from members"""
+    
+    user = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='beta_feedback'
+    )
+    feedback = models.TextField(
+        help_text='Freeform feedback from the member'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Beta Feedback'
+        verbose_name_plural = 'Beta Feedback'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        name = self.user.get_full_name() if self.user else 'Unknown'
+        return f"Feedback from {name} on {self.created_at.strftime('%m/%d/%Y %I:%M %p')}"
