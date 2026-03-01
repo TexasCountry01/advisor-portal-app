@@ -480,3 +480,41 @@ class WorkshopDelegate(models.Model):
 #    - Track sync operations, not just UI changes
 #    - Link back to WP user ID for debugging
 # ============================================================================
+
+
+# ============================================================================
+# SSO EMAIL ALLOWLIST — restrict SSO access on non-production environments
+# ============================================================================
+
+class SSOAllowedEmail(models.Model):
+    """
+    Email allowlist for SSO access control.
+    
+    When this table has rows, ONLY listed emails can SSO into this portal instance.
+    When empty, ALL tagged WP users can SSO in (production behavior).
+    
+    Use case: Restrict TEST server access while sharing the same WP OAuth.
+    Managed via Django Admin (superuser only).
+    """
+    email = models.EmailField(
+        unique=True,
+        help_text='Email address allowed to SSO into this portal instance'
+    )
+    note = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text='Optional note (e.g. "Tester - Chris", "Dev account")'
+    )
+    added_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'SSO Allowed Email'
+        verbose_name_plural = 'SSO Allowed Emails'
+        ordering = ['email']
+    
+    def __str__(self):
+        return f'{self.email} ({self.note})' if self.note else self.email
+    
+    def save(self, *args, **kwargs):
+        self.email = self.email.strip().lower()
+        super().save(*args, **kwargs)

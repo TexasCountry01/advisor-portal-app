@@ -281,6 +281,19 @@ def get_or_create_user_from_sso(profile_data, request=None):
     if not has_access:
         raise SSOAccessDenied('No portal access tag found. Contact your administrator.')
     
+    # Check email allowlist (TEST server gate)
+    # Sources: DB model (SSOAllowedEmail) + env var (SSO_ALLOWED_EMAILS)
+    # If EITHER has entries, only listed emails can SSO in.
+    # If BOTH are empty, all tagged users can SSO in (production behavior).
+    from .models import SSOAllowedEmail
+    db_emails = set(SSOAllowedEmail.objects.values_list('email', flat=True))
+    env_emails = set(getattr(settings, 'SSO_ALLOWED_EMAILS', []))
+    allowed_emails = db_emails | env_emails
+    
+    if allowed_emails and email.lower() not in allowed_emails:
+        logger.warning(f'SSO blocked by allowlist: {email} not in allowed emails')
+        raise SSOAccessDenied('Access to this portal instance is restricted. Contact your administrator.')
+    
     # Try to find existing user
     user = None
     created = False
@@ -406,8 +419,11 @@ def _sync_user_fields(user, data, new_role):
         changes['phone'] = {'old': user.phone, 'new': data['phone']}
         user.phone = data['phone']
     
-    # role — only update if WP tags indicate a different role
-    if new_role and new_role != user.role:
+    # role — only update for member/delegate roles (SSO-managed).
+    # NEVER overwrite portal-assigned roles (technician, manager, administrator).
+    # Those are set manually in /admin/ and must be preserved.
+    PORTAL_MANAGED_ROLES = {'technician', 'manager', 'administrator'}
+    if new_role and new_role != user.role and user.role not in PORTAL_MANAGED_ROLES:
         changes['role'] = {'old': user.role, 'new': new_role}
         user.role = new_role
     

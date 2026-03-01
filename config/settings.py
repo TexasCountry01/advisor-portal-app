@@ -253,6 +253,13 @@ WP_OAUTH_TOKEN_URL = config('WP_OAUTH_TOKEN_URL', default=f'{WP_OAUTH_BASE_URL}/
 WP_OAUTH_RESOURCE_URL = config('WP_OAUTH_RESOURCE_URL', default=f'{WP_OAUTH_BASE_URL}/wp-json/moserver/resource')
 WP_OAUTH_REDIRECT_URI = SITE_URL + '/accounts/sso/callback/'
 
+# SSO Email Allowlist — restrict SSO access to specific emails (TEST server gate)
+# Comma-separated list of emails. If empty/not set, ALL tagged users can SSO in.
+# Set this in .env on TEST only. PROD leaves it blank = open to all tagged users.
+# Example: SSO_ALLOWED_EMAILS=chris@profeds.com,devops@profeds.com
+_sso_emails = config('SSO_ALLOWED_EMAILS', default='')
+SSO_ALLOWED_EMAILS = [e.strip().lower() for e in _sso_emails.split(',') if e.strip()] if _sso_emails else []
+
 # Webhook secret for real-time profile sync from WordPress (set in .env)
 WP_WEBHOOK_SECRET = config('WP_WEBHOOK_SECRET', default='')
 

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, UserPreference, AuditLog, MemberDelegate
+from .models import User, UserPreference, AuditLog, MemberDelegate, SSOAllowedEmail
 
 
 @admin.register(User)
@@ -48,4 +48,27 @@ class AuditLogAdmin(admin.ModelAdmin):
     search_fields = ['user__username', 'action', 'resource_type']
     readonly_fields = ['user', 'action', 'resource_type', 'resource_id', 'details', 'ip_address', 'user_agent', 'created_at']
     date_hierarchy = 'created_at'
+
+
+@admin.register(SSOAllowedEmail)
+class SSOAllowedEmailAdmin(admin.ModelAdmin):
+    """SSO email allowlist — superuser only. Controls who can SSO into this instance."""
+    list_display = ['email', 'note', 'added_at']
+    search_fields = ['email', 'note']
+    readonly_fields = ['added_at']
+    
+    def has_module_permission(self, request):
+        return request.user.is_superuser
+    
+    def has_view_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
+    def has_add_permission(self, request):
+        return request.user.is_superuser
+    
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_superuser
+    
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_superuser
 
