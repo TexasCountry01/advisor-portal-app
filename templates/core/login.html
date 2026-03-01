@@ -13,6 +13,28 @@
                     <p class="text-muted">Enter your credentials to continue</p>
                 </div>
 
+                {% if messages %}
+                <div class="mb-3">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- SSO Login Button -->
+                <a href="{% url 'sso_login' %}" class="btn btn-success w-100 btn-lg mb-3">
+                    <i class="bi bi-shield-lock"></i> Login with ProFeds Account
+                </a>
+
+                <div class="d-flex align-items-center my-3">
+                    <hr class="flex-grow-1">
+                    <span class="mx-3 text-muted small">or use portal credentials</span>
+                    <hr class="flex-grow-1">
+                </div>
+
                 <form method="post">
                     {% csrf_token %}
                     

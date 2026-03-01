@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, UserPreference, AuditLog
+from .models import User, UserPreference, AuditLog, MemberDelegate
 
 
 @admin.register(User)
@@ -29,6 +29,16 @@ class UserPreferenceAdmin(admin.ModelAdmin):
     list_display = ['user', 'preference_key', 'updated_at']
     list_filter = ['preference_key']
     search_fields = ['user__username', 'preference_key']
+
+
+@admin.register(MemberDelegate)
+class MemberDelegateAdmin(admin.ModelAdmin):
+    list_display = ['delegate', 'member', 'assigned_by', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['delegate__username', 'delegate__first_name', 'delegate__last_name',
+                     'member__username', 'member__first_name', 'member__last_name']
+    raw_id_fields = ['member', 'delegate', 'assigned_by']
+    readonly_fields = ['created_at']
 
 
 @admin.register(AuditLog)

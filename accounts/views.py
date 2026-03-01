@@ -637,6 +637,122 @@ def member_credit_allowance_edit(request, member_id, fiscal_year, quarter):
 
 
 # ============================================================================
+# DELEGATE MANAGEMENT VIEW (Member-to-Delegate assignments)
+# ============================================================================
+# Benefits Technicians assign delegates to members.
+# Rules:
+# - Any member can be a delegate for any other member
+# - A delegate can be assigned to multiple members
+# - No delegate can be a delegate of another delegate (no chaining)
+# - Only Benefits Technicians can assign delegates
+# - Delegate must have an existing portal account
+# ============================================================================
+
+@login_required
+def delegate_management(request):
+    """Delegate management page for Benefits Technicians — assign delegates to members."""
+    user = request.user
+    
+    # Permission check
+    if user.role not in ('technician', 'administrator'):
+        messages.error(request, 'You do not have permission to manage delegates.')
+        return redirect('cases:technician_dashboard')
+    
+    User = get_user_model()
+    
+    # Get all active members for dropdowns
+    all_members = User.objects.filter(
+        role='member', is_active=True
+    ).order_by('last_name', 'first_name')
+    
+    # Get all active users who could be delegates (members with portal accounts)
+    all_possible_delegates = User.objects.filter(
+        role='member', is_active=True
+    ).order_by('last_name', 'first_name')
+    
+    # Get existing delegate assignments from MemberDelegate model
+    from accounts.models import MemberDelegate
+    assignments_qs = MemberDelegate.objects.select_related(
+        'delegate', 'member', 'assigned_by'
+    ).all().order_by('member__last_name', 'member__first_name')
+    
+    # Build assignment data for template
+    assignments = []
+    for a in assignments_qs:
+        assignments.append({
+            'id': a.id,
+            'member_name': f'{a.member.first_name} {a.member.last_name}',
+            'member_email': a.member.email,
+            'workshop_code': a.member.workshop_code,
+            'delegate_name': f'{a.delegate.first_name} {a.delegate.last_name}',
+            'delegate_email': a.delegate.email,
+            'delegate_is_also_member': a.delegate.role == 'member',
+            'assigned_by': a.assigned_by.get_full_name() if a.assigned_by else '—',
+            'assigned_date': a.created_at.strftime('%b %d, %Y') if a.created_at else '—',
+        })
+    
+    # Handle POST — assign or remove delegates
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'assign':
+            member_id = request.POST.get('member_id')
+            delegate_id = request.POST.get('delegate_id')
+            
+            if member_id and delegate_id:
+                try:
+                    member = User.objects.get(id=member_id, role='member')
+                    delegate_user = User.objects.get(id=delegate_id)
+                    
+                    if member.id == delegate_user.id:
+                        messages.error(request, 'A member cannot be their own delegate.')
+                    elif MemberDelegate.objects.filter(member=member, delegate=delegate_user).exists():
+                        messages.warning(request, f'{delegate_user.get_full_name()} is already a delegate for {member.get_full_name()}.')
+                    else:
+                        MemberDelegate.objects.create(
+                            member=member,
+                            delegate=delegate_user,
+                            assigned_by=user
+                        )
+                        messages.success(request, f'{delegate_user.get_full_name()} assigned as delegate for {member.get_full_name()}.')
+                except User.DoesNotExist:
+                    messages.error(request, 'Invalid member or delegate selected.')
+            else:
+                messages.error(request, 'Both member and delegate are required.')
+            
+            return redirect('delegate_management')
+        
+        elif action == 'remove':
+            assignment_id = request.POST.get('assignment_id')
+            try:
+                assignment = MemberDelegate.objects.get(id=assignment_id)
+                delegate_name = assignment.delegate.get_full_name()
+                member_name = assignment.member.get_full_name()
+                assignment.delete()
+                messages.success(request, f'Removed {delegate_name} as delegate for {member_name}.')
+            except MemberDelegate.DoesNotExist:
+                messages.error(request, 'Assignment not found.')
+            
+            return redirect('delegate_management')
+    
+    # Stats
+    unique_delegates = set(a['delegate_name'] for a in assignments)
+    unique_members = set(a['member_name'] for a in assignments)
+    
+    context = {
+        'assignments': assignments,
+        'all_members': all_members,
+        'all_possible_delegates': all_possible_delegates,
+        'total_assignments': len(assignments),
+        'total_delegates': len(unique_delegates),
+        'total_members_with_delegates': len(unique_members),
+        'total_members': all_members.count(),
+    }
+    
+    return render(request, 'accounts/delegate_management.html', context)
+
+
+# ============================================================================
 # WORKSHOP DELEGATE MANAGEMENT VIEWS
 # ============================================================================
 # These views allow Benefits Technicians and Admins to assign delegates to

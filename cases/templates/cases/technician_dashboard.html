@@ -17,8 +17,8 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="managementDropdown">
                     <li>
-                        <a class="dropdown-item" href="{% url 'workshop_delegate_list' %}">
-                            <i class="bi bi-people"></i> Workshop Delegates
+                        <a class="dropdown-item" href="{% url 'delegate_management' %}">
+                            <i class="bi bi-people"></i> Delegate Management
                         </a>
                     </li>
                     {% if user.role == 'administrator' %}

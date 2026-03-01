@@ -1,7 +1,14 @@
 from django.urls import path
 from . import views
+from . import views_sso
 
 urlpatterns = [
+    # ========================================================================
+    # SSO (WP Fusion / miniOrange OAuth2)
+    # ========================================================================
+    path('sso/login/', views_sso.sso_login, name='sso_login'),
+    path('sso/callback/', views_sso.sso_callback, name='sso_callback'),
+
     path('manage-users/', views.manage_users, name='manage_users'),
     path('deactivate-user/<int:user_id>/', views.deactivate_user, name='deactivate_user'),
     path('reactivate-user/<int:user_id>/', views.reactivate_user, name='reactivate_user'),
@@ -46,7 +53,16 @@ urlpatterns = [
     ),
     
     # ========================================================================
-    # WORKSHOP DELEGATE MANAGEMENT URLS (Tech/Admin only)
+    # DELEGATE MANAGEMENT (Member-to-Delegate assignments)
+    # ========================================================================
+    path(
+        'delegate-management/',
+        views.delegate_management,
+        name='delegate_management'
+    ),
+    
+    # ========================================================================
+    # WORKSHOP DELEGATE MANAGEMENT URLS (Tech/Admin only) - LEGACY
     # ========================================================================
     # These URLs are for Benefits Technicians/Admins to assign delegates
     # to workshop codes for case submission authority.

@@ -1,0 +1,102 @@
+# SSO Integration — Email to WP Developer
+
+**Date:** March 1, 2026
+
+---
+
+Hey,
+
+I'm working on the SSO integration for our Advisor Portal. We're using the miniOrange OAuth Server on WP to authenticate users via an OAuth2 Authorization Code flow. Authentication is handled by GHL — the WP/miniOrange side just needs to pass authorization tags so we know who gets portal access.
+
+We have **two environments** that need to be set up:
+
+| Environment | WP Site | Portal Server |
+|---|---|---|
+| **Test** | `test-reports.profeds.com` | `https://157.245.141.42` |
+| **Production** | `reports.profeds.com` | `https://104.248.126.74` |
+
+The SSO setup should be identical on both WP sites — same tags, same endpoint structure, same OAuth app configuration. This lets us test on the test site before going live.
+
+Here's what I need from you:
+
+---
+
+## 1. Correct OAuth2 Endpoint URLs
+
+Please confirm these endpoints are correct on **both** sites:
+
+**Test site (`test-reports.profeds.com`):**
+- Authorization: `https://test-reports.profeds.com/wp-json/moserver/authorize`
+- Token: `https://test-reports.profeds.com/wp-json/moserver/token`
+- Resource: `https://test-reports.profeds.com/wp-json/moserver/resource`
+
+**Production site (`reports.profeds.com`):**
+- Authorization: `https://reports.profeds.com/wp-json/moserver/authorize`
+- Token: `https://reports.profeds.com/wp-json/moserver/token`
+- Resource: `https://reports.profeds.com/wp-json/moserver/resource`
+
+---
+
+## 2. Sample JSON from the Resource Endpoint
+
+This is the big one. When our portal calls the Resource URL with a bearer token, what JSON comes back? Can you send me an example response? I specifically need to know the field names for:
+
+- **CRM contact ID** (e.g., `contact_id`, `ID`, `user_id`?)
+- **Email** (e.g., `user_email`, `email`?)
+- **First name** and **last name**
+- **Member/workshop code** (the code assigned to each advisor)
+- **Tags** — what's the field name and format? (list of strings, list of objects, comma-separated, etc.)
+
+If you can just copy/paste a raw JSON response from Postman or the browser, that's perfect. The response format should be the same on both sites.
+
+---
+
+## 3. Client ID and Client Secret
+
+We need OAuth app credentials for **both** sites. They can be the same or different — just let me know.
+
+Currently we have:
+- **Client ID:** `GIbWesmTFmehLeDLZCqRjpyfUcWDscSa`
+- **Client Secret:** `luHBoeGKSryxWdeFBiNyPSTaXxSOboeo`
+
+Are these valid for `test-reports.profeds.com`? Do we need a separate set for `reports.profeds.com`?
+
+---
+
+## 4. Callback URLs to Whitelist
+
+Our portal will redirect users back after authorization. These need to be registered as allowed redirect URIs in the miniOrange OAuth Server settings on **each respective WP site**:
+
+| WP Site | Callback URL to Register |
+|---|---|
+| `test-reports.profeds.com` | `https://157.245.141.42/accounts/sso/callback/` |
+| `reports.profeds.com` | `https://104.248.126.74/accounts/sso/callback/` |
+
+---
+
+## 5. Authorization Tags (only 2 needed)
+
+We only need **two** tags for portal authorization. Everything else (technician tier levels, manager/admin roles, etc.) is handled inside the portal's admin panel.
+
+| Tag | Who Gets It |
+|-----|------------|
+| `Portal access: Member` | Financial advisors — they have their own cases |
+| `Portal access: Delegate` | Admin assistants — they submit cases on behalf of advisors |
+
+These tags need to exist on **both** `test-reports.profeds.com` and `reports.profeds.com`.
+
+---
+
+## 6. Test Accounts
+
+Are the test accounts (3 test members + 3 test delegates) set up with the tags above on `test-reports.profeds.com`? We'd like to do our initial end-to-end testing there.
+
+---
+
+## What Happens Next
+
+Once I get the sample JSON from item #2, I update one function in the portal code and we can do end-to-end testing on the test site. Once that's validated, we flip it to production.
+
+Let me know if you have any questions — happy to jump on a call to walk through it.
+
+Thanks!

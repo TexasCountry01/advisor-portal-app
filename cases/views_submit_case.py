@@ -34,32 +34,27 @@ def submit_case(request):
     
     # Get advisors this user can submit cases for
     advisors_list = []
-    from accounts.models import AdvisorDelegate, WorkshopDelegate
+    from accounts.models import MemberDelegate
     
-    # Check if user is a workshop delegate (has workshop codes they can submit for)
-    workshop_delegates = WorkshopDelegate.objects.filter(
-        delegate=user, 
-        is_active=True,
-        permission_level__in=['submit', 'edit', 'approve']
-    )
+    # Check if user is a delegate for any members (via MemberDelegate)
+    delegate_assignments = MemberDelegate.objects.filter(delegate=user).select_related('member')
+    assigned_members = [da.member for da in delegate_assignments]
     
-    if workshop_delegates.exists():
-        # User is a delegate - they can submit for ANY member in those workshops
-        # Get all members in those workshop codes
-        workshop_codes = list(workshop_delegates.values_list('workshop_code', flat=True).distinct())
-        advisors_list = list(User.objects.filter(role='member', workshop_code__in=workshop_codes).distinct())
-        # Also add themselves if they have a role as member (unlikely but safe)
+    if assigned_members:
+        # User is a delegate — start with assigned members
+        advisors_list = list(assigned_members)
+        # If user is also a member (advisor), include themselves
         if user.role == 'member' and user not in advisors_list:
-            advisors_list.append(user)
+            advisors_list.insert(0, user)
     else:
-        # Check legacy AdvisorDelegate (if user is old delegate system)
-        delegate_relationships = AdvisorDelegate.objects.filter(delegate=user, can_submit=True)
-        if delegate_relationships.exists():
-            advisors_list = [rel.advisor for rel in delegate_relationships]
-        else:
-            # User is an advisor - they can submit for themselves
-            if user.role == 'member':
-                advisors_list = [user]
+        # User is a regular advisor — submit for themselves only
+        if user.role == 'member':
+            advisors_list = [user]
+    
+    # Determine if advisor/workshop fields should be locked (single choice)
+    # Greyed out unless delegate has more than one advisor with different workshop codes
+    unique_workshop_codes = set(a.workshop_code for a in advisors_list if a.workshop_code)
+    is_single_choice = len(advisors_list) <= 1 or (len(advisors_list) > 1 and len(unique_workshop_codes) <= 1)
     
     # Prepare context for form rendering
     context = {
@@ -67,6 +62,8 @@ def submit_case(request):
         'current_user': user,
         'default_due_date': (timezone.now().date() + timedelta(days=7)).isoformat(),
         'today': timezone.now().date().isoformat(),
+        'is_single_choice': is_single_choice,
+        'is_delegate': len(assigned_members) > 0,
     }
     
     if request.method == 'POST':
@@ -113,18 +110,16 @@ def submit_case(request):
                 messages.error(request, 'You do not have permission to submit cases for this advisor.')
                 return render(request, 'cases/submit_case.html', context)
             
-            # If user is not the advisor, verify they have workshop delegate access for this workshop code
+            # If user is not the advisor, verify they have delegate access via MemberDelegate
             if user.id != advisor.id:
-                from accounts.models import WorkshopDelegate
-                has_workshop_access = WorkshopDelegate.objects.filter(
+                from accounts.models import MemberDelegate
+                has_delegate_access = MemberDelegate.objects.filter(
                     delegate=user,
-                    workshop_code=workshop_code,
-                    is_active=True,
-                    permission_level__in=['submit', 'edit', 'approve']
+                    member=advisor,
                 ).exists()
                 
-                if not has_workshop_access:
-                    messages.error(request, f'You do not have delegate access to workshop {workshop_code}.')
+                if not has_delegate_access:
+                    messages.error(request, f'You do not have delegate access for {advisor.get_full_name()}.')
                     return render(request, 'cases/submit_case.html', context)
             
             

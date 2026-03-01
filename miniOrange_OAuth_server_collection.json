@@ -1,0 +1,81 @@
+{
+			"info": {
+				"_postman_id": "2821a659-7b56-48be-9e72-ff95a971ee7f",
+				"name": "miniOrange OAuth Server",
+				"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+			},
+			"item": [
+				{
+					"name": "Authorization Grant",
+					"request": {
+						"auth": {
+							"type": "oauth2",
+							"oauth2": [
+								{
+									"key": "clientSecret",
+									"value": "luHBoeGKSryxWdeFBiNyPSTaXxSOboeo",
+									"type": "string"
+								},
+								{
+									"key": "clientId",
+									"value": "GIbWesmTFmehLeDLZCqRjpyfUcWDscSa",
+									"type": "string"
+								},
+								{
+									"key": "scope",
+									"value": "openid profile email",
+									"type": "string"
+								},
+								{
+									"key": "accessTokenUrl",
+									"value": "https://profeds.com/wp-json/moserver/token",
+									"type": "string"
+								},
+								{
+									"key": "useBrowser",
+									"value": true,
+									"type": "boolean"
+								},
+								{
+									"key": "state",
+									"value": "test",
+									"type": "string"
+								},
+								{
+									"key": "authUrl",
+									"value": "https://profeds.com/wp-json/moserver/authorize",
+									"type": "string"
+								},
+								{
+									"key": "redirect_uri",
+									"value": "",
+									"type": "string"
+								},
+								{
+									"key": "tokenName",
+									"value": "Benefits Portal",
+									"type": "string"
+								},
+								{
+									"key": "addTokenTo",
+									"value": "header",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://profeds.com/wp-json/moserver/resource",
+							"protocol": "https",
+							"host": [
+								"profeds.com"
+							],
+							"path": ["wp-json","moserver", "resource"],
+							"query": []
+						}
+					},
+					"response": []
+				}
+			]
+		}

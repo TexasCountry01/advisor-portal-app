@@ -55,6 +55,7 @@ def form_preview(request):
 def member_dashboard(request):
     """Dashboard view for Member role"""
     from django.db.models import Q
+    from accounts.models import MemberDelegate
     
     user = request.user
     
@@ -63,15 +64,57 @@ def member_dashboard(request):
         messages.error(request, 'Access denied. Members only.')
         return redirect('home')
     
-    # Get all cases for this member with unread count annotation
-    cases = Case.objects.filter(
-        member=user
-    ).prefetch_related(
-        'documents',
-        'unread_messages_for_users'
-    ).select_related(
-        'assigned_to'
-    ).order_by('-date_submitted')
+    # ====================================================================
+    # DELEGATE DETECTION — determine if user is a delegate for anyone
+    # ====================================================================
+    delegate_assignments = MemberDelegate.objects.filter(
+        delegate=user
+    ).select_related('member')
+    is_delegate = delegate_assignments.exists()
+    
+    # Get members this user is a delegate for (for delegate view queries)
+    delegated_members = [da.member for da in delegate_assignments] if is_delegate else []
+    delegated_member_ids = [m.id for m in delegated_members]
+    
+    # Check if user has their own cases (to determine pure delegate)
+    has_own_cases = Case.objects.filter(member=user).exists()
+    is_pure_delegate = is_delegate and not has_own_cases
+    
+    # Determine active view: 'my_cases' or 'delegate'
+    # Pure delegates default to 'delegate' view; members default to 'my_cases'
+    default_view = 'delegate' if is_pure_delegate else 'my_cases'
+    active_view = request.GET.get('view', default_view)
+    
+    # Validate the view parameter
+    if active_view == 'delegate' and not is_delegate:
+        active_view = 'my_cases'
+    if active_view == 'my_cases' and is_pure_delegate:
+        # Pure delegates can't switch to my_cases — they have no cases
+        active_view = 'delegate'
+    
+    # ====================================================================
+    # QUERY CASES based on active view
+    # ====================================================================
+    if active_view == 'delegate':
+        # Delegate view: show cases for all members this user is a delegate for
+        cases = Case.objects.filter(
+            member_id__in=delegated_member_ids
+        ).prefetch_related(
+            'documents',
+            'unread_messages_for_users'
+        ).select_related(
+            'assigned_to', 'member'
+        ).order_by('-date_submitted')
+    else:
+        # My Cases view: show user's own cases
+        cases = Case.objects.filter(
+            member=user
+        ).prefetch_related(
+            'documents',
+            'unread_messages_for_users'
+        ).select_related(
+            'assigned_to'
+        ).order_by('-date_submitted')
     
     # Apply filters BEFORE adding unread count
     status_filter = request.GET.getlist('status')  # Use getlist for multiple values
@@ -156,8 +199,11 @@ def member_dashboard(request):
     elif sort_by == '-urgency':
         cases = sorted(cases, key=lambda x: x.urgency or '', reverse=True)
     
-    # Calculate statistics
-    all_cases = Case.objects.filter(member=user)
+    # Calculate statistics (for the active view)
+    if active_view == 'delegate':
+        all_cases = Case.objects.filter(member_id__in=delegated_member_ids)
+    else:
+        all_cases = Case.objects.filter(member=user)
     stats = {
         'total_cases': all_cases.count(),
         'draft': all_cases.filter(status='draft').count(),
@@ -172,8 +218,11 @@ def member_dashboard(request):
     # Get column visibility settings
     visible_columns = get_user_visible_columns(user, 'member_dashboard')
     
-    # Get draft cases for banner
-    draft_cases = all_cases.filter(status='draft').order_by('-created_at')
+    # Get draft cases for banner (only for my_cases view — delegates don't see draft banner)
+    if active_view == 'my_cases':
+        draft_cases = Case.objects.filter(member=user, status='draft').order_by('-created_at')
+    else:
+        draft_cases = None
     
     context = {
         'cases': cases,
@@ -186,6 +235,11 @@ def member_dashboard(request):
         'visible_columns': visible_columns,
         'all_columns': DASHBOARD_COLUMN_CONFIG['member_dashboard']['available_columns'],
         'filter_params': build_filter_params(request),
+        # Delegate toggle context
+        'is_delegate': is_delegate,
+        'is_pure_delegate': is_pure_delegate,
+        'active_view': active_view,
+        'delegated_members': delegated_members,
     }
     
     return render(request, 'cases/member_dashboard.html', context)

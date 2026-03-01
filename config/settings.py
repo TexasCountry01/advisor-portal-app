@@ -235,3 +235,21 @@ TINYMCE_DEFAULT_CONFIG = {
     'image_description': False,  # Simplify image dialog
 }
 
+# ============================================================================
+# WP Fusion SSO — miniOrange OAuth2 Server
+# ============================================================================
+# Authentication is agnostic to environment. Each deployment sets its own
+# WP_OAUTH_BASE_URL via .env:
+#   Test portal  → https://test-reports.profeds.com
+#   Prod portal  → https://reports.profeds.com
+# All three OAuth endpoints are derived from that base URL.
+# Client ID/Secret may differ per site — set in .env as needed.
+# ============================================================================
+WP_OAUTH_BASE_URL = config('WP_OAUTH_BASE_URL', default='https://test-reports.profeds.com')
+WP_OAUTH_CLIENT_ID = config('WP_OAUTH_CLIENT_ID', default='GIbWesmTFmehLeDLZCqRjpyfUcWDscSa')
+WP_OAUTH_CLIENT_SECRET = config('WP_OAUTH_CLIENT_SECRET', default='luHBoeGKSryxWdeFBiNyPSTaXxSOboeo')
+WP_OAUTH_AUTHORIZE_URL = config('WP_OAUTH_AUTHORIZE_URL', default=f'{WP_OAUTH_BASE_URL}/wp-json/moserver/authorize')
+WP_OAUTH_TOKEN_URL = config('WP_OAUTH_TOKEN_URL', default=f'{WP_OAUTH_BASE_URL}/wp-json/moserver/token')
+WP_OAUTH_RESOURCE_URL = config('WP_OAUTH_RESOURCE_URL', default=f'{WP_OAUTH_BASE_URL}/wp-json/moserver/resource')
+WP_OAUTH_REDIRECT_URI = SITE_URL + '/accounts/sso/callback/'
+

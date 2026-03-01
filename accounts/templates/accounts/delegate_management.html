@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+
+{% block title %}Delegate Management - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2><i class="bi bi-people-fill"></i> Delegate Management</h2>
+            <p class="text-muted">Assign delegates to members — delegates can submit and view cases on behalf of assigned members</p>
+        </div>
+        <div class="col-auto d-flex gap-2 align-items-center">
+            <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDelegateModal">
+                <i class="bi bi-plus-circle"></i> Assign Delegate
+            </button>
+        </div>
+    </div>
+
+    <!-- Rules Summary -->
+    <div class="card mb-4 border-info">
+        <div class="card-body py-2">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Active Assignments</small>
+                    <strong class="fs-5 text-primary">{{ total_assignments }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Active Delegates</small>
+                    <strong class="fs-5 text-success">{{ total_delegates }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Members with Delegates</small>
+                    <strong class="fs-5 text-info">{{ total_members_with_delegates }}</strong>
+                </div>
+                <div class="col-md-3">
+                    <small class="text-muted d-block">Total Members</small>
+                    <strong class="fs-5">{{ total_members }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <h6 class="mb-0"><i class="bi bi-funnel"></i> Filters</h6>
+        </div>
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label for="member_filter" class="form-label form-label-sm">Member (Advisor)</label>
+                    <select name="member" id="member_filter" class="form-select form-select-sm">
+                        <option value="">All Members</option>
+                        {% for member in all_members %}
+                        <option value="{{ member.id }}" {% if request.GET.member == member.id|stringformat:"d" %}selected{% endif %}>
+                            {{ member.first_name }} {{ member.last_name }}{% if member.workshop_code %} ({{ member.workshop_code }}){% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="delegate_filter" class="form-label form-label-sm">Delegate</label>
+                    <select name="delegate" id="delegate_filter" class="form-select form-select-sm">
+                        <option value="">All Delegates</option>
+                        {% for d in all_possible_delegates %}
+                        <option value="{{ d.id }}">{{ d.first_name }} {{ d.last_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 d-flex gap-2 align-items-end">
+                    <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-search"></i> Filter</button>
+                    <a href="{% url 'delegate_management' %}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Assignments Table -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center py-2">
+            <h6 class="mb-0"><i class="bi bi-table"></i> Delegate Assignments</h6>
+            <small class="text-muted">{{ assignments|length }} assignment{{ assignments|length|pluralize }}</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 26%">Member (Advisor)</th>
+                            <th style="width: 12%">Workshop</th>
+                            <th style="width: 26%">Delegate</th>
+                            <th style="width: 16%">Assigned By</th>
+                            <th style="width: 10%">Date</th>
+                            <th style="width: 10%" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in assignments %}
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">{{ a.member_name }}</div>
+                                <small class="text-muted">{{ a.member_email }}</small>
+                            </td>
+                            <td>
+                                {% if a.workshop_code %}
+                                <span class="badge bg-secondary">{{ a.workshop_code }}</span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="fw-semibold">{{ a.delegate_name }}</div>
+                                <small class="text-muted">{{ a.delegate_email }}</small>
+                                {% if a.delegate_is_also_member %}
+                                <span class="badge bg-info bg-opacity-25 text-info ms-1" title="This delegate is also a member with their own cases">Also a member</span>
+                                {% endif %}
+                            </td>
+                            <td><small>{{ a.assigned_by }}</small></td>
+                            <td><small class="text-muted">{{ a.assigned_date }}</small></td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-danger" title="Remove delegate"
+                                        data-bs-toggle="modal" data-bs-target="#revokeModal"
+                                        data-assignment-id="{{ a.id }}"
+                                        data-member-name="{{ a.member_name }}"
+                                        data-delegate-name="{{ a.delegate_name }}">
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="bi bi-people fs-1 d-block mb-2"></i>
+                                No delegate assignments found. Click <strong>Assign Delegate</strong> to get started.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Rules Reference -->
+    <div class="card mt-4 border-warning">
+        <div class="card-header bg-warning bg-opacity-10 py-2">
+            <h6 class="mb-0"><i class="bi bi-info-circle"></i> Delegate Rules</h6>
+        </div>
+        <div class="card-body py-2">
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i> Any member can be assigned as a delegate for any other member</li>
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i> A delegate can be assigned to multiple members</li>
+                        <li class="mb-1"><i class="bi bi-check-circle text-success"></i> A member can have multiple delegates</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-1"><i class="bi bi-x-circle text-danger"></i> A delegate cannot be a delegate of another delegate (no chaining)</li>
+                        <li class="mb-1"><i class="bi bi-shield-check text-primary"></i> Only Benefits Technicians can assign delegates</li>
+                        <li class="mb-1"><i class="bi bi-shield-check text-primary"></i> Delegate must have an existing portal account</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Delegate Modal -->
+<div class="modal fade" id="addDelegateModal" tabindex="-1" aria-labelledby="addDelegateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{% url 'delegate_management' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="assign">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addDelegateModalLabel"><i class="bi bi-plus-circle"></i> Assign Delegate to Member</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="add_member" class="form-label fw-semibold">Member (Advisor) <span class="text-danger">*</span></label>
+                            <select name="member_id" id="add_member" class="form-select" required>
+                                <option value="">— Select Member —</option>
+                                {% for member in all_members %}
+                                <option value="{{ member.id }}">{{ member.first_name }} {{ member.last_name }}{% if member.workshop_code %} ({{ member.workshop_code }}){% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">The advisor whose cases the delegate will have access to</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="add_delegate" class="form-label fw-semibold">Delegate <span class="text-danger">*</span></label>
+                            <select name="delegate_id" id="add_delegate" class="form-select" required>
+                                <option value="">— Select Delegate —</option>
+                                {% for d in all_possible_delegates %}
+                                <option value="{{ d.id }}">{{ d.first_name }} {{ d.last_name }}{% if d.workshop_code %} ({{ d.workshop_code }}){% endif %} {% if d.role == 'member' %}[Member]{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Must have an existing portal account</small>
+                        </div>
+                    </div>
+
+                    <!-- Validation Alerts -->
+                    <div class="mt-3">
+                        <div class="alert alert-info py-2 small mb-0" id="delegateInfo" style="display: none;">
+                            <i class="bi bi-info-circle"></i> <span id="delegateInfoText"></span>
+                        </div>
+                        <div class="alert alert-danger py-2 small mb-0" id="delegateError" style="display: none;">
+                            <i class="bi bi-exclamation-triangle"></i> <span id="delegateErrorText"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="confirmAssignBtn">
+                        <i class="bi bi-check-circle"></i> Assign Delegate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Revoke Confirmation Modal -->
+<div class="modal fade" id="revokeModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'delegate_management' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove">
+                <input type="hidden" name="assignment_id" id="revokeAssignmentId" value="">
+                <div class="modal-header bg-danger bg-opacity-10">
+                    <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle"></i> Remove Delegate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to remove this delegate assignment?</p>
+                    <div class="card bg-light">
+                        <div class="card-body py-2">
+                            <strong>Delegate:</strong> <span id="revokeDelegateName"></span><br>
+                            <strong>Member:</strong> <span id="revokeMemberName"></span>
+                        </div>
+                    </div>
+                    <p class="mt-3 text-muted small">The delegate will immediately lose access to this member's cases. You can re-assign them later if needed.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-x-circle"></i> Remove Delegate
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const memberSelect = document.getElementById('add_member');
+    const delegateSelect = document.getElementById('add_delegate');
+    const infoDiv = document.getElementById('delegateInfo');
+    const infoText = document.getElementById('delegateInfoText');
+    const errorDiv = document.getElementById('delegateError');
+    const errorText = document.getElementById('delegateErrorText');
+    const submitBtn = document.getElementById('confirmAssignBtn');
+
+    function validateSelection() {
+        infoDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        submitBtn.disabled = false;
+
+        if (!memberSelect.value || !delegateSelect.value) return;
+
+        if (memberSelect.value === delegateSelect.value) {
+            errorDiv.style.display = 'block';
+            errorText.textContent = 'A member cannot be assigned as their own delegate.';
+            submitBtn.disabled = true;
+            return;
+        }
+
+        const delegateOption = delegateSelect.options[delegateSelect.selectedIndex];
+        if (delegateOption.text.includes('[Member]')) {
+            infoDiv.style.display = 'block';
+            infoText.textContent = 'This person is also a member (advisor). They will see their own cases AND the assigned member\'s cases via a dashboard toggle.';
+        }
+    }
+
+    if (memberSelect) memberSelect.addEventListener('change', validateSelection);
+    if (delegateSelect) delegateSelect.addEventListener('change', validateSelection);
+
+    // Wire up revoke modal with dynamic data
+    const revokeModal = document.getElementById('revokeModal');
+    if (revokeModal) {
+        revokeModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            document.getElementById('revokeAssignmentId').value = button.getAttribute('data-assignment-id');
+            document.getElementById('revokeDelegateName').textContent = button.getAttribute('data-delegate-name');
+            document.getElementById('revokeMemberName').textContent = button.getAttribute('data-member-name');
+        });
+    }
+});
+</script>
+{% endblock %}

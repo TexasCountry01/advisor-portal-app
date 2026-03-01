@@ -15,11 +15,42 @@
     
     <div class="row mb-4">
         <div class="col">
+            {% if is_pure_delegate %}
+            <h2>Delegate Dashboard</h2>
+            <p class="text-muted">Viewing cases for your assigned members</p>
+            {% else %}
             <h2>Member Dashboard</h2>
             <p class="text-muted">Workshop Code: <strong>{{ user.workshop_code }}</strong></p>
+            {% endif %}
         </div>
 
+        {% if is_delegate and not is_pure_delegate %}
+        <!-- My Cases / Delegate Cases Toggle -->
+        <div class="col-auto d-flex align-items-center">
+            <div class="btn-group" role="group" aria-label="Dashboard view toggle">
+                <a href="?view=my_cases" class="btn {% if active_view == 'my_cases' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="bi bi-briefcase"></i> My Cases
+                </a>
+                <a href="?view=delegate" class="btn {% if active_view == 'delegate' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="bi bi-people"></i> Delegate Cases
+                </a>
+            </div>
+        </div>
+        {% endif %}
     </div>
+
+    {% if active_view == 'delegate' %}
+    <!-- Delegate info bar -->
+    <div class="alert alert-info d-flex align-items-center mb-3" role="alert">
+        <i class="bi bi-info-circle me-2"></i>
+        <div>
+            <strong>Delegate View</strong> &mdash; Showing cases for:
+            {% for m in delegated_members %}
+                <span class="badge bg-light text-dark ms-1">{{ m.first_name }} {{ m.last_name }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Cases on Hold Alert Section (Collapsible) -->
     <div id="hold-cases-section" style="display:none;">
@@ -238,7 +269,13 @@
     <!-- Cases Table -->
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">My Cases</h5>
+            <h5 class="mb-0">
+                {% if active_view == 'delegate' %}
+                    Delegate Cases
+                {% else %}
+                    My Cases
+                {% endif %}
+            </h5>
         </div>
         <div class="card-body">
             {% if cases %}

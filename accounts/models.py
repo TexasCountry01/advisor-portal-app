@@ -18,6 +18,12 @@ class User(AbstractUser):
     ]
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
+    contact_id = models.IntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+        help_text='WP Fusion CRM contact ID — immutable SSO identifier for sync'
+    )
     user_level = models.CharField(
         max_length=10, 
         choices=USER_LEVEL_CHOICES, 
@@ -62,8 +68,8 @@ class User(AbstractUser):
 
 class AdvisorDelegate(models.Model):
     """
-    Allow delegates (staff members) to submit and manage cases on behalf of advisors.
-    This enables team members to help with case submissions.
+    DEPRECATED — replaced by MemberDelegate.
+    Kept temporarily for migration compatibility.
     """
     
     delegate = models.ForeignKey(
@@ -91,6 +97,62 @@ class AdvisorDelegate(models.Model):
     
     def __str__(self):
         return f"{self.delegate.get_full_name()} can submit for {self.advisor.get_full_name()}"
+
+
+# ============================================================================
+# MEMBER DELEGATE MODEL (consolidated replacement for AdvisorDelegate,
+# DelegateAccess, and WorkshopDelegate)
+# ============================================================================
+
+class MemberDelegate(models.Model):
+    """
+    Assign a delegate to act on behalf of a specific member (advisor).
+    
+    This is the single source of truth for delegate assignments.
+    
+    Rules (decided March 1, 2026 meeting with Chris):
+    - Benefits Technicians assign delegates (not members themselves)
+    - Delegates get full access (submit, edit, view) — no permission levels
+    - No active/inactive toggle — row exists = active, delete row = revoked
+    - A member can also be a delegate for other members
+    - Admin assistants (Portal: Delegate SSO tag) are pure delegates
+    - No delegate-of-delegate chaining
+    """
+    
+    member = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='delegates',
+        help_text='The member (advisor) being represented'
+    )
+    delegate = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='delegated_members',
+        help_text='The user who can act on behalf of this member'
+    )
+    assigned_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='delegate_assignments_made',
+        help_text='Benefits Technician who created this assignment'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('member', 'delegate')
+        verbose_name = 'Member Delegate'
+        verbose_name_plural = 'Member Delegates'
+        ordering = ['member__last_name', 'member__first_name']
+        indexes = [
+            models.Index(fields=['member']),
+            models.Index(fields=['delegate']),
+        ]
+    
+    def __str__(self):
+        return f"{self.delegate.get_full_name()} → {self.member.get_full_name()}"
 
 
 class UserPreference(models.Model):
