@@ -26,7 +26,8 @@ def home(request):
         elif request.user.role == 'administrator':
             return redirect('cases:admin_dashboard')
     
-    return render(request, 'core/home.html')
+    # Unauthenticated users go straight to SSO
+    return redirect('sso_login')
 
 
 @ensure_csrf_cookie
