@@ -256,3 +256,30 @@ WP_OAUTH_REDIRECT_URI = SITE_URL + '/accounts/sso/callback/'
 # Webhook secret for real-time profile sync from WordPress (set in .env)
 WP_WEBHOOK_SECRET = config('WP_WEBHOOK_SECRET', default='')
 
+# ============================================================================
+# LOGGING — ensure app-level logs reach gunicorn/journal
+# ============================================================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'accounts': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+
