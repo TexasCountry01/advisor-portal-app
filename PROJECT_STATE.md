@@ -4,8 +4,8 @@
 > It is intended to be read by GitHub Copilot (or any AI assistant) at the start of a session to
 > quickly understand the project's infrastructure, credentials, deployment, and codebase layout.
 >
-> **Last Updated:** February 21, 2026
-> **Current Git Commit:** `be2c3cc` — all three environments in sync
+> **Last Updated:** March 1, 2026
+> **Current Git Commit:** `17f2975` — SSO infrastructure, MemberDelegate, dashboard toggle
 
 ---
 
@@ -101,16 +101,16 @@ The Advisor Portal is a case-management application for **ProFeds**, a federal e
 | **Repository** | `https://github.com/TexasCountry01/advisor-portal-app.git` |
 | **Branch** | `main` (primary) |
 | **Other Branches** | `badge-button-styling` (inactive) |
-| **Latest Commit** | `be2c3cc` — "Workspace cleanup: organize docs and scripts into archive folders" |
+| **Latest Commit** | `17f2975` — "SSO infrastructure, MemberDelegate model, dashboard toggle, delegate case submission" |
 | **Auth Method** | HTTPS with GitHub credentials cached |
 
 ### Recent Commit History
 ```
+17f2975  SSO infrastructure, MemberDelegate model, dashboard toggle, delegate case submission
+a24f4c8  Fix: notification badge linking to wrong dashboard URL for members
+b500f23  Member dashboard: show member name column, submit case form UI polish
+ec0f44e  Beta feedback, case detail, fact finder PDF, submit case form
 be2c3cc  Workspace cleanup: organize docs and scripts into archive folders
-11bafc4  UX: Two-column Release Settings, prominent save button, no scroll
-5a7b157  UX: Save stays on active tab, move save button to top-right
-94d0ce1  Redesign System Settings: wire up toggles, add tooltips, sticky save
-510a0b8  Remove test email script from repo
 ```
 
 ---
@@ -284,12 +284,14 @@ advisor-portal-app/
 │   └── asgi.py
 │
 ├── accounts/                     # User management app
-│   ├── models.py                 # User model (roles, levels), delegates, credits
-│   ├── views.py                  # User management, profile editing, delegates
+│   ├── models.py                 # User model (roles, levels, contact_id), MemberDelegate, credits
+│   ├── views.py                  # User management, profile editing, delegate management
+│   ├── sso.py                    # SSO service: OAuth2 flow, tag→role mapping, user provisioning
+│   ├── views_sso.py              # sso_login + sso_callback views
 │   ├── forms.py
 │   ├── urls.py
-│   ├── templates/accounts/       # 6 templates
-│   └── migrations/
+│   ├── templates/accounts/       # 7 templates (incl. delegate_management.html)
+│   └── migrations/               # 7 migrations (incl. MemberDelegate, contact_id)
 │
 ├── cases/                        # Core case management app
 │   ├── models.py                 # Case, CaseDocument, CaseNote, CaseMessage, etc.
@@ -347,7 +349,9 @@ advisor-portal-app/
 ├── ADMINISTRATOR_WORKFLOW.md           # Admin capabilities
 ├── MANAGER_WORKFLOW.md                 # Manager (read-only) capabilities
 ├── WP_FUSION_INTEGRATION_GUIDE.md      # WP Fusion integration points (40+ placeholders)
+├── WP_FUSION_SSO_IMPLEMENTATION.md     # SSO working document — decisions, status, file list
 ├── WP_FUSION_SSO_MEETING_PREP.md       # SSO meeting prep for WP developer
+├── WP_DEV_SSO_REQUIREMENTS.md          # Formatted email to WP developer
 ├── CRON_JOB_SETUP.md                   # Cron job documentation
 ├── DEPLOYMENT_GUIDE.md                 # Full deployment guide
 ├── DEPLOYMENT_QUICK_REFERENCE.md       # Quick deploy commands
@@ -397,6 +401,9 @@ advisor-portal-app/
 | `/cases/manager/dashboard/` | `cases` | Manager dashboard |
 | `/cases/<pk>/` | `cases` | Case detail |
 | `/accounts/manage-users/` | `accounts` | User management |
+| `/accounts/delegate-management/` | `accounts` | Delegate assign/remove |
+| `/accounts/sso/login/` | `accounts` | SSO redirect to WordPress |
+| `/accounts/sso/callback/` | `accounts` | SSO callback from WordPress |
 
 ---
 
@@ -415,7 +422,9 @@ advisor-portal-app/
 - Internal notes (tech-only)
 - Document upload/download
 - Federal Fact Finder form
-- Delegate system (workshop-level)
+- Delegate system (MemberDelegate — per-member assignments by Benefits Techs)
+- Dashboard toggle: My Cases / Delegate Cases (member+delegate users)
+- Delegate case submission (greyed-out / dropdown advisor selection)
 - Credits system with quarterly allowances
 - Comprehensive audit trail (58 action types, 9 reports)
 - 4 role-specific dashboards with sorting, filtering, column preferences
@@ -425,8 +434,20 @@ advisor-portal-app/
 - PDF generation (report notes, FFF)
 - Sortable columns across all dashboards
 
+### � SSO — Infrastructure Built, Blocked on WP Developer
+- OAuth2 SSO service built (`accounts/sso.py` — tag parsing, user provisioning, login-time sync)
+- SSO views built (`accounts/views_sso.py` — sso_login + sso_callback)
+- OAuth settings in `config/settings.py` (env-driven via `WP_OAUTH_BASE_URL`)
+- "Login with ProFeds Account" button on login page
+- 2 authorization tags: `Portal access: Member`, `Portal access: Delegate`
+- Authentication handled by GHL — tags are authorization only
+- `contact_id` field on User model (immutable CRM sync key)
+- **Blocked on:** WP dev confirming endpoints, registering callback URLs, providing sample JSON
+- **See:** `WP_FUSION_SSO_IMPLEMENTATION.md` for full working document
+
 ### 🔲 Planned / Not Yet Started
-- WP Fusion SSO integration (placeholders in code, meeting prep doc ready)
+- `sync_wp_users` management command (initial population — blocked on sample JSON)
+- WP webhook endpoint for real-time profile sync
 - Benefits-software API integration (model fields + API log ready, no endpoint configured)
 - Production email/scheduling activation (toggles exist, currently OFF in PROD)
 

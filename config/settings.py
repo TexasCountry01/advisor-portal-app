@@ -253,3 +253,6 @@ WP_OAUTH_TOKEN_URL = config('WP_OAUTH_TOKEN_URL', default=f'{WP_OAUTH_BASE_URL}/
 WP_OAUTH_RESOURCE_URL = config('WP_OAUTH_RESOURCE_URL', default=f'{WP_OAUTH_BASE_URL}/wp-json/moserver/resource')
 WP_OAUTH_REDIRECT_URI = SITE_URL + '/accounts/sso/callback/'
 
+# Webhook secret for real-time profile sync from WordPress (set in .env)
+WP_WEBHOOK_SECRET = config('WP_WEBHOOK_SECRET', default='')
+

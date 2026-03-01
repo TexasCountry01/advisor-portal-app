@@ -367,3 +367,53 @@ def send_case_completed_email(case, request=None, user=None):
             }
         )
         return False
+
+
+# ============================================================================
+# DELEGATE NOTIFICATIONS
+# ============================================================================
+
+def send_delegate_assigned_email(member, delegate, assigned_by):
+    """Send email to member when a delegate is assigned to their account."""
+    if not member or not member.email:
+        return False
+
+    portal_url = getattr(settings, 'SITE_URL', 'https://portal.profeds.com')
+    context = {
+        'member_name': member.get_full_name() or member.username,
+        'delegate_name': delegate.get_full_name() or delegate.username,
+        'delegate_email': delegate.email,
+        'assigned_by_name': assigned_by.get_full_name() or assigned_by.username,
+        'portal_url': portal_url,
+    }
+
+    return send_email_notification(
+        subject='A delegate has been assigned to your account',
+        template_name='delegate_assigned_notification.html',
+        context=context,
+        recipient_email=member.email,
+        user=assigned_by,
+    )
+
+
+def send_delegate_removed_email(member, delegate, removed_by):
+    """Send email to member when a delegate is removed from their account."""
+    if not member or not member.email:
+        return False
+
+    portal_url = getattr(settings, 'SITE_URL', 'https://portal.profeds.com')
+    context = {
+        'member_name': member.get_full_name() or member.username,
+        'delegate_name': delegate.get_full_name() or delegate.username,
+        'delegate_email': delegate.email,
+        'removed_by_name': removed_by.get_full_name() or removed_by.username,
+        'portal_url': portal_url,
+    }
+
+    return send_email_notification(
+        subject='A delegate has been removed from your account',
+        template_name='delegate_removed_notification.html',
+        context=context,
+        recipient_email=member.email,
+        user=removed_by,
+    )

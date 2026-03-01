@@ -291,21 +291,12 @@ class MemberCreditAllowance(models.Model):
 
 class DelegateAccess(models.Model):
     """
-    Grant delegate permissions for members to allow others to submit cases on their behalf.
+    DEPRECATED — Replaced by MemberDelegate model.
+    Kept for migration compatibility. URL routes disabled.
+    Use delegate_management() view + MemberDelegate instead.
     
-    This model enables:
-    - Delegating case submission authority to team members within same office
-    - Granular permission control (submit, edit, view, approve)
-    - Workshop code-based visibility (only see delegates in same workshop)
-    - Audit trail of all delegate changes (who granted, when, by whom)
-    
-    NOTE: No expiration is currently set. Delegates remain active until manually revoked
-    or the member's account is deactivated.
-    
-    WP FUSION INTEGRATION PLACEHOLDER:
-    - Future: Could auto-revoke delegates when member's WP subscription expires
-    - Future: Could validate delegate office/workshop against WP user meta
-    - Currently: Benefits Tech manually manages delegates in member profile
+    Original purpose: Grant delegate permissions for members to allow
+    others to submit cases on their behalf.
     """
     
     # The member (advisor) who is delegating authority
@@ -381,23 +372,12 @@ class DelegateAccess(models.Model):
 
 class WorkshopDelegate(models.Model):
     """
-    Assign delegates to workshop codes for case submission authority.
+    DEPRECATED — Replaced by MemberDelegate model.
+    Kept for migration compatibility. URL routes disabled.
+    Use delegate_management() view + MemberDelegate instead.
     
-    This model enables:
-    - Technicians/Admins to assign delegates to workshop codes (not individual members)
-    - Delegates to submit cases on behalf of ANY member in that workshop
-    - Granular permission control (view, submit, edit, approve)
-    - Audit trail of all delegate assignments
-    
-    KEY DIFFERENCE from DelegateAccess:
-    - DelegateAccess: Member-centric (individual member controls delegates - DEPRECATED)
-    - WorkshopDelegate: Workshop-centric (Tech/Admin assigns delegates to workshop code)
-    
-    Workflow:
-    1. Benefits Tech/Admin goes to Delegate Management (dropdown menu on dashboard)
-    2. Selects a workshop code
-    3. Adds delegates who can submit cases for ANY member in that workshop
-    4. Delegate submits case via normal flow - created_by is the delegate, but they're authorized by workshop code
+    Original purpose: Assign delegates to workshop codes for case
+    submission authority (workshop-centric vs member-centric).
     """
     
     # The workshop code this delegate is assigned to

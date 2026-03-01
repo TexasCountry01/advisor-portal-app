@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; border-radius: 4px 4px 0 0; }
+        .content { background-color: #f8f9fa; padding: 20px; border-radius: 0 0 4px 4px; }
+        .button { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 10px; }
+        .footer { margin-top: 20px; font-size: 12px; color: #666; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Delegate Access Granted</h1>
+        </div>
+        <div class="content">
+            <p>Hi {{ member_name }},</p>
+
+            <p><strong>{{ delegate_name }}</strong> ({{ delegate_email }}) has been assigned as a delegate for your account by <strong>{{ assigned_by_name }}</strong>.</p>
+
+            <p><strong>What this means:</strong></p>
+            <ul>
+                <li>{{ delegate_name }} can view your cases and case details</li>
+                <li>{{ delegate_name }} can submit new cases on your behalf</li>
+                <li>All actions taken on your behalf will be clearly tracked in the audit trail</li>
+            </ul>
+
+            <p>If you have any concerns about this delegation, please contact your Benefits Technician.</p>
+
+            <p>
+                <a href="{{ portal_url }}" class="button">Go to Portal</a>
+            </p>
+
+            <div class="footer">
+                <p>This is an automated email. Please do not reply directly to this message.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

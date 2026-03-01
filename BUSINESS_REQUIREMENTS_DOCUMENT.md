@@ -409,21 +409,54 @@ The `CreditAuditLog` model tracks every credit value change:
 
 ## 13. Delegate System
 
-### 13.1 Workshop Delegates (Active Model)
+### 13.1 MemberDelegate Model (Active — March 2026)
 
-Delegates are assigned at the **workshop code** level, not per individual member. This means a delegate can submit cases for ANY member in that workshop.
+Delegates are assigned at the **individual member** level by Benefits Technicians. A delegate is a user (typically an administrative assistant) who can view cases and submit on behalf of one or more specific members.
 
 | Field | Description |
 |-------|-------------|
-| Workshop Code | The workshop the delegate can act within |
-| Delegate | The user granted access |
-| Permission Level | `view`, `submit`, `edit`, `approve` |
-| Granted By | Technician or admin who set this up |
-| Is Active | Can be deactivated without deletion |
+| Member | The financial advisor (FK to User) |
+| Delegate | The user granted delegate access (FK to User) |
+| Assigned By | Benefits Technician who created the assignment (FK to User) |
+| Created At | Timestamp |
+| Unique Constraint | `(member, delegate)` — no duplicate assignments |
 
-### 13.2 Delegate Capabilities
+### 13.2 SSO Authorization Tags
+
+| Tag | Who Gets It | Portal Role |
+|-----|-------------|-------------|
+| `Portal access: Member` | Financial advisors | `member` |
+| `Portal access: Delegate` | Administrative assistants | `member` (delegate-only) |
+
+- A **member** who is also a delegate for other members uses `Portal access: Member` only
+- Delegate assignments are managed in the portal by Benefits Techs, not by tags
+
+### 13.3 Delegate Capabilities
 
 A delegate submitting a case is recorded as `created_by` (distinct from `member`), creating a clear audit trail that the case was submitted on behalf of the member by a delegate.
+
+### 13.4 Dashboard Toggle (Member + Delegate)
+
+| User Type | Dashboard Behavior |
+|-----------|--------------------|
+| Pure member | Normal dashboard — sees own cases only. No toggle. |
+| Pure delegate | "Delegate Dashboard" heading. Shows only assigned members’ cases. No toggle. |
+| Member who is also a delegate | Toggle: **My Cases** \| **Delegate Cases**. Delegate view shows info bar with assigned member badges. |
+
+### 13.5 Case Submission — Delegate UX
+
+| Scenario | Advisor Field | Workshop Code Field |
+|----------|---------------|---------------------|
+| Pure member | Greyed out (their name) | Greyed out (their code) |
+| Delegate with 1 assigned member | Greyed out (that member) | Greyed out (that code) |
+| Delegate with multiple members, same workshop | Greyed out | Greyed out |
+| Delegate with multiple members, different workshops | Dropdown — select advisor | Auto-fills from selection |
+
+### 13.6 Deprecated Models (Still in DB)
+
+- `AdvisorDelegate` — replaced by `MemberDelegate`
+- `DelegateAccess` — replaced by `MemberDelegate`
+- `WorkshopDelegate` — replaced by `MemberDelegate`
 
 ---
 
@@ -431,7 +464,11 @@ A delegate submitting a case is recorded as `created_by` (distinct from `member`
 
 ### 14.1 Member Dashboard
 
-- Shows the member's own cases only
+- Shows the member's own cases (default view)
+- **Dashboard toggle** for users who are both a member AND a delegate:
+  - **My Cases** — member’s own submitted cases (default)
+  - **Delegate Cases** — all cases for assigned members, with info bar showing member badges
+- Pure delegates see "Delegate Dashboard" heading with assigned members’ cases only
 - Columns: Case Code, Employee Name, Reports, Urgency, Submitted Date, Due Date, Completed Date, Status, Credit Value, Actions
 - Filtering: status (multi-select), urgency, search
 - Sorting: all columns sortable, preferences saved per user
@@ -575,12 +612,18 @@ Each entry captures:
 - `@login_required` decorator on all protected views
 - Role-based access checks in views (e.g., only members can submit; only techs can accept)
 
-### 18.2 Future: SSO via WordPress / WP Fusion
+### 18.2 SSO via WordPress / miniOAuth (In Progress)
 
-- Integration planned with WP Fusion for Single Sign-On
-- WordPress site to serve as identity provider
-- Placeholder integration points exist in codebase (see WP_FUSION_INTEGRATION_GUIDE.md)
-- Additional sync points: subscription status, credit auto-calculation, delegate auto-management
+- OAuth2 Authorization Code Grant via miniORange OAuth Server plugin
+- Infrastructure built: `accounts/sso.py` (service), `accounts/views_sso.py` (views), OAuth settings in `config/settings.py`
+- Two environments: `test-reports.profeds.com` (test WP site) and `reports.profeds.com` (prod WP site)
+- `WP_OAUTH_BASE_URL` env var drives all endpoint URLs
+- Authentication handled by GHL (GoHighLevel) — WP tags are for authorization only
+- 2 authorization tags: `Portal access: Member`, `Portal access: Delegate`
+- `contact_id` field on User model as immutable CRM sync key
+- User provisioning + login-time data sync built
+- **Blocked on:** WP developer confirming endpoints, registering callback URLs, providing sample JSON response
+- Full working document: `WP_FUSION_SSO_IMPLEMENTATION.md`
 
 ---
 
@@ -659,3 +702,4 @@ The system includes fields and settings for integration with ProFeds' benefits-a
 |---------|------|-------------|
 | 1.0 | January 2026 | Initial technician workflow documentation |
 | 2.0 | February 21, 2026 | Complete BRD reflecting current system state |
+| 2.1 | March 1, 2026 | Updated delegate system (MemberDelegate), SSO status, dashboard toggle |

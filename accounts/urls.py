@@ -1,13 +1,19 @@
 from django.urls import path
 from . import views
 from . import views_sso
+from . import views_webhook
 
 urlpatterns = [
     # ========================================================================
-    # SSO (WP Fusion / miniOrange OAuth2)
+    # SSO (WP Fusion / miniOAuth OAuth2)
     # ========================================================================
     path('sso/login/', views_sso.sso_login, name='sso_login'),
     path('sso/callback/', views_sso.sso_callback, name='sso_callback'),
+
+    # ========================================================================
+    # WP Webhook (real-time profile sync from WordPress)
+    # ========================================================================
+    path('api/wp-webhook/', views_webhook.wp_webhook, name='wp_webhook'),
 
     path('manage-users/', views.manage_users, name='manage_users'),
     path('deactivate-user/<int:user_id>/', views.deactivate_user, name='deactivate_user'),
@@ -28,22 +34,27 @@ urlpatterns = [
         name='member_profile_edit'
     ),
     
-    # Delegate management
-    path(
-        'members/<int:member_id>/delegate/add/',
-        views.member_delegate_add,
-        name='member_delegate_add'
-    ),
-    path(
-        'delegates/<int:delegate_id>/edit/',
-        views.member_delegate_edit,
-        name='member_delegate_edit'
-    ),
-    path(
-        'delegates/<int:delegate_id>/revoke/',
-        views.member_delegate_revoke,
-        name='member_delegate_revoke'
-    ),
+    # ----------------------------------------------------------------
+    # DEPRECATED: Old DelegateAccess-based routes (replaced by MemberDelegate
+    # model + delegate_management view). Routes commented out to prevent
+    # accidental use. View functions and models kept for migration compat.
+    # See: /accounts/delegate-management/ for current delegate management.
+    # ----------------------------------------------------------------
+    # path(
+    #     'members/<int:member_id>/delegate/add/',
+    #     views.member_delegate_add,
+    #     name='member_delegate_add'
+    # ),
+    # path(
+    #     'delegates/<int:delegate_id>/edit/',
+    #     views.member_delegate_edit,
+    #     name='member_delegate_edit'
+    # ),
+    # path(
+    #     'delegates/<int:delegate_id>/revoke/',
+    #     views.member_delegate_revoke,
+    #     name='member_delegate_revoke'
+    # ),
     
     # Credit allowance management
     path(
@@ -62,39 +73,30 @@ urlpatterns = [
     ),
     
     # ========================================================================
-    # WORKSHOP DELEGATE MANAGEMENT URLS (Tech/Admin only) - LEGACY
+    # DEPRECATED: WORKSHOP DELEGATE MANAGEMENT URLS
     # ========================================================================
-    # These URLs are for Benefits Technicians/Admins to assign delegates
-    # to workshop codes for case submission authority.
-    #
-    # Pattern: /accounts/workshop-delegates/...
+    # Replaced by MemberDelegate model + delegate_management view.
+    # Routes commented out. View functions and models kept for migration compat.
+    # See: /accounts/delegate-management/ for current delegate management.
     # ========================================================================
-    
-    # List all workshop delegates
-    path(
-        'workshop-delegates/',
-        views.workshop_delegate_list,
-        name='workshop_delegate_list'
-    ),
-    
-    # Add new workshop delegate
-    path(
-        'workshop-delegates/add/',
-        views.workshop_delegate_add,
-        name='workshop_delegate_add'
-    ),
-    
-    # Edit workshop delegate assignment
-    path(
-        'workshop-delegates/<int:delegate_id>/edit/',
-        views.workshop_delegate_edit,
-        name='workshop_delegate_edit'
-    ),
-    
-    # Revoke workshop delegate access
-    path(
-        'workshop-delegates/<int:delegate_id>/revoke/',
-        views.workshop_delegate_revoke,
-        name='workshop_delegate_revoke'
-    ),
+    # path(
+    #     'workshop-delegates/',
+    #     views.workshop_delegate_list,
+    #     name='workshop_delegate_list'
+    # ),
+    # path(
+    #     'workshop-delegates/add/',
+    #     views.workshop_delegate_add,
+    #     name='workshop_delegate_add'
+    # ),
+    # path(
+    #     'workshop-delegates/<int:delegate_id>/edit/',
+    #     views.workshop_delegate_edit,
+    #     name='workshop_delegate_edit'
+    # ),
+    # path(
+    #     'workshop-delegates/<int:delegate_id>/revoke/',
+    #     views.workshop_delegate_revoke,
+    #     name='workshop_delegate_revoke'
+    # ),
 ]

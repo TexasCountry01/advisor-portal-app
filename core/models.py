@@ -65,6 +65,9 @@ class AuditLog(models.Model):
         ('member_change_request_created', 'Member Change Request Created'),
         ('member_change_request_approved', 'Member Change Request Approved'),
         ('member_change_request_denied', 'Member Change Request Denied'),
+        ('delegate_assigned', 'Delegate Assigned'),
+        ('delegate_removed', 'Delegate Removed'),
+        ('wp_user_sync', 'WP User Sync Completed'),
         ('other', 'Other Activity'),
     ]
     

@@ -12,6 +12,7 @@ from .forms import (
 )
 from .models import DelegateAccess, MemberCreditAllowance, WorkshopDelegate
 from core.models import AuditLog
+from cases.services.email_service import send_delegate_assigned_email, send_delegate_removed_email
 
 User = get_user_model()
 
@@ -356,13 +357,19 @@ def member_profile_edit(request, member_id):
     return render(request, 'accounts/member_profile_edit.html', context)
 
 
+# ==========================================================================
+# DEPRECATED: DelegateAccess-based views below
+# Replaced by MemberDelegate model + delegate_management() view.
+# URL routes have been commented out. Code kept for reference/migration.
+# ==========================================================================
+
 @login_required
 def member_delegate_add(request, member_id):
     """
-    Add a new delegate for a member.
+    DEPRECATED — Replaced by delegate_management() view.
+    Uses old DelegateAccess model. URL route disabled.
     
-    Delegates are team members who can submit cases on behalf of the member.
-    Benefits Technicians control who has access and what permissions they have.
+    Add a new delegate for a member.
     
     URL: POST /accounts/members/{member_id}/delegate/add/
     """
@@ -424,9 +431,10 @@ def member_delegate_add(request, member_id):
 @login_required
 def member_delegate_edit(request, delegate_id):
     """
-    Edit delegate access permissions.
+    DEPRECATED — Replaced by delegate_management() view.
+    Uses old DelegateAccess model. URL route disabled.
     
-    Allows Benefits Technicians to modify permission levels or revoke access.
+    Edit delegate access permissions.
     
     URL: /accounts/delegates/{delegate_id}/edit/
     """
@@ -504,9 +512,10 @@ def member_delegate_edit(request, delegate_id):
 @login_required
 def member_delegate_revoke(request, delegate_id):
     """
-    Revoke delegate access by marking it as inactive.
+    DEPRECATED — Replaced by delegate_management() view.
+    Uses old DelegateAccess model. URL route disabled.
     
-    This is a soft delete - the record is preserved for audit purposes.
+    Revoke delegate access by marking it as inactive.
     
     URL: POST /accounts/delegates/{delegate_id}/revoke/
     """
@@ -715,6 +724,26 @@ def delegate_management(request):
                             assigned_by=user
                         )
                         messages.success(request, f'{delegate_user.get_full_name()} assigned as delegate for {member.get_full_name()}.')
+                        
+                        # Audit log
+                        AuditLog.objects.create(
+                            user=user,
+                            action_type='delegate_assigned',
+                            description=f'{user.get_full_name()} assigned {delegate_user.get_full_name()} as delegate for {member.get_full_name()}',
+                            related_user=delegate_user,
+                            changes={
+                                'member_id': member.id,
+                                'member_name': member.get_full_name(),
+                                'member_email': member.email,
+                                'delegate_id': delegate_user.id,
+                                'delegate_name': delegate_user.get_full_name(),
+                                'delegate_email': delegate_user.email,
+                            },
+                            ip_address=request.META.get('REMOTE_ADDR'),
+                        )
+                        
+                        # Email notification to member
+                        send_delegate_assigned_email(member, delegate_user, user)
                 except User.DoesNotExist:
                     messages.error(request, 'Invalid member or delegate selected.')
             else:
@@ -728,8 +757,32 @@ def delegate_management(request):
                 assignment = MemberDelegate.objects.get(id=assignment_id)
                 delegate_name = assignment.delegate.get_full_name()
                 member_name = assignment.member.get_full_name()
+                
+                # Audit log before delete
+                AuditLog.objects.create(
+                    user=user,
+                    action_type='delegate_removed',
+                    description=f'{user.get_full_name()} removed {delegate_name} as delegate for {member_name}',
+                    related_user=assignment.delegate,
+                    changes={
+                        'member_id': assignment.member.id,
+                        'member_name': member_name,
+                        'member_email': assignment.member.email,
+                        'delegate_id': assignment.delegate.id,
+                        'delegate_name': delegate_name,
+                        'delegate_email': assignment.delegate.email,
+                    },
+                    ip_address=request.META.get('REMOTE_ADDR'),
+                )
+                
+                # Email notification to member
+                member_obj = assignment.member
+                delegate_obj = assignment.delegate
+                
                 assignment.delete()
                 messages.success(request, f'Removed {delegate_name} as delegate for {member_name}.')
+                
+                send_delegate_removed_email(member_obj, delegate_obj, user)
             except MemberDelegate.DoesNotExist:
                 messages.error(request, 'Assignment not found.')
             
@@ -766,13 +819,19 @@ def can_manage_workshop_delegates(user):
     return user.is_authenticated and user.role in ['technician', 'administrator']
 
 
+# ==========================================================================
+# DEPRECATED: WorkshopDelegate-based views below
+# Replaced by MemberDelegate model + delegate_management() view.
+# URL routes have been commented out. Code kept for reference/migration.
+# ==========================================================================
+
 @login_required
 def workshop_delegate_list(request):
     """
-    List all workshop delegate assignments.
+    DEPRECATED — Replaced by delegate_management() view.
+    Uses old WorkshopDelegate model. URL route disabled.
     
-    Technicians/Admins can view, edit, and revoke delegate assignments.
-    Supports filtering by workshop code and delegate status.
+    List all workshop delegate assignments.
     
     URL: /accounts/workshop-delegates/
     """
@@ -817,6 +876,9 @@ def workshop_delegate_list(request):
 @login_required
 def workshop_delegate_add(request):
     """
+    DEPRECATED — Replaced by delegate_management() view.
+    Uses old WorkshopDelegate model. URL route disabled.
+    
     Add a new workshop delegate assignment.
     
     URL: /accounts/workshop-delegates/add/
@@ -875,6 +937,9 @@ def workshop_delegate_add(request):
 @login_required
 def workshop_delegate_edit(request, delegate_id):
     """
+    DEPRECATED — Replaced by delegate_management() view.
+    Uses old WorkshopDelegate model. URL route disabled.
+    
     Edit workshop delegate assignment.
     
     URL: /accounts/workshop-delegates/{delegate_id}/edit/
@@ -951,6 +1016,9 @@ def workshop_delegate_edit(request, delegate_id):
 @login_required
 def workshop_delegate_revoke(request, delegate_id):
     """
+    DEPRECATED — Replaced by delegate_management() view.
+    Uses old WorkshopDelegate model. URL route disabled.
+    
     Revoke workshop delegate access.
     
     URL: POST /accounts/workshop-delegates/{delegate_id}/revoke/
