@@ -36,15 +36,16 @@ User = get_user_model()
 # ============================================================================
 
 TAG_ROLE_MAP = {
-    'Portal access: Member': 'member',
-    'Portal access: Delegate': 'member',   # delegates use member role but are pure delegates
+    'portal access: member': 'member',
+    'portal access: delegate': 'member',   # delegates use member role but are pure delegates
 }
 
 # Tags that indicate a pure delegate (admin assistant, no own cases)
-DELEGATE_TAGS = {'Portal access: Delegate'}
+# NOTE: All tag comparisons are CASE-INSENSITIVE (lowered before matching)
+DELEGATE_TAGS = {'portal access: delegate'}
 
 # Tags that indicate a member (advisor with own cases)
-MEMBER_TAGS = {'Portal access: Member'}
+MEMBER_TAGS = {'portal access: member'}
 
 
 def generate_state_token():
@@ -221,9 +222,15 @@ def determine_role_from_tags(tags):
     Technician, Manager, and Administrator roles are created
     directly in the portal admin panel — NOT via SSO tags.
     
+    Tag matching is CASE-INSENSITIVE.
+    
     Returns (role, is_pure_delegate, has_access)
     """
-    tag_set = set(tags)
+    # Lowercase all tags for case-insensitive matching
+    tag_set = {t.lower().strip() for t in tags if isinstance(t, str)}
+    
+    logger.info(f'SSO tag check — received tags (lowered): {tag_set}')
+    logger.info(f'SSO tag check — looking for member={MEMBER_TAGS}, delegate={DELEGATE_TAGS}')
     
     has_member = bool(tag_set & MEMBER_TAGS)
     has_delegate = bool(tag_set & DELEGATE_TAGS)

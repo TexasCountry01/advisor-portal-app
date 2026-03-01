@@ -85,7 +85,8 @@ def sso_callback(request):
         
         # Fetch user profile
         profile_data = fetch_user_profile(access_token)
-        logger.info(f'SSO resource payload: {list(profile_data.keys())}')
+        logger.info(f'SSO resource payload keys: {list(profile_data.keys())}')
+        logger.info(f'SSO resource payload FULL: {profile_data}')
         
         # Match or create user
         user, created, changes = get_or_create_user_from_sso(profile_data, request=request)
