@@ -1,0 +1,42 @@
+Response to Mike — SSO Follow-up
+
+Date: March 1, 2026
+
+Hey Mike,
+
+Good questions — let me clear up the confusion.
+
+You're right, there is only ONE WordPress site with OAuth — profeds.com. That's the only site that has miniOrange installed. The test-reports.profeds.com URL is our Django portal app (the advisor portal itself), not a WordPress site. Same with reports.profeds.com — that's the production version of the same portal app. Neither of those are WordPress.
+
+So the flow is:
+  User clicks "Login with SSO" on our portal (reports.profeds.com)
+  → Browser redirects to profeds.com/wp-json/moserver/authorize
+  → User authenticates
+  → Browser redirects BACK to reports.profeds.com/accounts/sso/callback/
+  → Portal reads the user data and logs them in
+
+One client in miniOrange is totally fine. We'll just use one callback URL. Please set it to the production one:
+
+  https://reports.profeds.com/accounts/sso/callback/
+
+(Instead of the test IP you have now. We can always switch it back if needed.)
+
+The JSON sample you sent is perfect — I've already wired all the field mappings into the portal code. We're using:
+  - contact_id → GHL contact ID (string)
+  - email
+  - username
+  - first_name / last_name
+  - member_code → workshop code
+  - wpf_tags → list of tag strings
+
+Two quick things I still need to confirm:
+
+1. Are the client credentials we have still valid?
+   - Client ID: GIbWesmTFmehLeDLZCqRjpyfUcWDscSa
+   - Client Secret: luHBoeGKSryxWdeFBiNyPSTaXxSOboeo
+
+2. Do you have any test users on profeds.com with the "portal access: member" and/or "portal access: delegate" tags that I can use for end-to-end testing? Your MikeTestWPCreateUser128 user looks like it already has both tags — can I use that one?
+
+Once you confirm the callback URL is set to the production one and the credentials are good, I can test the full SSO flow immediately.
+
+Thanks!
