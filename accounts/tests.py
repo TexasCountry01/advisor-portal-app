@@ -122,43 +122,58 @@ class ExtractUserDataTest(TestCase):
     """Test _extract_user_data extracts and normalizes fields."""
 
     def test_standard_payload(self):
+        """Test with real WP resource endpoint format."""
         data = _extract_user_data({
-            'ID': 42,
-            'user_email': 'John.Doe@example.com',
+            'id': 1424,
+            'ID': 1424,
+            'sub': 1424,
+            'email': 'John.Doe@example.com',
             'first_name': 'John',
             'last_name': 'Doe',
-            'user_login': 'johndoe',
+            'username': 'johndoe',
             'member_code': 'ws101',
-            'phone': '555-1234',
-            'wpf_tags': ['Portal access: Member'],
+            'contact_id': 'Kzqrc450LtP3s461wVAz',
+            'wpf_tags': ['portal access: member'],
         })
-        self.assertEqual(data['contact_id'], 42)
+        self.assertEqual(data['contact_id'], 'Kzqrc450LtP3s461wVAz')
         self.assertEqual(data['email'], 'john.doe@example.com')
         self.assertEqual(data['first_name'], 'John')
         self.assertEqual(data['last_name'], 'Doe')
         self.assertEqual(data['username'], 'johndoe')
         self.assertEqual(data['workshop_code'], 'WS101')
-        self.assertEqual(data['phone'], '555-1234')
-        self.assertEqual(data['tags'], ['Portal access: Member'])
+        self.assertEqual(data['tags'], ['portal access: member'])
 
-    def test_fallback_fields(self):
-        """Should fall back to alternate field names."""
+    def test_real_wp_response(self):
+        """Test with actual sample from WP developer."""
         data = _extract_user_data({
-            'contact_id': 99,
-            'email': 'alt@example.com',
-            'username': 'altuser',
-            'workshop_code': 'abc',
-            'tags': 'Portal access: Delegate',
+            'id': 1424,
+            'ID': 1424,
+            'sub': 1424,
+            'email': 'kennedy+testwpcreateuser128@profeds.com',
+            'username': 'MikeTestWPCreateUser128',
+            'first_name': 'Mike',
+            'last_name': 'TestWPCreateUser128',
+            'nickname': 'MikeTestWPCreateUser128',
+            'display_name': 'Mike TestWPCreateUser128',
+            'member_code': 'ABC',
+            'secondary_contact_type': '',
+            'contact_id': 'Kzqrc450LtP3s461wVAz',
+            'wpf_tags': [
+                'dup check: [02. history] 01. dup check complete',
+                'portal access: delegate',
+                'portal access: member',
+            ],
         })
-        self.assertEqual(data['contact_id'], 99)
-        self.assertEqual(data['email'], 'alt@example.com')
-        self.assertEqual(data['username'], 'altuser')
+        self.assertEqual(data['contact_id'], 'Kzqrc450LtP3s461wVAz')
+        self.assertEqual(data['email'], 'kennedy+testwpcreateuser128@profeds.com')
+        self.assertEqual(data['username'], 'miketestwpcreateuser128')
         self.assertEqual(data['workshop_code'], 'ABC')
-        self.assertEqual(data['tags'], ['Portal access: Delegate'])
+        self.assertIn('portal access: delegate', data['tags'])
+        self.assertIn('portal access: member', data['tags'])
 
     def test_missing_fields_return_defaults(self):
         data = _extract_user_data({})
-        self.assertIsNone(data['contact_id'])
+        self.assertEqual(data['contact_id'], '')
         self.assertEqual(data['email'], '')
         self.assertEqual(data['first_name'], '')
         self.assertEqual(data['tags'], [])

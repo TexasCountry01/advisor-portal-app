@@ -18,11 +18,12 @@ class User(AbstractUser):
     ]
     
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
-    contact_id = models.IntegerField(
+    contact_id = models.CharField(
+        max_length=100,
         unique=True,
         null=True,
         blank=True,
-        help_text='WP Fusion CRM contact ID — immutable SSO identifier for sync'
+        help_text='GHL (GoHighLevel) contact ID — immutable SSO identifier for sync'
     )
     user_level = models.CharField(
         max_length=10, 

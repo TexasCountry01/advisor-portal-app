@@ -132,62 +132,42 @@ def _extract_user_data(profile_data):
     This is the SINGLE PLACE to update when the actual JSON field names
     are confirmed from the resource endpoint.
     
+    Confirmed field mapping (from WP developer, 2026-03-01):
+        contact_id  → GHL contact ID string (e.g. "Kzqrc450LtP3s461wVAz")
+        email       → user email
+        first_name  → first name
+        last_name   → last name
+        username    → WP username
+        member_code → workshop/member code (e.g. "ABC")
+        wpf_tags    → list of tag strings from WP Fusion
+    
     Returns a dict with normalized keys:
         contact_id, email, first_name, last_name, username,
         workshop_code, phone, tags (list of tag names)
     """
-    # ---------------------------------------------------------------
-    # TODO: Update these field names once resource endpoint payload
-    # is confirmed. Current names are best guesses based on typical
-    # miniOrange / WP Fusion responses.
-    # ---------------------------------------------------------------
-    
-    # Contact ID — the immutable CRM link
-    contact_id = (
-        profile_data.get('contact_id')
-        or profile_data.get('ID')
-        or profile_data.get('id')
-        or profile_data.get('user_id')
-    )
+    # Contact ID — GHL contact ID (string, NOT integer)
+    contact_id = profile_data.get('contact_id', '') or ''
     
     # Basic identity
-    email = (
-        profile_data.get('user_email')
-        or profile_data.get('email')
-        or ''
-    )
+    email = profile_data.get('email', '')
     first_name = profile_data.get('first_name', '')
     last_name = profile_data.get('last_name', '')
-    username = (
-        profile_data.get('user_login')
-        or profile_data.get('username')
-        or email.split('@')[0] if email else ''
-    )
+    username = profile_data.get('username', '') or (email.split('@')[0] if email else '')
     
     # Member/workshop code
-    workshop_code = (
-        profile_data.get('member_code')
-        or profile_data.get('workshop_code')
-        or profile_data.get('member_workshop_code')
-        or ''
-    )
+    workshop_code = profile_data.get('member_code', '')
     
-    # Phone
-    phone = profile_data.get('phone', '') or profile_data.get('billing_phone', '')
+    # Phone (not in current payload, but may be added later)
+    phone = profile_data.get('phone', '')
     
-    # WP Fusion tags — could be a list of strings, list of dicts, or nested
-    raw_tags = (
-        profile_data.get('wpf_tags')
-        or profile_data.get('tags')
-        or profile_data.get('contact_tags')
-        or []
-    )
+    # WP Fusion tags — confirmed as list of strings in "wpf_tags" field
+    raw_tags = profile_data.get('wpf_tags', [])
     
     # Normalize tags to a list of strings
     tags = _normalize_tags(raw_tags)
     
     return {
-        'contact_id': int(contact_id) if contact_id else None,
+        'contact_id': str(contact_id).strip() if contact_id else '',
         'email': email.strip().lower() if email else '',
         'first_name': first_name.strip(),
         'last_name': last_name.strip(),

@@ -240,12 +240,12 @@ TINYMCE_DEFAULT_CONFIG = {
 # ============================================================================
 # Authentication is agnostic to environment. Each deployment sets its own
 # WP_OAUTH_BASE_URL via .env:
-#   Test portal  → https://test-reports.profeds.com
-#   Prod portal  → https://reports.profeds.com
+#   miniOrange OAuth Server is installed on profeds.com (single instance)
+#   Both test and production portals authenticate against the same WP site.
 # All three OAuth endpoints are derived from that base URL.
 # Client ID/Secret may differ per site — set in .env as needed.
 # ============================================================================
-WP_OAUTH_BASE_URL = config('WP_OAUTH_BASE_URL', default='https://test-reports.profeds.com')
+WP_OAUTH_BASE_URL = config('WP_OAUTH_BASE_URL', default='https://profeds.com')
 WP_OAUTH_CLIENT_ID = config('WP_OAUTH_CLIENT_ID', default='GIbWesmTFmehLeDLZCqRjpyfUcWDscSa')
 WP_OAUTH_CLIENT_SECRET = config('WP_OAUTH_CLIENT_SECRET', default='luHBoeGKSryxWdeFBiNyPSTaXxSOboeo')
 WP_OAUTH_AUTHORIZE_URL = config('WP_OAUTH_AUTHORIZE_URL', default=f'{WP_OAUTH_BASE_URL}/wp-json/moserver/authorize')
