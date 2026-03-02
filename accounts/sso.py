@@ -170,8 +170,8 @@ def _extract_user_data(profile_data):
     return {
         'contact_id': str(contact_id).strip() if contact_id else '',
         'email': email.strip().lower() if email else '',
-        'first_name': first_name.strip(),
-        'last_name': last_name.strip(),
+        'first_name': first_name.strip().title() if first_name else '',
+        'last_name': last_name.strip().title() if last_name else '',
         'username': username.strip().lower() if username else '',
         'workshop_code': workshop_code.strip().upper() if workshop_code else '',
         'phone': phone.strip() if phone else '',
