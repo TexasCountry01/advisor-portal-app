@@ -65,7 +65,9 @@ def login_view(request):
         else:
             messages.error(request, 'Invalid username or password.')
     
-    return render(request, 'core/login.html')
+    # Build full SSO login URL for the "Switch WordPress account" link
+    sso_redirect_url = request.build_absolute_uri(reverse('sso_login'))
+    return render(request, 'core/login.html', {'sso_redirect_url': sso_redirect_url})
 
 
 def logout_view(request):

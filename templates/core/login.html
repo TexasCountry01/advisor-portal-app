@@ -31,7 +31,7 @@
 
                 <p class="text-center text-muted small mb-0">
                     Already logged in as someone else on profeds.com?<br>
-                    <a href="https://profeds.com/wp-login.php?action=logout&redirect_to={% url 'sso_login' %}" class="text-primary">
+                    <a href="https://profeds.com/wp-login.php?action=logout&redirect_to={{ sso_redirect_url|urlencode }}" class="text-primary">
                         Switch WordPress account
                     </a>
                 </p>
