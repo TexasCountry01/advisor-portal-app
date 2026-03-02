@@ -172,11 +172,17 @@ def _extract_user_data(profile_data):
     # Normalize tags to a list of strings
     tags = _normalize_tags(raw_tags)
     
+    # Only title-case names that are all lowercase (e.g. 'dale' -> 'Dale')
+    # Preserve intentional mixed case like McGregor, McDonald, DeLuca
+    def _smart_case(name):
+        s = name.strip()
+        return s.title() if s == s.lower() else s
+
     return {
         'contact_id': str(contact_id).strip() if contact_id else '',
         'email': email.strip().lower() if email else '',
-        'first_name': first_name.strip().title() if first_name else '',
-        'last_name': last_name.strip().title() if last_name else '',
+        'first_name': _smart_case(first_name) if first_name else '',
+        'last_name': _smart_case(last_name) if last_name else '',
         'username': username.strip().lower() if username else '',
         'workshop_code': workshop_code.strip().upper() if workshop_code else '',
         'phone': phone.strip() if phone else '',
