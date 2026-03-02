@@ -72,7 +72,7 @@ def logout_view(request):
     """Logout view"""
     logout(request)
     messages.info(request, 'You have been logged out successfully.')
-    return redirect('home')
+    return redirect('login')
 
 
 @login_required
