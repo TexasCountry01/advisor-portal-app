@@ -195,6 +195,16 @@
                     <a href="{% url 'manage_users' %}" class="btn btn-sm btn-outline-info" title="Manage Users">
                         <i class="bi bi-person-plus"></i> Users
                     </a>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" title="Preview other dashboards">
+                            <i class="bi bi-eye"></i> Preview
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'cases:member_dashboard' %}?preview=admin"><i class="bi bi-person"></i> Member Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{% url 'cases:technician_dashboard' %}?preview=admin"><i class="bi bi-tools"></i> Technician Dashboard</a></li>
+                            <li><a class="dropdown-item" href="{% url 'cases:manager_dashboard' %}?preview=admin"><i class="bi bi-briefcase"></i> Manager Dashboard</a></li>
+                        </ul>
+                    </div>
                     <a href="{% url 'system_settings' %}" class="btn btn-sm btn-outline-info" title="System Settings">
                         <i class="bi bi-gear"></i> Settings
                     </a>

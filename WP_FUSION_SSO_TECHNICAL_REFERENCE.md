@@ -147,9 +147,10 @@ POST/GET https://reports.profeds.com/sso/callback/
 4. Match user by `wp_user_id` (or create new)
 5. Parse `wpf_tags` for role and tier
 6. Update user profile fields if changed
-7. Create Django session
-8. Redirect to appropriate dashboard
-9. Log SSO event in audit trail
+7. **Role protection check:** If user's current role is `administrator`, `manager`, or `technician`, skip role update (preserve portal-assigned role)
+8. Create Django session
+9. Redirect to appropriate dashboard
+10. Log SSO event in audit trail
 
 ---
 

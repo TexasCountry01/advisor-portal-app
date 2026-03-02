@@ -59,8 +59,11 @@ def member_dashboard(request):
     
     user = request.user
     
-    # Ensure user is a member
-    if user.role != 'member':
+    # Allow administrators to preview this dashboard
+    admin_preview = (request.GET.get('preview') == 'admin' and user.role == 'administrator')
+    
+    # Ensure user is a member (or admin previewing)
+    if user.role != 'member' and not admin_preview:
         messages.error(request, 'Access denied. Members only.')
         return redirect('home')
     
@@ -240,6 +243,7 @@ def member_dashboard(request):
         'is_pure_delegate': is_pure_delegate,
         'active_view': active_view,
         'delegated_members': delegated_members,
+        'admin_preview': admin_preview,
     }
     
     return render(request, 'cases/member_dashboard.html', context)
@@ -376,6 +380,7 @@ def technician_dashboard(request):
     visible_columns = get_user_visible_columns(user, 'technician_dashboard')
     context['visible_columns'] = visible_columns
     context['all_columns'] = DASHBOARD_COLUMN_CONFIG['technician_dashboard']['available_columns']
+    context['admin_preview'] = admin_preview
     
     return render(request, 'cases/technician_dashboard.html', context)
 
@@ -549,8 +554,11 @@ def manager_dashboard(request):
     """Dashboard view for Managers - read-only visibility with analytics"""
     user = request.user
     
-    # Ensure user is a manager
-    if user.role != 'manager':
+    # Allow administrators to preview this dashboard
+    admin_preview = (request.GET.get('preview') == 'admin' and user.role == 'administrator')
+    
+    # Ensure user is a manager (or admin previewing)
+    if user.role != 'manager' and not admin_preview:
         messages.error(request, 'Access denied. Managers only.')
         return redirect('home')
     
@@ -714,6 +722,7 @@ def manager_dashboard(request):
         'visible_columns': get_user_visible_columns(user, 'manager_dashboard'),
         'all_columns': DASHBOARD_COLUMN_CONFIG['manager_dashboard']['available_columns'],
         'filter_params': build_filter_params(request),
+        'admin_preview': admin_preview,
     }
     
     return render(request, 'cases/manager_dashboard.html', context)

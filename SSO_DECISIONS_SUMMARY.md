@@ -14,12 +14,13 @@
 - No other attributes (like "Active Member" status) are checked
 - **Simple to grant. Simple to revoke.**
 
-### 2. Administrators & Managers — No SSO, No Tags
+### 2. Administrators & Managers — No SSO, No Tags (Role Protected)
 
 - Administrator and Manager accounts are created directly in the portal
 - They log in with a secure username and password — not through WordPress/SSO
 - This eliminates the risk of someone giving themselves admin access through a tag
 - Only a very small number of people have these roles
+- **Role protection (implemented 2026-03-01):** If an admin/manager/technician also has a WP account and logs in via SSO, their portal role is preserved — SSO will never overwrite it back to `member`
 
 ### 3. Delegates — No Tags, Managed by Benefits Technicians in the Portal
 
@@ -80,13 +81,13 @@ Administrator, Manager, and Delegate access require **zero tags** — all manage
 
 ## How Each Role Gets Access
 
-| Role | How They Get In | Who Controls It |
-|------|----------------|-----------------|
-| **Member (Advisor)** | `Portal: Member` tag via SSO | GHL tag |
-| **Benefits Technician** | Portal tag via SSO + level set in portal OR by tag | GHL tag + portal (or GHL only) |
-| **Administrator** | Direct portal login (no SSO) | Portal admin |
-| **Manager** | Direct portal login (no SSO) | Portal admin |
-| **Delegate** | No login needed — acts under their advisor's cases | Benefits Technician (in portal) |
+| Role | How They Get In | Who Controls It | SSO Role Sync |
+|------|----------------|-----------------|---------------|
+| **Member (Advisor)** | `Portal: Member` tag via SSO | GHL tag | Yes — SSO sets role |
+| **Benefits Technician** | Portal tag via SSO + level set in portal OR by tag | GHL tag + portal (or GHL only) | **No — role protected** |
+| **Administrator** | Direct portal login (no SSO) | Portal admin | **No — role protected** |
+| **Manager** | Direct portal login (no SSO) | Portal admin | **No — role protected** |
+| **Delegate** | No login needed — acts under their advisor's cases | Benefits Technician (in portal) | Yes — SSO sets role |
 
 ---
 

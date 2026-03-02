@@ -145,6 +145,17 @@ The WP developer must register these redirect URIs in the miniOrange OAuth Serve
 | Administrator | Created directly in portal admin panel |
 | Manager | Created directly in portal admin panel |
 
+### Role Protection Rule (Implemented 2026-03-01)
+
+**Portal-managed roles are NEVER overwritten by SSO.** When a user with role `administrator`, `manager`, or `technician` logs in via SSO, their role is preserved — SSO will not reset them to `member` or `delegate`.
+
+- SSO can only set/change roles for users currently assigned `member` or `delegate`
+- This protection is enforced in `accounts/sso.py` → `_sync_user_fields()`
+- The protected set: `PORTAL_MANAGED_ROLES = {'technician', 'manager', 'administrator'}`
+- All other user fields (name, email, workshop_code, contact_id) still sync normally on each SSO login
+
+**Why:** Administrators, managers, and technicians are promoted manually via the Django admin panel (`/admin/`). Without this protection, an SSO login would overwrite their role back to `member` based on their WP tags, locking them out of their dashboard.
+
 ### Tag-Based Access Rule
 
 - Has a portal access tag → can log in via SSO
