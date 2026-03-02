@@ -65,6 +65,7 @@ def get_authorization_url(state):
         'response_type': 'code',
         'scope': 'openid profile email',
         'state': state,
+        'prompt': 'login',  # Force WP to show login form (don't reuse existing session)
     }
     query_string = '&'.join(f'{k}={requests.utils.quote(str(v))}' for k, v in params.items())
     return f'{settings.WP_OAUTH_AUTHORIZE_URL}?{query_string}'

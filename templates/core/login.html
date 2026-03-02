@@ -29,6 +29,13 @@
                     <i class="bi bi-shield-lock"></i> Login with ProFeds Account
                 </a>
 
+                <p class="text-center text-muted small mb-0">
+                    Already logged in as someone else on profeds.com?<br>
+                    <a href="https://profeds.com/wp-login.php?action=logout&redirect_to={% url 'sso_login' %}" class="text-primary">
+                        Switch WordPress account
+                    </a>
+                </p>
+
                 <div class="d-flex align-items-center my-3">
                     <hr class="flex-grow-1">
                     <span class="mx-3 text-muted small">or use portal credentials</span>
