@@ -182,6 +182,75 @@ def reactivate_user(request, user_id):
     return redirect('manage_users')
 
 
+@login_required
+def edit_user_role(request, user_id):
+    """Edit a user's role and level. Administrator-only."""
+    
+    current_user = request.user
+    target_user = get_object_or_404(User, id=user_id)
+    
+    # Only administrators can change roles
+    if current_user.role != 'administrator':
+        messages.error(request, 'Only administrators can change user roles.')
+        return redirect('manage_users')
+    
+    # Prevent editing yourself (to avoid locking yourself out)
+    if current_user.id == target_user.id:
+        messages.error(request, 'You cannot change your own role.')
+        return redirect('manage_users')
+    
+    if request.method == 'POST':
+        new_role = request.POST.get('role', '').strip()
+        new_level = request.POST.get('user_level', '').strip()
+        
+        # Validate role
+        valid_roles = [r[0] for r in User.ROLE_CHOICES]
+        if new_role not in valid_roles:
+            messages.error(request, f'Invalid role: {new_role}')
+            return redirect('manage_users')
+        
+        old_role = target_user.role
+        old_level = target_user.user_level
+        changes = []
+        
+        # Update role
+        if new_role != old_role:
+            target_user.role = new_role
+            changes.append(f'role: {old_role} → {new_role}')
+            
+            # Set staff/superuser flags for admin role
+            if new_role == 'administrator':
+                target_user.is_staff = True
+                target_user.is_superuser = True
+            elif old_role == 'administrator':
+                # Demoting from admin — remove staff/superuser
+                target_user.is_staff = False
+                target_user.is_superuser = False
+        
+        # Update technician level
+        if new_role == 'technician':
+            valid_levels = [l[0] for l in User.USER_LEVEL_CHOICES]
+            if new_level in valid_levels and new_level != old_level:
+                target_user.user_level = new_level
+                changes.append(f'level: {old_level or "none"} → {new_level}')
+        elif target_user.user_level:
+            # Clear level if no longer a technician
+            changes.append(f'level: {target_user.user_level} → cleared')
+            target_user.user_level = ''
+        
+        if changes:
+            target_user.save()
+            username = target_user.get_full_name() or target_user.username
+            messages.success(
+                request,
+                f'Updated {username}: {", ".join(changes)}'
+            )
+        else:
+            messages.info(request, 'No changes made.')
+    
+    return redirect('manage_users')
+
+
 # ============================================================================
 # MEMBER PROFILE MANAGEMENT VIEWS
 # ============================================================================

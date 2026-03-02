@@ -197,21 +197,35 @@
                                             </td>
                                             <td>
                                                 {% if user.id != request.user.id %}
-                                                    {% if user.is_active %}
-                                                        <a href="{% url 'deactivate_user' user.id %}" 
-                                                           class="btn btn-sm btn-warning"
-                                                           onclick="return confirm('Are you sure you want to deactivate {{ user.get_full_name }}? Their cases will be preserved.');">
-                                                            <i class="bi bi-person-dash"></i> Deactivate
-                                                        </a>
-                                                    {% else %}
-                                                        <a href="{% url 'reactivate_user' user.id %}" 
-                                                           class="btn btn-sm btn-success"
-                                                           onclick="return confirm('Are you sure you want to reactivate {{ user.get_full_name }}?');">
-                                                            <i class="bi bi-person-check"></i> Reactivate
-                                                        </a>
-                                                    {% endif %}
+                                                    <div class="btn-group btn-group-sm">
+                                                        {% if current_user_role == 'administrator' %}
+                                                            <button type="button" class="btn btn-outline-primary"
+                                                                    data-bs-toggle="modal" 
+                                                                    data-bs-target="#editRoleModal"
+                                                                    data-user-id="{{ user.id }}"
+                                                                    data-user-name="{{ user.get_full_name|default:user.username }}"
+                                                                    data-user-role="{{ user.role }}"
+                                                                    data-user-level="{{ user.user_level }}"
+                                                                    title="Edit Role">
+                                                                <i class="bi bi-pencil"></i> Edit
+                                                            </button>
+                                                        {% endif %}
+                                                        {% if user.is_active %}
+                                                            <a href="{% url 'deactivate_user' user.id %}" 
+                                                               class="btn btn-warning"
+                                                               onclick="return confirm('Are you sure you want to deactivate {{ user.get_full_name }}? Their cases will be preserved.');">
+                                                                <i class="bi bi-person-dash"></i>
+                                                            </a>
+                                                        {% else %}
+                                                            <a href="{% url 'reactivate_user' user.id %}" 
+                                                               class="btn btn-success"
+                                                               onclick="return confirm('Are you sure you want to reactivate {{ user.get_full_name }}?');">
+                                                                <i class="bi bi-person-check"></i>
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
                                                 {% else %}
-                                                    <small class="text-muted">(current user)</small>
+                                                    <small class="text-muted">(you)</small>
                                                 {% endif %}
                                             </td>
                                         </tr>
@@ -227,6 +241,56 @@
         </div>
     </div>
 </div>
+
+{% if current_user_role == 'administrator' %}
+<!-- Edit Role Modal -->
+<div class="modal fade" id="editRoleModal" tabindex="-1" aria-labelledby="editRoleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="editRoleForm">
+                {% csrf_token %}
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="editRoleModalLabel">Edit User Role</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Changing role for: <strong id="editRoleUserName"></strong></p>
+                    
+                    <div class="mb-3">
+                        <label for="editRoleSelect" class="form-label">Role</label>
+                        <select name="role" id="editRoleSelect" class="form-select" required>
+                            <option value="member">Member (Financial Advisor)</option>
+                            <option value="technician">Benefits Technician</option>
+                            <option value="administrator">Administrator</option>
+                            <option value="manager">Manager (View-Only Admin)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="editLevelContainer" style="display: none;">
+                        <label for="editLevelSelect" class="form-label">Technician Level</label>
+                        <select name="user_level" id="editLevelSelect" class="form-select">
+                            <option value="">-- Select Level --</option>
+                            <option value="level_1">Level 1 - New Technician</option>
+                            <option value="level_2">Level 2 - Technician</option>
+                            <option value="level_3">Level 3 - Senior Technician</option>
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-warning small mb-0">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Note:</strong> Changing a user's role changes their dashboard and permissions immediately.
+                        Portal-managed roles (Administrator, Manager, Technician) are protected from SSO overwrite.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <script>
 // Show/hide technician level field based on role selection
@@ -252,5 +316,39 @@ document.getElementById('roleSelect').addEventListener('change', function() {
 
 // Initialize on page load
 document.getElementById('roleSelect').dispatchEvent(new Event('change'));
+
+{% if current_user_role == 'administrator' %}
+// Edit Role Modal population
+const editRoleModal = document.getElementById('editRoleModal');
+editRoleModal.addEventListener('show.bs.modal', function(event) {
+    const button = event.relatedTarget;
+    const userId = button.getAttribute('data-user-id');
+    const userName = button.getAttribute('data-user-name');
+    const userRole = button.getAttribute('data-user-role');
+    const userLevel = button.getAttribute('data-user-level');
+    
+    // Set form action
+    document.getElementById('editRoleForm').action = '/accounts/edit-user-role/' + userId + '/';
+    
+    // Set display name
+    document.getElementById('editRoleUserName').textContent = userName;
+    
+    // Set current role
+    document.getElementById('editRoleSelect').value = userRole;
+    
+    // Set current level
+    document.getElementById('editLevelSelect').value = userLevel || '';
+    
+    // Show/hide level field
+    const editLevelContainer = document.getElementById('editLevelContainer');
+    editLevelContainer.style.display = (userRole === 'technician') ? 'block' : 'none';
+});
+
+// Show/hide level field when role changes in modal
+document.getElementById('editRoleSelect').addEventListener('change', function() {
+    const editLevelContainer = document.getElementById('editLevelContainer');
+    editLevelContainer.style.display = (this.value === 'technician') ? 'block' : 'none';
+});
+{% endif %}
 </script>
 {% endblock %}
