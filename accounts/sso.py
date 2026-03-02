@@ -26,6 +26,10 @@ from .models import AuditLog
 logger = logging.getLogger(__name__)
 User = get_user_model()
 
+# Roles assigned inside the portal that SSO should NEVER overwrite.
+# Users with these roles also bypass the WP tag check on SSO login.
+PORTAL_MANAGED_ROLES = {'technician', 'manager', 'administrator'}
+
 
 # ============================================================================
 # TAG → ROLE MAPPING
@@ -279,8 +283,23 @@ def get_or_create_user_from_sso(profile_data, request=None):
     # Determine role from tags
     role, is_pure_delegate, has_access = determine_role_from_tags(tags)
     
+    # Bypass tag check for existing users with portal-managed roles.
+    # Admins, technicians, and managers can always SSO in — their roles are
+    # assigned inside the portal, not controlled by WP tags.
     if not has_access:
-        raise SSOAccessDenied('No portal access tag found. Contact your administrator.')
+        existing_user = None
+        if contact_id:
+            existing_user = User.objects.filter(contact_id=contact_id).first()
+        if not existing_user and email:
+            existing_user = User.objects.filter(email__iexact=email).first()
+        
+        if existing_user and existing_user.role in PORTAL_MANAGED_ROLES:
+            logger.info(f'SSO tag bypass — {email} has portal-managed role '
+                        f"'{existing_user.role}', skipping tag requirement")
+            role = existing_user.role  # Keep their current role
+            has_access = True
+        else:
+            raise SSOAccessDenied('No portal access tag found. Contact your administrator.')
     
     # Check email allowlist (TEST server gate)
     # Sources: DB model (SSOAllowedEmail) + env var (SSO_ALLOWED_EMAILS)
@@ -423,7 +442,6 @@ def _sync_user_fields(user, data, new_role):
     # role — only update for member/delegate roles (SSO-managed).
     # NEVER overwrite portal-assigned roles (technician, manager, administrator).
     # Those are set manually in /admin/ and must be preserved.
-    PORTAL_MANAGED_ROLES = {'technician', 'manager', 'administrator'}
     if new_role and new_role != user.role and user.role not in PORTAL_MANAGED_ROLES:
         changes['role'] = {'old': user.role, 'new': new_role}
         user.role = new_role
