@@ -67,6 +67,9 @@ class AuditLog(models.Model):
         ('member_change_request_denied', 'Member Change Request Denied'),
         ('delegate_assigned', 'Delegate Assigned'),
         ('delegate_removed', 'Delegate Removed'),
+        ('sso_login_failed', 'SSO Login Failed'),
+        ('sso_auto_provision', 'SSO User Auto-Provisioned'),
+        ('sso_sync', 'SSO Profile Synced'),
         ('wp_user_sync', 'WP User Sync Completed'),
         ('other', 'Other Activity'),
     ]

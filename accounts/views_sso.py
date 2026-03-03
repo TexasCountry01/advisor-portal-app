@@ -22,8 +22,17 @@ from .sso import (
     SSOError,
     SSOAccessDenied,
 )
+from core.models import AuditLog
 
 logger = logging.getLogger(__name__)
+
+
+def _get_client_ip(request):
+    """Get client IP from request, handling proxied requests."""
+    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded:
+        return x_forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
 
 
 def sso_login(request):
@@ -107,15 +116,46 @@ def sso_callback(request):
     
     except SSOAccessDenied as e:
         logger.warning(f'SSO access denied: {e}')
+        AuditLog.objects.create(
+            action_type='sso_login_failed',
+            description=f'SSO access denied: {e}',
+            metadata={
+                'error_type': 'access_denied',
+                'error_message': str(e),
+                'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            },
+            ip_address=_get_client_ip(request),
+        )
         messages.error(request, str(e))
         return redirect('login')
     
     except SSOError as e:
         logger.error(f'SSO error during callback: {e}')
+        AuditLog.objects.create(
+            action_type='sso_login_failed',
+            description=f'SSO technical error: {e}',
+            metadata={
+                'error_type': 'sso_error',
+                'error_message': str(e),
+                'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            },
+            ip_address=_get_client_ip(request),
+        )
         messages.error(request, 'Login failed due to a technical issue. Please try again or use manual login.')
         return redirect('login')
     
     except Exception as e:
         logger.exception(f'Unexpected SSO error: {e}')
+        AuditLog.objects.create(
+            action_type='sso_login_failed',
+            description=f'Unexpected SSO error: {type(e).__name__}: {e}',
+            metadata={
+                'error_type': 'unexpected',
+                'error_class': type(e).__name__,
+                'error_message': str(e),
+                'user_agent': request.META.get('HTTP_USER_AGENT', ''),
+            },
+            ip_address=_get_client_ip(request),
+        )
         messages.error(request, 'An unexpected error occurred during login. Please try again.')
         return redirect('login')

@@ -3153,17 +3153,28 @@ def upload_member_document_to_completed_case(request, case_id):
                     logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
             
             # Create audit log entry
+            upload_meta = {
+                'filename': filename_with_employee,
+                'file_size': document_file.size,
+                'document_notes': document_notes,
+                'case_status': case.status,
+            }
+            upload_desc = f'Member uploaded supplementary document: {filename_with_employee}'
+            
+            # Add delegate context if uploading on behalf of another member
+            if is_case_delegate:
+                upload_meta['uploaded_by_delegate'] = True
+                upload_meta['delegate_id'] = user.id
+                upload_meta['delegate_name'] = user.get_full_name()
+                upload_meta['on_behalf_of'] = case.member.get_full_name()
+                upload_desc = f'Delegate {user.get_full_name()} uploaded supplementary document: {filename_with_employee} on behalf of {case.member.get_full_name()}'
+            
             AuditLog.objects.create(
                 user=user,
                 action_type='member_document_uploaded',
+                description=upload_desc,
                 case=case,
-                metadata={
-                    'filename': filename_with_employee,
-                    'file_size': document_file.size,
-                    'document_notes': document_notes,
-                    'case_status': case.status,
-                    'message': 'Member uploaded supplementary document'
-                }
+                metadata=upload_meta,
             )
         
         # Show updated document count
@@ -6229,17 +6240,28 @@ def upload_member_documents(request, case_id):
         
         # Log to audit trail
         from core.models import AuditLog
+        upload_metadata = {
+            'document_id': doc.id,
+            'original_filename': document_file.name,
+            'file_size': document_file.size,
+            'notes': document_notes
+        }
+        upload_description = f'Member uploaded document: {filename_with_employee}'
+        
+        # Add delegate context if uploading on behalf of another member
+        if is_case_delegate:
+            upload_metadata['uploaded_by_delegate'] = True
+            upload_metadata['delegate_id'] = user.id
+            upload_metadata['delegate_name'] = user.get_full_name()
+            upload_metadata['on_behalf_of'] = case.member.get_full_name()
+            upload_description = f'Delegate {user.get_full_name()} uploaded document: {filename_with_employee} on behalf of {case.member.get_full_name()}'
+        
         AuditLog.log_activity(
             user=user,
             action_type='member_document_uploaded',
             case=case,
-            description=f'Member uploaded document: {filename_with_employee}',
-            metadata={
-                'document_id': doc.id,
-                'original_filename': document_file.name,
-                'file_size': document_file.size,
-                'notes': document_notes
-            }
+            description=upload_description,
+            metadata=upload_metadata
         )
         
         # Count total member-uploaded documents (supporting docs)

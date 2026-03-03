@@ -21,7 +21,7 @@ import secrets
 import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model, login
-from .models import AuditLog
+from core.models import AuditLog
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -352,11 +352,11 @@ def get_or_create_user_from_sso(profile_data, request=None):
             if request:
                 AuditLog.objects.create(
                     user=user,
-                    action='sso_sync',
-                    resource_type='user',
-                    resource_id=user.id,
-                    details={
-                        'changes': changes,
+                    action_type='sso_sync',
+                    description=f'SSO login-time sync updated {user.get_full_name()} ({user.email})',
+                    related_user=user,
+                    changes=changes,
+                    metadata={
                         'contact_id': contact_id,
                         'tags': tags,
                     },
@@ -387,10 +387,10 @@ def get_or_create_user_from_sso(profile_data, request=None):
         if request:
             AuditLog.objects.create(
                 user=user,
-                action='sso_auto_provision',
-                resource_type='user',
-                resource_id=user.id,
-                details={
+                action_type='sso_auto_provision',
+                description=f'SSO auto-provisioned new user: {user.get_full_name()} ({user.email}, role={role})',
+                related_user=user,
+                metadata={
                     'contact_id': contact_id,
                     'role': role,
                     'is_pure_delegate': is_pure_delegate,

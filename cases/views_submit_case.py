@@ -191,15 +191,27 @@ def submit_case(request):
             # Log case submission to audit trail
             if action == 'submit':
                 from core.models import AuditLog
+                submit_metadata = {
+                    'urgency': urgency,
+                    'document_count': 0,  # Will be updated after file uploads
+                }
+                submit_description = f'Case submitted for {fed_first_name} {fed_last_name}'
+                
+                # Add delegate context if submitting on behalf of another member
+                if user.id != advisor.id:
+                    submit_metadata['submitted_by_delegate'] = True
+                    submit_metadata['delegate_id'] = user.id
+                    submit_metadata['delegate_name'] = user.get_full_name()
+                    submit_metadata['delegate_email'] = user.email
+                    submit_metadata['on_behalf_of'] = advisor.get_full_name()
+                    submit_description = f'Case submitted for {fed_first_name} {fed_last_name} by delegate {user.get_full_name()} on behalf of {advisor.get_full_name()}'
+                
                 AuditLog.log_activity(
                     user=user,
                     action_type='case_submitted',
                     case=case,
-                    description=f'Case submitted for {fed_first_name} {fed_last_name}',
-                    metadata={
-                        'urgency': urgency,
-                        'document_count': 0,  # Will be updated after file uploads
-                    }
+                    description=submit_description,
+                    metadata=submit_metadata
                 )
             
             # Calculate and set default credit value
