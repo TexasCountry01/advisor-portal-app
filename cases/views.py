@@ -254,6 +254,9 @@ def technician_dashboard(request):
     """Dashboard view for Benefits Technician - shows all cases (not just assigned)"""
     user = request.user
     
+    # Check if admin is previewing this dashboard
+    admin_preview = (user.role == 'administrator')
+    
     # Ensure user is a technician, manager, or admin
     if user.role not in ['technician', 'manager', 'administrator']:
         messages.error(request, 'Access denied. Technicians and Admins only.')
