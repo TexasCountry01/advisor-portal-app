@@ -43,9 +43,15 @@ def submit_case(request):
     if assigned_members:
         # User is a delegate — start with assigned members
         advisors_list = list(assigned_members)
-        # If user is also a member (advisor), include themselves
-        if user.role == 'member' and user not in advisors_list:
-            advisors_list.insert(0, user)
+        # Include themselves only if they are also an advisor (not a pure delegate)
+        # A pure delegate has no one delegating TO them and no cases of their own
+        if user not in advisors_list:
+            is_also_advisor = (
+                MemberDelegate.objects.filter(member=user).exists()
+                or Case.objects.filter(member=user).exists()
+            )
+            if is_also_advisor:
+                advisors_list.insert(0, user)
     else:
         # User is a regular advisor — submit for themselves only
         if user.role == 'member':
