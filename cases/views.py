@@ -1169,11 +1169,23 @@ def case_detail(request, pk):
     # Permission check
     can_view = False
     can_edit = False
+    is_delegate_viewer = False
     
     if user.role == 'member' and case.member == user:
         can_view = True
         can_edit = True  # Members can edit their own cases (add/remove documents)
-    elif user.role == 'technician':
+    elif user.role == 'member':
+        # Check if user is a delegate for the case's member
+        from accounts.models import MemberDelegate
+        is_delegate_viewer = MemberDelegate.objects.filter(
+            delegate=user,
+            member=case.member
+        ).exists()
+        if is_delegate_viewer:
+            can_view = True
+            can_edit = True  # Delegates get full access per MemberDelegate model rules
+    
+    if not can_view and user.role == 'technician':
         # Technicians can view submitted cases and cases assigned to them
         if case.status in ['submitted', 'accepted', 'hold', 'pending_review', 'completed'] or case.assigned_to == user:
             can_view = True
@@ -3070,10 +3082,19 @@ def upload_member_document_to_completed_case(request, case_id):
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - only the member who owns the case can upload
-    if user.role != 'member' or case.member != user:
+    # Permission check - member who owns the case, or their delegate, can upload
+    is_case_delegate = False
+    if user.role != 'member':
         messages.error(request, 'You do not have permission to upload documents to this case.')
         return redirect('cases:case_detail', pk=case_id)
+    if case.member != user:
+        from accounts.models import MemberDelegate
+        is_case_delegate = MemberDelegate.objects.filter(
+            delegate=user, member=case.member
+        ).exists()
+        if not is_case_delegate:
+            messages.error(request, 'You do not have permission to upload documents to this case.')
+            return redirect('cases:case_detail', pk=case_id)
     
     # Check if case is in an appropriate status for member document upload
     # Allow uploads for: draft, submitted, accepted, pending_review, completed (resubmission), hold (member providing requested docs)
@@ -6148,9 +6169,15 @@ def upload_member_documents(request, case_id):
         user = request.user
         case = get_object_or_404(Case, id=case_id)
         
-        # Permission: Only member can upload to their cases
+        # Permission: Member or delegate can upload to the case
+        is_case_delegate = False
         if case.member != user:
-            return JsonResponse({'success': False, 'error': 'Not your case'}, status=403)
+            from accounts.models import MemberDelegate
+            is_case_delegate = MemberDelegate.objects.filter(
+                delegate=user, member=case.member
+            ).exists()
+            if not is_case_delegate:
+                return JsonResponse({'success': False, 'error': 'Not your case'}, status=403)
         
         # Can only upload for submitted/in-progress cases
         if case.status not in ['submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:

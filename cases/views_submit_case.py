@@ -52,9 +52,9 @@ def submit_case(request):
             advisors_list = [user]
     
     # Determine if advisor/workshop fields should be locked (single choice)
-    # Greyed out unless delegate has more than one advisor with different workshop codes
-    unique_workshop_codes = set(a.workshop_code for a in advisors_list if a.workshop_code)
-    is_single_choice = len(advisors_list) <= 1 or (len(advisors_list) > 1 and len(unique_workshop_codes) <= 1)
+    # Only lock when there's truly one advisor — delegates with multiple advisors
+    # always need a dropdown even if all share the same workshop code
+    is_single_choice = len(advisors_list) <= 1
     
     # Prepare context for form rendering
     context = {
