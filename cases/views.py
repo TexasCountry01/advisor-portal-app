@@ -152,9 +152,11 @@ def member_dashboard(request):
             case=case,
             user=user
         ).count()
+        # For delegates, check notifications addressed to the case's member
+        notif_member = case.member if active_view == 'delegate' else user
         unread_notif_count = CaseNotification.objects.filter(
             case=case,
-            member=user,
+            member=notif_member,
             is_read=False
         ).count()
         case.unread_message_count = unread_msg_count + unread_notif_count
@@ -1216,12 +1218,14 @@ def case_detail(request, pk):
             }
         )
     
-    # Auto-mark all notifications for this case as read when member views the case
-    if user.role == 'member' and case.member == user:
+    # Auto-mark all notifications for this case as read when member/delegate views the case
+    if user.role == 'member' and (case.member == user or is_delegate_viewer):
         from cases.models import CaseNotification
+        # For delegates, mark notifications addressed to the case's member
+        notif_member = case.member if is_delegate_viewer else user
         unread_notifications = CaseNotification.objects.filter(
             case=case,
-            member=user,
+            member=notif_member,
             is_read=False
         )
         marked_count = 0
@@ -1233,7 +1237,7 @@ def case_detail(request, pk):
     
     # Handle draft edit POST requests
     if request.method == 'POST' and request.POST.get('edit_draft'):
-        if case.status == 'draft' and user.role == 'member' and case.member == user:
+        if case.status == 'draft' and user.role == 'member' and (case.member == user or is_delegate_viewer):
             # Update the case fields
             if 'num_reports_requested' in request.POST:
                 try:
@@ -1278,7 +1282,7 @@ def case_detail(request, pk):
     # Check if member can view technician's report and documents
     # Members can ONLY see reports/notes when case is completed AND released to them
     can_view_report = True
-    if user.role == 'member' and case.member == user:
+    if user.role == 'member' and (case.member == user or is_delegate_viewer):
         # For members: only show report/docs if case is completed AND has been released
         # A case is "released" when:
         # 1. actual_release_date is set (released now or in the past), OR
@@ -1985,10 +1989,17 @@ def edit_case(request, pk):
     user = request.user
     case = get_object_or_404(Case, pk=pk)
     
-    # Permission check - only the member who owns the case can edit
-    if user.role != 'member' or case.member != user:
+    # Permission check - only the member who owns the case (or their delegate) can edit
+    is_delegate = False
+    if user.role != 'member':
         messages.error(request, 'You do not have permission to edit this case.')
         return redirect('cases:case_detail', pk=pk)
+    if case.member != user:
+        from accounts.models import MemberDelegate
+        is_delegate = MemberDelegate.objects.filter(delegate=user, member=case.member).exists()
+        if not is_delegate:
+            messages.error(request, 'You do not have permission to edit this case.')
+            return redirect('cases:case_detail', pk=pk)
     
     # Members can edit before submission OR after submission (collaborative workflow)
     # Restriction: cannot edit after case is completed
@@ -2230,12 +2241,16 @@ def submit_case_final(request, case_id):
             user = request.user
             case = get_object_or_404(Case, pk=case_id)
             
-            # Permission check: Only the case creator (member) can submit their own case
+            # Permission check: Only the case creator (member) or delegate can submit
+            is_delegate = False
             if case.member != user:
-                return JsonResponse({
-                    'success': False, 
-                    'error': 'You do not have permission to submit this case'
-                }, status=403)
+                from accounts.models import MemberDelegate
+                is_delegate = MemberDelegate.objects.filter(delegate=user, member=case.member).exists()
+                if not is_delegate:
+                    return JsonResponse({
+                        'success': False, 
+                        'error': 'You do not have permission to submit this case'
+                    }, status=403)
             
             # Status check: Only draft cases can be submitted
             if case.status != 'draft':
@@ -2439,10 +2454,12 @@ def add_case_note(request, case_id):
         messages.error(request, 'You do not have permission to add notes to this case.')
         return redirect('cases:case_detail', pk=case_id)
     
-    # Additional check for members - can only add notes to their own cases
+    # Additional check for members - can only add notes to their own cases (or delegated cases)
     if user.role == 'member' and case.member != user:
-        messages.error(request, 'You do not have permission to add notes to this case.')
-        return redirect('cases:case_detail', pk=case_id)
+        from accounts.models import MemberDelegate
+        if not MemberDelegate.objects.filter(delegate=user, member=case.member).exists():
+            messages.error(request, 'You do not have permission to add notes to this case.')
+            return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
         note_text = request.POST.get('notes', '').strip()
@@ -2604,9 +2621,14 @@ def upload_technician_document(request, case_id):
             messages.error(request, 'You can only upload documents to cases you are assigned to.')
             return redirect('cases:case_detail', pk=case_id)
         can_upload = True
-    elif user.role == 'member' and case.member == user and case.status in ['draft', 'submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:
-        # Members can upload to their own cases in active statuses
-        can_upload = True
+    elif user.role == 'member' and case.status in ['draft', 'submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:
+        # Members can upload to their own cases (or delegated cases) in active statuses
+        if case.member == user:
+            can_upload = True
+        else:
+            from accounts.models import MemberDelegate
+            if MemberDelegate.objects.filter(delegate=user, member=case.member).exists():
+                can_upload = True
     
     if not can_upload:
         messages.error(request, 'You do not have permission to upload documents to this case.')
@@ -3280,10 +3302,15 @@ def resubmit_case(request, case_id):
     user = request.user
     case = get_object_or_404(Case, id=case_id)
     
-    # Permission check - only the member who owns the case can resubmit
-    if user.role != 'member' or case.member != user:
+    # Permission check - only the member who owns the case (or their delegate) can resubmit
+    if user.role != 'member':
         messages.error(request, 'You do not have permission to resubmit this case.')
         return redirect('cases:case_detail', pk=case_id)
+    if case.member != user:
+        from accounts.models import MemberDelegate
+        if not MemberDelegate.objects.filter(delegate=user, member=case.member).exists():
+            messages.error(request, 'You do not have permission to resubmit this case.')
+            return redirect('cases:case_detail', pk=case_id)
     
     # Check if case is completed
     if case.status != 'completed':
@@ -3667,13 +3694,17 @@ def add_case_message(request, pk):
     user = request.user
     logger.info(f'add_case_message called: user={user.username} ({user.role}), case={case.external_case_id}')
     
-    # Permission check: Only member or staff (technician/admin/manager) can message
+    # Permission check: Only member, delegate, or staff can message
     is_member = (user.role == 'member' and case.member == user)
     is_technician = (user.role in ['technician', 'administrator', 'manager'])
+    is_delegate = False
+    if not is_member and user.role == 'member':
+        from accounts.models import MemberDelegate
+        is_delegate = MemberDelegate.objects.filter(delegate=user, member=case.member).exists()
     
-    logger.info(f'Permission check: is_member={is_member}, is_technician={is_technician}')
+    logger.info(f'Permission check: is_member={is_member}, is_technician={is_technician}, is_delegate={is_delegate}')
     
-    if not (is_member or is_technician):
+    if not (is_member or is_technician or is_delegate):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     try:
@@ -3843,11 +3874,15 @@ def get_case_messages(request, pk):
     case = get_object_or_404(Case, pk=pk)
     user = request.user
     
-    # Permission check: Only member or staff can view messages
+    # Permission check: Only member, delegate, or staff can view messages
     is_member = (user.role == 'member' and case.member == user)
     is_technician = (user.role in ['technician', 'administrator', 'manager'])
+    is_delegate = False
+    if not is_member and user.role == 'member':
+        from accounts.models import MemberDelegate
+        is_delegate = MemberDelegate.objects.filter(delegate=user, member=case.member).exists()
     
-    if not (is_member or is_technician):
+    if not (is_member or is_technician or is_delegate):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     try:
@@ -3901,11 +3936,15 @@ def mark_messages_as_read(request, pk):
     case = get_object_or_404(Case, pk=pk)
     user = request.user
     
-    # Permission check: Only member or staff can mark as read
+    # Permission check: Only member, delegate, or staff can mark as read
     is_member = (user.role == 'member' and case.member == user)
     is_technician = (user.role in ['technician', 'administrator', 'manager'])
+    is_delegate = False
+    if not is_member and user.role == 'member':
+        from accounts.models import MemberDelegate
+        is_delegate = MemberDelegate.objects.filter(delegate=user, member=case.member).exists()
     
-    if not (is_member or is_technician):
+    if not (is_member or is_technician or is_delegate):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     try:
@@ -3984,9 +4023,13 @@ def request_modification(request, pk):
     case = get_object_or_404(Case, pk=pk)
     user = request.user
     
-    # Permission check: Only member can request modification
-    if user.role != 'member' or case.member != user:
+    # Permission check: Only member (or delegate) can request modification
+    if user.role != 'member':
         return JsonResponse({'error': 'Access denied'}, status=403)
+    if case.member != user:
+        from accounts.models import MemberDelegate
+        if not MemberDelegate.objects.filter(delegate=user, member=case.member).exists():
+            return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Case must be completed
     if case.status != 'completed' or not case.actual_release_date:
@@ -4236,19 +4279,27 @@ def generate_report_notes_pdf(request, pk):
     case = get_object_or_404(Case, pk=pk)
     user = request.user
     
-    # Permission check: User must be tech/admin/manager/or member (if released)
+    # Permission check: User must be tech/admin/manager/or member/delegate (if released)
     can_access = False
     
     if user.role in ['technician', 'administrator', 'manager']:
         can_access = True
-    elif user.role == 'member' and case.member == user:
-        # Member can only access if case is completed and released
-        from datetime import date
-        if case.status == 'completed':
-            if case.actual_release_date is not None:
-                can_access = True
-            elif case.scheduled_release_date and case.scheduled_release_date <= date.today():
-                can_access = True
+    elif user.role == 'member':
+        # Check if user is the case owner or a delegate for the case owner
+        is_owner = (case.member == user)
+        is_delegate = False
+        if not is_owner:
+            from accounts.models import MemberDelegate
+            is_delegate = MemberDelegate.objects.filter(delegate=user, member=case.member).exists()
+        
+        if is_owner or is_delegate:
+            # Member/delegate can only access if case is completed and released
+            from datetime import date
+            if case.status == 'completed':
+                if case.actual_release_date is not None:
+                    can_access = True
+                elif case.scheduled_release_date and case.scheduled_release_date <= date.today():
+                    can_access = True
     
     if not can_access:
         return HttpResponseForbidden('Access denied')
@@ -5651,15 +5702,18 @@ def get_member_notifications(request):
     - Ordered by most recent first
     - Used for notification center on member dashboard
     - Full audit trail maintained via AuditLog
+    - Delegates see notifications for their delegated members' cases
     
     SECURITY:
     - Members can only view their own notifications
+    - Delegates can view notifications for their delegated members' cases
     
     RESPONSE:
     - JSON with: notifications (list), total_count, unread_count, pages
     """
     from cases.models import CaseNotification
     from core.models import AuditLog
+    from accounts.models import MemberDelegate
     
     user = request.user
     
@@ -5671,9 +5725,15 @@ def get_member_notifications(request):
         }, status=403)
     
     try:
-        # Get all notifications for this member
+        # Build list of member IDs whose notifications this user can see
+        member_ids = [user.id]
+        delegate_assignments = MemberDelegate.objects.filter(delegate=user).select_related('member')
+        for da in delegate_assignments:
+            member_ids.append(da.member.id)
+        
+        # Get all notifications for self and delegated members
         notifications = CaseNotification.objects.filter(
-            member=user
+            member_id__in=member_ids
         ).select_related(
             'case'
         ).order_by('-created_at')
@@ -5758,7 +5818,13 @@ def mark_notification_read(request, notification_id):
         }, status=403)
     
     try:
-        notification = get_object_or_404(CaseNotification, id=notification_id, member=user)
+        # Allow marking notifications for self or delegated members
+        from accounts.models import MemberDelegate
+        member_ids = [user.id]
+        for da in MemberDelegate.objects.filter(delegate=user):
+            member_ids.append(da.member_id)
+        
+        notification = get_object_or_404(CaseNotification, id=notification_id, member_id__in=member_ids)
         
         # Mark as read if not already
         was_unread = not notification.is_read
@@ -5826,9 +5892,14 @@ def mark_all_notifications_read(request):
         }, status=403)
     
     try:
-        # Get all unread notifications for this member
+        # Get all unread notifications for self and delegated members
+        from accounts.models import MemberDelegate
+        member_ids = [user.id]
+        for da in MemberDelegate.objects.filter(delegate=user):
+            member_ids.append(da.member_id)
+        
         unread_notifications = CaseNotification.objects.filter(
-            member=user,
+            member_id__in=member_ids,
             is_read=False
         )
         
@@ -5945,9 +6016,11 @@ def create_case_change_request(request, case_id):
         user = request.user
         case = get_object_or_404(Case, id=case_id)
         
-        # Permission: Only member can create requests for their cases
+        # Permission: Only member (or delegate) can create requests for their cases
         if case.member != user:
-            return JsonResponse({'success': False, 'error': 'Not your case'}, status=403)
+            from accounts.models import MemberDelegate
+            if not MemberDelegate.objects.filter(delegate=user, member=case.member).exists():
+                return JsonResponse({'success': False, 'error': 'Not your case'}, status=403)
         
         # Can only create requests for submitted/in-progress cases (not draft or completed)
         if case.status not in ['submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:

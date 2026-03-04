@@ -101,9 +101,11 @@ def view_fact_finder_pdf(request, case_id):
     """Serve the uploaded Federal Fact Finder PDF for inline viewing in iframe"""
     case = get_object_or_404(Case, id=case_id)
     
-    # Check permissions
+    # Check permissions — member must own the case or be a delegate
     if request.user.role == 'member' and case.member != request.user:
-        return HttpResponse('Access denied', status=403)
+        from accounts.models import MemberDelegate
+        if not MemberDelegate.objects.filter(delegate=request.user, member=case.member).exists():
+            return HttpResponse('Access denied', status=403)
     
     # Get all fact_finder documents ordered by upload date (newest first)
     ff_documents = CaseDocument.objects.filter(
@@ -217,9 +219,11 @@ def download_document(request, doc_id):
     doc = get_object_or_404(CaseDocument, id=doc_id)
     case = doc.case
     
-    # Check permissions
+    # Check permissions — member must own the case or be a delegate
     if request.user.role == 'member' and case.member != request.user:
-        return HttpResponse('Access denied', status=403)
+        from accounts.models import MemberDelegate
+        if not MemberDelegate.objects.filter(delegate=request.user, member=case.member).exists():
+            return HttpResponse('Access denied', status=403)
     
     if not doc.file:
         return HttpResponse('File not found', status=404)
@@ -261,9 +265,11 @@ def submit_case(request, case_id):
     """Submit a case for processing"""
     case = get_object_or_404(Case, id=case_id)
     
-    # Check permissions - only member can submit their own cases
+    # Check permissions - member or their delegate can submit
     if request.user.role == 'member' and case.member != request.user:
-        return HttpResponse('Access denied', status=403)
+        from accounts.models import MemberDelegate
+        if not MemberDelegate.objects.filter(delegate=request.user, member=case.member).exists():
+            return HttpResponse('Access denied', status=403)
     
     if request.method == 'POST':
         # Update case status to submitted
