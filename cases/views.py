@@ -3785,6 +3785,7 @@ def add_case_message(request, pk):
                 # ============================================================
                 try:
                     from cases.services.email_service import should_send_emails
+                    from core.models import AuditLog
                     
                     if not should_send_emails():
                         logger.info(f'Email notifications disabled. Skipped tech comment email for case {case.external_case_id}')
