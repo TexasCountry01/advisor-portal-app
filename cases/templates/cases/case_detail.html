@@ -122,7 +122,7 @@
                         }
                     </script>
                 {% endif %}
-                {% if case.status == 'draft' and case.member == user %}
+                {% if case.status == 'draft' and can_edit %}
                 <button type="button" class="btn btn-success" onclick="submitDraftFromDetail({{ case.id }})">
                     <i class="bi bi-check-circle"></i> Submit Case
                 </button>
@@ -133,7 +133,7 @@
                     <i class="bi bi-trash"></i> Delete Draft
                 </a>
                 {% endif %}
-                {% if case.status in 'submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' and case.member == user %}
+                {% if case.status in 'submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' and can_edit %}
                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelCaseModal">
                     <i class="bi bi-x-circle"></i> Cancel Case
                 </button>
@@ -424,7 +424,7 @@
                         </div>
                         <div class="col-md-6">
                             <strong>Reports requested:</strong><br>
-                            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+                            {% if case.status == 'draft' and user.role == 'member' and can_edit %}
                                 <span id="reportDisplay">{{ case.num_reports_requested }}</span>
                                 <select id="reportEdit" name="num_reports_requested" class="form-select" style="display: none;">
                                     {% for i in "12345" %}
@@ -470,7 +470,7 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Date Due:</strong><br>
-                            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+                            {% if case.status == 'draft' and user.role == 'member' and can_edit %}
                                 <span id="dueDateDisplay">
                                     {% if case.date_due %}
                                         {{ case.date_due|date:"m/d/Y" }}
@@ -576,34 +576,55 @@
             </div>
 
             <!-- Member Notes to Benefits Team -->
-            {% if case.status == 'draft' and user.role == 'member' and case.member == user %}
+            {% if case.status == 'draft' and user.role == 'member' and can_edit %}
                 <div class="card mb-4 border-info">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h6 class="mb-0">Member Notes to Benefits Team</h6>
-                        {% if not case.special_notes %}
-                        <button type="button" class="btn btn-sm btn-info" id="addNotesBtn" onclick="toggleEditMode()">
-                            <i class="bi bi-pencil"></i> Add Notes
+                        <button type="button" class="btn btn-sm btn-info" id="addNotesBtn" onclick="toggleNotesEdit()">
+                            <i class="bi bi-pencil"></i> {% if case.special_notes %}Edit Notes{% else %}Add Notes{% endif %}
                         </button>
-                        {% endif %}
                     </div>
                     <div class="card-body">
                         {% if case.special_notes %}
                             <div id="notesDisplay" class="p-3 bg-light rounded">
                                 {{ case.special_notes|linebreaks }}
                             </div>
-                            <div id="notesEdit" style="display: none;">
-                                <textarea id="notesEditField" class="form-control" rows="4">{{ case.special_notes }}</textarea>
-                            </div>
                         {% else %}
                             <div id="notesDisplay" class="p-3 bg-light rounded text-muted">
                                 No notes added yet
                             </div>
-                            <div id="notesEdit" style="display: none;">
-                                <textarea id="notesEditField" class="form-control" rows="4" placeholder="Add notes for the benefits team..."></textarea>
-                            </div>
                         {% endif %}
+                        <form method="post" action="{% url 'cases:case_detail' case.id %}" id="notesEditForm" style="display: none;">
+                            {% csrf_token %}
+                            <input type="hidden" name="edit_draft" value="true">
+                            <textarea name="special_notes" id="notesEditField" class="form-control mb-2" rows="4" placeholder="Add notes for the benefits team...">{{ case.special_notes|default:'' }}</textarea>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-success">
+                                    <i class="bi bi-check"></i> Save Notes
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="toggleNotesEdit()">
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
+                <script>
+                function toggleNotesEdit() {
+                    const display = document.getElementById('notesDisplay');
+                    const form = document.getElementById('notesEditForm');
+                    const btn = document.getElementById('addNotesBtn');
+                    if (form.style.display === 'none') {
+                        display.style.display = 'none';
+                        form.style.display = 'block';
+                        btn.style.display = 'none';
+                    } else {
+                        display.style.display = 'block';
+                        form.style.display = 'none';
+                        btn.style.display = 'inline-block';
+                    }
+                }
+                </script>
             {% elif case.special_notes %}
             <div class="card mb-4">
                 <div class="card-header bg-light">
@@ -664,7 +685,7 @@
                         Submitted Documents
                         <span class="badge bg-info">{{ documents|length }} Total</span>
                     </h5>
-                    {% if user.role == 'member' and case.member == user and case.status in 'draft,submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' %}
+                    {% if user.role == 'member' and can_edit and case.status in 'draft,submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' %}
                     <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
                         <i class="bi bi-upload"></i> Upload Document
                     </button>
@@ -713,7 +734,7 @@
             {% endif %}
 
             <!-- For members with no submitted documents: show simple upload button -->
-            {% if user.role == 'member' and case.member == user and documents|length == 0 %}
+            {% if user.role == 'member' and can_edit and documents|length == 0 %}
             <div class="mb-4">
                 <p class="text-muted mb-3">No documents uploaded yet. Download the Federal Fact Finder template below and upload it with your supporting documents.</p>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadTechDocModal">
