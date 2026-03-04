@@ -507,7 +507,7 @@
                         </label>
                         <input type="date" name="due_date" id="dueDateInput" class="form-control" 
                                value="{{ default_due_date }}" min="{{ today }}" required
-                               onchange="checkRushedStatus()"
+                               onchange="checkRushedStatus()" oninput="checkRushedStatus()"
                                style="font-size: 0.9rem; padding: 0.375rem 0.75rem;">
                         <div class="date-info" style="font-size: 0.85rem; margin-top: 0.25rem; line-height: 1.3;">
                             Our standard turnaround time is 7 days. Dates less than 7 days are marked as <strong>RUSHED</strong>.
@@ -810,11 +810,13 @@
             });
         }
 
-        // Hide rushed alert container on page load - only show when user changes the date
+        // Hide rushed alert container on page load - then check if default date is already rushed
         const rushAlertContainer = document.getElementById('rushAlertContainer');
         if (rushAlertContainer) {
             rushAlertContainer.classList.remove('show');
         }
+        // Check rushed status on page load in case default date is already within 7 days
+        checkRushedStatus();
     });
 </script>
 {% endblock %}
