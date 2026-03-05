@@ -125,8 +125,10 @@ def send_case_accepted_email(case):
         'case_detail_url': _build_case_detail_url(case),
     }
     
+    employee_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+
     return send_email_notification(
-        subject=f'Your case {case.external_case_id} has been accepted',
+        subject=f'Your case for {employee_name} has been accepted',
         template_name='case_accepted_member.html',
         context=context,
         recipient_email=case.member.email,
@@ -148,8 +150,10 @@ def send_case_question_asked_email(case, question_text):
         'case_detail_url': _build_case_detail_url(case),
     }
     
+    employee_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+
     return send_email_notification(
-        subject=f'Question about your case {case.external_case_id}',
+        subject=f'Question about your case for {employee_name}',
         template_name='case_question_asked.html',
         context=context,
         recipient_email=case.member.email,
@@ -171,8 +175,10 @@ def send_case_hold_resumed_email(case):
         'case_detail_url': _build_case_detail_url(case),
     }
     
+    employee_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+
     return send_email_notification(
-        subject=f'Your case {case.external_case_id} processing has resumed',
+        subject=f'Your case for {employee_name} processing has resumed',
         template_name='case_hold_resumed.html',
         context=context,
         recipient_email=case.member.email,
@@ -198,8 +204,10 @@ def send_member_response_email(case, tech_user):
         'case_detail_url': _build_case_detail_url(case),
     }
     
+    employee_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+
     return send_email_notification(
-        subject=f'Member response on case {case.external_case_id}',
+        subject=f'Member response on case for {employee_name}',
         template_name='member_response_notification.html',
         context=context,
         recipient_email=tech_user.email,
@@ -221,8 +229,10 @@ def send_case_resubmitted_email(case, tech_user):
         'case_detail_url': _build_case_detail_url(case),
     }
     
+    employee_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+
     return send_email_notification(
-        subject=f'Case {case.external_case_id} has been resubmitted',
+        subject=f'Case for {employee_name} has been resubmitted',
         template_name='case_resubmitted_notification.html',
         context=context,
         recipient_email=tech_user.email,
@@ -247,7 +257,7 @@ def send_new_case_assigned_email(case, tech_user):
     }
     
     return send_email_notification(
-        subject=f'New case assigned: {case.external_case_id}',
+        subject=f'New case assigned: {case.employee_first_name} {case.employee_last_name}',
         template_name='new_case_assigned.html',
         context=context,
         recipient_email=tech_user.email,
@@ -270,8 +280,10 @@ def send_modification_created_email(original_case, modification_case, tech_user)
         'case_detail_url': _build_case_detail_url(modification_case),
     }
     
+    employee_name = f"{original_case.employee_first_name} {original_case.employee_last_name}".strip()
+
     return send_email_notification(
-        subject=f'Modification requested for case {original_case.external_case_id}',
+        subject=f'Modification requested for case for {employee_name}',
         template_name='modification_created_notification.html',
         context=context,
         recipient_email=tech_user.email,

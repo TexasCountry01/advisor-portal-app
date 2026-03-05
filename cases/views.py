@@ -1108,8 +1108,8 @@ def accept_case(request, pk):
                         html_message = render_to_string('emails/case_accepted.html', email_context)
                         
                         send_mail(
-                            subject=f'Case {case.external_case_id} - Accepted and Assigned to You',
-                            message=f'Case {case.external_case_id} has been accepted as Tier {tier} and assigned to you.',
+                            subject=f'Case for {case.employee_first_name} {case.employee_last_name} - Accepted and Assigned to You',
+                            message=f'Case for {case.employee_first_name} {case.employee_last_name} has been accepted as Tier {tier} and assigned to you.',
                             from_email='noreply@advisor-portal.com',
                             recipient_list=[case.assigned_to.email],
                             html_message=html_message,
@@ -1135,8 +1135,8 @@ def accept_case(request, pk):
                     html_message = render_to_string('emails/case_accepted_member.html', email_context)
                     
                     send_mail(
-                        subject=f'Case {case.external_case_id} - Your Case Has Been Accepted',
-                        message=f'Your case {case.external_case_id} has been received and accepted by our team.',
+                        subject=f'Your Case for {case.employee_first_name} {case.employee_last_name} Has Been Accepted',
+                        message=f'Your case for {case.employee_first_name} {case.employee_last_name} has been received and accepted by our team.',
                         from_email='noreply@advisor-portal.com',
                         recipient_list=[case.member.email],
                         html_message=html_message,
@@ -3610,7 +3610,7 @@ def reject_case(request, pk):
                 'case_url': f'{settings.SITE_URL}/cases/{case.id}/' if hasattr(settings, 'SITE_URL') else 'https://yoursite.com/cases/',
             }
             
-            subject = f'Case {case.external_case_id} - Additional Information Needed'
+            subject = f'Case for {case.employee_first_name} {case.employee_last_name} - Additional Information Needed'
             text_message = render_to_string('emails/case_rejection_notification.txt', email_context)
             html_message = render_to_string('emails/case_rejection_notification.html', email_context)
             
@@ -4728,7 +4728,7 @@ def edit_case_details(request, pk):
                     if not should_send_emails():
                         logger.info(f'Email notifications disabled. Skipped edit notification for case {case.external_case_id}')
                     else:
-                        subject = f'Case {case.external_case_id} Details Updated'
+                        subject = f'Case for {case.employee_first_name} {case.employee_last_name} Details Updated'
                         
                         # Build change summary
                         change_list = []
@@ -4745,7 +4745,7 @@ def edit_case_details(request, pk):
                         
                         message = f"""Dear {case.member.first_name},
 
-Your case {case.external_case_id} has been updated with the following corrections:
+Your case for {case.employee_first_name} {case.employee_last_name} has been updated with the following corrections:
 
 {change_summary}
 
@@ -5333,8 +5333,8 @@ def approve_case_review(request, case_id):
                     }
                     html_message = render_to_string('emails/case_approved_notification.html', email_context)
                     send_mail(
-                        subject=f'Case {case.external_case_id} - Approved by Quality Review',
-                        message=f'Your case {case.external_case_id} has been approved and {release_msg}.',
+                        subject=f'Case for {case.employee_first_name} {case.employee_last_name} - Approved by Quality Review',
+                        message=f'The case for {case.employee_first_name} {case.employee_last_name} has been approved and {release_msg}.',
                         from_email='noreply@advisor-portal.com',
                         recipient_list=[case.assigned_to.email],
                         html_message=html_message,
@@ -5443,8 +5443,8 @@ def request_case_revisions(request, case_id):
                     }
                     html_message = render_to_string('emails/case_revisions_needed_notification.html', email_context)
                     send_mail(
-                        subject=f'Case {case.external_case_id} - Revisions Requested',
-                        message=f'Revisions have been requested for case {case.external_case_id}. Feedback: {revision_feedback}',
+                        subject=f'Case for {case.employee_first_name} {case.employee_last_name} - Revisions Requested',
+                        message=f'Revisions have been requested for case for {case.employee_first_name} {case.employee_last_name}. Feedback: {revision_feedback}',
                         from_email='noreply@advisor-portal.com',
                         recipient_list=[case.assigned_to.email],
                         html_message=html_message,
@@ -5556,8 +5556,8 @@ def correct_case_review(request, case_id):
                     }
                     html_message = render_to_string('emails/case_corrections_notification.html', email_context)
                     send_mail(
-                        subject=f'Case {case.external_case_id} - Completed with Corrections',
-                        message=f'Case {case.external_case_id} has been completed with corrections by the reviewer. Notes: {correction_notes}',
+                        subject=f'Case for {case.employee_first_name} {case.employee_last_name} - Completed with Corrections',
+                        message=f'Case for {case.employee_first_name} {case.employee_last_name} has been completed with corrections by the reviewer. Notes: {correction_notes}',
                         from_email='noreply@advisor-portal.com',
                         recipient_list=[case.assigned_to.email],
                         html_message=html_message,

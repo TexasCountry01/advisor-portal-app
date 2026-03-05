@@ -1,11 +1,10 @@
 Dear {{ member.first_name|default:member.username }},
 
-Your case {{ case.external_case_id }} has been completed and is now available for your review.
+Your case has been completed and is now available for your review.
 
 CASE DETAILS:
 ─────────────────────────────────────
 Employee Name: {{ employee_name }}
-Case ID: {{ case.external_case_id }}
 Workshop Code: {{ case.workshop_code }}
 Completion Date: {{ case.date_completed|date:"F j, Y \a\t g:i A" }}
 Status: {{ case.get_status_display }}

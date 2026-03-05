@@ -1,6 +1,6 @@
 Hi {{ member.get_full_name }},
 
-We've reviewed your case {{ case.external_case_id }} and need some additional information before we can proceed with processing it.
+We've reviewed your case and need some additional information before we can proceed with processing it.
 
 REASON FOR REQUEST:
 {{ rejection_reason }}
