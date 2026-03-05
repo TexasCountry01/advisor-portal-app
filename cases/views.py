@@ -1090,8 +1090,9 @@ def accept_case(request, pk):
                 })
             
             # Send notification to assigned technician (if any and different from accepter)
+            # DISABLED per email policy — technicians do not receive email notifications
             # Only send if case was actually assigned to someone
-            if case.assigned_to and case.assigned_to != user:
+            if False and case.assigned_to and case.assigned_to != user:
                 try:
                     from django.core.mail import send_mail
                     from django.template.loader import render_to_string
@@ -1119,12 +1120,13 @@ def accept_case(request, pk):
                     print(f"Error sending tech notification: {str(e)}")
             
             # Send notification to member
+            # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
             try:
                 from django.core.mail import send_mail
                 from django.template.loader import render_to_string
                 from cases.services.email_service import should_send_emails
                 
-                if should_send_emails():
+                if False and should_send_emails():
                     email_context = {
                         'case': case,
                         'tier': tier,
@@ -3596,12 +3598,13 @@ def reject_case(request, pk):
         )
         
         # Send rejection email to member
+        # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
         from django.core.mail import send_mail
         from django.template.loader import render_to_string
         from django.conf import settings
         from cases.services.email_service import should_send_emails
         
-        if should_send_emails():
+        if False and should_send_emails():
             email_context = {
                 'member': case.member,
                 'case': case,
@@ -4728,7 +4731,8 @@ def edit_case_details(request, pk):
             logger.info(f'Case {case.external_case_id} details edited by {user.username}. Changes: {changes}')
             
             # Send optional notification email
-            if send_notification and case.member:
+            # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
+            if False and send_notification and case.member:
                 try:
                     from cases.services.email_service import should_send_emails
                     

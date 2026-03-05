@@ -114,6 +114,9 @@ def send_email_notification(
 
 def send_case_accepted_email(case):
     """Send email to member when case is accepted by technician"""
+    # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
+    return False
+
     if not case.member or not case.member.email:
         return False
     
@@ -139,6 +142,9 @@ def send_case_accepted_email(case):
 
 def send_case_question_asked_email(case, question_text):
     """Send email to member when technician asks a question"""
+    # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
+    return False
+
     if not case.member or not case.member.email:
         return False
     
@@ -164,6 +170,9 @@ def send_case_question_asked_email(case, question_text):
 
 def send_case_hold_resumed_email(case):
     """Send email to member when case is resumed from hold"""
+    # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
+    return False
+
     if not case.member or not case.member.email:
         return False
     
@@ -193,6 +202,9 @@ def send_case_hold_resumed_email(case):
 
 def send_member_response_email(case, tech_user):
     """Send email to technician when member responds to question/uploads doc"""
+    # DISABLED per email policy — technicians do not receive email notifications
+    return False
+
     if not tech_user or not tech_user.email:
         return False
     
@@ -218,6 +230,9 @@ def send_member_response_email(case, tech_user):
 
 def send_case_resubmitted_email(case, tech_user):
     """Send email to technician when case is resubmitted"""
+    # DISABLED per email policy — technicians do not receive email notifications
+    return False
+
     if not tech_user or not tech_user.email:
         return False
     
@@ -243,6 +258,9 @@ def send_case_resubmitted_email(case, tech_user):
 
 def send_new_case_assigned_email(case, tech_user):
     """Send email to technician when new case is assigned"""
+    # DISABLED per email policy — technicians do not receive email notifications
+    return False
+
     if not tech_user or not tech_user.email:
         return False
     
@@ -268,6 +286,9 @@ def send_new_case_assigned_email(case, tech_user):
 
 def send_modification_created_email(original_case, modification_case, tech_user):
     """Send email to technician when member requests modification"""
+    # DISABLED per email policy — technicians do not receive email notifications
+    return False
+
     if not tech_user or not tech_user.email:
         return False
     
@@ -387,6 +408,9 @@ def send_case_completed_email(case, request=None, user=None):
 
 def send_delegate_assigned_email(member, delegate, assigned_by):
     """Send email to member when a delegate is assigned to their account."""
+    # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
+    return False
+
     if not member or not member.email:
         return False
 
@@ -410,6 +434,9 @@ def send_delegate_assigned_email(member, delegate, assigned_by):
 
 def send_delegate_removed_email(member, delegate, removed_by):
     """Send email to member when a delegate is removed from their account."""
+    # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
+    return False
+
     if not member or not member.email:
         return False
 
