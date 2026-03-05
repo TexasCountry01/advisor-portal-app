@@ -3724,8 +3724,9 @@ def add_case_message(request, pk):
         from cases.models import CaseNotification
         
         # Create UnreadMessage records for recipient(s)
-        if is_member:
-            # Member posted - mark as unread for the assigned technician
+        # Delegates act on behalf of the member, so treat them like the member
+        if is_member or is_delegate:
+            # Member (or delegate) posted - mark as unread for the assigned technician
             if case.assigned_to:
                 try:
                     um, created = UnreadMessage.objects.get_or_create(
@@ -3733,9 +3734,15 @@ def add_case_message(request, pk):
                         user=case.assigned_to,
                         defaults={'case': case}
                     )
-                    logger.info(f'Member {user.username} message on case {case.external_case_id} - Created UnreadMessage for technician {case.assigned_to.username}: {created}')
+                    logger.info(f'{"Delegate" if is_delegate else "Member"} {user.username} message on case {case.external_case_id} - Created UnreadMessage for technician {case.assigned_to.username}: {created}')
                 except Exception as e:
                     logger.error(f'Error creating UnreadMessage for technician: {str(e)}')
+            
+            # Set has_member_updates flag so "New Info" badge shows on technician dashboard
+            if case.status not in ['draft']:
+                case.has_member_updates = True
+                case.member_last_update_date = timezone.now()
+                case.save(update_fields=['has_member_updates', 'member_last_update_date'])
         else:
             # Technician posted - mark as unread for the member
             if case.member:
