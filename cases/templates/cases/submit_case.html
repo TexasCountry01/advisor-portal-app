@@ -535,7 +535,7 @@
 
             <!-- Rushed Status Alert (OUTSIDE form-section) -->
             <div id="rushAlertContainer" style="margin-top: 10px;">
-                <div class="alert alert-warning" id="rushAlert" style="border: 2px solid #ffc107; font-size: 0.9em; margin: 0; padding: 10px 15px; max-width: 50%;">
+                <div class="alert alert-danger" id="rushAlert" style="border: 2px solid #dc3545; font-size: 0.9em; margin: 0; padding: 10px 15px; max-width: 50%;">
                     <div style="display: flex; align-items: flex-start; gap: 10px;">
                         <div style="font-size: 1.3em;">⚠️</div>
                         <div>
@@ -816,7 +816,7 @@
             rushAlertContainer.classList.remove('show');
         }
         // Check rushed status on page load in case default date is already within 7 days
-        checkRushedStatus();
+        setTimeout(function() { checkRushedStatus(); }, 100);
     });
 </script>
 {% endblock %}
