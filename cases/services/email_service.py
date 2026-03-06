@@ -357,7 +357,7 @@ def send_case_completed_email(case, request=None, user=None):
             'logo_url': logo_url,
         }
 
-        email_subject = f'COMPLETE: The case for {employee_name} is ready for you!'
+        email_subject = f'REPORT: The case for {employee_name} is ready for you!'
         text_message = render_to_string('emails/case_completed.txt', email_context)
         html_message = render_to_string('emails/case_completed.html', email_context)
 
