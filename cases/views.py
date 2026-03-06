@@ -1734,12 +1734,16 @@ def put_case_on_hold(request, case_id):
                         text_message = render_to_string('emails/case_on_hold.txt', email_context)
                         html_message = render_to_string('emails/case_on_hold.html', email_context)
                         
+                        # Get all recipients (member + delegates)
+                        from cases.services.email_service import get_case_recipient_emails
+                        hold_recipients = get_case_recipient_emails(case)
+                        
                         # Send email with both text and HTML versions
                         send_mail(
                             subject=email_subject,
                             message=text_message,
                             from_email=django_settings.DEFAULT_FROM_EMAIL,
-                            recipient_list=[case.member.email],
+                            recipient_list=hold_recipients,
                             html_message=html_message,
                             fail_silently=False
                         )
@@ -1749,9 +1753,9 @@ def put_case_on_hold(request, case_id):
                             case=case,
                             user=user,
                             action_type='email_notification_sent',
-                            description=f'Member notification email sent to {case.member.email} - case put on hold',
+                            description=f'Hold notification email sent to {hold_recipients} - case put on hold',
                             metadata={
-                                'email_to': case.member.email,
+                                'email_to': str(hold_recipients),
                                 'email_subject': email_subject,
                                 'hold_reason': reason,
                                 'notification_id': notification.id
@@ -3824,11 +3828,15 @@ def add_case_message(request, pk):
                         text_message = render_to_string('emails/tech_comment_notification.txt', email_context)
                         html_message = render_to_string('emails/tech_comment_notification.html', email_context)
                         
+                        # Get all recipients (member + delegates)
+                        from cases.services.email_service import get_case_recipient_emails
+                        chat_recipients = get_case_recipient_emails(case)
+                        
                         send_mail(
                             subject=email_subject,
                             message=text_message,
                             from_email=django_settings.DEFAULT_FROM_EMAIL,
-                            recipient_list=[case.member.email],
+                            recipient_list=chat_recipients,
                             html_message=html_message,
                             fail_silently=False
                         )
@@ -3837,9 +3845,9 @@ def add_case_message(request, pk):
                             case=case,
                             user=user,
                             action_type='email_notification_sent',
-                            description=f'Tech comment email sent to {case.member.email} for case {case.external_case_id}',
+                            description=f'Tech comment email sent to {chat_recipients} for case {case.external_case_id}',
                             metadata={
-                                'email_to': case.member.email,
+                                'email_to': str(chat_recipients),
                                 'email_subject': email_subject,
                             }
                         )

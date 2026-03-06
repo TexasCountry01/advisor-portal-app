@@ -26,6 +26,26 @@ def _build_case_detail_url(case):
     return f"{base_url}{reverse('cases:case_detail', args=[case.id])}"
 
 
+def get_case_recipient_emails(case):
+    """Get all email recipients for a case: member + their delegates.
+    Returns a list of unique email addresses."""
+    recipients = []
+    if case.member and case.member.email:
+        recipients.append(case.member.email)
+    
+    # Add delegate emails
+    try:
+        from accounts.models import MemberDelegate
+        delegates = MemberDelegate.objects.filter(member=case.member).select_related('delegate')
+        for assignment in delegates:
+            if assignment.delegate.email and assignment.delegate.email not in recipients:
+                recipients.append(assignment.delegate.email)
+    except Exception as e:
+        logger.warning(f'Error fetching delegate emails for case {case.id}: {e}')
+    
+    return recipients
+
+
 def send_email_notification(
     subject,
     template_name,
@@ -361,11 +381,13 @@ def send_case_completed_email(case, request=None, user=None):
         text_message = render_to_string('emails/case_completed.txt', email_context)
         html_message = render_to_string('emails/case_completed.html', email_context)
 
+        recipient_list = get_case_recipient_emails(case)
+
         send_mail(
             subject=email_subject,
             message=text_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[case.member.email],
+            recipient_list=recipient_list,
             html_message=html_message,
             fail_silently=False,
         )
@@ -374,7 +396,7 @@ def send_case_completed_email(case, request=None, user=None):
         AuditLog.log_activity(
             user=user,
             action_type='email_notification_sent',
-            description=f'Case completed email sent to {case.member.email} for case {case.external_case_id}',
+            description=f'Case completed email sent to {recipient_list} for case {case.external_case_id}',
             case=case,
             metadata={
                 'email_to': case.member.email,
