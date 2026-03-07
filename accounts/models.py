@@ -52,6 +52,15 @@ class User(AbstractUser):
     )
     phone = models.CharField(max_length=20, blank=True)
     is_active = models.BooleanField(default=True)
+    is_test_account = models.BooleanField(
+        default=False,
+        help_text='Flag for permanent test accounts (Devops*). Excluded from data cleanup scripts.'
+    )
+    notification_email = models.EmailField(
+        blank=True,
+        default='',
+        help_text='Override email for portal notifications. If set, HOLD/CHAT/READY emails go here instead of the SSO email.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

@@ -26,20 +26,31 @@ def _build_case_detail_url(case):
     return f"{base_url}{reverse('cases:case_detail', args=[case.id])}"
 
 
+def _get_notification_email(user):
+    """Return the email address to use for portal notifications.
+    Uses notification_email if set, otherwise falls back to the SSO email."""
+    override = getattr(user, 'notification_email', '') or ''
+    return override.strip() if override.strip() else user.email
+
+
 def get_case_recipient_emails(case):
     """Get all email recipients for a case: member + their delegates.
+    Respects notification_email overrides for each user.
     Returns a list of unique email addresses."""
     recipients = []
     if case.member and case.member.email:
-        recipients.append(case.member.email)
+        email = _get_notification_email(case.member)
+        if email:
+            recipients.append(email)
     
     # Add delegate emails
     try:
         from accounts.models import MemberDelegate
         delegates = MemberDelegate.objects.filter(member=case.member).select_related('delegate')
         for assignment in delegates:
-            if assignment.delegate.email and assignment.delegate.email not in recipients:
-                recipients.append(assignment.delegate.email)
+            email = _get_notification_email(assignment.delegate)
+            if email and email not in recipients:
+                recipients.append(email)
     except Exception as e:
         logger.warning(f'Error fetching delegate emails for case {case.id}: {e}')
     
