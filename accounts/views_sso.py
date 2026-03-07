@@ -109,6 +109,8 @@ def sso_callback(request):
         else:
             if changes:
                 logger.info(f'SSO user synced and logged in: {user.username} — changes: {changes}')
+            else:
+                logger.info(f'SSO user logged in (no changes): {user.username}')
             
         # Redirect to stored 'next' URL or dashboard
         next_url = request.session.pop('sso_next', settings.LOGIN_REDIRECT_URL)

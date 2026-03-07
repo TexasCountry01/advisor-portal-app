@@ -343,6 +343,10 @@ def get_or_create_user_from_sso(profile_data, request=None):
     if user:
         # ---- EXISTING USER: login-time sync ----
         changes = _sync_user_fields(user, data, role)
+        delegate_flag_changed = _sync_pure_delegate_flag(user, is_pure_delegate)
+        
+        if delegate_flag_changed:
+            changes['is_pure_delegate'] = {'old': not is_pure_delegate, 'new': is_pure_delegate}
         
         if changes:
             user.save()
@@ -362,6 +366,8 @@ def get_or_create_user_from_sso(profile_data, request=None):
                     },
                     ip_address=_get_client_ip(request),
                 )
+        elif delegate_flag_changed:
+            user.save()
     else:
         # ---- NEW USER: auto-provision ----
         username = _generate_unique_username(data['username'] or data['email'].split('@')[0])
@@ -375,6 +381,7 @@ def get_or_create_user_from_sso(profile_data, request=None):
             role=role,
             workshop_code=data['workshop_code'],
             phone=data['phone'],
+            is_pure_delegate=is_pure_delegate,
             is_active=True,
         )
         # SSO users don't use Django passwords
@@ -453,6 +460,27 @@ def _sync_user_fields(user, data, new_role):
         user.role = new_role
     
     return changes
+
+
+def _sync_pure_delegate_flag(user, is_pure_delegate):
+    """
+    Update is_pure_delegate on every SSO login based on current WP tags.
+    
+    Separate from _sync_user_fields because it needs the is_pure_delegate
+    value computed by determine_role_from_tags, not from raw data dict.
+    Returns True if the value changed (caller must save).
+    """
+    # Don't touch portal-managed roles — they are never "pure delegates"
+    if user.role in PORTAL_MANAGED_ROLES:
+        if user.is_pure_delegate:
+            user.is_pure_delegate = False
+            return True
+        return False
+    
+    if user.is_pure_delegate != is_pure_delegate:
+        user.is_pure_delegate = is_pure_delegate
+        return True
+    return False
 
 
 def _generate_unique_username(base_username):

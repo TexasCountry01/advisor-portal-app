@@ -61,6 +61,11 @@ class User(AbstractUser):
         default='',
         help_text='Override email for portal notifications. If set, HOLD/CHAT/READY emails go here instead of the SSO email.'
     )
+    is_pure_delegate = models.BooleanField(
+        default=False,
+        help_text='True if user has only the "Portal access: Delegate" tag (admin assistant, no own cases). '
+                  'False if also a member/advisor. Set automatically by SSO on each login.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

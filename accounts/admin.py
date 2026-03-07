@@ -15,6 +15,10 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('is_test_account', 'notification_email'),
             'classes': ('collapse',),
         }),
+        ('SSO Delegate Info', {
+            'fields': ('is_pure_delegate',),
+            'classes': ('collapse',),
+        }),
     )
     
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
@@ -23,8 +27,8 @@ class UserAdmin(BaseUserAdmin):
         }),
     )
     
-    list_display = ['username', 'email', 'first_name', 'last_name', 'role', 'user_level', 'is_test_account', 'is_active']
-    list_filter = ['role', 'user_level', 'is_active', 'is_staff', 'is_test_account']
+    list_display = ['username', 'email', 'first_name', 'last_name', 'role', 'user_level', 'is_pure_delegate', 'is_test_account', 'is_active']
+    list_filter = ['role', 'user_level', 'is_active', 'is_staff', 'is_pure_delegate', 'is_test_account']
     search_fields = ['username', 'email', 'first_name', 'last_name', 'workshop_code']
 
 

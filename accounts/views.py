@@ -764,7 +764,7 @@ def delegate_management(request):
             'workshop_code': a.member.workshop_code,
             'delegate_name': f'{a.delegate.first_name} {a.delegate.last_name}',
             'delegate_email': a.delegate.email,
-            'delegate_is_also_member': a.delegate.role == 'member',
+            'delegate_is_also_member': not a.delegate.is_pure_delegate,
             'assigned_by': a.assigned_by.get_full_name() if a.assigned_by else '—',
             'assigned_date': a.created_at.strftime('%b %d, %Y') if a.created_at else '—',
         })
