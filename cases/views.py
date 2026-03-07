@@ -3749,11 +3749,9 @@ def add_case_message(request, pk):
                 except Exception as e:
                     logger.error(f'Error creating UnreadMessage for technician: {str(e)}')
             
-            # Set has_member_updates flag so "New Info" badge shows on technician dashboard
-            if case.status not in ['draft']:
-                case.has_member_updates = True
-                case.member_last_update_date = timezone.now()
-                case.save(update_fields=['has_member_updates', 'member_last_update_date'])
+            # NOTE: Do NOT set has_member_updates here — that flag is only for
+            # document uploads / resubmissions. Chat messages use UnreadMessage
+            # which drives the red unread bubble on the View button.
         else:
             # Technician posted - mark as unread for the member
             if case.member:
