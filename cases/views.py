@@ -6065,13 +6065,64 @@ def create_case_change_request(request, case_id):
         if request_type not in ['due_date_extension', 'cancellation']:
             return JsonResponse({'success': False, 'error': 'Invalid request type'}, status=400)
         
-        # Create the change request
+        # Handle cancellation immediately (no approval needed)
+        if request_type == 'cancellation':
+            case.status = 'cancelled'
+            case.save(update_fields=['status'])
+            
+            # Notify the assigned technician
+            if case.assigned_to:
+                from cases.models import CaseNotification
+                CaseNotification.objects.create(
+                    case=case,
+                    member=case.member,
+                    notification_type='case_released',
+                    title=f'Case Cancelled by Member',
+                    message=f'{user.get_full_name() or user.username} cancelled case {case.external_case_id}. Reason: {cancellation_reason}',
+                )
+                # Also create an UnreadMessage-style alert for the tech
+                try:
+                    from cases.models import CaseMessage
+                    msg = CaseMessage.objects.create(
+                        case=case,
+                        sender=user,
+                        message=f'[Case Cancelled] Reason: {cancellation_reason}' + (f'\nNotes: {member_notes}' if member_notes else ''),
+                    )
+                    UnreadMessage.objects.get_or_create(
+                        message=msg,
+                        user=case.assigned_to,
+                        defaults={'case': case}
+                    )
+                except Exception as e:
+                    logger.error(f'Error creating cancellation message: {str(e)}')
+            
+            # Log to audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=user,
+                action_type='case_cancelled',
+                case=case,
+                description=f'Member cancelled case: {cancellation_reason}',
+                metadata={
+                    'request_type': 'cancellation',
+                    'cancellation_reason': cancellation_reason,
+                    'member_notes': member_notes,
+                }
+            )
+            
+            logger.info(f'Member {user.id} cancelled case {case_id}: {cancellation_reason}')
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Case has been cancelled.',
+            })
+        
+        # For other request types (e.g., due_date_extension), create a pending change request
         change_request = CaseChangeRequest(
             case=case,
             member=user,
             request_type=request_type,
             requested_due_date=requested_due_date if request_type == 'due_date_extension' else None,
-            cancellation_reason=cancellation_reason if request_type == 'cancellation' else None,
             member_notes=member_notes,
             status='pending'
         )

@@ -3973,7 +3973,7 @@ function acceptAndPutOnHold() {
             <div class="modal-body">
                 <div class="alert alert-warning mb-3">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>Are you sure?</strong> This will send a cancellation request to the Benefits Team for review.
+                    <strong>Are you sure?</strong> This will immediately cancel this case. This action cannot be undone.
                 </div>
                 <form id="cancelCaseForm">
                     {% csrf_token %}
@@ -3990,7 +3990,7 @@ function acceptAndPutOnHold() {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Never Mind</button>
                 <button type="button" class="btn btn-danger" onclick="submitCancelRequest()">
-                    <i class="bi bi-x-circle"></i> Submit Cancellation Request
+                    <i class="bi bi-x-circle"></i> Cancel Case
                 </button>
             </div>
         </div>
@@ -4195,7 +4195,7 @@ function submitCancelRequest() {
         if (data.success) {
             const modal = bootstrap.Modal.getInstance(document.getElementById('cancelCaseModal'));
             if (modal) modal.hide();
-            alert(data.message + '\n\nYour technician will review your request shortly.');
+            alert(data.message);
             location.reload();
         } else {
             alert('Error: ' + data.error);
