@@ -32,6 +32,8 @@ CASE_STATUS_PENDING_REVIEW = 'pending_review'
 CASE_STATUS_COMPLETED = 'completed'
 CASE_STATUS_DRAFT = 'draft'
 
+CASE_STATUS_CANCELLED = 'cancelled'
+
 CASE_STATUS_CHOICES = [
     (CASE_STATUS_DRAFT, 'Draft'),
     (CASE_STATUS_SUBMITTED, 'Submitted'),
@@ -39,6 +41,7 @@ CASE_STATUS_CHOICES = [
     (CASE_STATUS_HOLD, 'Hold'),
     (CASE_STATUS_PENDING_REVIEW, 'Pending Review'),
     (CASE_STATUS_COMPLETED, 'Completed'),
+    (CASE_STATUS_CANCELLED, 'Cancelled'),
 ]
 
 # Status workflow transitions
