@@ -158,6 +158,8 @@ def member_dashboard(request):
             case=case,
             member=notif_member,
             is_read=False
+        ).exclude(
+            notification_type='member_update_received'  # Already counted via UnreadMessage
         ).count()
         case.unread_message_count = unread_msg_count + unread_notif_count
         if case.unread_message_count > 0:
@@ -223,9 +225,11 @@ def member_dashboard(request):
     # Get column visibility settings
     visible_columns = get_user_visible_columns(user, 'member_dashboard')
     
-    # Get draft cases for banner (only for my_cases view — delegates don't see draft banner)
+    # Get draft cases for banner
     if active_view == 'my_cases':
         draft_cases = Case.objects.filter(member=user, status='draft').order_by('-created_at')
+    elif active_view == 'delegate' and delegated_member_ids:
+        draft_cases = Case.objects.filter(member_id__in=delegated_member_ids, status='draft').order_by('-created_at')
     else:
         draft_cases = None
     
@@ -5987,9 +5991,13 @@ def get_hold_cases(request):
         }, status=403)
     
     try:
-        # Get all cases on hold for this member
+        # Get all cases on hold for this member + delegated members
+        from accounts.models import MemberDelegate
+        delegate_member_ids = list(
+            MemberDelegate.objects.filter(delegate=user).values_list('member_id', flat=True)
+        )
         hold_cases = Case.objects.filter(
-            member=user,
+            Q(member=user) | Q(member_id__in=delegate_member_ids),
             status='hold'
         ).select_related(
             'assigned_to'
