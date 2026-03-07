@@ -6077,8 +6077,8 @@ def create_case_change_request(request, case_id):
                     case=case,
                     member=case.member,
                     notification_type='case_released',
-                    title=f'Case Cancelled by Member',
-                    message=f'{user.get_full_name() or user.username} cancelled case {case.external_case_id}. Reason: {cancellation_reason}',
+                    title=f'Case Canceled by Member',
+                    message=f'{user.get_full_name() or user.username} canceled case {case.external_case_id}. Reason: {cancellation_reason}',
                 )
                 # Also create an UnreadMessage-style alert for the tech
                 try:
@@ -6086,7 +6086,7 @@ def create_case_change_request(request, case_id):
                     msg = CaseMessage.objects.create(
                         case=case,
                         sender=user,
-                        message=f'[Case Cancelled] Reason: {cancellation_reason}' + (f'\nNotes: {member_notes}' if member_notes else ''),
+                        message=f'[Case Canceled] Reason: {cancellation_reason}' + (f'\nNotes: {member_notes}' if member_notes else ''),
                     )
                     UnreadMessage.objects.get_or_create(
                         message=msg,
@@ -6102,7 +6102,7 @@ def create_case_change_request(request, case_id):
                 user=user,
                 action_type='case_cancelled',
                 case=case,
-                description=f'Member cancelled case: {cancellation_reason}',
+                description=f'Member canceled case: {cancellation_reason}',
                 metadata={
                     'request_type': 'cancellation',
                     'cancellation_reason': cancellation_reason,
@@ -6110,11 +6110,11 @@ def create_case_change_request(request, case_id):
                 }
             )
             
-            logger.info(f'Member {user.id} cancelled case {case_id}: {cancellation_reason}')
+            logger.info(f'Member {user.id} canceled case {case_id}: {cancellation_reason}')
             
             return JsonResponse({
                 'success': True,
-                'message': 'Case has been cancelled.',
+                'message': 'Case has been canceled.',
             })
         
         # For other request types (e.g., due_date_extension), create a pending change request
@@ -6222,7 +6222,7 @@ def approve_case_change_request(request, request_id):
                 user=user,
                 action_type='case_cancelled',
                 case=case,
-                description=f'Case cancelled via approved member request',
+                description=f'Case canceled via approved member request',
                 changes={'status': {'from': 'submitted', 'to': 'cancelled'}},
                 metadata={'change_request_id': change_req.id}
             )

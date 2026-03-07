@@ -43,7 +43,7 @@
                     <span class="badge bg-primary fs-5" title="Case accepted by Benefits Team">Accepted</span>
                     {% endif %}
                 {% elif case.status == 'cancelled' %}
-                    <span class="badge bg-danger fs-5" title="Case has been cancelled">Cancelled</span>
+                    <span class="badge bg-danger fs-5" title="Case has been canceled">Canceled</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -63,7 +63,7 @@
                 {% elif case.status == 'completed' %}
                     <span class="badge bg-success fs-5" title="Case completed and ready for download">Completed</span>
                 {% elif case.status == 'cancelled' %}
-                    <span class="badge bg-danger fs-5" title="Case has been cancelled">Cancelled</span>
+                    <span class="badge bg-danger fs-5" title="Case has been canceled">Canceled</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -83,7 +83,7 @@
                 {% elif case.status == 'completed' %}
                     <span class="badge bg-success fs-5" title="Case completed and ready for download">Completed</span>
                 {% elif case.status == 'cancelled' %}
-                    <span class="badge bg-danger fs-5" title="Case has been cancelled">Cancelled</span>
+                    <span class="badge bg-danger fs-5" title="Case has been canceled">Canceled</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -1424,7 +1424,7 @@
                                             {% elif event.action_type == 'case_rejected' %}
                                                 <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>
                                             {% elif event.action_type == 'case_cancelled' %}
-                                                <span class="badge bg-dark"><i class="bi bi-slash-circle me-1"></i>Cancelled</span>
+                                                <span class="badge bg-dark"><i class="bi bi-slash-circle me-1"></i>Canceled</span>
                                             {% elif event.action_type == 'case_ownership_taken' %}
                                                 <span class="badge bg-primary"><i class="bi bi-person-fill me-1"></i>Ownership Claimed</span>
                                             {% elif event.action_type == 'admin_ownership' %}

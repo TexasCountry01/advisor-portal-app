@@ -57,7 +57,7 @@ class AuditLog(models.Model):
         ('case_completed', 'Case Completed'),
         ('case_incomplete', 'Case Marked Incomplete'),
         ('case_rejected', 'Case Rejected'),
-        ('case_cancelled', 'Case Cancelled'),
+        ('case_cancelled', 'Case Canceled'),
         ('case_deleted', 'Case Deleted'),
         ('case_review_approved', 'Case Review Approved'),
         ('case_review_revisions', 'Case Review Revisions Requested'),

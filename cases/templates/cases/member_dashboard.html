@@ -203,7 +203,7 @@
                         </div>
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="cancelled" id="status_cancelled" {% if 'cancelled' in status_filter %}checked{% endif %}>
-                            <label class="form-check-label" for="status_cancelled">Cancelled</label>
+                            <label class="form-check-label" for="status_cancelled">Canceled</label>
                         </div>
                     </div>
                 </div>
@@ -332,7 +332,7 @@
                                     <span class="badge bg-primary" title="Case accepted by Benefits Team">Accepted</span>
                                     {% endif %}
                                 {% elif case.status == 'cancelled' %}
-                                    <span class="badge bg-danger" title="Case cancelled by technician">Cancelled</span>
+                                    <span class="badge bg-danger" title="Case canceled">Canceled</span>
                                 {% endif %}
                             </td>
                             <td class="column-credit {% if 'credit' not in visible_columns %}column-hidden{% endif %}">
