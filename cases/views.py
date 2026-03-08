@@ -4014,10 +4014,26 @@ def get_unread_message_count(request):
                     'external_case_id': case.external_case_id,
                     'member_name': case.member.get_full_name() if case.member else 'Unknown',
                     'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
-                    'unread_count': item['count']
+                    'unread_count': item['count'],
+                    'has_member_updates': case.has_member_updates,
                 })
             except Case.DoesNotExist:
                 pass
+        
+        # Also include cases with has_member_updates=True but no unread messages
+        unread_case_ids = [item['case'] for item in unread_by_case]
+        updated_cases = Case.objects.filter(
+            has_member_updates=True
+        ).exclude(id__in=unread_case_ids)
+        for case in updated_cases:
+            unread_cases.append({
+                'case_id': case.id,
+                'external_case_id': case.external_case_id,
+                'member_name': case.member.get_full_name() if case.member else 'Unknown',
+                'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
+                'unread_count': 0,
+                'has_member_updates': True,
+            })
         
         return JsonResponse({
             'success': True,

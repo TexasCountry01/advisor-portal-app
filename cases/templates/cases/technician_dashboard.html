@@ -326,7 +326,7 @@
                     </thead>
                     <tbody>
                         {% for case in cases %}
-                        <tr>
+                        <tr data-case-id="{{ case.pk }}">
                             <!-- COMMENTED OUT: ID Column Cell - 01/11/2026
                                  Reason: ID column removed from dashboard. Full link available via "Code" column.
                             <td id="id-column">
@@ -348,7 +348,7 @@
                                     </span>
                                     {% endif %}
                                     {% if case.has_member_updates %}
-                                    <span class="badge bg-warning text-dark" title="Member has provided new information">
+                                    <span class="badge bg-warning text-dark new-info-badge" data-case-id="{{ case.pk }}" title="Member has provided new information">
                                         <i class="bi bi-info-circle"></i> New Info
                                     </span>
                                     {% endif %}
@@ -441,7 +441,7 @@
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                     {% if case.unread_message_count > 0 %}
-                                    <span class="badge bg-danger ms-1" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
+                                    <span class="badge bg-danger ms-1 unread-badge" data-case-id="{{ case.pk }}" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
                                     {% endif %}
                                 </a>
                             </td>
@@ -919,6 +919,72 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+</script>
+
+<!-- Auto-refresh badge counts every 30 seconds -->
+<script>
+function refreshBadgeCounts() {
+    fetch('/cases/unread-message-count/')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            // Build lookup: case_id -> {unread_count, has_member_updates}
+            const lookup = {};
+            (data.unread_by_case || []).forEach(item => {
+                lookup[item.case_id] = item;
+            });
+            // Update each row
+            document.querySelectorAll('tr[data-case-id]').forEach(row => {
+                const caseId = parseInt(row.dataset.caseId);
+                const info = lookup[caseId];
+                const unreadCount = info ? info.unread_count : 0;
+                const hasUpdates = info ? info.has_member_updates : false;
+
+                // Update unread badge on View button
+                const viewLink = row.querySelector('a[href*="/cases/"]');
+                if (viewLink) {
+                    let badge = viewLink.querySelector('.unread-badge');
+                    if (unreadCount > 0) {
+                        if (badge) {
+                            badge.textContent = unreadCount;
+                            badge.title = `You have ${unreadCount} unread message(s)`;
+                        } else {
+                            badge = document.createElement('span');
+                            badge.className = 'badge bg-danger ms-1 unread-badge';
+                            badge.dataset.caseId = caseId;
+                            badge.title = `You have ${unreadCount} unread message(s)`;
+                            badge.textContent = unreadCount;
+                            viewLink.appendChild(badge);
+                        }
+                    } else if (badge) {
+                        badge.remove();
+                    }
+                }
+
+                // Update New Info badge in code column
+                const codeCell = row.querySelector('.column-code');
+                if (codeCell) {
+                    let infoBadge = codeCell.querySelector('.new-info-badge');
+                    if (hasUpdates) {
+                        if (!infoBadge) {
+                            infoBadge = document.createElement('span');
+                            infoBadge.className = 'badge bg-warning text-dark new-info-badge';
+                            infoBadge.dataset.caseId = caseId;
+                            infoBadge.title = 'Member has provided new information';
+                            infoBadge.innerHTML = '<i class="bi bi-info-circle"></i> New Info';
+                            const wrapper = codeCell.querySelector('.d-flex');
+                            if (wrapper) wrapper.appendChild(infoBadge);
+                        }
+                    } else if (infoBadge) {
+                        infoBadge.remove();
+                    }
+                }
+            });
+        })
+        .catch(err => console.error('Badge refresh error:', err));
+}
+// Poll every 30 seconds
+setInterval(refreshBadgeCounts, 30000);
 </script>
 
 {% endblock %}
