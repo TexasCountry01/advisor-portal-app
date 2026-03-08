@@ -4032,17 +4032,22 @@ function acceptAndPutOnHold() {
 
 <script>
 function submitDraftFromDetail(caseId) {
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
-    const formData = new FormData();
-    formData.append('check_only', 'true');
-
+    // Check if case has any documents attached
     fetch(`/cases/${caseId}/submit-final/`, {
         method: 'POST',
-        body: formData,
-        headers: { 'X-CSRFToken': csrfToken }
+        body: new URLSearchParams({ 'check_only': 'true' }),
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
     })
     .then(response => response.json())
     .then(checkData => {
+        if (checkData.no_documents) {
+            alert('Please attach at least one document (Federal Fact Finder form and supporting documents) before submitting your case.');
+            return;
+        }
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
         if (checkData.urgency_changed) {
             document.getElementById('rushEditCaseLink').href = `/cases/${caseId}/edit/`;
             document.getElementById('confirmRushSubmitBtn').onclick = function() {
@@ -4057,6 +4062,7 @@ function submitDraftFromDetail(caseId) {
     .catch(error => {
         console.error('Error:', error);
         if (confirm('Are you sure you want to submit this case?')) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
             doSubmitDraft(caseId, csrfToken);
         }
     });

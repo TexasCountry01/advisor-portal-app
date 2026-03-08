@@ -2285,13 +2285,22 @@ def submit_case_final(request, case_id):
             # If this is a check-only request (from frontend), return urgency status
             check_only = request.POST.get('check_only') == 'true'
             if check_only:
+                has_documents = case.documents.count() > 0
                 return JsonResponse({
                     'success': True,
                     'urgency_changed': urgency_changed,
                     'stored_urgency': stored_urgency,
                     'current_urgency': current_urgency,
+                    'no_documents': not has_documents,
                     'message': 'This case is now marked as RUSH. Your due date is within 7 days. Continue?'
                 })
+            
+            # Server-side document check
+            if case.documents.count() == 0:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please attach at least one document before submitting your case.'
+                }, status=400)
             
             # Update case urgency to current value
             if current_urgency != stored_urgency:
