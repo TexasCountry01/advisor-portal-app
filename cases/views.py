@@ -3778,16 +3778,16 @@ def add_case_message(request, pk):
                     if len(preview) > 200:
                         preview = preview[:197] + '...'
                     
-                    # Get technician's first name
-                    tech_first_name = user.first_name or user.username
+                    # Get employee name for notification title
+                    employee_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
                     
-                    logger.info(f'Creating CaseNotification: title="Response from {tech_first_name}", message="{preview}"')
+                    logger.info(f'Creating CaseNotification: title="New Chat for {employee_name} case", message="{preview}"')
                     
                     notification = CaseNotification.objects.create(
                         case=case,
                         member=case.member,
                         notification_type='member_update_received',
-                        title=f'Response from {tech_first_name}',
+                        title=f'New Chat for {employee_name} case',
                         message=preview
                     )
                     logger.info(f'CaseNotification created successfully: {notification.id}')
