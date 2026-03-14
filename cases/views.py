@@ -1368,8 +1368,8 @@ def case_detail(request, pk):
     # Get case reports
     reports = case.reports.all().order_by('report_number')
     
-    # Only technicians can upload reports
-    can_upload_reports = user.role == 'technician' and can_edit
+    # Only technicians and administrators can upload reports
+    can_upload_reports = user.role in ['technician', 'administrator'] and can_edit
     
     # Check if user can release case immediately (case owner or admin, and case is scheduled for release)
     can_release_immediately = False
