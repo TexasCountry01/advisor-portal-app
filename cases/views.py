@@ -91,6 +91,8 @@ def member_dashboard(request):
     # Validate the view parameter
     if active_view == 'delegate' and not is_delegate:
         active_view = 'my_cases'
+    if active_view == 'all' and not is_delegate:
+        active_view = 'my_cases'
     if active_view == 'my_cases' and is_pure_delegate:
         # Pure delegates can't switch to my_cases — they have no cases
         active_view = 'delegate'
@@ -98,7 +100,18 @@ def member_dashboard(request):
     # ====================================================================
     # QUERY CASES based on active view
     # ====================================================================
-    if active_view == 'delegate':
+    if active_view == 'all':
+        # All Cases view: show user's own cases + delegate cases combined
+        all_member_ids = [user.id] + delegated_member_ids
+        cases = Case.objects.filter(
+            member_id__in=all_member_ids
+        ).prefetch_related(
+            'documents',
+            'unread_messages_for_users'
+        ).select_related(
+            'assigned_to', 'member'
+        ).order_by('-date_submitted')
+    elif active_view == 'delegate':
         # Delegate view: show cases for all members this user is a delegate for
         cases = Case.objects.filter(
             member_id__in=delegated_member_ids
@@ -231,7 +244,10 @@ def member_dashboard(request):
         cases = sorted(cases, key=lambda x: x.urgency or '', reverse=True)
     
     # Calculate statistics (for the active view)
-    if active_view == 'delegate':
+    if active_view == 'all':
+        all_member_ids = [user.id] + delegated_member_ids
+        all_cases = Case.objects.filter(member_id__in=all_member_ids)
+    elif active_view == 'delegate':
         all_cases = Case.objects.filter(member_id__in=delegated_member_ids)
     else:
         all_cases = Case.objects.filter(member=user)
@@ -250,7 +266,10 @@ def member_dashboard(request):
     visible_columns = get_user_visible_columns(user, 'member_dashboard')
     
     # Get draft cases for banner
-    if active_view == 'my_cases':
+    if active_view == 'all':
+        all_member_ids_for_drafts = [user.id] + delegated_member_ids
+        draft_cases = Case.objects.filter(member_id__in=all_member_ids_for_drafts, status='draft').order_by('-created_at')
+    elif active_view == 'my_cases':
         draft_cases = Case.objects.filter(member=user, status='draft').order_by('-created_at')
     elif active_view == 'delegate' and delegated_member_ids:
         draft_cases = Case.objects.filter(member_id__in=delegated_member_ids, status='draft').order_by('-created_at')

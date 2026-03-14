@@ -31,11 +31,14 @@
         </div>
 
         {% if is_delegate and not is_pure_delegate %}
-        <!-- My Cases / Delegate Cases Toggle -->
+        <!-- My Cases / All Cases / Delegate Cases Toggle -->
         <div class="col-auto d-flex align-items-center">
             <div class="btn-group" role="group" aria-label="Dashboard view toggle">
                 <a href="?view=my_cases" class="btn {% if active_view == 'my_cases' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                     <i class="bi bi-briefcase"></i> My Cases
+                </a>
+                <a href="?view=all" class="btn {% if active_view == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="bi bi-collection"></i> All Cases
                 </a>
                 <a href="?view=delegate" class="btn {% if active_view == 'delegate' %}btn-primary{% else %}btn-outline-primary{% endif %}">
                     <i class="bi bi-people"></i> Delegate Cases
@@ -271,7 +274,9 @@
     <div class="card">
         <div class="card-header">
             <h5 class="mb-0">
-                {% if active_view == 'delegate' %}
+                {% if active_view == 'all' %}
+                    All Cases
+                {% elif active_view == 'delegate' %}
                     Delegate Cases
                 {% else %}
                     My Cases
