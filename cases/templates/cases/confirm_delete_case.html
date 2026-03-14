@@ -117,12 +117,12 @@
 
                     <!-- Action Buttons -->
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                        <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-lg btn-secondary">
+                        <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-lg btn-outline-secondary">
                             <i class="bi bi-arrow-left"></i> Cancel - Keep This Case
                         </a>
                         <form method="post" style="display: inline;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-lg btn-danger" onclick="return confirm('Are you absolutely sure? This cannot be undone.\n\nCase for: {{ case.employee_first_name }} {{ case.employee_last_name }}\n\nDocuments: {{ documents_count }}\nReports: {{ reports_count }}\nNotes: {{ notes_count }}')">
+                            <button type="submit" class="btn btn-lg btn-outline-danger" onclick="return confirm('Are you absolutely sure? This cannot be undone.\n\nCase for: {{ case.employee_first_name }} {{ case.employee_last_name }}\n\nDocuments: {{ documents_count }}\nReports: {{ reports_count }}\nNotes: {{ notes_count }}')">
                                 <i class="bi bi-trash"></i> Yes, Permanently Delete This Case
                             </button>
                         </form>

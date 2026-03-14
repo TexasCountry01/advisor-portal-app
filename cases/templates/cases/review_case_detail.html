@@ -15,7 +15,7 @@
             <p class="text-muted">Quality Review for {{ assigned_technician.get_user_level_display }} Technician</p>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{% url 'cases:review_queue' %}" class="btn btn-secondary">
+            <a href="{% url 'cases:review_queue' %}" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Queue
             </a>
         </div>
@@ -255,7 +255,7 @@
                     <!-- Approve Button -->
                     <button 
                         type="button" 
-                        class="btn btn-success w-100 mb-2" 
+                        class="btn btn-outline-success w-100 mb-2" 
                         data-bs-toggle="modal" 
                         data-bs-target="#approveModal"
                     >
@@ -265,7 +265,7 @@
                     <!-- Request Revisions Button -->
                     <button 
                         type="button" 
-                        class="btn btn-warning w-100 mb-2" 
+                        class="btn btn-outline-warning w-100 mb-2" 
                         data-bs-toggle="modal" 
                         data-bs-target="#revisionsModal"
                     >
@@ -275,7 +275,7 @@
                     <!-- Request Corrections Button -->
                     <button 
                         type="button" 
-                        class="btn btn-danger w-100" 
+                        class="btn btn-outline-danger w-100" 
                         data-bs-toggle="modal" 
                         data-bs-target="#correctionsModal"
                     >

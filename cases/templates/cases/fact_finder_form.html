@@ -203,10 +203,10 @@
                         <p style="color: red; font-weight: bold; font-size: 11px; margin-bottom: 15px;">MEMBER USE ONLY - NOT FOR DISTRIBUTION TO PUBLIC</p>
                         
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-primary" onclick="clearForm()" style="background: #4472c4; border: none; font-weight: bold;">
+                            <button type="button" class="btn btn-outline-primary" onclick="clearForm()" style="font-weight: bold;">
                                 CLEAR FORM
                             </button>
-                            <button type="button" class="btn btn-success" onclick="saveDraft()" style="background: #70ad47; border: none; font-weight: bold;">
+                            <button type="button" class="btn btn-outline-success" onclick="saveDraft()" style="font-weight: bold;">
                                 SAVE FILE
                             </button>
                         </div>
@@ -259,7 +259,7 @@
                     <strong>Draft Found:</strong> <span id="draftDate"></span>
                 </div>
                 <div class="draft-banner-actions">
-                    <button type="button" class="btn btn-sm btn-primary" onclick="restoreDraftData()">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="restoreDraftData()">
                         <i class="bi bi-arrow-counterclockwise"></i> Restore Draft
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-secondary" onclick="dismissDraft()">
@@ -2633,7 +2633,7 @@
                                 <input type="file" class="form-control document-file" name="documents[]" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
                             </div>
                             <div class="col-md-2">
-                                <button type="button" class="btn btn-sm btn-success" onclick="addDocumentRow()">
+                                <button type="button" class="btn btn-sm btn-outline-success" onclick="addDocumentRow()">
                                     <i class="bi bi-plus-circle"></i> Add More
                                 </button>
                             </div>
@@ -2649,7 +2649,7 @@
                     <button type="button" class="btn btn-lg btn-outline-secondary" onclick="window.location.href='{% url 'cases:member_dashboard' %}'">
                         <i class="bi bi-x-circle"></i> CANCEL
                     </button>
-                    <button type="submit" class="btn btn-lg btn-primary">
+                    <button type="submit" class="btn btn-lg btn-outline-primary">
                         <i class="bi bi-send"></i> SUBMIT CASE
                     </button>
                 </div>
@@ -2843,7 +2843,7 @@
                     <input type="file" class="form-control document-file" name="documents[]" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
                 </div>
                 <div class="col-md-2">
-                    <button type="button" class="btn btn-sm btn-danger" onclick="removeDocumentRow(${documentRowCount})">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDocumentRow(${documentRowCount})">
                         <i class="bi bi-trash"></i> Remove
                     </button>
                 </div>
@@ -3052,7 +3052,7 @@
                     </div>
                 </div>
                 
-                <button type="button" class="btn btn-sm btn-primary" onclick="addDocument()">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDocument()">
                     <i class="bi bi-plus-circle"></i> Add Document
                 </button>
                 
@@ -3070,7 +3070,7 @@
                     <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary btn-lg px-5">
                         <i class="bi bi-x-circle"></i> Cancel
                     </a>
-                    <button type="submit" class="btn btn-primary btn-lg px-5">
+                    <button type="submit" class="btn btn-outline-primary btn-lg px-5">
                         <i class="bi bi-check-circle"></i> Submit Complete Case
                     </button>
                 </div>

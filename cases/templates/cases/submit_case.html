@@ -273,22 +273,26 @@
         display: inline-block;
     }
 
-    .btn-primary {
+    .btn-outline-primary {
+        color: #0066cc;
+        border-color: #0066cc;
+        background: transparent;
+    }
+
+    .btn-outline-primary:hover {
         background: #0066cc;
         color: white;
     }
 
-    .btn-primary:hover {
-        background: #003399;
+    .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+        background: transparent;
     }
 
-    .btn-secondary {
+    .btn-outline-secondary:hover {
         background: #6c757d;
         color: white;
-    }
-
-    .btn-secondary:hover {
-        background: #5a6268;
     }
 
     .btn:disabled {
@@ -617,13 +621,13 @@
 
             <!-- Form Actions -->
             <div class="form-actions">
-                <a href="{% url 'cases:member_dashboard' %}" class="btn btn-secondary">
+                <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary">
                     <i class="bi bi-x-circle"></i> Cancel
                 </a>
-                <button type="submit" name="action" value="draft" class="btn btn-primary" id="saveDraftBtn">
+                <button type="submit" name="action" value="draft" class="btn btn-outline-primary" id="saveDraftBtn">
                     <i class="bi bi-bookmark"></i> Save as Draft
                 </button>
-                <button type="submit" name="action" value="submit" class="btn btn-success" id="submitBtn">
+                <button type="submit" name="action" value="submit" class="btn btn-outline-success" id="submitBtn">
                     <i class="bi bi-check-circle"></i> Submit
                 </button>
             </div>

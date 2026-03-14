@@ -54,10 +54,10 @@
                     <input type="date" class="form-control" id="dateTo" name="date_to" value="{{ date_to }}">
                 </div>
                 <div class="col-12">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-outline-primary">
                         <i class="bi bi-search"></i> Apply Filters
                     </button>
-                    <a href="{% url 'cases:case_audit_history' case.id %}" class="btn btn-secondary">
+                    <a href="{% url 'cases:case_audit_history' case.id %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-clockwise"></i> Reset
                     </a>
                 </div>

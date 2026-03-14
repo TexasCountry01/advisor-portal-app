@@ -78,7 +78,7 @@
                             <td>{{ case.assigned_to.username }}</td>
                             <td>{{ case.submitted_at|date:"m/d/Y" }}</td>
                             <td>
-                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-warning">
+                                <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-warning">
                                     <i class="bi bi-eye"></i> Review
                                 </a>
                             </td>
@@ -114,7 +114,7 @@
                            value="{{ search_query|default:'' }}">
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    <button type="submit" class="btn btn-outline-primary w-100"><i class="bi bi-search"></i> Filter</button>
                 </div>
             </form>
         </div>
