@@ -992,38 +992,39 @@ def accept_case(request, pk):
             assigned_tech = None
             if assigned_to_id:
                 try:
-                    assigned_tech = User.objects.get(id=assigned_to_id, role='technician')
+                    assigned_tech = User.objects.get(id=assigned_to_id, role__in=['technician', 'administrator'])
                 except User.DoesNotExist:
                     return JsonResponse({
                         'success': False,
                         'error': 'Invalid technician selected.'
                     }, status=400)
                 
-                # Check tech level against tier
-                tech_level_num = {
-                    'level_1': 1,
-                    'level_2': 2,
-                    'level_3': 3
-                }.get(assigned_tech.user_level, 0)
-                
-                tier_num = int(tier)
-                required_level_num = tier_num
-                
-                if tech_level_num < required_level_num:
-                    # Tech level doesn't meet tier requirement
-                    # Only admin can override
-                    if user.role != 'administrator':
-                        return JsonResponse({
-                            'success': False,
-                            'error': f'{assigned_tech.first_name} {assigned_tech.last_name} is Level {tech_level_num} but Tier {tier} requires Level {required_level_num}. Only administrators can override this.'
-                        }, status=400)
+                # Check tech level against tier (skip for administrators)
+                if assigned_tech.role != 'administrator':
+                    tech_level_num = {
+                        'level_1': 1,
+                        'level_2': 2,
+                        'level_3': 3
+                    }.get(assigned_tech.user_level, 0)
                     
-                    # Admin override: require reason
-                    if not tech_override_reason:
-                        return JsonResponse({
-                            'success': False,
-                            'error': 'Override reason is required when assigning tech with insufficient level.'
-                        }, status=400)
+                    tier_num = int(tier)
+                    required_level_num = tier_num
+                    
+                    if tech_level_num < required_level_num:
+                        # Tech level doesn't meet tier requirement
+                        # Only admin can override
+                        if user.role != 'administrator':
+                            return JsonResponse({
+                                'success': False,
+                                'error': f'{assigned_tech.first_name} {assigned_tech.last_name} is Level {tech_level_num} but Tier {tier} requires Level {required_level_num}. Only administrators can override this.'
+                            }, status=400)
+                        
+                        # Admin override: require reason
+                        if not tech_override_reason:
+                            return JsonResponse({
+                                'success': False,
+                                'error': 'Override reason is required when assigning tech with insufficient level.'
+                            }, status=400)
             
             # Update case
             case.status = 'accepted'
@@ -1379,7 +1380,7 @@ def case_detail(request, pk):
             can_release_immediately = True
     
     # Get available technicians for reassignment dropdown
-    available_techs = User.objects.filter(role='technician', is_active=True).order_by('first_name')
+    available_techs = User.objects.filter(role__in=['technician', 'administrator'], is_active=True).order_by('first_name')
     
     # Get audit history for this case (Manager/Admin only)
     audit_logs = []
@@ -1999,7 +2000,9 @@ def admin_take_ownership(request, case_id):
                 pass
         
         # Transition to 'accepted' status when ownership is taken
-        case.status = 'accepted'
+        # But preserve hold status if the case is currently on hold
+        if case.status != 'hold':
+            case.status = 'accepted'
         case.save()
         
         # Create audit log entry
@@ -2031,7 +2034,7 @@ def admin_take_ownership(request, case_id):
         # Log the action
         messages.success(
             request, 
-            f'You have taken ownership of case {case.external_case_id}. Previous owner: {previous_owner_name}. Status: Accepted'
+            f'You have taken ownership of case {case.external_case_id}. Previous owner: {previous_owner_name}. Status: {case.get_status_display()}'
         )
         
         return redirect('cases:admin_dashboard')
@@ -3616,8 +3619,8 @@ def case_review_for_acceptance(request, pk):
         messages.error(request, f'Case cannot be reviewed. Status: {case.get_status_display()}')
         return redirect('case_detail', pk=case.id)
     
-    # Get available technicians for assignment (only those with role='technician')
-    available_techs = User.objects.filter(role='technician', is_active=True).order_by('first_name')
+    # Get available technicians for assignment (technicians and administrators)
+    available_techs = User.objects.filter(role__in=['technician', 'administrator'], is_active=True).order_by('first_name')
     
     context = {
         'case': case,
@@ -4891,7 +4894,7 @@ Advisor Portal System"""
             return JsonResponse({'error': str(e)}, status=500)
     
     # GET request - return form data for modal
-    available_techs = User.objects.filter(role='technician').order_by('first_name', 'last_name')
+    available_techs = User.objects.filter(role__in=['technician', 'administrator']).order_by('first_name', 'last_name')
     
     context = {
         'case': case,

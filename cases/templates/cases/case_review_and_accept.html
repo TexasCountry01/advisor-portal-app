@@ -206,7 +206,7 @@
                                 <option value="">Choose technician...</option>
                                 {% for tech in available_techs %}
                                     <option value="{{ tech.id }}" data-level="{{ tech.user_level }}" {% if case.assigned_to.id == tech.id %}selected{% endif %}>
-                                        {{ tech.get_full_name }} ({{ tech.get_user_level_display }})
+                                        {{ tech.get_full_name }} ({% if tech.role == 'administrator' %}Admin{% else %}{{ tech.get_user_level_display }}{% endif %})
                                     </option>
                                 {% endfor %}
                             </select>
