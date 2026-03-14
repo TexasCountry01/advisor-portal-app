@@ -122,6 +122,9 @@ def member_dashboard(request):
     # Apply filters BEFORE adding unread count
     status_filter = request.GET.getlist('status')  # Use getlist for multiple values
     urgency_filter = request.GET.get('urgency')
+    date_range = request.GET.get('date_range')
+    custom_date_from = request.GET.get('date_from')
+    custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort')
     if sort_by:
@@ -137,6 +140,27 @@ def member_dashboard(request):
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
+    
+    # Date range filter - custom dates take precedence
+    if custom_date_from or custom_date_to:
+        from datetime import datetime as dt_parse
+        if custom_date_from:
+            date_from = dt_parse.strptime(custom_date_from, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__gte=date_from)
+        if custom_date_to:
+            date_to = dt_parse.strptime(custom_date_to, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__lte=date_to)
+    elif date_range:
+        from datetime import timedelta
+        today = timezone.now().date()
+        if date_range == 'today':
+            cases = cases.filter(date_submitted__date=today)
+        elif date_range == 'week':
+            week_ago = today - timedelta(days=7)
+            cases = cases.filter(date_submitted__date__gte=week_ago)
+        elif date_range == 'month':
+            month_ago = today - timedelta(days=30)
+            cases = cases.filter(date_submitted__date__gte=month_ago)
     
     if search_query:
         cases = cases.filter(
@@ -239,6 +263,9 @@ def member_dashboard(request):
         'draft_cases': draft_cases,
         'status_filter': status_filter,
         'urgency_filter': urgency_filter,
+        'date_range': date_range,
+        'custom_date_from': custom_date_from,
+        'custom_date_to': custom_date_to,
         'search_query': search_query,
         'sort_by': sort_by,
         'visible_columns': visible_columns,
@@ -296,6 +323,9 @@ def technician_dashboard(request):
     status_filters = request.GET.getlist('status')  # Get list of selected statuses
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
+    date_range = request.GET.get('date_range')
+    custom_date_from = request.GET.get('date_from')
+    custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
     sort_by = request.GET.get('sort')
     if sort_by:
@@ -319,6 +349,27 @@ def technician_dashboard(request):
     
     if tier_filter:
         cases = cases.filter(tier=tier_filter)
+    
+    # Date range filter - custom dates take precedence
+    if custom_date_from or custom_date_to:
+        from datetime import datetime as dt_parse
+        if custom_date_from:
+            date_from = dt_parse.strptime(custom_date_from, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__gte=date_from)
+        if custom_date_to:
+            date_to = dt_parse.strptime(custom_date_to, '%Y-%m-%d').date()
+            cases = cases.filter(date_submitted__date__lte=date_to)
+    elif date_range:
+        from datetime import timedelta
+        today = timezone.now().date()
+        if date_range == 'today':
+            cases = cases.filter(date_submitted__date=today)
+        elif date_range == 'week':
+            week_ago = today - timedelta(days=7)
+            cases = cases.filter(date_submitted__date__gte=week_ago)
+        elif date_range == 'month':
+            month_ago = today - timedelta(days=30)
+            cases = cases.filter(date_submitted__date__gte=month_ago)
     
     if search_query:
         cases = cases.filter(
@@ -377,6 +428,9 @@ def technician_dashboard(request):
         'status_filters': status_filters,  # List of selected statuses
         'urgency_filter': urgency_filter,
         'tier_filter': tier_filter,
+        'date_range': date_range,
+        'custom_date_from': custom_date_from,
+        'custom_date_to': custom_date_to,
         'search_query': search_query,
         'sort_by': sort_by,
         'assigned_filter': assigned_filter,

@@ -207,7 +207,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="urgency" class="form-label"><strong>Urgency</strong></label>
                     <select name="urgency" id="urgency" class="form-select">
                         <option value="">All Urgencies</option>
@@ -215,7 +215,26 @@
                         <option value="rush" {% if urgency_filter == 'rush' %}selected{% endif %}>Rush</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label"><strong>Date Range</strong></label>
+                    <select name="date_range" id="date_range" class="form-select">
+                        <option value="">All Time</option>
+                        <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
+                        <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_from" class="form-label"><strong>From Date</strong></label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" 
+                           value="{{ custom_date_from|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="date_to" class="form-label"><strong>To Date</strong></label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" 
+                           value="{{ custom_date_to|default:'' }}">
+                </div>
+                <div class="col-md-3">
                     <label for="search" class="form-label"><strong>Search</strong></label>
                     <input type="text" name="search" id="search" class="form-control" 
                            placeholder="Case ID or Employee Name..." 
@@ -584,13 +603,18 @@ function getCookie(name) {
 
     function updateFilterCount() {
         // Count active filters
-        const statusFilter = document.getElementById('status').value;
+        const statusFilters = document.querySelectorAll('input[name="status"]:checked').length;
         const urgencyFilter = document.getElementById('urgency').value;
+        const dateRangeFilter = document.getElementById('date_range').value;
+        const dateFromFilter = document.getElementById('date_from').value;
+        const dateToFilter = document.getElementById('date_to').value;
         const searchFilter = document.getElementById('search').value;
         
-        let filterCount = 0;
-        if (statusFilter) filterCount++;
+        let filterCount = statusFilters;
         if (urgencyFilter) filterCount++;
+        if (dateRangeFilter) filterCount++;
+        if (dateFromFilter) filterCount++;
+        if (dateToFilter) filterCount++;
         if (searchFilter) filterCount++;
         
         const filterCountSpan = document.getElementById('filter-count');
@@ -601,7 +625,7 @@ function getCookie(name) {
 
     // Update filter count on input change
     document.addEventListener('DOMContentLoaded', function() {
-        const filterInputs = document.querySelectorAll('#status, #urgency, #search');
+        const filterInputs = document.querySelectorAll('input[name="status"], #urgency, #date_range, #date_from, #date_to, #search');
         filterInputs.forEach(input => {
             input.addEventListener('change', updateFilterCount);
             input.addEventListener('keyup', updateFilterCount);

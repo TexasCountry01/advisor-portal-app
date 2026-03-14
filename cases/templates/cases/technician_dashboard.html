@@ -82,14 +82,14 @@
                     <div class="col-auto d-flex align-items-center gap-2">
                         <small class="text-muted">View:</small>
                         <div class="btn-group" role="group">
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if custom_date_from %}&date_from={{ custom_date_from }}{% endif %}{% if custom_date_to %}&date_to={{ custom_date_to }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
                                id="view-all-btn"
                                class="btn btn-sm btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
                                data-view-type="all"
                                onclick="saveViewPreference('all'); return true;">
                                 <i class="bi bi-list-ul"></i> All Cases
                             </a>
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if custom_date_from %}&date_from={{ custom_date_from }}{% endif %}{% if custom_date_to %}&date_to={{ custom_date_to }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
                                id="view-mine-btn"
                                class="btn btn-sm btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
                                data-view-type="mine"
@@ -207,6 +207,25 @@
                             <option value="tier_2" {% if tier_filter == 'tier_2' %}selected{% endif %}>Tier 2</option>
                             <option value="tier_3" {% if tier_filter == 'tier_3' %}selected{% endif %}>Tier 3</option>
                         </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="date_range" class="form-label">Date Range</label>
+                        <select name="date_range" id="date_range" class="form-select">
+                            <option value="">All Time</option>
+                            <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+                            <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
+                            <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" name="date_from" id="date_from" class="form-control" 
+                               value="{{ custom_date_from|default:'' }}">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" name="date_to" id="date_to" class="form-control" 
+                               value="{{ custom_date_to|default:'' }}">
                     </div>
                     <div class="col-md-2">
                         <label for="sort" class="form-label">Sort By</label>
@@ -801,11 +820,17 @@ function updateFilterCount() {
     const statusFilters = document.querySelectorAll('input[name="status"]:checked').length;
     const urgencyFilter = document.getElementById('urgency').value;
     const tierFilter = document.getElementById('tier').value;
+    const dateRangeFilter = document.getElementById('date_range').value;
+    const dateFromFilter = document.getElementById('date_from').value;
+    const dateToFilter = document.getElementById('date_to').value;
     const searchFilter = document.getElementById('search').value;
     
     let filterCount = statusFilters;
     if (urgencyFilter) filterCount++;
     if (tierFilter) filterCount++;
+    if (dateRangeFilter) filterCount++;
+    if (dateFromFilter) filterCount++;
+    if (dateToFilter) filterCount++;
     if (searchFilter) filterCount++;
     
     const filterCountSpan = document.getElementById('filter-count');
@@ -816,7 +841,7 @@ function updateFilterCount() {
 
 // Update filter count on input change
 document.addEventListener('DOMContentLoaded', function() {
-    const filterInputs = document.querySelectorAll('input[name="status"], #urgency, #tier, #search');
+    const filterInputs = document.querySelectorAll('input[name="status"], #urgency, #tier, #date_range, #date_from, #date_to, #search');
     filterInputs.forEach(input => {
         input.addEventListener('change', updateFilterCount);
         input.addEventListener('keyup', updateFilterCount);
