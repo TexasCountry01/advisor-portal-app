@@ -34,8 +34,33 @@
                 </p>
 
                 <hr class="my-4">
+
+                {% if debug %}
+                <!-- Staff/Local Login - only visible in DEBUG mode -->
+                <div class="text-center mb-3">
+                    <a class="text-muted small" data-bs-toggle="collapse" href="#staffLoginForm" role="button" aria-expanded="false">
+                        <i class="bi bi-key"></i> Staff / Local Login
+                    </a>
+                </div>
+                <div class="collapse" id="staffLoginForm">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-box-arrow-in-right"></i> Sign In
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
                 
-                <div class="text-center text-muted">
+                <div class="text-center text-muted mt-3">
                     <small>
                         <i class="bi bi-shield-check"></i> Secure login with SSL encryption
                     </small>

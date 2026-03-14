@@ -2654,10 +2654,10 @@ def upload_technician_document(request, case_id):
         return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
-        document_file = request.FILES.get('document_file')
+        document_files = request.FILES.getlist('document_file')
         document_notes = request.POST.get('document_notes', '').strip()
         
-        if not document_file:
+        if not document_files:
             messages.error(request, 'Please select a file to upload.')
             return redirect('cases:case_detail', pk=case_id)
         
@@ -2666,7 +2666,6 @@ def upload_technician_document(request, case_id):
         # Append employee last name to filename
         import os
         fed_last_name = case.employee_last_name
-        filename_with_employee = f"{fed_last_name}_{document_file.name}"
         
         # For members uploading to draft cases, use 'fact_finder' type
         # For members uploading after submission, use 'supporting' type
@@ -2676,31 +2675,36 @@ def upload_technician_document(request, case_id):
         else:
             doc_type = 'report'
         
-        doc = CaseDocument.objects.create(
-            case=case,
-            document_type=doc_type,
-            original_filename=filename_with_employee,
-            file_size=document_file.size,
-            uploaded_by=user,
-            file=document_file,
-            notes=document_notes,
-        )
-        
-        # Log to audit trail
-        from core.models import AuditLog
-        AuditLog.log_activity(
-            user=user,
-            action_type='document_uploaded',
-            case=case,
-            description=f'{"Member" if user.role == "member" else "Technician"} uploaded document: {filename_with_employee}',
-            metadata={
-                'document_id': doc.id,
-                'original_filename': document_file.name,
-                'file_size': document_file.size,
-                'document_type': doc_type,
-                'notes': document_notes
-            }
-        )
+        uploaded_count = 0
+        for document_file in document_files:
+            filename_with_employee = f"{fed_last_name}_{document_file.name}"
+            
+            doc = CaseDocument.objects.create(
+                case=case,
+                document_type=doc_type,
+                original_filename=filename_with_employee,
+                file_size=document_file.size,
+                uploaded_by=user,
+                file=document_file,
+                notes=document_notes,
+            )
+            uploaded_count += 1
+            
+            # Log to audit trail
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=user,
+                action_type='document_uploaded',
+                case=case,
+                description=f'{"Member" if user.role == "member" else "Technician"} uploaded document: {filename_with_employee}',
+                metadata={
+                    'document_id': doc.id,
+                    'original_filename': document_file.name,
+                    'file_size': document_file.size,
+                    'document_type': doc_type,
+                    'notes': document_notes
+                }
+            )
         
         # If member uploads after submission, flag for technician
         if user.role == 'member' and case.status != 'draft':
@@ -2717,7 +2721,7 @@ def upload_technician_document(request, case_id):
                         user=case.assigned_to,
                         notification_type='member_document_uploaded',
                         title=f'New Document on Case {case.external_case_id}',
-                        message=f'Member {user.get_full_name() or user.username} uploaded a document to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                        message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
                         case=case,
                         is_read=False
                     )
@@ -2727,7 +2731,7 @@ def upload_technician_document(request, case_id):
         # Show updated document count
         from cases.services.document_count_service import get_document_count_message
         doc_count_msg = get_document_count_message(case, include_breakdown=True)
-        messages.success(request, f'Document uploaded successfully. {doc_count_msg}')
+        messages.success(request, f'{uploaded_count} document(s) uploaded successfully. {doc_count_msg}')
     
     return redirect('cases:case_detail', pk=case_id)
 
@@ -3145,55 +3149,39 @@ def upload_member_document_to_completed_case(request, case_id):
         return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
-        document_file = request.FILES.get('document_file')
+        document_files = request.FILES.getlist('document_file')
         document_notes = request.POST.get('document_notes', '').strip()
         
-        if not document_file:
+        if not document_files:
             messages.error(request, 'Please select a file to upload.')
             return redirect('cases:case_detail', pk=case_id)
         
-        # Validate file size (max 50MB)
-        if document_file.size > 50 * 1024 * 1024:
-            messages.error(request, 'File size exceeds 50MB limit.')
-            return redirect('cases:case_detail', pk=case_id)
+        # Validate file sizes (max 50MB each)
+        for document_file in document_files:
+            if document_file.size > 50 * 1024 * 1024:
+                messages.error(request, f'File "{document_file.name}" exceeds 50MB limit.')
+                return redirect('cases:case_detail', pk=case_id)
         
         # Append employee last name to filename
         fed_last_name = case.employee_last_name
-        filename_with_employee = f"{fed_last_name}_{document_file.name}"
         
-        # Create document with 'supporting' type
-        doc = CaseDocument.objects.create(
-            case=case,
-            document_type='supporting',  # Using 'supporting' type for member supplements
-            original_filename=filename_with_employee,
-            file_size=document_file.size,
-            uploaded_by=user,
-            file=document_file,
-            notes=document_notes if document_notes else 'Member supplementary document',
-        )
-        
-        # Set member updates flag if case is after submission (submitted, accepted, pending_review, resubmitted, completed, hold)
-        if case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted', 'completed', 'hold']:
-            case.has_member_updates = True
-            case.has_member_new_info = True
-            case.member_last_update_date = timezone.now()
-            case.save(update_fields=['has_member_updates', 'has_member_new_info', 'member_last_update_date'])
+        uploaded_count = 0
+        for document_file in document_files:
+            filename_with_employee = f"{fed_last_name}_{document_file.name}"
             
-            # Create StaffNotification for the assigned technician
-            if case.assigned_to:
-                try:
-                    StaffNotification.objects.create(
-                        user=case.assigned_to,
-                        notification_type='member_document_uploaded',
-                        title=f'New Document on Case {case.external_case_id}',
-                        message=f'Member {user.get_full_name() or user.username} uploaded a document to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
-                        case=case,
-                        is_read=False
-                    )
-                except Exception as notif_err:
-                    logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
+            # Create document with 'supporting' type
+            doc = CaseDocument.objects.create(
+                case=case,
+                document_type='supporting',  # Using 'supporting' type for member supplements
+                original_filename=filename_with_employee,
+                file_size=document_file.size,
+                uploaded_by=user,
+                file=document_file,
+                notes=document_notes if document_notes else 'Member supplementary document',
+            )
+            uploaded_count += 1
             
-            # Create audit log entry
+            # Create audit log entry for each file
             upload_meta = {
                 'filename': filename_with_employee,
                 'file_size': document_file.size,
@@ -3218,10 +3206,31 @@ def upload_member_document_to_completed_case(request, case_id):
                 metadata=upload_meta,
             )
         
+        # Set member updates flag if case is after submission
+        if case.status in ['submitted', 'accepted', 'pending_review', 'resubmitted', 'completed', 'hold']:
+            case.has_member_updates = True
+            case.has_member_new_info = True
+            case.member_last_update_date = timezone.now()
+            case.save(update_fields=['has_member_updates', 'has_member_new_info', 'member_last_update_date'])
+            
+            # Create StaffNotification for the assigned technician
+            if case.assigned_to:
+                try:
+                    StaffNotification.objects.create(
+                        user=case.assigned_to,
+                        notification_type='member_document_uploaded',
+                        title=f'New Document on Case {case.external_case_id}',
+                        message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                        case=case,
+                        is_read=False
+                    )
+                except Exception as notif_err:
+                    logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
+        
         # Show updated document count
         from cases.services.document_count_service import get_document_count_message
         doc_count_msg = get_document_count_message(case, include_breakdown=True)
-        messages.success(request, f'Document uploaded successfully. {doc_count_msg} You can upload more documents before resubmitting.')
+        messages.success(request, f'{uploaded_count} document(s) uploaded successfully. {doc_count_msg} You can upload more documents before resubmitting.')
     
     return redirect('cases:case_detail', pk=case_id)
 
@@ -6372,25 +6381,56 @@ def upload_member_documents(request, case_id):
                 'error': f'Cannot upload documents for {case.get_status_display()} cases'
             }, status=400)
         
-        # Get file from request
-        document_file = request.FILES.get('document_file')
+        # Get files from request
+        document_files = request.FILES.getlist('document_file')
         document_notes = request.POST.get('document_notes', '').strip()
         
-        if not document_file:
+        if not document_files:
             return JsonResponse({'success': False, 'error': 'No file provided'}, status=400)
         
-        # Create CaseDocument record
-        filename_with_employee = f"{case.employee_last_name}_{document_file.name}"
-        
-        doc = CaseDocument.objects.create(
-            case=case,
-            document_type='supporting',  # Member uploads are supporting docs
-            original_filename=filename_with_employee,
-            file_size=document_file.size,
-            uploaded_by=user,
-            file=document_file,
-            notes=document_notes,
-        )
+        uploaded_count = 0
+        last_doc_id = None
+        for document_file in document_files:
+            # Create CaseDocument record
+            filename_with_employee = f"{case.employee_last_name}_{document_file.name}"
+            
+            doc = CaseDocument.objects.create(
+                case=case,
+                document_type='supporting',  # Member uploads are supporting docs
+                original_filename=filename_with_employee,
+                file_size=document_file.size,
+                uploaded_by=user,
+                file=document_file,
+                notes=document_notes,
+            )
+            uploaded_count += 1
+            last_doc_id = doc.id
+            
+            # Log to audit trail
+            from core.models import AuditLog
+            upload_metadata = {
+                'document_id': doc.id,
+                'original_filename': document_file.name,
+                'file_size': document_file.size,
+                'notes': document_notes
+            }
+            upload_description = f'Member uploaded document: {filename_with_employee}'
+            
+            # Add delegate context if uploading on behalf of another member
+            if is_case_delegate:
+                upload_metadata['uploaded_by_delegate'] = True
+                upload_metadata['delegate_id'] = user.id
+                upload_metadata['delegate_name'] = user.get_full_name()
+                upload_metadata['on_behalf_of'] = case.member.get_full_name()
+                upload_description = f'Delegate {user.get_full_name()} uploaded document: {filename_with_employee} on behalf of {case.member.get_full_name()}'
+            
+            AuditLog.log_activity(
+                user=user,
+                action_type='member_document_uploaded',
+                case=case,
+                description=upload_description,
+                metadata=upload_metadata
+            )
         
         # Set flags to notify technician (has_member_updates drives "New Info" badge)
         case.has_member_new_info = True
@@ -6406,38 +6446,12 @@ def upload_member_documents(request, case_id):
                     user=case.assigned_to,
                     notification_type='member_document_uploaded',
                     title=f'New Document on Case {case.external_case_id}',
-                    message=f'Member {user.get_full_name() or user.username} uploaded a document to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                    message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
                     case=case,
                     is_read=False
                 )
             except Exception as notif_err:
                 logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
-        
-        # Log to audit trail
-        from core.models import AuditLog
-        upload_metadata = {
-            'document_id': doc.id,
-            'original_filename': document_file.name,
-            'file_size': document_file.size,
-            'notes': document_notes
-        }
-        upload_description = f'Member uploaded document: {filename_with_employee}'
-        
-        # Add delegate context if uploading on behalf of another member
-        if is_case_delegate:
-            upload_metadata['uploaded_by_delegate'] = True
-            upload_metadata['delegate_id'] = user.id
-            upload_metadata['delegate_name'] = user.get_full_name()
-            upload_metadata['on_behalf_of'] = case.member.get_full_name()
-            upload_description = f'Delegate {user.get_full_name()} uploaded document: {filename_with_employee} on behalf of {case.member.get_full_name()}'
-        
-        AuditLog.log_activity(
-            user=user,
-            action_type='member_document_uploaded',
-            case=case,
-            description=upload_description,
-            metadata=upload_metadata
-        )
         
         # Count total member-uploaded documents (supporting docs)
         document_count = CaseDocument.objects.filter(
@@ -6446,13 +6460,13 @@ def upload_member_documents(request, case_id):
             uploaded_by=user
         ).count()
         
-        logger.info(f'Member {user.id} uploaded document to case {case_id}')
+        logger.info(f'Member {user.id} uploaded {uploaded_count} document(s) to case {case_id}')
         
         return JsonResponse({
             'success': True,
-            'message': f'✓ Document uploaded successfully',
+            'message': f'✓ {uploaded_count} document(s) uploaded successfully',
             'document_count': document_count,
-            'document_id': doc.id
+            'document_id': last_doc_id
         })
     
     except Exception as e:
