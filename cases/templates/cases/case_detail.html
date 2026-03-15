@@ -720,7 +720,13 @@
                                         {% if doc.file %}</a>{% endif %}
                                         <br><small class="text-muted">
                                             {% if doc.notes and doc.notes != 'Member supplementary document' %}
-                                                <i class="bi bi-chat-left-text"></i> {{ doc.notes|truncatewords:20 }}<br>
+                                                <i class="bi bi-chat-left-text"></i>
+                                                <span class="doc-note-preview-{{ doc.id }}">{{ doc.notes|truncatewords:20 }}</span>
+                                                {% if doc.notes|wordcount > 20 %}
+                                                    <span class="doc-note-full-{{ doc.id }}" style="display:none;">{{ doc.notes }}</span>
+                                                    <a href="#" class="ms-1" onclick="event.preventDefault(); document.querySelector('.doc-note-preview-{{ doc.id }}').style.display='none'; document.querySelector('.doc-note-full-{{ doc.id }}').style.display='inline'; this.style.display='none';">Show more</a>
+                                                {% endif %}
+                                                <br>
                                             {% endif %}
                                             Uploaded {{ doc.uploaded_at|date:"m/d/Y H:i" }}
                                         </small>
