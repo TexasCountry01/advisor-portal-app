@@ -44,35 +44,80 @@ Today, all communication in the portal is tied to a specific case. There's no wa
 
 ---
 
-## Urgent Messages
+## Two Separate Systems — How They Work Together
 
-- Member toggles "Urgent" when creating a question (or during a conversation)
-- Urgent messages show a **red badge** in the staff queue
-- Staff receives an **in-app notification** plus an **email alert** for urgent items
+The tech's top navigation bar will have **two indicators** with their own red bubble badges:
+
+1. **Notifications** (bell icon) — for case-related activity (same as today)
+2. **Messages** — for general questions from members (new)
+
+These two systems **never cross**. Case chat stays in Notifications. General questions stay in Messages.
 
 ---
 
-## Notifications
+## Case Chat (Existing System — Small Enhancement)
 
-| Event | What Happens |
+This is the chat that already exists on each case. It stays exactly where it is.
+
+| Scenario | Where Tech Sees It | What Happens |
+|---|---|---|
+| Member sends a **normal** case chat | **Notifications** bell only | Same as today — notification appears under the bell |
+| Member sends an **URGENT** case chat | **Notifications** bell | Notification appears under the bell **+ the case row in the tech's case queue gets an URGENT badge** so it stands out from regular comments |
+
+- The URGENT badge makes it visually obvious in the case queue — it's not just another comment
+- Case chat does **not** appear in the new Messages area — it stays tied to the case
+
+---
+
+## General Messages (New System)
+
+This is the new system for non-case questions. Completely separate from cases.
+
+| Scenario | Where Tech Sees It | What Happens |
+|---|---|---|
+| Member sends a **normal** general question | **Messages** area | Appears in the message queue · Unread badge on "Messages" in nav |
+| Member sends an **URGENT** general question | **Messages** area | Appears in the message queue with **red URGENT badge** · Unread badge on "Messages" in nav · **Email alert** sent to staff |
+
+- General messages do **not** appear in the Notifications bell — they have their own dedicated area
+- All general questions (urgent or not) live in the Messages queue
+
+---
+
+## What the Tech Nav Bar Looks Like
+
+```
+Dashboard · All Cases · Messages (3) · Notifications (5) · Profile · Logout
+```
+
+- **Messages (3)** — 3 unread general questions from members
+- **Notifications (5)** — 5 case-related notifications (comments, uploads, status changes)
+- Each has its own independent red bubble count
+
+---
+
+## Summary: Where Does Each Thing Go?
+
+| What the Member Does | Where the Tech Sees It |
 |---|---|
-| Member sends a new question | Staff gets in-app notification |
-| Member sends an **urgent** question | Staff gets in-app notification **+ email** |
-| Staff replies | Member sees unread badge on "Messages" |
-| Broadcast sent | Appears in every member's Messages list |
+| Sends a case chat (normal) | 🔔 Notifications |
+| Sends a case chat (URGENT) | 🔔 Notifications + URGENT badge on the case in the queue |
+| Sends a general question (normal) | 💬 Messages |
+| Sends a general question (URGENT) | 💬 Messages (with URGENT badge) + email alert |
+| — | |
+| Staff sends a broadcast | 💬 Appears in every member's Messages list |
 
 ---
 
 ## Build Phases
 
-- **Phase 1:** Members can submit questions · Staff can see the queue and reply
-- **Phase 2:** Full chat view · Notifications · Urgent email alerts
+- **Phase 1:** Members can submit general questions · Staff can see the message queue and reply
+- **Phase 2:** Full chat view · Notifications · Urgent email alerts · Urgent badge on case queue
 - **Phase 3:** User directory · Broadcast · Retire "Beta Feedback" button
 
 ---
 
 ## What It Doesn't Change
 
-- Existing **case chat** stays exactly as it is — no changes
+- Existing **case chat** stays exactly as it is — lives on the case, shows in Notifications
 - Existing **case workflow** is untouched
-- This is a **completely separate system** alongside the current case features
+- The only addition to the case system is the **URGENT badge** on the case row in the queue

@@ -3842,6 +3842,21 @@ def add_case_message(request, pk):
                     logger.info(f'{"Delegate" if is_delegate else "Member"} {user.username} message on case {case.external_case_id} - Created UnreadMessage for technician {case.assigned_to.username}: {created}')
                 except Exception as e:
                     logger.error(f'Error creating UnreadMessage for technician: {str(e)}')
+            else:
+                # Case is unassigned — create UnreadMessage for all techs and admins
+                # so the chat shows as a red unread bubble for whoever picks it up
+                from accounts.models import User as UserModel
+                staff_users = UserModel.objects.filter(role__in=['technician', 'administrator'], is_active=True)
+                for staff_user in staff_users:
+                    try:
+                        UnreadMessage.objects.get_or_create(
+                            message=msg,
+                            user=staff_user,
+                            defaults={'case': case}
+                        )
+                    except Exception as e:
+                        logger.error(f'Error creating UnreadMessage for staff {staff_user.username}: {str(e)}')
+                logger.info(f'Member {user.username} message on unassigned case {case.external_case_id} - Created UnreadMessage for {staff_users.count()} staff users')
             
             # NOTE: Do NOT set has_member_updates here — that flag is only for
             # document uploads / resubmissions. Chat messages use UnreadMessage
