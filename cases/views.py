@@ -148,8 +148,12 @@ def member_dashboard(request):
     if status_filter:
         # Override: always include cases with unread notifications regardless of filter
         from django.db.models import Exists, OuterRef
-        has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-        cases = cases.filter(Q(status__in=status_filter) | has_unread)
+        from cases.models import CaseNotification
+        has_unread_msg = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+        has_unread_notif = Exists(CaseNotification.objects.filter(
+            case=OuterRef('pk'), member=OuterRef('member'), is_read=False
+        ).exclude(notification_type='member_update_received'))
+        cases = cases.filter(Q(status__in=status_filter) | has_unread_msg | has_unread_notif)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
@@ -182,14 +186,25 @@ def member_dashboard(request):
             Q(employee_last_name__icontains=search_query)
         )
     
-    # Add unread message count to each case (chat messages only)
-    # CaseNotifications (hold, resume, release, etc.) are shown via the bell icon,
-    # NOT in the View badge — to avoid double-counting
+    # Add unread count to each case:
+    # 1. UnreadMessage (chat messages) — keyed by logged-in user
+    # 2. Unread CaseNotification lifecycle events (hold, resume, release, documents_needed)
+    #    — keyed by case.member (not logged-in user) so delegates see them too
+    #    — exclude 'member_update_received' (chat notifs) to avoid double-counting
+    from cases.models import CaseNotification
     for case in cases:
-        case.unread_message_count = UnreadMessage.objects.filter(
+        chat_unread = UnreadMessage.objects.filter(
             case=case,
             user=user
         ).count()
+        lifecycle_unread = CaseNotification.objects.filter(
+            case=case,
+            member=case.member,
+            is_read=False
+        ).exclude(
+            notification_type='member_update_received'
+        ).count()
+        case.unread_message_count = chat_unread + lifecycle_unread
     
     # Convert to list to preserve the modified case objects with unread_message_count
     cases = list(cases)
@@ -4097,37 +4112,65 @@ def get_unread_message_count(request):
     user = request.user
     
     try:
-        # Get count of unread messages per case
+        from cases.models import CaseNotification
+        
+        # Get count of unread chat messages per case
         unread_by_case = UnreadMessage.objects.filter(
             user=user
         ).values('case').annotate(
             count=models.Count('id')
         ).order_by('-count')
         
-        # Also get total unread count
-        total_unread = UnreadMessage.objects.filter(user=user).count()
+        # Build lookup of chat unreads per case
+        chat_unread_lookup = {item['case']: item['count'] for item in unread_by_case}
+        
+        # For members: also count unread lifecycle CaseNotifications (hold, resume, release)
+        # Exclude 'member_update_received' to avoid double-counting with UnreadMessage
+        notif_unread_lookup = {}
+        if user.role == 'member':
+            from accounts.models import MemberDelegate
+            # Get member IDs this user acts as (own ID + delegated members)
+            member_ids = [user.id]
+            delegate_member_ids = list(
+                MemberDelegate.objects.filter(delegate=user).values_list('member_id', flat=True)
+            )
+            member_ids.extend(delegate_member_ids)
+            
+            notif_unreads = CaseNotification.objects.filter(
+                member_id__in=member_ids,
+                is_read=False
+            ).exclude(
+                notification_type='member_update_received'
+            ).values('case').annotate(
+                count=models.Count('id')
+            )
+            notif_unread_lookup = {item['case']: item['count'] for item in notif_unreads}
+        
+        # Merge all case IDs that have any unreads
+        all_case_ids = set(chat_unread_lookup.keys()) | set(notif_unread_lookup.keys())
+        total_unread = sum(chat_unread_lookup.values()) + sum(notif_unread_lookup.values())
         
         # Build response with case details
         unread_cases = []
-        for item in unread_by_case:
+        for case_id in all_case_ids:
             try:
-                case = Case.objects.get(pk=item['case'])
+                case = Case.objects.get(pk=case_id)
+                combined_count = chat_unread_lookup.get(case_id, 0) + notif_unread_lookup.get(case_id, 0)
                 unread_cases.append({
                     'case_id': case.id,
                     'external_case_id': case.external_case_id,
                     'member_name': case.member.get_full_name() if case.member else 'Unknown',
                     'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
-                    'unread_count': item['count'],
+                    'unread_count': combined_count,
                     'has_member_updates': case.has_member_updates,
                 })
             except Case.DoesNotExist:
                 pass
         
         # Also include cases with has_member_updates=True but no unread messages
-        unread_case_ids = [item['case'] for item in unread_by_case]
         updated_cases = Case.objects.filter(
             has_member_updates=True
-        ).exclude(id__in=unread_case_ids)
+        ).exclude(id__in=all_case_ids)
         for case in updated_cases:
             unread_cases.append({
                 'case_id': case.id,
