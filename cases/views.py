@@ -182,25 +182,14 @@ def member_dashboard(request):
             Q(employee_last_name__icontains=search_query)
         )
     
-    # Add unread message count to each case (includes both chat messages and case notifications)
-    from cases.models import CaseNotification
+    # Add unread message count to each case (chat messages only)
+    # CaseNotifications (hold, resume, release, etc.) are shown via the bell icon,
+    # NOT in the View badge — to avoid double-counting
     for case in cases:
-        unread_msg_count = UnreadMessage.objects.filter(
+        case.unread_message_count = UnreadMessage.objects.filter(
             case=case,
             user=user
         ).count()
-        # For delegates, check notifications addressed to the case's member
-        notif_member = case.member if active_view == 'delegate' else user
-        unread_notif_count = CaseNotification.objects.filter(
-            case=case,
-            member=notif_member,
-            is_read=False
-        ).exclude(
-            notification_type='member_update_received'  # Already counted via UnreadMessage
-        ).count()
-        case.unread_message_count = unread_msg_count + unread_notif_count
-        if case.unread_message_count > 0:
-            logger.info(f'Member dashboard: Case {case.external_case_id} has {case.unread_message_count} unread items for {user.username}')
     
     # Convert to list to preserve the modified case objects with unread_message_count
     cases = list(cases)
