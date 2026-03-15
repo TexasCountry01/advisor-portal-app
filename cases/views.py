@@ -607,6 +607,11 @@ def admin_dashboard(request):
         'requiring_review': all_cases.filter(status='pending_review').count(),
     }
     
+    # Add unread message count to each case
+    for case in cases:
+        unread_count = UnreadMessage.objects.filter(case=case, user=user).count()
+        case.unread_message_count = unread_count
+
     context = {
         'cases': cases,
         'stats': stats,

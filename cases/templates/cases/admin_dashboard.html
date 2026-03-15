@@ -309,7 +309,7 @@
                     </thead>
                     <tbody>
                         {% for case in cases %}
-                        <tr>
+                        <tr data-case-id="{{ case.pk }}">
                             <!-- COMMENTED OUT: ID Column Cell - 01/11/2026
                                  Reason: ID column removed from dashboard.
                             <td id="id-column"><a href="{% url 'cases:case_detail' case.id %}" class="btn btn-sm btn-outline-primary" title="{{ case.external_case_id }}">Link</a></td>
@@ -455,6 +455,9 @@
                             <td data-column-id="actions" class="column-actions {% if 'actions' not in visible_columns %}column-hidden{% endif %}" style="min-width: 200px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
+                                    {% if case.unread_message_count > 0 %}
+                                    <span class="badge bg-danger ms-1 unread-badge" data-case-id="{{ case.pk }}" title="You have {{ case.unread_message_count }} unread message(s)">{{ case.unread_message_count }}</span>
+                                    {% endif %}
                                 </a>
                                 <!-- COMMENTED OUT: PDF Button - 01/11/2026
                                      Reason: PDF viewer moved to Case Details page. Users can access PDF from there.
@@ -763,6 +766,48 @@
             });
         }
     });
+</script>
+
+<!-- Auto-refresh badge counts every 30 seconds -->
+<script>
+function refreshBadgeCounts() {
+    fetch('/cases/unread-message-count/')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const lookup = {};
+            (data.unread_by_case || []).forEach(item => {
+                lookup[item.case_id] = item;
+            });
+            document.querySelectorAll('tr[data-case-id]').forEach(row => {
+                const caseId = parseInt(row.dataset.caseId);
+                const info = lookup[caseId];
+                const unreadCount = info ? info.unread_count : 0;
+
+                const viewLink = row.querySelector('a[href*="/cases/"]');
+                if (viewLink) {
+                    let badge = viewLink.querySelector('.unread-badge');
+                    if (unreadCount > 0) {
+                        if (badge) {
+                            badge.textContent = unreadCount;
+                            badge.title = `You have ${unreadCount} unread message(s)`;
+                        } else {
+                            badge = document.createElement('span');
+                            badge.className = 'badge bg-danger ms-1 unread-badge';
+                            badge.dataset.caseId = caseId;
+                            badge.title = `You have ${unreadCount} unread message(s)`;
+                            badge.textContent = unreadCount;
+                            viewLink.appendChild(badge);
+                        }
+                    } else if (badge) {
+                        badge.remove();
+                    }
+                }
+            });
+        })
+        .catch(err => console.log('Badge refresh error:', err));
+}
+setInterval(refreshBadgeCounts, 30000);
 </script>
 
 <style>
