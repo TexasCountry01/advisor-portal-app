@@ -88,6 +88,12 @@
                                     <i class="bi bi-chat-dots"></i> Beta Feedback
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
+                                    <i class="bi bi-envelope"></i> Messages
+                                    <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
+                                </a>
+                            </li>
                         {% elif user.role == 'technician' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'cases:technician_dashboard' %}">
@@ -99,6 +105,12 @@
                                     <i class="bi bi-list-task"></i> All Cases
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
+                                    <i class="bi bi-envelope"></i> Messages
+                                    <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
+                                </a>
+                            </li>
                         {% elif user.role == 'administrator' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="/admin/">
@@ -108,6 +120,12 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'cases:case_list' %}">
                                     <i class="bi bi-list-task"></i> All Cases
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
+                                    <i class="bi bi-envelope"></i> Messages
+                                    <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
                                 </a>
                             </li>
                         {% endif %}
@@ -434,5 +452,30 @@
     {% endif %}
 
     {% block extra_js %}{% endblock %}
+
+    {% if user.is_authenticated %}
+    <script>
+    // Poll for unread general-message count every 30 seconds
+    (function() {
+        function refreshMessagesBadge() {
+            fetch('/messages/unread-count/')
+                .then(r => r.json())
+                .then(data => {
+                    const badge = document.getElementById('nav-messages-badge');
+                    if (!badge) return;
+                    if (data.count > 0) {
+                        badge.textContent = data.count;
+                        badge.style.display = '';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(() => {});
+        }
+        refreshMessagesBadge();
+        setInterval(refreshMessagesBadge, 30000);
+    })();
+    </script>
+    {% endif %}
 </body>
 </html>

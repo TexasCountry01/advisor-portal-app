@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ conversation.subject }} - Messages - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-3">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'messaging:inbox' %}">Messages</a></li>
+                    <li class="breadcrumb-item active">{{ conversation.subject|truncatechars:50 }}</li>
+                </ol>
+            </nav>
+            <h4 class="mb-0">
+                {% if conversation.is_urgent %}<span class="badge bg-danger me-1">URGENT</span>{% endif %}
+                {{ conversation.subject }}
+            </h4>
+            <small class="text-muted">
+                Started by {{ conversation.started_by.get_full_name|default:conversation.started_by.username }}
+                &middot; {{ conversation.created_at|date:"M d, Y g:i A" }}
+                {% if conversation.status == 'closed' %}
+                &middot; <span class="text-danger">Closed {{ conversation.closed_at|date:"M d, Y g:i A" }}</span>
+                {% endif %}
+            </small>
+        </div>
+        <div class="col-auto d-flex gap-2 align-items-start">
+            {% if is_staff %}
+                {% if not conversation.assigned_to %}
+                <form method="post" action="{% url 'messaging:claim' conversation.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-person-plus"></i> Claim
+                    </button>
+                </form>
+                {% elif conversation.assigned_to != request.user %}
+                <form method="post" action="{% url 'messaging:claim' conversation.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Reassign to yourself">
+                        <i class="bi bi-person-plus"></i> Take Over
+                    </button>
+                </form>
+                {% else %}
+                <span class="badge bg-info align-self-center">Assigned to you</span>
+                {% endif %}
+
+                {% if conversation.status == 'open' %}
+                <form method="post" action="{% url 'messaging:close' conversation.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-check-circle"></i> Close
+                    </button>
+                </form>
+                {% else %}
+                <form method="post" action="{% url 'messaging:reopen' conversation.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-arrow-counterclockwise"></i> Reopen
+                    </button>
+                </form>
+                {% endif %}
+            {% endif %}
+            <a href="{% url 'messaging:inbox' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    {% if is_staff and conversation.assigned_to %}
+    <div class="mb-3">
+        <small class="text-muted">
+            <i class="bi bi-person-fill"></i> Assigned to:
+            <strong>{{ conversation.assigned_to.get_full_name|default:conversation.assigned_to.username }}</strong>
+        </small>
+    </div>
+    {% endif %}
+
+    <!-- Messages -->
+    <div class="card mb-3">
+        <div class="card-body" id="messages-container" style="max-height: 60vh; overflow-y: auto;">
+            {% for msg in messages %}
+            <div class="mb-3 {% if msg.author == request.user %}text-end{% endif %}">
+                <div class="d-inline-block text-start p-3 rounded-3 {% if msg.author == request.user %}bg-primary text-white{% elif msg.author.role == 'member' %}bg-light border{% else %}bg-success bg-opacity-10 border border-success{% endif %}"
+                     style="max-width: 75%;">
+                    <div class="mb-1">
+                        <strong>{{ msg.author.get_full_name|default:msg.author.username }}</strong>
+                        {% if msg.author.role == 'member' %}
+                        <span class="badge {% if msg.author == request.user %}bg-light text-primary{% else %}bg-info{% endif %} ms-1">Member</span>
+                        {% else %}
+                        <span class="badge {% if msg.author == request.user %}bg-light text-success{% else %}bg-success{% endif %} ms-1">Staff</span>
+                        {% endif %}
+                    </div>
+                    <p class="mb-1" style="white-space: pre-wrap;">{{ msg.body }}</p>
+                    <small class="{% if msg.author == request.user %}text-white-50{% else %}text-muted{% endif %}">
+                        {{ msg.created_at|date:"M d, Y g:i A" }}
+                    </small>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Reply form -->
+    <div class="card">
+        <div class="card-body">
+            <form method="post" action="{% url 'messaging:reply' conversation.pk %}">
+                {% csrf_token %}
+                <div class="mb-2">
+                    <textarea name="body" class="form-control" rows="3" placeholder="Type your reply..." required></textarea>
+                </div>
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-send"></i> Send Reply
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Scroll to bottom of messages on load
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('messages-container');
+    if (container) {
+        container.scrollTop = container.scrollHeight;
+    }
+});
+</script>
+{% endblock %}

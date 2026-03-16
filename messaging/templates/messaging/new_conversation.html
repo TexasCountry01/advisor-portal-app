@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}New Question - Messages - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-3">
+            <li class="breadcrumb-item"><a href="{% url 'messaging:inbox' %}">Messages</a></li>
+            <li class="breadcrumb-item active">New Question</li>
+        </ol>
+    </nav>
+
+    <h3 class="mb-4"><i class="bi bi-plus-circle"></i> Ask a Question</h3>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="subject" class="form-label fw-bold">Subject</label>
+                    <input type="text" class="form-control" id="subject" name="subject"
+                           value="{{ subject|default:'' }}" placeholder="Brief summary of your question"
+                           required maxlength="255">
+                </div>
+                <div class="mb-3">
+                    <label for="body" class="form-label fw-bold">Your Question</label>
+                    <textarea class="form-control" id="body" name="body" rows="6"
+                              placeholder="Provide details about your question..."
+                              required>{{ body|default:'' }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_urgent" value="1"
+                               id="isUrgent" {% if is_urgent %}checked{% endif %}>
+                        <label class="form-check-label" for="isUrgent">
+                            <i class="bi bi-exclamation-triangle text-danger"></i>
+                            <strong>Mark as Urgent</strong>
+                            <small class="text-muted d-block">Use this only for time-sensitive issues that need immediate attention.</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'messaging:inbox' %}" class="btn btn-outline-secondary">Cancel</a>
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-send"></i> Submit Question
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
