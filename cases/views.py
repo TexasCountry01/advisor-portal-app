@@ -1615,8 +1615,8 @@ def change_release_date(request, case_id):
                 release_dt_cst = cst.localize(release_dt_naive)
                 release_dt_utc = release_dt_cst.astimezone(pytz.UTC)
                 
-                case.scheduled_release_date = release_dt_utc.date()
-                case.scheduled_email_date = release_dt_utc.date()
+                case.scheduled_release_date = release_dt_utc
+                case.scheduled_email_date = release_dt_utc
                 case.save()
                 
                 release_date_str = release_dt_cst.strftime('%b %d, %Y at %I:%M %p %Z')
@@ -1625,8 +1625,8 @@ def change_release_date(request, case_id):
                     user=user,
                     action_type='other',
                     case=case,
-                    description=f'Release date changed from {old_release_date} to {release_dt_utc.date()}',
-                    metadata={'old_release_date': str(old_release_date), 'new_release_date': str(release_dt_utc.date())}
+                    description=f'Release date changed from {old_release_date} to {release_date_str}',
+                    metadata={'old_release_date': str(old_release_date), 'new_release_date': str(release_dt_utc)}
                 )
                 
                 return JsonResponse({
@@ -2952,9 +2952,9 @@ def mark_case_completed(request, case_id):
                             # Convert to UTC for storage (Django ORM stores in UTC)
                             release_dt_utc = release_dt_cst.astimezone(pytz.UTC)
                             
-                            # Store as date only for scheduled_release_date (matches existing schema)
-                            case.scheduled_release_date = release_dt_utc.date()
-                            case.scheduled_email_date = release_dt_utc.date()
+                            # Store full datetime for scheduled release (supports same-day time-based scheduling)
+                            case.scheduled_release_date = release_dt_utc
+                            case.scheduled_email_date = release_dt_utc
                             case.actual_release_date = None
                             case.actual_email_sent_date = None
                             case.date_completed = timezone.now()  # Tech completed now, release scheduled for later

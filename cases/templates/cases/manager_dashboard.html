@@ -387,7 +387,7 @@
                             </td>
                             <td data-column-id="release_date">
                                 {% if case.scheduled_release_date %}
-                                    {{ case.scheduled_release_date|date:"m/d/y" }}
+                                    {{ case.scheduled_release_date|date:"m/d/y g:i A" }}
                                 {% elif case.actual_release_date %}
                                     {{ case.actual_release_date|date:"m/d/y" }}
                                 {% else %}

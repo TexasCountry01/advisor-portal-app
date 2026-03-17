@@ -4,7 +4,6 @@ Run this daily via cron: 0 0 * * * cd /path/to/app && python manage.py release_s
 """
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from datetime import date
 from cases.models import Case
 import logging
 
@@ -23,7 +22,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
-        today = date.today()
+        now = timezone.now()
         
         # Check if batch processing is enabled
         from core.models import SystemSettings
@@ -32,10 +31,10 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('Automated batch processing is disabled in System Settings. Skipping.'))
             return
         
-        # Find all completed cases that are scheduled for release on or before today
+        # Find all completed cases that are scheduled for release on or before now
         cases_to_release = Case.objects.filter(
             status='completed',
-            scheduled_release_date__lte=today,
+            scheduled_release_date__lte=now,
             actual_release_date__isnull=True
         )
         

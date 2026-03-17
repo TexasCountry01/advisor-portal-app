@@ -11,7 +11,6 @@ from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.conf import settings
-from datetime import date
 from cases.models import Case
 import logging
 
@@ -30,12 +29,12 @@ class Command(BaseCommand):
     
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
-        today = date.today()
+        now = timezone.now()
         
-        # Find all completed cases that are scheduled for email notification on or before today
+        # Find all completed cases that are scheduled for email notification on or before now
         cases_to_email = Case.objects.filter(
             status='completed',
-            scheduled_email_date__lte=today,
+            scheduled_email_date__lte=now,
             actual_email_sent_date__isnull=True,
             member__isnull=False,  # Must have a member to email
         ).select_related('member')

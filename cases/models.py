@@ -239,10 +239,10 @@ class Case(models.Model):
     date_completed = models.DateTimeField(null=True, blank=True)
     
     # Release Management Fields
-    scheduled_release_date = models.DateField(
+    scheduled_release_date = models.DateTimeField(
         null=True,
         blank=True,
-        help_text='Date when completed case will be released to member (null = released immediately)'
+        help_text='Date/time when completed case will be released to member (null = released immediately)'
     )
     
     actual_release_date = models.DateTimeField(
@@ -252,10 +252,10 @@ class Case(models.Model):
     )
     
     # Email Notification Fields (tied to release schedule)
-    scheduled_email_date = models.DateField(
+    scheduled_email_date = models.DateTimeField(
         null=True,
         blank=True,
-        help_text='Date when member notification email will be sent (tied to release date)'
+        help_text='Date/time when member notification email will be sent (tied to release date)'
     )
     
     actual_email_sent_date = models.DateTimeField(

@@ -574,7 +574,7 @@
                                     {% if user.role != 'member' %}
                                         <strong>Scheduled Release:</strong><br>
                                         <span class="text-info">
-                                            <i class="bi bi-calendar-event me-1"></i>{{ case.scheduled_release_date|date:"m/d/Y" }}
+                                            <i class="bi bi-calendar-event me-1"></i>{{ case.scheduled_release_date|date:"m/d/Y g:i A" }}
                                         </span>
                                     {% endif %}
                                 {% else %}
@@ -673,7 +673,7 @@
                             <div class="alert alert-info" role="alert">
                                 <i class="bi bi-calendar-event"></i>
                                 <strong>This case will be released on:</strong><br>
-                                {{ case.scheduled_release_date|date:"F j, Y" }}
+                                {{ case.scheduled_release_date|date:"F j, Y \a\t g:i A" }}
                                 {% if can_release_immediately %}
                                     <br><br>
                                     <button type="button" class="btn btn-sm btn-outline-success" onclick="releaseImmediately({{ case.id }})">
@@ -3871,7 +3871,7 @@ function acceptAndPutOnHold() {
             </div>
             <div class="modal-body">
                 {% if case.scheduled_release_date %}
-                <p>Current release date: <strong>{{ case.scheduled_release_date|date:"F j, Y" }}</strong></p>
+                <p>Current release date: <strong>{{ case.scheduled_release_date|date:"F j, Y \a\t g:i A" }}</strong></p>
                 {% endif %}
                 
                 <div class="form-check mb-3 p-3 border rounded bg-light">
