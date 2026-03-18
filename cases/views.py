@@ -1576,7 +1576,6 @@ def change_release_date(request, case_id):
                 # Release immediately - preserve original date_completed from when tech finished
                 case.actual_release_date = timezone.now()
                 case.scheduled_release_date = None
-                case.actual_email_sent_date = timezone.now()
                 case.scheduled_email_date = None
                 if not case.date_completed:
                     case.date_completed = timezone.now()  # Fallback only
@@ -2933,7 +2932,6 @@ def mark_case_completed(request, case_id):
                     case.scheduled_release_date = None
                     case.actual_release_date = timezone.now()
                     case.scheduled_email_date = None
-                    case.actual_email_sent_date = timezone.now()
                     case.date_completed = timezone.now()
                     release_msg = "released immediately"
                 else:
@@ -2967,7 +2965,6 @@ def mark_case_completed(request, case_id):
                             case.scheduled_release_date = None
                             case.actual_release_date = timezone.now()
                             case.scheduled_email_date = None
-                            case.actual_email_sent_date = timezone.now()
                             case.date_completed = timezone.now()
                             release_msg = "released immediately (invalid datetime format)"
                     else:
@@ -2989,7 +2986,6 @@ def mark_case_completed(request, case_id):
                             case.scheduled_release_date = None
                             case.actual_release_date = timezone.now()
                             case.scheduled_email_date = None
-                            case.actual_email_sent_date = timezone.now()
                             case.date_completed = timezone.now()
                             release_msg = "released immediately"
                         else:
@@ -5444,14 +5440,12 @@ def approve_case_review(request, case_id):
                 release_msg = f'scheduled for release on {release_date_str}'
             except (ValueError, AttributeError):
                 case.actual_release_date = timezone.now()
-                case.actual_email_sent_date = timezone.now()
                 case.scheduled_release_date = None
                 case.scheduled_email_date = None
                 release_msg = 'released immediately'
         else:
             # Immediate release
             case.actual_release_date = timezone.now()
-            case.actual_email_sent_date = timezone.now()
             case.scheduled_release_date = None
             case.scheduled_email_date = None
             release_msg = 'released immediately'
@@ -5697,7 +5691,6 @@ def correct_case_review(request, case_id):
         case.review_notes = correction_notes
         case.date_completed = timezone.now()
         case.actual_release_date = timezone.now()
-        case.actual_email_sent_date = timezone.now()
         case.save()
         
         # Create audit trail entry

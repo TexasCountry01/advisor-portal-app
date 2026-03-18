@@ -349,6 +349,9 @@ def send_case_completed_email(case, request=None, user=None):
     Send email to member when their case is completed and released.
     Can be called from views (with request) or from cron job (without request).
     
+    On success, sets case.actual_email_sent_date and saves the case.
+    On failure, ensures actual_email_sent_date remains None so retries can pick it up.
+    
     Args:
         case: The Case object that has been completed/released
         request: Optional HttpRequest (for URL building in views)
@@ -403,6 +406,10 @@ def send_case_completed_email(case, request=None, user=None):
             fail_silently=False,
         )
 
+        # Mark email as sent on the case
+        case.actual_email_sent_date = timezone.now()
+        case.save(update_fields=['actual_email_sent_date'])
+
         # Audit trail
         AuditLog.log_activity(
             user=user,
@@ -421,6 +428,11 @@ def send_case_completed_email(case, request=None, user=None):
 
     except Exception as e:
         logger.error(f'Failed to send case completed email for {case.external_case_id}: {str(e)}')
+
+        # Ensure email date is cleared so retries can pick it up
+        if case.actual_email_sent_date is not None:
+            case.actual_email_sent_date = None
+            case.save(update_fields=['actual_email_sent_date'])
 
         AuditLog.log_activity(
             user=user,
