@@ -5432,8 +5432,8 @@ def approve_case_review(request, case_id):
                 cst = pytz.timezone('US/Central')
                 release_dt_cst = cst.localize(release_dt_naive)
                 release_dt_utc = release_dt_cst.astimezone(pytz.UTC)
-                case.scheduled_release_date = release_dt_utc.date()
-                case.scheduled_email_date = release_dt_utc.date()
+                case.scheduled_release_date = release_dt_utc
+                case.scheduled_email_date = release_dt_utc
                 case.actual_release_date = None
                 case.actual_email_sent_date = None
                 release_date_str = release_dt_cst.strftime('%b %d, %Y at %I:%M %p %Z')
