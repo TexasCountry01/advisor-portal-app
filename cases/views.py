@@ -849,12 +849,14 @@ def case_list(request):
         )
     
     # Calculate statistics
+    all_cases = Case.objects.exclude(status='draft')
     stats = {
-        'total': cases.count(),
-        'draft': cases.filter(status='draft').count(),
-        'submitted': cases.filter(status='submitted').count(),
-        'accepted': cases.filter(status='accepted').count(),
-        'completed': cases.filter(status='completed').count(),
+        'total': all_cases.count(),
+        'submitted': all_cases.filter(status='submitted').count(),
+        'accepted': all_cases.filter(status='accepted').count(),
+        'on_hold': all_cases.filter(status='hold').count(),
+        'pending_review': all_cases.filter(status='pending_review').count(),
+        'completed': all_cases.filter(status='completed').count(),
     }
     
     context = {
