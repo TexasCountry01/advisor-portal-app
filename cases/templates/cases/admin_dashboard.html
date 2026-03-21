@@ -17,7 +17,7 @@
             <h5 class="mb-0">Quick Stats & Filters</h5>
             <div class="btn-group btn-group-sm" role="group">
                 <button type="button" id="toggle-view-stats" class="btn btn-outline-secondary" title="Show/hide stats">
-                    <i class="bi bi-chevron-up"></i> Stats
+                    <i class="bi bi-chevron-up"></i> Hide Stats
                 </button>
                 <button type="button" id="toggle-view-filters" class="btn btn-outline-secondary" title="Show/hide filters" data-bs-toggle="collapse" data-bs-target="#filter-container">
                     <i class="bi bi-chevron-down"></i> Filters
@@ -604,7 +604,7 @@
         const isHidden = localStorage.getItem('viewStatsHidden') === 'true';
         if (isHidden) {
             container.style.display = 'none';
-            toggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i> Show';
+            toggleBtn.innerHTML = '<i class="bi bi-chevron-down"></i> Show Stats';
             toggleBtn.classList.add('collapsed');
         }
 
@@ -613,8 +613,8 @@
             const isCurrentlyHidden = container.style.display === 'none';
             container.style.display = isCurrentlyHidden ? 'block' : 'none';
             toggleBtn.innerHTML = isCurrentlyHidden ? 
-                '<i class="bi bi-chevron-up"></i> Hide' : 
-                '<i class="bi bi-chevron-down"></i> Show';
+                '<i class="bi bi-chevron-up"></i> Hide Stats' : 
+                '<i class="bi bi-chevron-down"></i> Show Stats';
             toggleBtn.classList.toggle('collapsed');
             localStorage.setItem('viewStatsHidden', !isCurrentlyHidden);
         });
