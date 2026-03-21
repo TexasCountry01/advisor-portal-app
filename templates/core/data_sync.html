@@ -118,9 +118,9 @@
                         <div class="flex-grow-1">
                             <div class="input-group input-group-sm">
                                 <input type="text" id="case-search-input" class="form-control"
-                                       placeholder="Search by employee or member name..." disabled>
+                                       placeholder="Search by employee or member name...">
                                 <button class="btn btn-outline-secondary" id="case-search-btn"
-                                        onclick="searchCases()" disabled>
+                                        onclick="searchCases()">
                                     <i class="bi bi-search"></i> Search PROD
                                 </button>
                             </div>
@@ -278,10 +278,6 @@ async function loadDropdowns() {
             document.getElementById('case-count-label').textContent = `Latest ${cData.cases.length} cases loaded`;
         }
     } catch(e) { logEntry('Failed to load cases: ' + e, 'error'); }
-
-    // Enable search input
-    document.getElementById('case-search-input').disabled = false;
-    document.getElementById('case-search-btn').disabled = false;
 }
 
 // --------------- Pull Actions ---------------
