@@ -351,7 +351,7 @@ function pullCase() {
 }
 
 // --------------- Case Search ---------------
-function populateCaseDropdown(cases) {
+function populateCaseDropdown(cases, autoSelect) {
     const sel = document.getElementById('case-select');
     sel.innerHTML = '<option value="">-- Select Case --</option>';
     cases.forEach(c => {
@@ -364,6 +364,10 @@ function populateCaseDropdown(cases) {
     });
     sel.disabled = false;
     document.getElementById('pull-case-btn').disabled = false;
+    // Auto-select if only one result from search
+    if (autoSelect && cases.length === 1) {
+        sel.value = cases[0].external_case_id;
+    }
 }
 
 function searchCases() {
@@ -376,7 +380,7 @@ function searchCases() {
     .then(data => {
         document.getElementById('case-search-btn').disabled = false;
         if (data.error) { logEntry('Search error: ' + data.error, 'error'); return; }
-        populateCaseDropdown(data.cases);
+        populateCaseDropdown(data.cases, true);
         document.getElementById('case-count-label').textContent = `Search: ${data.cases.length} results for "${query}"`;
         logEntry(`Found ${data.cases.length} cases matching "${query}"`, 'success');
     })
