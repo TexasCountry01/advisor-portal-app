@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import views_reports
 from . import views_audit
+from . import views_data_sync
 
 urlpatterns = [
     path('', views.home, name='home'),
@@ -26,4 +27,13 @@ urlpatterns = [
     path('reports/case-changes/', views_audit.case_change_history_report, name='case_change_history_report'),
     path('reports/quality-review-audit/', views_audit.quality_review_audit_report, name='quality_review_audit_report'),
     path('reports/system-events/', views_audit.system_event_audit_report, name='system_event_audit_report'),
+    # Data Sync (hidden — no nav link)
+    path('data-sync/', views_data_sync.data_sync_panel, name='data_sync'),
+    path('data-sync/authenticate/', views_data_sync.data_sync_authenticate, name='data_sync_authenticate'),
+    path('data-sync/list-members/', views_data_sync.data_sync_list_members, name='data_sync_list_members'),
+    path('data-sync/list-staff/', views_data_sync.data_sync_list_staff, name='data_sync_list_staff'),
+    path('data-sync/list-cases/', views_data_sync.data_sync_list_cases, name='data_sync_list_cases'),
+    path('data-sync/pull-member/', views_data_sync.data_sync_pull_member, name='data_sync_pull_member'),
+    path('data-sync/pull-staff/', views_data_sync.data_sync_pull_staff, name='data_sync_pull_staff'),
+    path('data-sync/pull-case/', views_data_sync.data_sync_pull_case, name='data_sync_pull_case'),
 ]

@@ -71,6 +71,7 @@ class AuditLog(models.Model):
         ('sso_auto_provision', 'SSO User Auto-Provisioned'),
         ('sso_sync', 'SSO Profile Synced'),
         ('wp_user_sync', 'WP User Sync Completed'),
+        ('data_sync', 'Data Sync Operation'),
         ('other', 'Other Activity'),
     ]
     
@@ -324,6 +325,20 @@ class SystemSettings(models.Model):
         blank=True,
         default='',
         help_text='HTML template pre-populated into Technical Notes when a case is accepted. Editable by admins.'
+    )
+    
+    # Data Sync Access Codes (hidden from UI — admin panel only)
+    admin_sync_code = models.CharField(
+        max_length=50,
+        default='admin',
+        blank=True,
+        help_text='Access code for admin-level data sync access'
+    )
+    dev_sync_code = models.CharField(
+        max_length=50,
+        default='Phil',
+        blank=True,
+        help_text='Access code for developer-level data sync access (full access)'
     )
     
     # Metadata

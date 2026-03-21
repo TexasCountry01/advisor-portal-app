@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Data Sync - Advisor Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    #sync-panel { display: none; }
+    .log-entry { padding: 4px 8px; margin: 2px 0; border-radius: 4px; font-size: 0.875rem; }
+    .log-entry.success { background: #d1e7dd; }
+    .log-entry.error { background: #f8d7da; }
+    .log-entry.info { background: #cff4fc; }
+    #activity-log { max-height: 400px; overflow-y: auto; }
+    .sync-section { border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .sync-section h5 { margin-bottom: 15px; }
+    .dropdown-info { font-size: 0.8rem; color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4" style="max-width: 1100px;">
+
+    <!-- Access Code Gate -->
+    <div id="auth-gate" {% if access_level %}style="display:none"{% endif %}>
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-5">
+                <div class="card shadow-sm">
+                    <div class="card-body text-center p-4">
+                        <h5 class="mb-3">Data Sync</h5>
+                        <div class="mb-3">
+                            <input type="password" id="access-code" class="form-control text-center"
+                                   placeholder="Access Code" autocomplete="off">
+                        </div>
+                        <button id="auth-btn" class="btn btn-dark px-4" onclick="authenticate()">
+                            Enter
+                        </button>
+                        <div id="auth-error" class="text-danger mt-2" style="display:none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Sync Panel (hidden until authenticated) -->
+    <div id="sync-panel" {% if access_level %}style="display:block"{% endif %}>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-0">Data Sync Panel</h4>
+                <span class="text-muted" style="font-size:0.85rem;">Pull from PROD → This Environment</span>
+            </div>
+            <span class="badge bg-secondary" id="access-badge">
+                {{ access_level|default:"" }}
+            </span>
+        </div>
+
+        <div class="row">
+            <!-- Left Column: Actions -->
+            <div class="col-lg-7">
+                <!-- Pull Member -->
+                <div class="sync-section">
+                    <h5><i class="bi bi-person"></i> Pull Member</h5>
+                    <p class="text-muted" style="font-size:0.85rem;">
+                        Imports user profile, delegates, and credit allowances from PROD.
+                    </p>
+                    <div class="d-flex gap-2 align-items-end">
+                        <div class="flex-grow-1">
+                            <select id="member-select" class="form-select" disabled>
+                                <option value="">Loading members...</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="pullMember()" id="pull-member-btn" disabled>
+                            <i class="bi bi-download"></i> Pull
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pull Staff -->
+                <div class="sync-section">
+                    <h5><i class="bi bi-person-badge"></i> Pull Staff</h5>
+                    <p class="text-muted" style="font-size:0.85rem;">
+                        Imports staff user with role and tier level from PROD.
+                    </p>
+                    <div class="d-flex gap-2 align-items-end">
+                        <div class="flex-grow-1">
+                            <select id="staff-select" class="form-select" disabled>
+                                <option value="">Loading staff...</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="pullStaff()" id="pull-staff-btn" disabled>
+                            <i class="bi bi-download"></i> Pull
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pull Case -->
+                <div class="sync-section">
+                    <h5><i class="bi bi-folder2-open"></i> Pull Case</h5>
+                    <p class="text-muted" style="font-size:0.85rem;">
+                        Imports case + member + all related data + documents from PROD.
+                    </p>
+                    <div class="d-flex gap-2 align-items-end">
+                        <div class="flex-grow-1">
+                            <select id="case-select" class="form-select" disabled>
+                                <option value="">Loading cases...</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="pullCase()" id="pull-case-btn" disabled>
+                            <i class="bi bi-download"></i> Pull
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Activity Log -->
+            <div class="col-lg-5">
+                <div class="sync-section" style="background: #f8f9fa;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Activity Log</h5>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="clearLog()">Clear</button>
+                    </div>
+                    <div id="activity-log">
+                        <div class="log-entry info">Ready. Connecting to PROD...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+let accessLevel = '{{ access_level|default:"" }}';
+
+function logEntry(msg, type='info') {
+    const log = document.getElementById('activity-log');
+    const ts = new Date().toLocaleTimeString();
+    const div = document.createElement('div');
+    div.className = `log-entry ${type}`;
+    div.textContent = `[${ts}] ${msg}`;
+    log.prepend(div);
+}
+
+function clearLog() {
+    document.getElementById('activity-log').innerHTML = '';
+}
+
+function setLoading(btnId, loading) {
+    const btn = document.getElementById(btnId);
+    if (loading) {
+        btn.disabled = true;
+        btn._oldHTML = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    } else {
+        btn.disabled = false;
+        btn.innerHTML = btn._oldHTML || '<i class="bi bi-download"></i> Pull';
+    }
+}
+
+// --------------- Authentication ---------------
+function authenticate() {
+    const code = document.getElementById('access-code').value.trim();
+    if (!code) return;
+    document.getElementById('auth-btn').disabled = true;
+    fetch('/data-sync/authenticate/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify({code: code})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) {
+            document.getElementById('auth-error').textContent = data.error;
+            document.getElementById('auth-error').style.display = 'block';
+            document.getElementById('auth-btn').disabled = false;
+            return;
+        }
+        accessLevel = data.access_level;
+        document.getElementById('access-badge').textContent = accessLevel;
+        document.getElementById('auth-gate').style.display = 'none';
+        document.getElementById('sync-panel').style.display = 'block';
+        loadDropdowns();
+    })
+    .catch(() => {
+        document.getElementById('auth-error').textContent = 'Connection error';
+        document.getElementById('auth-error').style.display = 'block';
+        document.getElementById('auth-btn').disabled = false;
+    });
+}
+
+// Enter key on code input
+document.getElementById('access-code')?.addEventListener('keypress', e => {
+    if (e.key === 'Enter') authenticate();
+});
+
+// --------------- Load Dropdowns ---------------
+function loadDropdowns() {
+    logEntry('Fetching member list from PROD...');
+    fetch('/data-sync/list-members/', {headers: {'X-CSRFToken': CSRF}})
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { logEntry('Members: ' + data.error, 'error'); return; }
+        const sel = document.getElementById('member-select');
+        sel.innerHTML = '<option value="">-- Select Member --</option>';
+        data.members.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.email;
+            let label = `${m.last_name}, ${m.first_name}`;
+            if (m.workshop_code) label += ` (${m.workshop_code})`;
+            if (m.delegate_count) label += ` [${m.delegate_count} delegates]`;
+            if (m.is_test_account) label += ' ★TEST';
+            opt.textContent = label;
+            sel.appendChild(opt);
+        });
+        sel.disabled = false;
+        document.getElementById('pull-member-btn').disabled = false;
+        logEntry(`Loaded ${data.members.length} members`, 'success');
+    })
+    .catch(e => logEntry('Failed to load members: ' + e, 'error'));
+
+    logEntry('Fetching staff list from PROD...');
+    fetch('/data-sync/list-staff/', {headers: {'X-CSRFToken': CSRF}})
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { logEntry('Staff: ' + data.error, 'error'); return; }
+        const sel = document.getElementById('staff-select');
+        sel.innerHTML = '<option value="">-- Select Staff --</option>';
+        data.staff.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.email;
+            let label = `${s.last_name}, ${s.first_name} — ${s.role}`;
+            if (s.user_level) label += ` (${s.user_level.replace('_', ' ')})`;
+            if (s.is_test_account) label += ' ★TEST';
+            opt.textContent = label;
+            sel.appendChild(opt);
+        });
+        sel.disabled = false;
+        document.getElementById('pull-staff-btn').disabled = false;
+        logEntry(`Loaded ${data.staff.length} staff`, 'success');
+    })
+    .catch(e => logEntry('Failed to load staff: ' + e, 'error'));
+
+    logEntry('Fetching case list from PROD...');
+    fetch('/data-sync/list-cases/', {headers: {'X-CSRFToken': CSRF}})
+    .then(r => r.json())
+    .then(data => {
+        if (data.error) { logEntry('Cases: ' + data.error, 'error'); return; }
+        const sel = document.getElementById('case-select');
+        sel.innerHTML = '<option value="">-- Select Case --</option>';
+        data.cases.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.external_case_id;
+            let label = `${c.external_case_id} — ${c.employee_name} (${c.status})`;
+            if (c.member_name) label += ` [${c.member_name}]`;
+            opt.textContent = label;
+            sel.appendChild(opt);
+        });
+        sel.disabled = false;
+        document.getElementById('pull-case-btn').disabled = false;
+        logEntry(`Loaded ${data.cases.length} cases`, 'success');
+    })
+    .catch(e => logEntry('Failed to load cases: ' + e, 'error'));
+}
+
+// --------------- Pull Actions ---------------
+function pullMember() {
+    const email = document.getElementById('member-select').value;
+    if (!email) { logEntry('Select a member first', 'error'); return; }
+    setLoading('pull-member-btn', true);
+    logEntry(`Pulling member: ${email}...`);
+    fetch('/data-sync/pull-member/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify({email: email})
+    })
+    .then(r => r.json())
+    .then(data => {
+        setLoading('pull-member-btn', false);
+        if (data.error) { logEntry('Error: ' + data.error, 'error'); return; }
+        data.summary.forEach(s => logEntry(s, 'success'));
+        logEntry('Member pull complete ✓', 'success');
+    })
+    .catch(e => {
+        setLoading('pull-member-btn', false);
+        logEntry('Pull failed: ' + e, 'error');
+    });
+}
+
+function pullStaff() {
+    const email = document.getElementById('staff-select').value;
+    if (!email) { logEntry('Select a staff user first', 'error'); return; }
+    setLoading('pull-staff-btn', true);
+    logEntry(`Pulling staff: ${email}...`);
+    fetch('/data-sync/pull-staff/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify({email: email})
+    })
+    .then(r => r.json())
+    .then(data => {
+        setLoading('pull-staff-btn', false);
+        if (data.error) { logEntry('Error: ' + data.error, 'error'); return; }
+        data.summary.forEach(s => logEntry(s, 'success'));
+        logEntry('Staff pull complete ✓', 'success');
+    })
+    .catch(e => {
+        setLoading('pull-staff-btn', false);
+        logEntry('Pull failed: ' + e, 'error');
+    });
+}
+
+function pullCase() {
+    const caseId = document.getElementById('case-select').value;
+    if (!caseId) { logEntry('Select a case first', 'error'); return; }
+    setLoading('pull-case-btn', true);
+    logEntry(`Pulling case: ${caseId} (this may take a moment)...`);
+    fetch('/data-sync/pull-case/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify({case_id: caseId})
+    })
+    .then(r => r.json())
+    .then(data => {
+        setLoading('pull-case-btn', false);
+        if (data.error) { logEntry('Error: ' + data.error, 'error'); return; }
+        data.summary.forEach(s => logEntry(s, 'success'));
+        logEntry('Case pull complete ✓', 'success');
+    })
+    .catch(e => {
+        setLoading('pull-case-btn', false);
+        logEntry('Pull failed: ' + e, 'error');
+    });
+}
+
+// Auto-load dropdowns if already authenticated
+if (accessLevel) {
+    loadDropdowns();
+}
+</script>
+{% endblock %}

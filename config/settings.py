@@ -240,6 +240,15 @@ TINYMCE_DEFAULT_CONFIG = {
 }
 
 # ============================================================================
+# Data Sync — PROD SSH Configuration
+# ============================================================================
+# Used by the data sync panel to SSH into PROD and export data.
+# Only needed on TEST and LOCAL. PROD doesn't use these.
+PROD_SSH_USER = config('PROD_SSH_USER', default='dev')
+PROD_SSH_HOST = config('PROD_SSH_HOST', default='104.248.126.74')
+PROD_SSH_APP_PATH = config('PROD_SSH_APP_PATH', default='/var/www/advisor-portal')
+
+# ============================================================================
 # WP Fusion SSO — miniOrange OAuth2 Server
 # ============================================================================
 # Authentication is agnostic to environment. Each deployment sets its own
