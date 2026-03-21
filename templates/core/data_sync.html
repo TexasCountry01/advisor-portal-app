@@ -389,12 +389,6 @@ function searchCases() {
 document.getElementById('case-search-input')?.addEventListener('keypress', e => {
     if (e.key === 'Enter') searchCases();
 });
-    })
-    .catch(e => {
-        setLoading('pull-case-btn', false);
-        logEntry('Pull failed: ' + e, 'error');
-    });
-}
 
 // Auto-load dropdowns if already authenticated
 if (accessLevel) {
