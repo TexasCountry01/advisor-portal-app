@@ -42,7 +42,7 @@ def _get_ssh_config():
     )
 
 
-def _ssh_export(args_str, timeout=30):
+def _ssh_export(args_str, timeout=45):
     """
     SSH into PROD and run `python manage.py export_data <args_str>`.
     Returns parsed JSON or raises RuntimeError.

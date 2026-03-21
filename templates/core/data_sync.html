@@ -194,73 +194,79 @@ document.getElementById('access-code')?.addEventListener('keypress', e => {
     if (e.key === 'Enter') authenticate();
 });
 
-// --------------- Load Dropdowns ---------------
-function loadDropdowns() {
+// --------------- Load Dropdowns (sequential to avoid SSH contention) ---------------
+async function loadDropdowns() {
+    // Members
     logEntry('Fetching member list from PROD...');
-    fetch('/data-sync/list-members/', {headers: {'X-CSRFToken': CSRF}})
-    .then(r => r.json())
-    .then(data => {
-        if (data.error) { logEntry('Members: ' + data.error, 'error'); return; }
-        const sel = document.getElementById('member-select');
-        sel.innerHTML = '<option value="">-- Select Member --</option>';
-        data.members.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.email;
-            let label = `${m.last_name}, ${m.first_name}`;
-            if (m.workshop_code) label += ` (${m.workshop_code})`;
-            if (m.delegate_count) label += ` [${m.delegate_count} delegates]`;
-            if (m.is_test_account) label += ' ★TEST';
-            opt.textContent = label;
-            sel.appendChild(opt);
-        });
-        sel.disabled = false;
-        document.getElementById('pull-member-btn').disabled = false;
-        logEntry(`Loaded ${data.members.length} members`, 'success');
-    })
-    .catch(e => logEntry('Failed to load members: ' + e, 'error'));
+    try {
+        const mRes = await fetch('/data-sync/list-members/', {headers: {'X-CSRFToken': CSRF}});
+        const mData = await mRes.json();
+        if (mData.error) { logEntry('Members: ' + mData.error, 'error'); }
+        else {
+            const sel = document.getElementById('member-select');
+            sel.innerHTML = '<option value="">-- Select Member --</option>';
+            mData.members.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.email;
+                let label = `${m.last_name}, ${m.first_name}`;
+                if (m.workshop_code) label += ` (${m.workshop_code})`;
+                if (m.delegate_count) label += ` [${m.delegate_count} delegates]`;
+                if (m.is_test_account) label += ' ★TEST';
+                opt.textContent = label;
+                sel.appendChild(opt);
+            });
+            sel.disabled = false;
+            document.getElementById('pull-member-btn').disabled = false;
+            logEntry(`Loaded ${mData.members.length} members`, 'success');
+        }
+    } catch(e) { logEntry('Failed to load members: ' + e, 'error'); }
 
+    // Staff
     logEntry('Fetching staff list from PROD...');
-    fetch('/data-sync/list-staff/', {headers: {'X-CSRFToken': CSRF}})
-    .then(r => r.json())
-    .then(data => {
-        if (data.error) { logEntry('Staff: ' + data.error, 'error'); return; }
-        const sel = document.getElementById('staff-select');
-        sel.innerHTML = '<option value="">-- Select Staff --</option>';
-        data.staff.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s.email;
-            let label = `${s.last_name}, ${s.first_name} — ${s.role}`;
-            if (s.user_level) label += ` (${s.user_level.replace('_', ' ')})`;
-            if (s.is_test_account) label += ' ★TEST';
-            opt.textContent = label;
-            sel.appendChild(opt);
-        });
-        sel.disabled = false;
-        document.getElementById('pull-staff-btn').disabled = false;
-        logEntry(`Loaded ${data.staff.length} staff`, 'success');
-    })
-    .catch(e => logEntry('Failed to load staff: ' + e, 'error'));
+    try {
+        const sRes = await fetch('/data-sync/list-staff/', {headers: {'X-CSRFToken': CSRF}});
+        const sData = await sRes.json();
+        if (sData.error) { logEntry('Staff: ' + sData.error, 'error'); }
+        else {
+            const sel = document.getElementById('staff-select');
+            sel.innerHTML = '<option value="">-- Select Staff --</option>';
+            sData.staff.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s.email;
+                let label = `${s.last_name}, ${s.first_name} — ${s.role}`;
+                if (s.user_level) label += ` (${s.user_level.replace('_', ' ')})`;
+                if (s.is_test_account) label += ' ★TEST';
+                opt.textContent = label;
+                sel.appendChild(opt);
+            });
+            sel.disabled = false;
+            document.getElementById('pull-staff-btn').disabled = false;
+            logEntry(`Loaded ${sData.staff.length} staff`, 'success');
+        }
+    } catch(e) { logEntry('Failed to load staff: ' + e, 'error'); }
 
+    // Cases
     logEntry('Fetching case list from PROD...');
-    fetch('/data-sync/list-cases/', {headers: {'X-CSRFToken': CSRF}})
-    .then(r => r.json())
-    .then(data => {
-        if (data.error) { logEntry('Cases: ' + data.error, 'error'); return; }
-        const sel = document.getElementById('case-select');
-        sel.innerHTML = '<option value="">-- Select Case --</option>';
-        data.cases.forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.external_case_id;
-            let label = `${c.external_case_id} — ${c.employee_name} (${c.status})`;
-            if (c.member_name) label += ` [${c.member_name}]`;
-            opt.textContent = label;
-            sel.appendChild(opt);
-        });
-        sel.disabled = false;
-        document.getElementById('pull-case-btn').disabled = false;
-        logEntry(`Loaded ${data.cases.length} cases`, 'success');
-    })
-    .catch(e => logEntry('Failed to load cases: ' + e, 'error'));
+    try {
+        const cRes = await fetch('/data-sync/list-cases/', {headers: {'X-CSRFToken': CSRF}});
+        const cData = await cRes.json();
+        if (cData.error) { logEntry('Cases: ' + cData.error, 'error'); }
+        else {
+            const sel = document.getElementById('case-select');
+            sel.innerHTML = '<option value="">-- Select Case --</option>';
+            cData.cases.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.external_case_id;
+                let label = `${c.external_case_id} — ${c.employee_name} (${c.status})`;
+                if (c.member_name) label += ` [${c.member_name}]`;
+                opt.textContent = label;
+                sel.appendChild(opt);
+            });
+            sel.disabled = false;
+            document.getElementById('pull-case-btn').disabled = false;
+            logEntry(`Loaded ${cData.cases.length} cases`, 'success');
+        }
+    } catch(e) { logEntry('Failed to load cases: ' + e, 'error'); }
 }
 
 // --------------- Pull Actions ---------------
