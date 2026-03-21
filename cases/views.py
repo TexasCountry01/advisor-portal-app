@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -635,6 +636,7 @@ def admin_dashboard(request):
         'visible_columns': get_user_visible_columns(user, 'admin_dashboard'),
         'all_columns': DASHBOARD_COLUMN_CONFIG['admin_dashboard']['available_columns'],
         'filter_params': build_filter_params(request),
+        'enable_data_sync': settings.ENABLE_DATA_SYNC,
     }
     
     return render(request, 'cases/admin_dashboard.html', context)
