@@ -41,4 +41,5 @@ if settings.ENABLE_DATA_SYNC:
         path('data-sync/pull-member/', views_data_sync.data_sync_pull_member, name='data_sync_pull_member'),
         path('data-sync/pull-staff/', views_data_sync.data_sync_pull_staff, name='data_sync_pull_staff'),
         path('data-sync/pull-case/', views_data_sync.data_sync_pull_case, name='data_sync_pull_case'),
+        path('data-sync/search-cases/', views_data_sync.data_sync_search_cases, name='data_sync_search_cases'),
     ]

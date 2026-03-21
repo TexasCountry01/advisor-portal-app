@@ -69,6 +69,8 @@ class Command(BaseCommand):
                            help='Export full staff user data by email')
         group.add_argument('--case', type=str, metavar='CASE_ID',
                            help='Export full case data by external_case_id')
+        group.add_argument('--search-cases', type=str, metavar='QUERY',
+                           help='Search cases by employee or member name')
 
     def handle(self, *args, **options):
         # All output goes to stdout as JSON; errors to stderr
@@ -84,6 +86,8 @@ class Command(BaseCommand):
             self._export_staff(options['staff'])
         elif options['case']:
             self._export_case(options['case'])
+        elif options['search_cases']:
+            self._search_cases(options['search_cases'])
 
     def _output_json(self, data):
         """Write JSON to stdout (not self.stdout to avoid Django formatting)."""
@@ -129,6 +133,22 @@ class Command(BaseCommand):
         cases = Case.objects.select_related('member', 'assigned_to').order_by(
             '-date_submitted'
         )[:200]  # Limit to most recent 200
+        self._output_json(self._cases_to_list(cases))
+
+    def _search_cases(self, query):
+        from cases.models import Case
+        from django.db.models import Q
+        q = query.strip()
+        cases = Case.objects.select_related('member', 'assigned_to').filter(
+            Q(employee_first_name__icontains=q) |
+            Q(employee_last_name__icontains=q) |
+            Q(member__first_name__icontains=q) |
+            Q(member__last_name__icontains=q) |
+            Q(external_case_id__icontains=q)
+        ).order_by('-date_submitted')[:100]
+        self._output_json(self._cases_to_list(cases))
+
+    def _cases_to_list(self, cases):
         result = []
         for c in cases:
             result.append({
@@ -140,7 +160,7 @@ class Command(BaseCommand):
                 'date_submitted': c.date_submitted.isoformat() if c.date_submitted else '',
                 'assigned_to': c.assigned_to.get_full_name() if c.assigned_to else 'Unassigned',
             })
-        self._output_json(result)
+        return result
 
     def _export_member(self, email):
         try:

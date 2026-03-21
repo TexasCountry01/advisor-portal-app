@@ -644,6 +644,31 @@ def data_sync_list_cases(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
+# Safe pattern for search queries passed to SSH
+_SEARCH_QUERY_RE = re.compile(r'^[a-zA-Z0-9 \.\'\-]+$')
+
+
+@require_GET
+@login_required
+def data_sync_search_cases(request):
+    """AJAX: Search PROD cases by employee/member name."""
+    access = _validate_access(request)
+    if not access:
+        return JsonResponse({'error': 'Not authenticated'}, status=403)
+    query = request.GET.get('q', '').strip()
+    if not query or len(query) < 2:
+        return JsonResponse({'error': 'Search query must be at least 2 characters'}, status=400)
+    if len(query) > 100:
+        return JsonResponse({'error': 'Search query too long'}, status=400)
+    if not _SEARCH_QUERY_RE.match(query):
+        return JsonResponse({'error': 'Invalid characters in search query'}, status=400)
+    try:
+        data = _ssh_export(f'--search-cases "{query}"', timeout=45)
+        return JsonResponse({'cases': data})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
 @require_POST
 @login_required
 def data_sync_pull_member(request):
