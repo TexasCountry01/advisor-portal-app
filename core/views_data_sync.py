@@ -53,8 +53,9 @@ def _ssh_export(args_str, timeout=45):
         f'cd {path} && source venv/bin/activate && '
         f'python manage.py export_data {args_str}'
     )
+    ssh_bin = shutil.which('ssh') or '/usr/bin/ssh'
     result = subprocess.run(
-        ['ssh', '-o', 'StrictHostKeyChecking=accept-new',
+        [ssh_bin, '-o', 'StrictHostKeyChecking=accept-new',
          '-o', 'ConnectTimeout=10', f'{user}@{host}', cmd],
         capture_output=True, text=True, timeout=timeout,
     )
@@ -71,8 +72,9 @@ def _scp_file(remote_path, local_path, timeout=60):
     user, host, app_path = _get_ssh_config()
     remote_full = f'{user}@{host}:{app_path}/media/{remote_path}'
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    scp_bin = shutil.which('scp') or '/usr/bin/scp'
     result = subprocess.run(
-        ['scp', '-o', 'StrictHostKeyChecking=accept-new',
+        [scp_bin, '-o', 'StrictHostKeyChecking=accept-new',
          '-o', 'ConnectTimeout=10', remote_full, local_path],
         capture_output=True, text=True, timeout=timeout,
     )
