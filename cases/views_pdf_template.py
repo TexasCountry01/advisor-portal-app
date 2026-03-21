@@ -71,7 +71,7 @@ def fact_finder_template(request, case_id):
             if request.user.role == 'member':
                 return redirect('cases:member_dashboard')
             else:
-                return redirect('cases:case_list')
+                return redirect('cases:admin_dashboard')
     
     # If no Federal Fact Finder document exists, show upload form
     if not ff_document:
@@ -241,7 +241,7 @@ def delete_document(request, doc_id):
         doc = get_object_or_404(CaseDocument, id=doc_id)
     except:
         messages.error(request, f'Document not found (ID: {doc_id}). It may have already been deleted.')
-        return redirect('cases:case_list')
+        return redirect('cases:admin_dashboard')
     
     case = doc.case
     

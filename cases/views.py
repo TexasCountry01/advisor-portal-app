@@ -821,52 +821,16 @@ def manager_dashboard(request):
 
 @login_required
 def case_list(request):
-    """List all cases - Admin and Manager only"""
+    """Redirect to the appropriate dashboard based on user role."""
     user = request.user
-    
-    # Ensure user is admin or manager
-    if user.role not in ['administrator', 'manager']:
-        messages.error(request, 'Access denied.')
-        return redirect('home')
-    
-    # Get all cases
-    cases = Case.objects.all().select_related(
-        'member', 'assigned_to'
-    ).order_by('-created_at')
-    
-    # Apply filters
-    status_filter = request.GET.get('status')
-    search_query = request.GET.get('search')
-    
-    if status_filter:
-        cases = cases.filter(status=status_filter)
-    
-    if search_query:
-        cases = cases.filter(
-            Q(external_case_id__icontains=search_query) |
-            Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query)
-        )
-    
-    # Calculate statistics
-    all_cases = Case.objects.exclude(status='draft')
-    stats = {
-        'total': all_cases.count(),
-        'submitted': all_cases.filter(status='submitted').count(),
-        'accepted': all_cases.filter(status='accepted').count(),
-        'on_hold': all_cases.filter(status='hold').count(),
-        'pending_review': all_cases.filter(status='pending_review').count(),
-        'completed': all_cases.filter(status='completed').count(),
-    }
-    
-    context = {
-        'cases': cases,
-        'stats': stats,
-        'status_filter': status_filter,
-        'search_query': search_query,
-    }
-    
-    return render(request, 'cases/case_list.html', context)
+    if user.role == 'administrator':
+        return redirect('cases:admin_dashboard')
+    elif user.role == 'manager':
+        return redirect('cases:manager_dashboard')
+    elif user.role == 'technician':
+        return redirect('cases:technician_dashboard')
+    else:
+        return redirect('cases:member_dashboard')
 
 
 @login_required
@@ -876,7 +840,7 @@ def delete_case(request, pk):
     
     # Permission check
     can_delete = False
-    redirect_to = 'cases:case_list'
+    redirect_to = 'home'
     
     if request.user.role == 'member' and case.member == request.user:
         # Members can only delete their own draft cases
@@ -3579,7 +3543,7 @@ def credit_audit_trail(request, case_id=None):
     # Check if user is admin or manager (check role field)
     if user.role not in ['administrator', 'manager']:
         messages.error(request, 'You do not have permission to view credit audit trails.')
-        return redirect('cases:case_list')
+        return redirect('home')
     
     from cases.models import CreditAuditLog
     
