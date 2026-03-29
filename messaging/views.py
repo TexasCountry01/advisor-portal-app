@@ -222,13 +222,10 @@ def reply(request, pk):
                 member_email = _get_notification_email(conversation.started_by)
                 if member_email and should_send_emails():
                     send_email_notification(
-                        subject=f'Re: {conversation.subject} - ProFeds Benefits Team',
+                        subject='New Response to Your Question - ProFeds Benefits Team',
                         template_name='message_reply_notification.html',
                         context={
                             'member_first_name': conversation.started_by.first_name or conversation.started_by.username,
-                            'subject': conversation.subject,
-                            'reply_preview': body[:300],
-                            'staff_name': user.get_full_name() or 'Benefits Team',
                             'conversation_url': f"{getattr(__import__('django.conf', fromlist=['settings']).settings, 'SITE_URL', 'https://reports.profeds.com')}/messages/{conversation.pk}/",
                         },
                         recipient_email=member_email,
