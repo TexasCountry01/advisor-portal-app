@@ -23,9 +23,9 @@
             <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Dashboard
             </a>
-            {% if case.status == 'draft' or case.status == 'submitted' %}
-            <a href="{% url 'cases:delete_case' case.pk %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this case? This action cannot be undone.')">
-                <i class="bi bi-x-lg"></i> Delete Case
+            {% if case.status == 'draft' %}
+            <a href="{% url 'cases:delete_case' case.pk %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this draft? This action cannot be undone.')">
+                <i class="bi bi-x-lg"></i> Delete Draft
             </a>
             {% endif %}
         </div>
