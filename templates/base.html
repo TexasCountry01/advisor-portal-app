@@ -231,7 +231,7 @@
     <style>
         .notification-item { cursor: pointer; transition: background-color 0.2s; }
         .notification-item:hover { background-color: #e9ecef !important; }
-        .border-left-warning { border-left: 4px solid #ffc107 !important; }
+        .border-left-warning { border-left: 4px solid #EDA618 !important; }
     </style>
     <script>
     (function() {
@@ -269,7 +269,7 @@
             data.notifications.forEach(notif => {
                 const icon = notif.notification_type.includes('hold') ? 'exclamation-triangle' : 'info-circle';
                 html += `
-                    <div class="notification-item p-3 border-bottom" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f8f9fa;'}" onclick="window.location.href='/cases/${notif.case_id}/?focus=messages&notification_id=${notif.id}'">
+                    <div class="notification-item p-3 border-bottom" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #D1E2F2;'}" onclick="window.location.href='/cases/${notif.case_id}/?focus=messages&notification_id=${notif.id}'">
                         <div class="d-flex gap-2">
                             <i class="bi bi-${icon} flex-shrink-0 mt-1"></i>
                             <div class="flex-grow-1">
@@ -424,7 +424,7 @@
                 const icon = iconMap[notif.notification_type] || 'info-circle';
                 const caseLink = notif.case_id ? `/cases/${notif.case_id}/` : '#';
                 html += `
-                    <div class="staff-notification-item p-3 border-bottom" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f0f4ff;'}" onclick="window.location.href='${caseLink}'">
+                    <div class="staff-notification-item p-3 border-bottom" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #D1E2F2;'}" onclick="window.location.href='${caseLink}'">
                         <div class="d-flex gap-2">
                             <i class="bi bi-${icon} flex-shrink-0 mt-1 ${notif.is_read ? 'text-muted' : 'text-primary'}"></i>
                             <div class="flex-grow-1">

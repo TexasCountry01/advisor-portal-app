@@ -96,8 +96,8 @@
     }
     
     .draft-banner {
-        background: #fff3cd;
-        border: 1px solid #ffc107;
+        background: #FDF5DE;
+        border: 1px solid #EDA618;
         border-radius: 4px;
         padding: 15px 20px;
         margin-bottom: 20px;
@@ -122,12 +122,12 @@
     
     .required-field::after {
         content: " *";
-        color: #dc3545;
+        color: #C00000;
     }
     
     .help-text {
         font-size: 12px;
-        color: #6c757d;
+        color: #898F9B;
         font-style: italic;
     }
     
@@ -138,8 +138,8 @@
     }
     
     .document-upload-section {
-        background: #fff3cd;
-        border: 2px solid #ffc107;
+        background: #FDF5DE;
+        border: 2px solid #EDA618;
         padding: 25px;
         border-radius: 8px;
         margin-bottom: 30px;
@@ -3266,7 +3266,7 @@ if (high3No && retirementNotes) {
     high3No.addEventListener('change', function() {
         if (this.checked) {
             retirementNotes.setAttribute('required', 'required');
-            retirementNotes.style.borderColor = '#dc3545';
+            retirementNotes.style.borderColor = '#C00000';
             retirementNotes.placeholder = 'Please provide highest salary history (REQUIRED when "No" is selected)';
         }
     });
@@ -3357,7 +3357,7 @@ function validateDateRange(startId, endId, label) {
             
             if (startDate && endDate && endDate < startDate) {
                 endInput.setCustomValidity(`End date must be after start date for ${label}`);
-                endInput.style.borderColor = '#dc3545';
+                endInput.style.borderColor = '#C00000';
             } else {
                 endInput.setCustomValidity('');
                 endInput.style.borderColor = '';
@@ -3452,13 +3452,13 @@ function calculateTSPTotals() {
             errorRow.style.display = 'table-row';
             errorMessage.textContent = `Total allocation is ${allocationTotal}%. The combined allocation across all TSP funds cannot exceed 100%.`;
         } else if (allocationTotal > 0 && allocationTotal < 100) {
-            allocationTotalInput.style.background = '#fff3cd';
+            allocationTotalInput.style.background = '#FDF5DE';
             allocationTotalInput.style.color = '#856404';
             allocationTotalInput.style.fontWeight = 'bold';
             errorRow.style.display = 'table-row';
             errorMessage.textContent = `Total allocation is ${allocationTotal}%. Consider allocating the remaining ${(100 - allocationTotal).toFixed(0)}% to reach 100%.`;
-            errorRow.style.background = '#fff3cd';
-            errorRow.querySelector('td').style.background = '#fff3cd';
+            errorRow.style.background = '#FDF5DE';
+            errorRow.querySelector('td').style.background = '#FDF5DE';
             errorRow.querySelector('td').style.color = '#856404';
             errorRow.querySelector('td').style.borderColor = '#ffeaa7';
         } else {
@@ -3602,7 +3602,7 @@ if (factFinderForm) {
             if (errors[0].element) {
                 errors[0].element.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 errors[0].element.focus();
-                errors[0].element.style.border = '2px solid #dc3545';
+                errors[0].element.style.border = '2px solid #C00000';
                 
                 // Remove highlight after 3 seconds
                 setTimeout(() => {

@@ -1,5 +1,104 @@
 /* Main stylesheet for Advisor Portal */
 
+/* =============================================
+   ProFeds Brand Color System
+   Primary:   ProFeds Blue #285FBF, ProFeds Gold #EDA618
+   Secondary: Dark Blue #072A84, Purple #4D1B53, Dark Gray #898F9B, Light Gray #E2E2E2
+   Tertiary:  Red #C00000, Light Blue #D1E2F2
+   ============================================= */
+
+:root {
+    --profeds-blue: #285FBF;
+    --profeds-gold: #EDA618;
+    --profeds-dark-blue: #072A84;
+    --profeds-purple: #4D1B53;
+    --profeds-dark-gray: #898F9B;
+    --profeds-light-gray: #E2E2E2;
+    --profeds-red: #C00000;
+    --profeds-light-blue: #D1E2F2;
+
+    /* Bootstrap overrides */
+    --bs-primary: #285FBF;
+    --bs-primary-rgb: 40, 95, 191;
+    --bs-warning: #EDA618;
+    --bs-warning-rgb: 237, 166, 24;
+    --bs-danger: #C00000;
+    --bs-danger-rgb: 192, 0, 0;
+    --bs-secondary: #898F9B;
+    --bs-secondary-rgb: 137, 143, 155;
+    --bs-dark: #072A84;
+    --bs-dark-rgb: 7, 42, 132;
+    --bs-info: #5B8FD4;
+    --bs-info-rgb: 91, 143, 212;
+    --bs-light: #E2E2E2;
+    --bs-light-rgb: 226, 226, 226;
+    --bs-link-color: #285FBF;
+    --bs-link-hover-color: #1E4D9E;
+}
+
+/* Background utility overrides */
+.bg-primary { background-color: var(--profeds-blue) !important; }
+.bg-warning { background-color: var(--profeds-gold) !important; }
+.bg-danger { background-color: var(--profeds-red) !important; }
+.bg-secondary { background-color: var(--profeds-dark-gray) !important; }
+.bg-dark { background-color: var(--profeds-dark-blue) !important; }
+.bg-info { background-color: var(--bs-info) !important; }
+.bg-light { background-color: var(--profeds-light-gray) !important; }
+
+/* Button overrides — Primary (ProFeds Blue) */
+.btn-primary { background-color: var(--profeds-blue); border-color: var(--profeds-blue); color: #fff; }
+.btn-primary:hover, .btn-primary:focus { background-color: #1E4D9E; border-color: #1E4D9E; color: #fff; }
+.btn-primary:active { background-color: #18408A; border-color: #18408A; }
+.btn-outline-primary { color: var(--profeds-blue); border-color: var(--profeds-blue); }
+.btn-outline-primary:hover, .btn-outline-primary:focus { background-color: var(--profeds-blue); border-color: var(--profeds-blue); color: #fff; }
+
+/* Button overrides — Warning (ProFeds Gold) */
+.btn-warning { background-color: var(--profeds-gold); border-color: var(--profeds-gold); color: #000; }
+.btn-warning:hover, .btn-warning:focus { background-color: #D4920E; border-color: #D4920E; color: #000; }
+.btn-outline-warning { color: #B8880F; border-color: var(--profeds-gold); }
+.btn-outline-warning:hover, .btn-outline-warning:focus { background-color: var(--profeds-gold); border-color: var(--profeds-gold); color: #000; }
+
+/* Button overrides — Danger (ProFeds Red) */
+.btn-danger { background-color: var(--profeds-red); border-color: var(--profeds-red); color: #fff; }
+.btn-danger:hover, .btn-danger:focus { background-color: #A00000; border-color: #A00000; color: #fff; }
+.btn-outline-danger { color: var(--profeds-red); border-color: var(--profeds-red); }
+.btn-outline-danger:hover, .btn-outline-danger:focus { background-color: var(--profeds-red); border-color: var(--profeds-red); color: #fff; }
+
+/* Button overrides — Info (ProFeds Blue derivative) */
+.btn-info { background-color: var(--bs-info); border-color: var(--bs-info); color: #fff; }
+.btn-info:hover, .btn-info:focus { background-color: #4A7EC3; border-color: #4A7EC3; color: #fff; }
+.btn-outline-info { color: var(--bs-info); border-color: var(--bs-info); }
+.btn-outline-info:hover, .btn-outline-info:focus { background-color: var(--bs-info); border-color: var(--bs-info); color: #fff; }
+
+/* Button overrides — Dark (ProFeds Dark Blue) */
+.btn-dark { background-color: var(--profeds-dark-blue); border-color: var(--profeds-dark-blue); color: #fff; }
+.btn-dark:hover, .btn-dark:focus { background-color: #051E63; border-color: #051E63; color: #fff; }
+.btn-outline-dark { color: var(--profeds-dark-blue); border-color: var(--profeds-dark-blue); }
+.btn-outline-dark:hover, .btn-outline-dark:focus { background-color: var(--profeds-dark-blue); border-color: var(--profeds-dark-blue); color: #fff; }
+
+/* Button overrides — Secondary (ProFeds Dark Gray) */
+.btn-secondary { background-color: var(--profeds-dark-gray); border-color: var(--profeds-dark-gray); color: #fff; }
+.btn-secondary:hover, .btn-secondary:focus { background-color: #737983; border-color: #737983; color: #fff; }
+.btn-outline-secondary { color: var(--profeds-dark-gray); border-color: var(--profeds-dark-gray); }
+.btn-outline-secondary:hover, .btn-outline-secondary:focus { background-color: var(--profeds-dark-gray); border-color: var(--profeds-dark-gray); color: #fff; }
+
+/* Navbar override */
+.navbar.bg-primary { background-color: var(--profeds-blue) !important; }
+
+/* Link colors */
+a { color: var(--profeds-blue); }
+a:hover { color: #1E4D9E; }
+.nav-link { color: inherit; }
+.navbar-dark .nav-link, .navbar-dark .navbar-brand { color: rgba(255,255,255,.85); }
+.navbar-dark .nav-link:hover, .navbar-dark .nav-link:focus { color: #fff; }
+
+/* Table header aligned with brand */
+.table thead th { background-color: var(--profeds-light-gray); }
+
+/* Badge text color fixes for light backgrounds */
+.badge.bg-info { color: #fff; }
+.badge.bg-warning { color: #000; }
+
 /* Ensure buttons display properly */
 .btn {
     display: inline-block !important;
@@ -52,10 +151,6 @@ body {
 
 .badge {
     padding: 0.375rem 0.75rem;
-}
-
-.badge-secondary {
-    background-color: #6c757d;
 }
 
 .btn-group-sm .btn {

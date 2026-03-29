@@ -1329,7 +1329,7 @@
 
                         <!-- Hold Alert -->
                         {% if case.status == 'hold' %}
-                        <div class="alert alert-warning py-2 mb-3" style="border-left: 4px solid #ffc107;">
+                        <div class="alert alert-warning py-2 mb-3" style="border-left: 4px solid #EDA618;">
                             <strong><i class="bi bi-pause-circle me-1"></i>Case On Hold</strong>
                             {% if case.hold_reason %}
                             <p class="mb-1 mt-1">{{ case.hold_reason }}</p>
@@ -1444,7 +1444,7 @@
                                             {% elif event.action_type == 'case_assigned' %}
                                                 <span class="badge bg-secondary"><i class="bi bi-person-check me-1"></i>Assigned</span>
                                             {% elif event.action_type == 'case_reassigned' %}
-                                                <span class="badge" style="background-color: #6f42c1;"><i class="bi bi-arrow-left-right me-1"></i>Reassigned</span>
+                                                <span class="badge" style="background-color: #4D1B53;"><i class="bi bi-arrow-left-right me-1"></i>Reassigned</span>
                                             {% elif event.action_type == 'case_tier_changed' %}
                                                 <span class="badge bg-secondary"><i class="bi bi-layers me-1"></i>Tier Changed</span>
                                             {% elif event.action_type == 'case_held' %}
@@ -3084,7 +3084,7 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
     width: 800px;
     max-height: 80vh;
     background: white;
-    border: 2px solid #007bff;
+    border: 2px solid #285FBF;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     z-index: 9999;
@@ -3099,7 +3099,7 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
 }
 
 .floating-window-header {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    background: linear-gradient(135deg, #285FBF 0%, #1E4D9E 100%);
     color: white;
     padding: 12px 15px;
     border-radius: 6px 6px 0 0;
@@ -3182,7 +3182,7 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
 }
 
 .floating-notes-saved {
-    border-color: #28a745 !important;
+    border-color: #285FBF !important;
 }
 </style>
 
