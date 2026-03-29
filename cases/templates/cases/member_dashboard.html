@@ -29,6 +29,11 @@
             <p class="text-muted">Workshop Code: <strong>{{ user.workshop_code }}</strong></p>
             {% endif %}
         </div>
+        <div class="col-auto d-flex align-items-center">
+            <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#needHelpModal">
+                <i class="bi bi-question-circle"></i> Need help?
+            </button>
+        </div>
 
         {% if is_delegate and not is_pure_delegate %}
         <!-- My Cases / All Cases / Delegate Cases Toggle -->
@@ -973,5 +978,28 @@ function refreshBadgeCounts() {
 }
 setInterval(refreshBadgeCounts, 30000);
 </script>
+
+<!-- Need Help Modal -->
+<div class="modal fade" id="needHelpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-question-circle"></i> Need help?
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Use this form to submit questions that are <strong>not case specific</strong>. For case specific questions, please use the <strong>case chat</strong> feature for that employee's case.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{% url 'messaging:new_conversation' %}" class="btn btn-info text-white">
+                    <i class="bi bi-envelope"></i> Send a Message
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
