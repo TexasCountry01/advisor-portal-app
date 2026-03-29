@@ -139,11 +139,14 @@ class CaseService:
         """
         status_classes = {
             CASE_STATUS_DRAFT: 'bg-secondary',
-            CASE_STATUS_SUBMITTED: 'bg-primary',
-            CASE_STATUS_ACCEPTED: 'bg-info',
+            CASE_STATUS_SUBMITTED: 'bg-info',
+            'resubmitted': 'bg-info',
+            CASE_STATUS_ACCEPTED: 'bg-primary',
             CASE_STATUS_PENDING_REVIEW: 'bg-warning text-dark',
             CASE_STATUS_HOLD: 'bg-danger',
+            'needs_resubmission': 'bg-warning text-dark',
             CASE_STATUS_COMPLETED: 'bg-success',
+            'cancelled': 'bg-dark',
         }
         return status_classes.get(status, 'bg-secondary')
     

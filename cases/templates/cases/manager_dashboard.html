@@ -367,15 +367,15 @@
                             </td>
                             <td data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.status == 'submitted' %}
-                                    <span class="badge bg-secondary" title="Case awaiting initial review by Benefits Team">Submitted</span>
+                                    <span class="badge bg-info" title="Case awaiting initial review by Benefits Team">Submitted</span>
                                 {% elif case.status == 'accepted' %}
                                     <span class="badge bg-primary" title="Case accepted by Benefits Team">Accepted</span>
                                 {% elif case.status == 'pending_review' %}
-                                    <span class="badge bg-info" title="Awaiting quality review">Pending Review</span>
+                                    <span class="badge bg-warning text-dark" title="Awaiting quality review">Pending Review</span>
                                 {% elif case.status == 'hold' %}
                                     <span class="badge bg-danger" title="Case paused awaiting Member input">On Hold</span>
                                 {% elif case.status == 'resubmitted' %}
-                                    <span class="badge bg-warning text-dark" title="Case resubmitted by member">Resubmitted</span>
+                                    <span class="badge bg-info" title="Case resubmitted by member">Resubmitted</span>
                                 {% elif case.status == 'needs_resubmission' %}
                                     <span class="badge bg-warning text-dark" title="Case needs resubmission from member">Needs Resubmission</span>
                                 {% elif case.status == 'completed' %}
@@ -384,7 +384,7 @@
                                     {% elif case.scheduled_release_date %}
                                         <span class="badge bg-danger" title="Completed but scheduled for future release">Scheduled</span>
                                     {% else %}
-                                        <span class="badge bg-info" title="Currently being worked on">Working</span>
+                                        <span class="badge bg-primary" title="Currently being worked on">Working</span>
                                     {% endif %}
                                 {% else %}
                                     <span class="badge bg-secondary">{{ case.get_status_display }}</span>
