@@ -939,11 +939,11 @@
                                     {% if report.report_file %}
                                     <i class="bi bi-file-earmark"></i>
                                     <a href="{{ report.report_file.url }}" target="_blank" class="text-decoration-none">
-                                        <strong>Report #{{ report.report_number }}</strong>
+                                        <strong>{{ case.employee_last_name }}, {{ case.employee_first_name }} – {{ case.member.get_full_name|default:case.member.username }}{% if case.reports.count > 1 %} (Report #{{ report.report_number }}){% endif %}</strong>
                                     </a>
                                     {% else %}
                                     <i class="bi bi-file-earmark"></i>
-                                    <strong>Report #{{ report.report_number }}</strong>
+                                    <strong>{{ case.employee_last_name }}, {{ case.employee_first_name }} – {{ case.member.get_full_name|default:case.member.username }}{% if case.reports.count > 1 %} (Report #{{ report.report_number }}){% endif %}</strong>
                                     {% endif %}
                                     <br><small class="text-muted">
                                         Status: <span class="badge bg-secondary">{{ report.get_status_display }}</span>

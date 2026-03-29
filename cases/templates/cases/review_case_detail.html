@@ -146,7 +146,7 @@
                                 <div class="list-group-item">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
-                                            <h6 class="mb-1">Report #{{ report.report_number }}</h6>
+                                            <h6 class="mb-1">{{ case.employee_last_name }}, {{ case.employee_first_name }} – {{ case.member.get_full_name|default:case.member.username }}{% if case.reports.count > 1 %} (Report #{{ report.report_number }}){% endif %}</h6>
                                             <p class="mb-0 text-muted small">
                                                 <strong>Status:</strong> <span class="badge bg-info">{{ report.get_status_display }}</span>
                                                 {% if report.completed_at %}
