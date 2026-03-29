@@ -85,7 +85,7 @@
         <div class="d-flex align-items-center justify-content-between">
             <div class="flex-grow-1">
                 <h5 class="alert-heading mb-0" style="cursor: pointer; user-select: none;" onclick="toggleDraftCasesAlert()" id="draft-cases-header">
-                    <i class="bi bi-file-earmark-text"></i> You Have {{ draft_cases|length }} Unsubmitted Draft{{ draft_cases|length|pluralize }}
+                    <i class="bi bi-file-earmark-text"></i> You Have Case{{ draft_cases|length|pluralize }} in Draft Mode
                     <i class="bi bi-chevron-down" id="draft-cases-toggle-icon" style="margin-left: 8px;"></i>
                 </h5>
                 <div id="draft-cases-content" style="margin-top: 12px; display: none;">
