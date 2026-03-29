@@ -256,6 +256,7 @@ def delete_document(request, doc_id):
         return redirect('cases:case_detail', pk=case.id)
     
     filename = doc.original_filename
+    doc._audit_user = request.user
     doc.delete()
     messages.success(request, f'Document "{filename}" deleted successfully.')
     return redirect('cases:case_detail', pk=case.id)

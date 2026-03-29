@@ -181,9 +181,9 @@ def log_document_delete(sender, instance, **kwargs):
     AuditLog.log_activity(
         user=user,
         action_type='document_deleted',
-        description=f'Document "{instance.filename}" deleted from case {instance.case_id}',
+        description=f'Document "{instance.original_filename}" deleted from case {instance.case_id}',
         case=instance.case,
-        metadata={'filename': instance.filename}
+        metadata={'filename': instance.original_filename}
     )
 
 
