@@ -767,6 +767,7 @@ def delegate_management(request):
             'delegate_is_also_member': not a.delegate.is_pure_delegate,
             'assigned_by': a.assigned_by.get_full_name() if a.assigned_by else '—',
             'assigned_date': a.created_at.strftime('%b %d, %Y') if a.created_at else '—',
+            'email_notifications': a.email_notifications,
         })
     
     # Handle POST — assign or remove delegates
@@ -872,6 +873,47 @@ def delegate_management(request):
     }
     
     return render(request, 'accounts/delegate_management.html', context)
+
+
+@login_required
+def toggle_delegate_email(request, assignment_id):
+    """AJAX endpoint to toggle email notifications for a delegate assignment."""
+    from django.http import JsonResponse
+    from accounts.models import MemberDelegate
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    if request.user.role not in ('technician', 'administrator', 'manager'):
+        return JsonResponse({'error': 'Permission denied'}, status=403)
+
+    try:
+        assignment = MemberDelegate.objects.select_related('delegate', 'member').get(id=assignment_id)
+    except MemberDelegate.DoesNotExist:
+        return JsonResponse({'error': 'Assignment not found'}, status=404)
+
+    assignment.email_notifications = not assignment.email_notifications
+    assignment.save(update_fields=['email_notifications'])
+
+    AuditLog.objects.create(
+        user=request.user,
+        action_type='delegate_email_toggled',
+        description=(
+            f'{request.user.get_full_name()} {"enabled" if assignment.email_notifications else "disabled"} '
+            f'email notifications for delegate {assignment.delegate.get_full_name()} '
+            f'on member {assignment.member.get_full_name()}'
+        ),
+        related_user=assignment.delegate,
+        changes={
+            'assignment_id': assignment.id,
+            'member_name': assignment.member.get_full_name(),
+            'delegate_name': assignment.delegate.get_full_name(),
+            'email_notifications': assignment.email_notifications,
+        },
+        ip_address=request.META.get('REMOTE_ADDR'),
+    )
+
+    return JsonResponse({'email_notifications': assignment.email_notifications})
 
 
 # ============================================================================

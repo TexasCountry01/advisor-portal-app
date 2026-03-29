@@ -154,6 +154,10 @@ class MemberDelegate(models.Model):
         related_name='delegate_assignments_made',
         help_text='Benefits Technician who created this assignment'
     )
+    email_notifications = models.BooleanField(
+        default=True,
+        help_text='Whether this delegate receives email notifications for this member\'s cases'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

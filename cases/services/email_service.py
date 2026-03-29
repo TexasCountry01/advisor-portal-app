@@ -43,10 +43,12 @@ def get_case_recipient_emails(case):
         if email:
             recipients.append(email)
     
-    # Add delegate emails
+    # Add delegate emails (only those with email_notifications enabled)
     try:
         from accounts.models import MemberDelegate
-        delegates = MemberDelegate.objects.filter(member=case.member).select_related('delegate')
+        delegates = MemberDelegate.objects.filter(
+            member=case.member, email_notifications=True
+        ).select_related('delegate')
         for assignment in delegates:
             email = _get_notification_email(assignment.delegate)
             if email and email not in recipients:

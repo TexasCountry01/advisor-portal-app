@@ -72,6 +72,11 @@ urlpatterns = [
         views.delegate_management,
         name='delegate_management'
     ),
+    path(
+        'delegate-management/toggle-email/<int:assignment_id>/',
+        views.toggle_delegate_email,
+        name='toggle_delegate_email'
+    ),
     
     # ========================================================================
     # DEPRECATED: WORKSHOP DELEGATE MANAGEMENT URLS
