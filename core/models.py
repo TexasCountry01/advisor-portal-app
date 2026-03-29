@@ -463,8 +463,8 @@ class BetaFeedback(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        verbose_name = 'Beta Feedback'
-        verbose_name_plural = 'Beta Feedback'
+        verbose_name = 'Portal Feedback'
+        verbose_name_plural = 'Portal Feedback'
         ordering = ['-created_at']
     
     def __str__(self):

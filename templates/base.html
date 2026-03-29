@@ -85,7 +85,7 @@
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#betaFeedbackModal">
-                                    <i class="bi bi-chat-dots"></i> Beta Feedback
+                                    <i class="bi bi-chat-dots"></i> Portal Feedback
                                 </a>
                             </li>
                             <li class="nav-item">
@@ -354,13 +354,13 @@
     <script src="{% static 'js/main.js' %}"></script>
     
     {% if user.is_authenticated and user.role == 'member' %}
-    <!-- Beta Feedback Modal -->
+    <!-- Portal Feedback Modal -->
     <div class="modal fade" id="betaFeedbackModal" tabindex="-1" aria-labelledby="betaFeedbackModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
                     <h5 class="modal-title" id="betaFeedbackModalLabel">
-                        <i class="bi bi-chat-dots"></i> Beta Feedback
+                        <i class="bi bi-chat-dots"></i> Portal Feedback
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
