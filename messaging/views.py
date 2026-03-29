@@ -108,6 +108,7 @@ def new_conversation(request):
         subject = request.POST.get('subject', '').strip()
         body = request.POST.get('body', '').strip()
         is_urgent = request.POST.get('is_urgent') == '1'
+        send_email = request.POST.get('send_email') == '1'
 
         if not subject or not body:
             return render(request, 'messaging/new_conversation.html', {
@@ -115,6 +116,7 @@ def new_conversation(request):
                 'subject': subject,
                 'body': body,
                 'is_urgent': is_urgent,
+                'send_email': send_email,
             })
 
         # Create conversation + first message
@@ -137,7 +139,38 @@ def new_conversation(request):
             for staff in staff_users
         ])
 
-        logger.info(f'New conversation "{subject}" created by {user.username} (urgent={is_urgent})')
+        # Send email to staff if requested
+        if send_email:
+            try:
+                from cases.services.email_service import send_email_notification, _get_notification_email, should_send_emails
+                from django.conf import settings as django_settings
+                if should_send_emails():
+                    site_url = getattr(django_settings, 'SITE_URL', 'https://reports.profeds.com')
+                    for staff in staff_users:
+                        staff_email = _get_notification_email(staff)
+                        if staff_email:
+                            try:
+                                send_email_notification(
+                                    subject=f'{subject} - New Member Question',
+                                    template_name='new_question_notification.html',
+                                    context={
+                                        'staff_first_name': staff.first_name or staff.username,
+                                        'member_name': user.get_full_name() or user.username,
+                                        'subject': subject,
+                                        'body': body,
+                                        'is_urgent': is_urgent,
+                                        'conversation_url': f"{site_url}/messages/{conversation.pk}/",
+                                    },
+                                    recipient_email=staff_email,
+                                    user=user,
+                                    action_type='email_notification_sent',
+                                )
+                            except Exception as e:
+                                logger.error(f'Error sending new question email to {staff_email}: {e}')
+            except Exception as e:
+                logger.error(f'Error sending new question emails: {e}')
+
+        logger.info(f'New conversation "{subject}" created by {user.username} (urgent={is_urgent}, email={send_email})')
         return redirect('messaging:conversation_detail', pk=conversation.pk)
 
     return render(request, 'messaging/new_conversation.html')
