@@ -3815,6 +3815,21 @@ def add_case_message(request, pk):
                     logger.info(f'{"Delegate" if is_delegate else "Member"} {user.username} message on case {case.external_case_id} - Created UnreadMessage for technician {case.assigned_to.username}: {created}')
                 except Exception as e:
                     logger.error(f'Error creating UnreadMessage for technician: {str(e)}')
+
+                # Create StaffNotification for case chat message
+                try:
+                    from core.models import StaffNotification
+                    preview = message_text[:150] + ('...' if len(message_text) > 150 else '')
+                    StaffNotification.objects.create(
+                        user=case.assigned_to,
+                        case=case,
+                        notification_type='case_chat_message',
+                        title=f'New message on Case {case.external_case_id}',
+                        message=f'{user.get_full_name() or user.username}: {preview}',
+                        is_read=False
+                    )
+                except Exception as e:
+                    logger.error(f'Error creating StaffNotification for chat message: {str(e)}')
             else:
                 # Case is unassigned — create UnreadMessage for all techs and admins
                 # so the chat shows as a red unread bubble for whoever picks it up
@@ -6254,6 +6269,21 @@ def create_case_change_request(request, case_id):
         # Set flag on case
         case.has_member_change_request = True
         case.save()
+
+        # Create StaffNotification for the assigned technician
+        if case.assigned_to:
+            try:
+                from core.models import StaffNotification
+                StaffNotification.objects.create(
+                    user=case.assigned_to,
+                    case=case,
+                    notification_type='member_change_request',
+                    title=f'Change Request: {case.external_case_id}',
+                    message=f'{user.get_full_name() or user.username} requested {request_type.replace("_", " ")}.' + (f' Notes: {member_notes[:150]}' if member_notes else ''),
+                    is_read=False
+                )
+            except Exception as e:
+                logger.error(f'Error creating StaffNotification for change request: {str(e)}')
         
         # Log to audit trail
         from core.models import AuditLog
