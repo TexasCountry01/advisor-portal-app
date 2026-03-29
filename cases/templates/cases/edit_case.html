@@ -19,10 +19,15 @@
             </nav>
             <h2>Edit Case: {{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
         </div>
-        <div class="col-auto d-flex align-items-center">
+        <div class="col-auto d-flex align-items-center gap-2">
             <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Dashboard
             </a>
+            {% if case.status == 'draft' or case.status == 'submitted' %}
+            <a href="{% url 'cases:delete_case' case.pk %}" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this case? This action cannot be undone.')">
+                <i class="bi bi-x-lg"></i> Delete Case
+            </a>
+            {% endif %}
         </div>
     </div>
 
