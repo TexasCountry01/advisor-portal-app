@@ -89,10 +89,10 @@
                 <table class="table table-hover table-striped mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 24%">Member (Advisor)</th>
-                            <th style="width: 10%">Workshop</th>
-                            <th style="width: 22%">Delegate</th>
-                            <th style="width: 10%">Email</th>
+                            <th style="width: 22%">Member (Advisor)</th>
+                            <th style="width: 9%">Workshop</th>
+                            <th style="width: 20%">Delegate</th>
+                            <th style="width: 15%">Alerts</th>
                             <th style="width: 14%">Assigned By</th>
                             <th style="width: 10%">Date</th>
                             <th style="width: 10%" class="text-end">Actions</th>
@@ -120,11 +120,21 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input delegate-email-toggle" type="checkbox"
-                                           data-assignment-id="{{ a.id }}"
-                                           {% if a.email_notifications %}checked{% endif %}
-                                           title="Toggle email notifications for this delegate">
+                                <div class="d-flex flex-column gap-1">
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input delegate-alert-toggle" type="checkbox"
+                                               data-assignment-id="{{ a.id }}" data-field="email_notifications"
+                                               {% if a.email_notifications %}checked{% endif %}
+                                               title="Toggle email notifications for this delegate">
+                                        <label class="form-check-label small text-muted">Emails</label>
+                                    </div>
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input delegate-alert-toggle" type="checkbox"
+                                               data-assignment-id="{{ a.id }}" data-field="portal_notifications"
+                                               {% if a.portal_notifications %}checked{% endif %}
+                                               title="Toggle in-app notifications for this delegate">
+                                        <label class="form-check-label small text-muted">Notifications</label>
+                                    </div>
                                 </div>
                             </td>
                             <td><small>{{ a.assigned_by }}</small></td>
@@ -313,23 +323,27 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Wire up email notification toggles
-    document.querySelectorAll('.delegate-email-toggle').forEach(function(toggle) {
+    // Wire up alert notification toggles (emails + portal)
+    document.querySelectorAll('.delegate-alert-toggle').forEach(function(toggle) {
         toggle.addEventListener('change', function() {
             const assignmentId = this.getAttribute('data-assignment-id');
+            const field = this.getAttribute('data-field');
             const checkbox = this;
             checkbox.disabled = true;
+
+            const formData = new FormData();
+            formData.append('field', field);
 
             fetch(`{% url 'toggle_delegate_email' assignment_id=0 %}`.replace('/0/', `/${assignmentId}/`), {
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/json',
                 },
+                body: formData,
             })
             .then(response => response.json())
             .then(data => {
-                checkbox.checked = data.email_notifications;
+                checkbox.checked = data[field];
                 checkbox.disabled = false;
             })
             .catch(() => {

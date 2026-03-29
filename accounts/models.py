@@ -158,6 +158,10 @@ class MemberDelegate(models.Model):
         default=True,
         help_text='Whether this delegate receives email notifications for this member\'s cases'
     )
+    portal_notifications = models.BooleanField(
+        default=True,
+        help_text='Whether this delegate sees in-app notification alerts for this member\'s cases'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:

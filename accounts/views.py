@@ -768,6 +768,7 @@ def delegate_management(request):
             'assigned_by': a.assigned_by.get_full_name() if a.assigned_by else '—',
             'assigned_date': a.created_at.strftime('%b %d, %Y') if a.created_at else '—',
             'email_notifications': a.email_notifications,
+            'portal_notifications': a.portal_notifications,
         })
     
     # Handle POST — assign or remove delegates
@@ -877,7 +878,7 @@ def delegate_management(request):
 
 @login_required
 def toggle_delegate_email(request, assignment_id):
-    """AJAX endpoint to toggle email notifications for a delegate assignment."""
+    """AJAX endpoint to toggle email or portal notifications for a delegate assignment."""
     from django.http import JsonResponse
     from accounts.models import MemberDelegate
 
@@ -892,15 +893,23 @@ def toggle_delegate_email(request, assignment_id):
     except MemberDelegate.DoesNotExist:
         return JsonResponse({'error': 'Assignment not found'}, status=404)
 
-    assignment.email_notifications = not assignment.email_notifications
-    assignment.save(update_fields=['email_notifications'])
+    field = request.POST.get('field', 'email_notifications')
+    if field not in ('email_notifications', 'portal_notifications'):
+        return JsonResponse({'error': 'Invalid field'}, status=400)
+
+    current_value = getattr(assignment, field)
+    setattr(assignment, field, not current_value)
+    assignment.save(update_fields=[field])
+
+    label = 'email' if field == 'email_notifications' else 'portal'
+    new_value = getattr(assignment, field)
 
     AuditLog.objects.create(
         user=request.user,
-        action_type='delegate_email_toggled',
+        action_type='delegate_alert_toggled',
         description=(
-            f'{request.user.get_full_name()} {"enabled" if assignment.email_notifications else "disabled"} '
-            f'email notifications for delegate {assignment.delegate.get_full_name()} '
+            f'{request.user.get_full_name()} {"enabled" if new_value else "disabled"} '
+            f'{label} notifications for delegate {assignment.delegate.get_full_name()} '
             f'on member {assignment.member.get_full_name()}'
         ),
         related_user=assignment.delegate,
@@ -908,12 +917,13 @@ def toggle_delegate_email(request, assignment_id):
             'assignment_id': assignment.id,
             'member_name': assignment.member.get_full_name(),
             'delegate_name': assignment.delegate.get_full_name(),
-            'email_notifications': assignment.email_notifications,
+            'field': field,
+            field: new_value,
         },
         ip_address=request.META.get('REMOTE_ADDR'),
     )
 
-    return JsonResponse({'email_notifications': assignment.email_notifications})
+    return JsonResponse({field: new_value})
 
 
 # ============================================================================

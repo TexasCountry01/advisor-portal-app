@@ -192,19 +192,29 @@ def member_dashboard(request):
     # 2. Unread CaseNotification lifecycle events (hold, resume, release, documents_needed)
     #    — keyed by case.member (not logged-in user) so delegates see them too
     #    — exclude 'member_update_received' (chat notifs) to avoid double-counting
+    #    — for delegated cases, respect portal_notifications toggle
     from cases.models import CaseNotification
+    # Build set of member IDs with portal notifications enabled for this delegate
+    notif_enabled_member_ids = set(
+        da.member_id for da in delegate_assignments if da.portal_notifications
+    )
+    notif_enabled_member_ids.add(user.id)  # always show for own cases
     for case in cases:
         chat_unread = UnreadMessage.objects.filter(
             case=case,
             user=user
         ).count()
-        lifecycle_unread = CaseNotification.objects.filter(
-            case=case,
-            member=case.member,
-            is_read=False
-        ).exclude(
-            notification_type='member_update_received'
-        ).count()
+        # Only show lifecycle unread badges if notifications enabled for this member
+        if case.member_id in notif_enabled_member_ids:
+            lifecycle_unread = CaseNotification.objects.filter(
+                case=case,
+                member=case.member,
+                is_read=False
+            ).exclude(
+                notification_type='member_update_received'
+            ).count()
+        else:
+            lifecycle_unread = 0
         case.unread_message_count = chat_unread + lifecycle_unread
     
     # Convert to list to preserve the modified case objects with unread_message_count
@@ -5893,7 +5903,9 @@ def get_member_notifications(request):
     try:
         # Build list of member IDs whose notifications this user can see
         member_ids = [user.id]
-        delegate_assignments = MemberDelegate.objects.filter(delegate=user).select_related('member')
+        delegate_assignments = MemberDelegate.objects.filter(
+            delegate=user, portal_notifications=True
+        ).select_related('member')
         for da in delegate_assignments:
             member_ids.append(da.member.id)
         
