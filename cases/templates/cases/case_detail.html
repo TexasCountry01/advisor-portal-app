@@ -1689,10 +1689,13 @@
                         <select class="form-select" id="reportNumber" name="report_number" required>
                             <option value="">-- Select Report Number --</option>
                             {% for i in case.get_report_numbers %}
-                            <option value="{{ i }}">Report {{ i }}</option>
+                            <option value="{{ i }}">Report {{ i }}{% if i <= case.num_reports_requested %} (Requested){% endif %}</option>
                             {% endfor %}
+                            {% if next_report_number <= 10 %}
+                            <option value="{{ next_report_number }}">Report {{ next_report_number }} (Additional)</option>
+                            {% endif %}
                         </select>
-                        <small class="text-muted">Requested: {{ case.num_reports_requested }} report{{ case.num_reports_requested|pluralize }}</small>
+                        <small class="text-muted">Requested: {{ case.num_reports_requested }} report{{ case.num_reports_requested|pluralize }}. Select an existing report # to replace it, or choose "Additional" to add a new one.</small>
                     </div>
                     <div class="mb-3">
                         <label for="reportFile" class="form-label">Select File <span class="text-danger">*</span></label>

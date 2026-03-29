@@ -494,8 +494,10 @@ class Case(models.Model):
     
     @property
     def get_report_numbers(self):
-        """Return list of report numbers (1 through num_reports_requested)"""
-        return range(1, self.num_reports_requested + 1)
+        """Return sorted list of report numbers: requested range plus any additional uploads."""
+        numbers = set(range(1, self.num_reports_requested + 1))
+        numbers.update(self.reports.values_list('report_number', flat=True))
+        return sorted(numbers)
 
 
 class CaseDocument(models.Model):

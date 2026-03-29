@@ -1367,6 +1367,11 @@ def case_detail(request, pk):
     
     # Only technicians and administrators can upload reports
     can_upload_reports = user.role in ['technician', 'administrator'] and can_edit
+
+    # Calculate the next available report number for additional uploads
+    existing_report_numbers = set(case.reports.values_list('report_number', flat=True))
+    max_existing = max(existing_report_numbers) if existing_report_numbers else 0
+    next_report_number = max(case.num_reports_requested, max_existing) + 1
     
     # Check if user can release case immediately (case owner or admin, and case is scheduled for release)
     can_release_immediately = False
@@ -1440,6 +1445,7 @@ def case_detail(request, pk):
         'case': case,
         'can_edit': can_edit,
         'can_upload_reports': can_upload_reports,
+        'next_report_number': next_report_number,
         'can_view_report': can_view_report,
         'can_view_internal_notes': can_view_internal_notes,
         'can_release_immediately': can_release_immediately,
