@@ -732,9 +732,9 @@ def delegate_management(request):
     user = request.user
     
     # Permission check
-    if user.role not in ('technician', 'administrator'):
+    if user.role not in ('technician', 'administrator', 'manager'):
         messages.error(request, 'You do not have permission to manage delegates.')
-        return redirect('cases:technician_dashboard')
+        return redirect('cases:member_dashboard')
     
     User = get_user_model()
     

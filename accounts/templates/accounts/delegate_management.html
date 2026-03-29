@@ -10,7 +10,7 @@
             <p class="text-muted">Assign delegates to members — delegates can submit and view cases on behalf of assigned members</p>
         </div>
         <div class="col-auto d-flex gap-2 align-items-center">
-            <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-secondary">
+            <a href="{% if request.user.role == 'administrator' %}{% url 'cases:admin_dashboard' %}{% elif request.user.role == 'manager' %}{% url 'cases:manager_dashboard' %}{% else %}{% url 'cases:technician_dashboard' %}{% endif %}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Dashboard
             </a>
             <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDelegateModal">
