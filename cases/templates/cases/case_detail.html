@@ -4,10 +4,11 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="row mb-4">
+    <!-- Sticky header: employee name, status badge, and action buttons -->
+    <div class="row mb-4" style="position: sticky; top: 56px; z-index: 1010; background: #fff; padding-top: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid #dee2e6;">
         <div class="col">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
+            <nav aria-label="breadcrumb" class="mb-1">
+                <ol class="breadcrumb mb-0">
                     <li class="breadcrumb-item">
                         {% if user.role == 'member' %}
                             <a href="{% url 'cases:member_dashboard' %}">Dashboard</a>
@@ -22,7 +23,7 @@
                     <li class="breadcrumb-item active">{{ case.employee_first_name }} {{ case.employee_last_name }}</li>
                 </ol>
             </nav>
-            <h2>{{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
+            <h2 class="mb-1">{{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
             <!-- Status Badge (under employee name) -->
             {% if user.role == 'member' %}
                 {% if case.status == 'draft' %}
