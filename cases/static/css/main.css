@@ -4,11 +4,15 @@
 .btn {
     display: inline-block !important;
     visibility: visible !important;
+    font-weight: 600;
+    border-width: 2px;
 }
 
 .btn-sm {
     display: inline-block !important;
     visibility: visible !important;
+    font-weight: 600;
+    border-width: 2px;
 }
 
 .btn-outline-primary,
