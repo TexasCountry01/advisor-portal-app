@@ -19,6 +19,8 @@ class Conversation(models.Model):
         related_name='started_conversations',
     )
     is_urgent = models.BooleanField(default=False)
+    is_broadcast = models.BooleanField(default=False)
+    broadcast_email_sent = models.BooleanField(default=False)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='open')
     assigned_to = models.ForeignKey(
         settings.AUTH_USER_MODEL,

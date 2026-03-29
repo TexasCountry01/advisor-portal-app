@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Broadcast Message - Advisor Portal{% endblock %}
+
+{% block content %}
+<div class="container py-4" style="max-width: 700px;">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-3">
+            <li class="breadcrumb-item"><a href="{% url 'messaging:inbox' %}">Messages</a></li>
+            <li class="breadcrumb-item active">Broadcast</li>
+        </ol>
+    </nav>
+
+    <h3><i class="bi bi-megaphone"></i> Broadcast Message</h3>
+    <p class="text-muted">Send a message to all active members and delegates who have cases in the system.</p>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <div class="alert alert-info">
+        <i class="bi bi-people-fill"></i> This broadcast will reach <strong>{{ target_count }}</strong> active user{{ target_count|pluralize }}.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="subject" class="form-label">Subject <span class="text-danger">*</span></label>
+            <input type="text" name="subject" id="subject" class="form-control" value="{{ subject|default:'' }}" required maxlength="255" placeholder="Enter subject line...">
+        </div>
+        <div class="mb-3">
+            <label for="body" class="form-label">Message <span class="text-danger">*</span></label>
+            <textarea name="body" id="body" class="form-control" rows="6" required placeholder="Enter your broadcast message...">{{ body|default:'' }}</textarea>
+        </div>
+        <div class="mb-3">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="send_email" value="1" id="sendEmail" {% if send_email %}checked{% endif %}>
+                <label class="form-check-label" for="sendEmail">
+                    <i class="bi bi-envelope"></i> Also send as email to all recipients
+                </label>
+            </div>
+            <small class="text-muted">If checked, each recipient will also receive an email notification in addition to the in-portal message.</small>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between">
+            <a href="{% url 'messaging:inbox' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary" onclick="return confirm('Send this broadcast to {{ target_count }} users?')">
+                <i class="bi bi-megaphone"></i> Send Broadcast
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

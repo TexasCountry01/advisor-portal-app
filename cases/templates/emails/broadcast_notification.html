@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .wrapper { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+        .header { background-color: #ffffff; padding: 25px 20px 15px 30px; text-align: left; border-bottom: 2px solid #1a3c6e; }
+        .body-content { padding: 30px 30px 20px 30px; }
+        .body-content p { margin: 0 0 16px 0; font-size: 15px; color: #333333; }
+        .cta-button { display: inline-block; background-color: #1a3c6e; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; margin: 10px 0; }
+        .footer { background-color: #f8f8f8; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0; }
+        .footer p { margin: 4px 0; font-size: 12px; color: #999999; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            {% if logo_url %}<img src="{{ logo_url }}" alt="FedImpact" style="max-width: 180px; height: auto;">{% endif %}
+        </div>
+        <div class="body-content">
+            <p>Hi {{ member_first_name }},</p>
+
+            <p><strong>{{ sender_name }}</strong> from the ProFeds Benefits Team has sent a broadcast message:</p>
+
+            <p><strong>Subject:</strong> {{ subject }}</p>
+
+            <div style="background-color: #f8f9fa; border-left: 4px solid #1a3c6e; padding: 15px; margin: 16px 0; border-radius: 4px;">
+                {{ body|linebreaksbr }}
+            </div>
+
+            <p>You can view this message in your portal:</p>
+
+            <p style="text-align: center;">
+                <a href="{{ portal_url }}" class="cta-button">VIEW IN PORTAL</a>
+            </p>
+
+            <br>
+            <p>Thank you,</p>
+            <p><strong>The ProFeds Benefits Team</strong></p>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from the ProFeds Advisor Portal.</p>
+        </div>
+    </div>
+</body>
+</html>

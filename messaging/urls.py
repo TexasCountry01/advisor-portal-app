@@ -6,6 +6,7 @@ app_name = 'messaging'
 urlpatterns = [
     path('', views.inbox, name='inbox'),
     path('new/', views.new_conversation, name='new_conversation'),
+    path('broadcast/', views.broadcast_message, name='broadcast'),
     path('<int:pk>/', views.conversation_detail, name='conversation_detail'),
     path('<int:pk>/reply/', views.reply, name='reply'),
     path('<int:pk>/claim/', views.claim_conversation, name='claim'),

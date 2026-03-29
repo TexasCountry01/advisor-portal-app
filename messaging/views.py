@@ -1,5 +1,6 @@
 import logging
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -10,6 +11,7 @@ from .models import Conversation, Message, MessageReadStatus
 logger = logging.getLogger(__name__)
 
 STAFF_ROLES = ('technician', 'administrator', 'manager')
+BROADCAST_ROLES = ('administrator', 'manager')
 
 
 @login_required
@@ -42,10 +44,10 @@ def inbox(request):
         if urgent_filter == '1':
             conversations = conversations.filter(is_urgent=True)
     else:
-        # Members see only their own conversations
+        # Members see their own conversations + broadcast messages
         conversations = Conversation.objects.filter(
-            started_by=user
-        ).select_related('assigned_to').order_by('-updated_at')
+            Q(started_by=user) | Q(is_broadcast=True)
+        ).select_related('assigned_to', 'started_by').distinct().order_by('-updated_at')
         status_filter = request.GET.get('status', '')
         assigned_filter = None
         urgent_filter = None
@@ -67,6 +69,7 @@ def inbox(request):
         'status_filter': status_filter,
         'assigned_filter': assigned_filter,
         'urgent_filter': urgent_filter,
+        'can_broadcast': _can_broadcast(user),
     }
     return render(request, 'messaging/inbox.html', context)
 
@@ -78,8 +81,8 @@ def conversation_detail(request, pk):
     is_staff = user.role in STAFF_ROLES
     conversation = get_object_or_404(Conversation, pk=pk)
 
-    # Permission: member can only see own conversations
-    if not is_staff and conversation.started_by != user:
+    # Permission: member can only see own conversations or broadcasts
+    if not is_staff and conversation.started_by != user and not conversation.is_broadcast:
         return redirect('messaging:inbox')
 
     # Mark all messages in this conversation as read for the current user
@@ -179,6 +182,28 @@ def reply(request, pk):
             message=msg, user=conversation.started_by,
             defaults={'conversation': conversation}
         )
+        # Send email notification to the member (non-broadcast conversations only)
+        if not conversation.is_broadcast:
+            try:
+                from cases.services.email_service import send_email_notification, _get_notification_email, should_send_emails
+                member_email = _get_notification_email(conversation.started_by)
+                if member_email and should_send_emails():
+                    send_email_notification(
+                        subject=f'Re: {conversation.subject} - ProFeds Benefits Team',
+                        template_name='message_reply_notification.html',
+                        context={
+                            'member_first_name': conversation.started_by.first_name or conversation.started_by.username,
+                            'subject': conversation.subject,
+                            'reply_preview': body[:300],
+                            'staff_name': user.get_full_name() or 'Benefits Team',
+                            'conversation_url': f"{getattr(__import__('django.conf', fromlist=['settings']).settings, 'SITE_URL', 'https://reports.profeds.com')}/messages/{conversation.pk}/",
+                        },
+                        recipient_email=member_email,
+                        user=user,
+                        action_type='email_notification_sent',
+                    )
+            except Exception as e:
+                logger.error(f'Error sending reply email for conversation {conversation.pk}: {e}')
     else:
         # Member replied — mark unread for all active staff
         from accounts.models import User as UserModel
@@ -249,3 +274,114 @@ def unread_count(request):
         'conversation'
     ).distinct().count()
     return JsonResponse({'count': count})
+
+
+def _can_broadcast(user):
+    """Check if user has broadcast permission: admin, manager, or level-3 tech."""
+    if user.role in BROADCAST_ROLES:
+        return True
+    if user.role == 'technician' and getattr(user, 'user_level', '') == 'level_3':
+        return True
+    return False
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def broadcast_message(request):
+    """Admin/Manager/Level-3 Tech sends a broadcast to all active members+delegates with cases."""
+    user = request.user
+    if not _can_broadcast(user):
+        return redirect('messaging:inbox')
+
+    from accounts.models import User as UserModel, MemberDelegate
+
+    # Get target audience: active members/delegates who have cases
+    target_users = UserModel.objects.filter(
+        is_active=True
+    ).filter(
+        Q(submitted_cases__isnull=False) |
+        Q(delegated_members__isnull=False)
+    ).exclude(
+        role__in=STAFF_ROLES
+    ).distinct()
+
+    if request.method == 'POST':
+        subject = request.POST.get('subject', '').strip()
+        body = request.POST.get('body', '').strip()
+        send_email = request.POST.get('send_email') == '1'
+
+        if not subject or not body:
+            return render(request, 'messaging/broadcast.html', {
+                'error': 'Subject and message are required.',
+                'subject': subject,
+                'body': body,
+                'send_email': send_email,
+                'target_count': target_users.count(),
+            })
+
+        # Create the broadcast conversation
+        conversation = Conversation.objects.create(
+            subject=subject,
+            started_by=user,
+            is_broadcast=True,
+            broadcast_email_sent=send_email,
+            status='closed',  # Broadcasts are informational, start closed
+        )
+        msg = Message.objects.create(
+            conversation=conversation,
+            author=user,
+            body=body,
+        )
+
+        # Create unread records for all target users
+        read_statuses = [
+            MessageReadStatus(message=msg, user=target, conversation=conversation)
+            for target in target_users
+        ]
+        MessageReadStatus.objects.bulk_create(read_statuses, ignore_conflicts=True)
+
+        recipients_count = len(read_statuses)
+        emails_sent = 0
+
+        # Send emails if requested
+        if send_email:
+            from cases.services.email_service import send_email_notification, _get_notification_email, should_send_emails
+            from django.conf import settings as django_settings
+            if should_send_emails():
+                site_url = getattr(django_settings, 'SITE_URL', 'https://reports.profeds.com')
+                for target in target_users:
+                    target_email = _get_notification_email(target)
+                    if target_email:
+                        try:
+                            send_email_notification(
+                                subject=f'{subject} - ProFeds Benefits Team',
+                                template_name='broadcast_notification.html',
+                                context={
+                                    'member_first_name': target.first_name or target.username,
+                                    'subject': subject,
+                                    'body': body,
+                                    'sender_name': user.get_full_name() or 'Benefits Team',
+                                    'portal_url': f"{site_url}/messages/{conversation.pk}/",
+                                },
+                                recipient_email=target_email,
+                                user=user,
+                                action_type='email_notification_sent',
+                            )
+                            emails_sent += 1
+                        except Exception as e:
+                            logger.error(f'Error sending broadcast email to {target_email}: {e}')
+
+        logger.info(
+            f'Broadcast "{subject}" by {user.username}: '
+            f'{recipients_count} recipients, {emails_sent} emails sent'
+        )
+
+        from django.contrib import messages
+        email_note = f', {emails_sent} emails sent' if send_email else ''
+        messages.success(request, f'Broadcast sent to {recipients_count} users{email_note}.')
+        return redirect('messaging:conversation_detail', pk=conversation.pk)
+
+    context = {
+        'target_count': target_users.count(),
+    }
+    return render(request, 'messaging/broadcast.html', context)

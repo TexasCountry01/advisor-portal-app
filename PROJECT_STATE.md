@@ -233,7 +233,7 @@ Both servers have an identical cron job (under `dev` user's crontab):
 | Port | `587` |
 | TLS | `True` |
 | User | `reports@profeds.com` |
-| App Password | `rnnscdlqxtcfjwrj` |
+| App Password | `tqtewlpdzbhiuwlb` |
 
 ### Current Toggle States (as of Feb 21, 2026)
 
