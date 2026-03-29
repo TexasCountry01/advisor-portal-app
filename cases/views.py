@@ -6572,5 +6572,103 @@ def approve_change_request(request, request_id):
 
 @login_required
 def deny_change_request(request, request_id):
-    """Wrapper for deny_case_change_request for URL routing"""  
+    """Wrapper for deny_case_change_request for URL routing"""
     return deny_case_change_request(request, request_id)
+
+
+# ============================================================================
+# STAFF NOTIFICATION API VIEWS
+# ============================================================================
+
+@login_required
+@require_http_methods(["GET"])
+def get_staff_notifications(request):
+    """
+    Get all notifications for the logged-in staff member.
+    Returns StaffNotification records (excludes messaging — those go to Messages tab).
+    """
+    from core.models import StaffNotification
+
+    user = request.user
+    if user.role not in ('technician', 'administrator', 'manager'):
+        return JsonResponse({'success': False, 'error': 'Staff only'}, status=403)
+
+    try:
+        notifications = StaffNotification.objects.filter(user=user).order_by('-created_at')
+
+        page_num = request.GET.get('page', 1)
+        paginator = Paginator(notifications, 20)
+        page_obj = paginator.get_page(page_num)
+
+        unread_count = notifications.filter(is_read=False).count()
+
+        import pytz
+        cst_tz = pytz.timezone('America/Chicago')
+        notification_list = []
+        for notif in page_obj.object_list:
+            created_cst = notif.created_at.astimezone(cst_tz) if notif.created_at.tzinfo else pytz.UTC.localize(notif.created_at).astimezone(cst_tz)
+            notification_list.append({
+                'id': notif.id,
+                'case_id': notif.case_id,
+                'case_code': notif.case.external_case_id if notif.case else None,
+                'notification_type': notif.notification_type,
+                'notification_type_display': notif.get_notification_type_display(),
+                'title': notif.title,
+                'message': notif.message,
+                'is_read': notif.is_read,
+                'created_at': created_cst.strftime('%b %d, %Y %I:%M %p %Z'),
+            })
+
+        return JsonResponse({
+            'success': True,
+            'notifications': notification_list,
+            'total_count': notifications.count(),
+            'unread_count': unread_count,
+            'pages': paginator.num_pages,
+        })
+    except Exception as e:
+        logger.error(f'Error loading staff notifications: {e}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def mark_staff_notification_read(request, notification_id):
+    """Mark a single staff notification as read."""
+    from core.models import StaffNotification
+
+    user = request.user
+    if user.role not in ('technician', 'administrator', 'manager'):
+        return JsonResponse({'success': False, 'error': 'Staff only'}, status=403)
+
+    try:
+        notif = get_object_or_404(StaffNotification, id=notification_id, user=user)
+        if not notif.is_read:
+            notif.is_read = True
+            notif.read_at = timezone.now()
+            notif.save(update_fields=['is_read', 'read_at'])
+        return JsonResponse({'success': True, 'notification_id': notif.id})
+    except Exception as e:
+        logger.error(f'Error marking staff notification {notification_id} read: {e}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def mark_all_staff_notifications_read(request):
+    """Mark all unread staff notifications as read."""
+    from core.models import StaffNotification
+
+    user = request.user
+    if user.role not in ('technician', 'administrator', 'manager'):
+        return JsonResponse({'success': False, 'error': 'Staff only'}, status=403)
+
+    try:
+        now = timezone.now()
+        count = StaffNotification.objects.filter(
+            user=user, is_read=False
+        ).update(is_read=True, read_at=now)
+        return JsonResponse({'success': True, 'marked_count': count})
+    except Exception as e:
+        logger.error(f'Error marking all staff notifications read: {e}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

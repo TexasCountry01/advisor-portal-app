@@ -106,6 +106,12 @@
                                     <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#staffNotificationOffcanvas" title="Notifications">
+                                    <i class="bi bi-bell"></i> Notifications
+                                    <span class="badge bg-danger rounded-pill" id="staff-unread-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
+                                </a>
+                            </li>
                         {% elif user.role == 'administrator' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'cases:admin_dashboard' %}">
@@ -118,6 +124,12 @@
                                     <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#staffNotificationOffcanvas" title="Notifications">
+                                    <i class="bi bi-bell"></i> Notifications
+                                    <span class="badge bg-danger rounded-pill" id="staff-unread-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
+                                </a>
+                            </li>
                         {% elif user.role == 'manager' %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'cases:manager_dashboard' %}">
@@ -128,6 +140,12 @@
                                 <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
                                     <i class="bi bi-envelope"></i> Messages
                                     <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#" data-bs-toggle="offcanvas" data-bs-target="#staffNotificationOffcanvas" title="Notifications">
+                                    <i class="bi bi-bell"></i> Notifications
+                                    <span class="badge bg-danger rounded-pill" id="staff-unread-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
                                 </a>
                             </li>
                         {% endif %}
@@ -328,6 +346,148 @@
                 fetch('{% url "cases:get_member_notifications" %}')
                     .then(response => response.ok ? response.json() : null)
                     .then(data => { if (data && data.success) updateNotificationBadge(data.unread_count); })
+                    .catch(() => {});
+            }, 30000);
+        });
+    })();
+    </script>
+    {% endif %}
+
+    {% if user.is_authenticated and user.role in 'technician administrator manager' %}
+    <!-- Staff Notification Offcanvas Sidebar -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="staffNotificationOffcanvas" aria-labelledby="staffNotificationOffcanvasLabel">
+        <div class="offcanvas-header bg-primary text-white">
+            <h5 class="offcanvas-title" id="staffNotificationOffcanvasLabel">
+                <i class="bi bi-bell"></i> Notifications
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div id="staff-notifications-container" style="max-height: calc(100vh - 120px); overflow-y: auto;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="border-top p-3 mt-auto">
+                <button type="button" class="btn btn-sm btn-outline-primary w-100" id="staff-mark-all-read-btn">
+                    Mark All as Read
+                </button>
+            </div>
+        </div>
+    </div>
+    <style>
+        .staff-notification-item { cursor: pointer; transition: background-color 0.2s; }
+        .staff-notification-item:hover { background-color: #e9ecef !important; }
+    </style>
+    <script>
+    (function() {
+        function getStaffCsrfToken() {
+            let value = '; ' + document.cookie;
+            let parts = value.split('; csrftoken=');
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return '';
+        }
+
+        function loadStaffNotifications() {
+            fetch('{% url "cases:get_staff_notifications" %}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayStaffNotifications(data);
+                        updateStaffBadge(data.unread_count);
+                    }
+                })
+                .catch(error => console.error('Error loading staff notifications:', error));
+        }
+
+        function displayStaffNotifications(data) {
+            const container = document.getElementById('staff-notifications-container');
+            if (!container) return;
+            if (data.notifications.length === 0) {
+                container.innerHTML = '<div class="text-center py-4 text-muted">No notifications</div>';
+                return;
+            }
+            const iconMap = {
+                'case_assigned': 'person-check',
+                'case_modification_error': 'exclamation-triangle',
+                'quality_review_feedback': 'clipboard-check',
+                'case_on_hold': 'pause-circle',
+                'member_document_uploaded': 'file-earmark-arrow-up',
+                'system_alert': 'gear'
+            };
+            let html = '';
+            data.notifications.forEach(notif => {
+                const icon = iconMap[notif.notification_type] || 'info-circle';
+                const caseLink = notif.case_id ? `/cases/${notif.case_id}/` : '#';
+                html += `
+                    <div class="staff-notification-item p-3 border-bottom" data-notification-id="${notif.id}" style="${notif.is_read ? '' : 'background-color: #f0f4ff;'}" onclick="window.location.href='${caseLink}'">
+                        <div class="d-flex gap-2">
+                            <i class="bi bi-${icon} flex-shrink-0 mt-1 ${notif.is_read ? 'text-muted' : 'text-primary'}"></i>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 ${notif.is_read ? 'text-muted' : ''}">${notif.title}</h6>
+                                <p class="text-muted small mb-1">${notif.message}</p>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <small class="text-muted">${notif.created_at}</small>
+                                    ${notif.case_code ? '<span class="badge bg-secondary">' + notif.case_code + '</span>' : ''}
+                                    ${!notif.is_read ? '<button class="btn btn-link btn-sm p-0" onclick="event.stopPropagation(); window._markStaffNotifRead(' + notif.id + ')">Mark as read</button>' : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function markStaffNotifRead(notificationId) {
+            fetch('{% url "cases:mark_staff_notification_read" 0 %}'.replace('0', notificationId), {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getStaffCsrfToken(), 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(response => response.ok ? response.json() : Promise.reject())
+            .then(data => { if (data.success) loadStaffNotifications(); })
+            .catch(error => console.error('Error marking staff notification read:', error));
+        }
+
+        function markAllStaffNotifsRead() {
+            fetch('{% url "cases:mark_all_staff_notifications_read" %}', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getStaffCsrfToken(), 'Content-Type': 'application/x-www-form-urlencoded' }
+            })
+            .then(response => response.ok ? response.json() : Promise.reject())
+            .then(data => { if (data.success) loadStaffNotifications(); })
+            .catch(error => console.error('Error marking all staff notifications read:', error));
+        }
+
+        function updateStaffBadge(count) {
+            const badge = document.getElementById('staff-unread-badge');
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        window._markStaffNotifRead = markStaffNotifRead;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStaffNotifications();
+
+            const markAllBtn = document.getElementById('staff-mark-all-read-btn');
+            if (markAllBtn) markAllBtn.addEventListener('click', function(e) { e.preventDefault(); markAllStaffNotifsRead(); });
+
+            const offcanvas = document.getElementById('staffNotificationOffcanvas');
+            if (offcanvas) offcanvas.addEventListener('show.bs.offcanvas', loadStaffNotifications);
+
+            setInterval(function() {
+                fetch('{% url "cases:get_staff_notifications" %}')
+                    .then(response => response.ok ? response.json() : null)
+                    .then(data => { if (data && data.success) updateStaffBadge(data.unread_count); })
                     .catch(() => {});
             }, 30000);
         });

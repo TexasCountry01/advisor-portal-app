@@ -68,6 +68,11 @@ urlpatterns = [
     path('api/notifications/<int:notification_id>/mark-read/', views.mark_notification_read, name='mark_notification_read'),
     path('api/notifications/mark-all-read/', views.mark_all_notifications_read, name='mark_all_notifications_read'),
     path('api/hold-cases/', views.get_hold_cases, name='get_hold_cases'),
+
+    # Staff Notification API
+    path('api/staff-notifications/', views.get_staff_notifications, name='get_staff_notifications'),
+    path('api/staff-notifications/<int:notification_id>/mark-read/', views.mark_staff_notification_read, name='mark_staff_notification_read'),
+    path('api/staff-notifications/mark-all-read/', views.mark_all_staff_notifications_read, name='mark_all_staff_notifications_read'),
     
     # View preference API
     path('api/view-preference/save/<str:view_type>/', views.save_view_preference, name='save_view_preference'),
