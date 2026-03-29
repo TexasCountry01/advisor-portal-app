@@ -6218,6 +6218,18 @@ def create_case_change_request(request, case_id):
                     title=f'Case Canceled by Member',
                     message=f'{user.get_full_name() or user.username} canceled case {case.external_case_id}. Reason: {cancellation_reason}',
                 )
+                # Create StaffNotification for the assigned technician
+                try:
+                    from core.models import StaffNotification
+                    StaffNotification.objects.create(
+                        recipient=case.assigned_to,
+                        case=case,
+                        notification_type='member_change_request',
+                        title=f'Case Canceled by Member',
+                        message=f'{user.get_full_name() or user.username} canceled case {case.external_case_id}. Reason: {cancellation_reason}',
+                    )
+                except Exception as e:
+                    logger.error(f'Error creating StaffNotification for cancellation: {str(e)}')
                 # Also create an UnreadMessage-style alert for the tech
                 try:
                     from cases.models import CaseMessage
