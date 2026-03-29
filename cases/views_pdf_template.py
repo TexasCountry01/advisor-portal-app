@@ -245,9 +245,9 @@ def delete_document(request, doc_id):
     
     case = doc.case
     
-    # Check permissions - only managers and administrators can delete documents
-    if request.user.role not in ['administrator', 'manager']:
-        messages.error(request, 'Only administrators and managers can delete documents.')
+    # Check permissions - staff (technician, administrator, manager) can delete documents
+    if request.user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'Only staff members can delete documents.')
         return redirect('cases:case_detail', pk=case.id)
     
     # Check case status - cannot delete documents from submitted cases
