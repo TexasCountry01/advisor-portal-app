@@ -4265,6 +4265,24 @@ def request_modification(request, pk):
         
         logger.info(f'New modification case {new_case.external_case_id} created for case {case.external_case_id} by member {user.username} (assigned to: {case.assigned_to})')
         
+        # Log modification case creation to audit trail
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_submitted',
+            case=new_case,
+            description=f'Modification case submitted for {case.employee_first_name} {case.employee_last_name} (original case: {case.external_case_id})',
+            metadata={
+                'is_modification': True,
+                'original_case_id': case.id,
+                'original_case_number': case.external_case_id,
+                'urgency': mod_urgency,
+                'is_profeds_error': is_profeds_error,
+                'submitted_by': user.get_full_name(),
+                'assigned_to': case.assigned_to.username if case.assigned_to else None,
+            }
+        )
+        
         # If member flagged as ProFeds error, also mark original case and log to audit trail
         if is_profeds_error:
             case.has_profeds_error = True
