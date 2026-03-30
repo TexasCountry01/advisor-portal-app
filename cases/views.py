@@ -1354,14 +1354,13 @@ def case_detail(request, pk):
         # A case is "released" when:
         # 1. actual_release_date is set (released now or in the past), OR
         # 2. scheduled_release_date has passed (scheduled release is now ready)
-        from datetime import date
         case_is_released = False
         
         if case.status == 'completed':
             if case.actual_release_date:
                 # Case was released immediately or the scheduled release time has passed
                 case_is_released = True
-            elif case.scheduled_release_date and case.scheduled_release_date <= date.today():
+            elif case.scheduled_release_date and case.scheduled_release_date <= timezone.now():
                 # Case has a scheduled release date that has already passed
                 case_is_released = True
         
@@ -4490,11 +4489,10 @@ def generate_report_notes_pdf(request, pk):
         
         if is_owner or is_delegate:
             # Member/delegate can only access if case is completed and released
-            from datetime import date
             if case.status == 'completed':
                 if case.actual_release_date is not None:
                     can_access = True
-                elif case.scheduled_release_date and case.scheduled_release_date <= date.today():
+                elif case.scheduled_release_date and case.scheduled_release_date <= timezone.now():
                     can_access = True
     
     if not can_access:
