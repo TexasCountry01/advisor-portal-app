@@ -3019,20 +3019,44 @@ def mark_case_completed(request, case_id):
             
             case.save()
             
+            # Handle credit adjustment from pre-completion review (atomic with completion)
+            if body_data.get('completion_review') and body_data.get('credit_adjusted') and body_data.get('credit_value'):
+                try:
+                    from decimal import Decimal
+                    from cases.services.credit_service import set_case_credit
+                    new_credit = Decimal(body_data['credit_value'])
+                    if Decimal('0.0') <= new_credit <= Decimal('3.0'):
+                        set_case_credit(case, new_credit, request.user, 'completion',
+                                        body_data.get('credit_reason', 'Adjusted during pre-completion review'))
+                except Exception as credit_err:
+                    logger.warning(f'Credit adjustment during completion failed for case {case_id}: {credit_err}')
+            
             # Log case completion to audit trail
             from core.models import AuditLog
+            completion_metadata = {
+                'status': case.status,
+                'release_msg': release_msg,
+                'release_option': release_option,
+                'scheduled_release_date': str(case.scheduled_release_date) if case.scheduled_release_date else None,
+                'actual_release_date': str(case.actual_release_date) if case.actual_release_date else None,
+            }
+            
+            # Include pre-completion review checklist data if submitted from the review page
+            if body_data.get('completion_review'):
+                completion_metadata['completion_review'] = True
+                completion_metadata['completion_checklist'] = body_data.get('completion_checklist', {})
+                completion_metadata['credit_adjusted_at_completion'] = body_data.get('credit_adjusted', False)
+                completion_metadata['credit_value_at_completion'] = str(case.credit_value) if case.credit_value is not None else None
+                completion_metadata['reports_requested'] = case.num_reports_requested
+                completion_metadata['reports_uploaded'] = len(uploaded_report_numbers)
+                completion_metadata['has_tech_notes'] = bool(case.report_notes_to_member and case.report_notes_to_member.strip())
+            
             AuditLog.log_activity(
                 user=request.user,
                 action_type='case_completed',
                 case=case,
                 description=f'Case marked as {case.status} - {release_msg}',
-                metadata={
-                    'status': case.status,
-                    'release_msg': release_msg,
-                    'release_option': release_option,
-                    'scheduled_release_date': str(case.scheduled_release_date) if case.scheduled_release_date else None,
-                    'actual_release_date': str(case.actual_release_date) if case.actual_release_date else None,
-                }
+                metadata=completion_metadata,
             )
             
             # Create notification and send email to member (only if immediately released)
@@ -3065,6 +3089,65 @@ def mark_case_completed(request, case_id):
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def completion_review(request, case_id):
+    """
+    Pre-completion review page. Technician reviews credit value, report counts,
+    technical notes, and completes a checklist before marking the case complete.
+    Modeled after the Initial Case Review (case_review_for_acceptance).
+    """
+    case = get_object_or_404(Case, id=case_id)
+    user = request.user
+
+    # Permission check
+    if user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'You do not have permission to complete cases.')
+        return redirect('cases:case_detail', pk=case_id)
+
+    # Technicians must own the case
+    if user.role == 'technician' and case.assigned_to != user:
+        messages.error(request, 'You can only complete cases assigned to you.')
+        return redirect('cases:case_detail', pk=case_id)
+
+    # Case must be in a completable status
+    if case.status not in ['accepted', 'hold']:
+        messages.error(request, f'Case cannot be completed from status: {case.get_status_display()}')
+        return redirect('cases:case_detail', pk=case_id)
+
+    # Report counts
+    from cases.models import CaseReport
+    uploaded_reports = CaseReport.objects.filter(case=case).order_by('report_number')
+    uploaded_count = uploaded_reports.count()
+    requested_count = case.num_reports_requested
+    reports_match = uploaded_count >= requested_count
+
+    # Check if tech notes exist and have content
+    has_tech_notes = bool(case.report_notes_to_member and case.report_notes_to_member.strip())
+
+    # Documents
+    documents = case.documents.all().order_by('document_type', '-uploaded_at')
+    tech_documents = documents.filter(document_type='report')
+
+    # Credit info
+    from cases.services.credit_service import calculate_default_credit
+    default_credit = calculate_default_credit(requested_count)
+
+    context = {
+        'case': case,
+        'uploaded_reports': uploaded_reports,
+        'uploaded_count': uploaded_count,
+        'requested_count': requested_count,
+        'reports_match': reports_match,
+        'has_tech_notes': has_tech_notes,
+        'documents': documents,
+        'tech_documents': tech_documents,
+        'default_credit': default_credit,
+        'page_title': f'Pre-Completion Review - {case.external_case_id}',
+    }
+
+    return render(request, 'cases/case_completion_review.html', context)
 
 
 @login_required

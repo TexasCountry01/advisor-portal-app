@@ -1,0 +1,424 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Pre-Completion Review - {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="bi bi-clipboard2-check"></i> Pre-Completion Review</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Employee:</strong> {{ case.employee_first_name }} {{ case.employee_last_name }}</p>
+                            <p><strong>Case ID:</strong> {{ case.external_case_id }}</p>
+                            <p><strong>Member (Advisor):</strong> {{ case.member.get_full_name }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Tier:</strong> <span class="badge bg-info">{{ case.get_tier_display|default:"Not Set" }}</span></p>
+                            <p><strong>Assigned To:</strong> {{ case.assigned_to.get_full_name|default:"Unassigned" }}</p>
+                            <p><strong>Accepted:</strong> {{ case.date_accepted|date:"M d, Y g:i A"|default:"N/A" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p><strong>Reports Requested:</strong> {{ requested_count }}</p>
+                            <p><strong>Reports Uploaded:</strong>
+                                {% if reports_match %}
+                                    <span class="badge bg-success">{{ uploaded_count }} of {{ requested_count }}</span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">{{ uploaded_count }} of {{ requested_count }}</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Status:</strong> <span class="badge bg-primary">{{ case.get_status_display }}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column: Review Items -->
+        <div class="col-md-8">
+
+            <!-- Reports Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark-bar-graph"></i> Reports ({{ uploaded_count }} of {{ requested_count }} uploaded)</h5>
+                </div>
+                <div class="card-body">
+                    {% if uploaded_reports %}
+                        <div class="list-group">
+                            {% for report in uploaded_reports %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Report {{ report.report_number }}</strong>
+                                        <span class="badge bg-{{ report.status|default:'secondary' }} ms-2">
+                                            {% if report.status == 'completed' %}Completed
+                                            {% elif report.status == 'in_progress' %}In Progress
+                                            {% elif report.status == 'pending_review' %}Pending Review
+                                            {% else %}{{ report.get_status_display|default:report.status }}{% endif %}
+                                        </span>
+                                        {% if report.report_file %}
+                                            <small class="text-muted ms-2"><i class="bi bi-paperclip"></i> File attached</small>
+                                        {% endif %}
+                                    </div>
+                                    {% if report.report_file %}
+                                        <a href="{{ report.report_file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="bi bi-download"></i> View
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>No reports uploaded yet.</strong>
+                        </div>
+                    {% endif %}
+                    {% if not reports_match %}
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Report count mismatch:</strong> {{ requested_count }} report(s) were requested but only {{ uploaded_count }} uploaded.
+                            <br><small>You can still complete the case by checking the override in the checklist below.</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Technical Notes Preview -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-journal-text"></i> Technical Notes to Member (Preview)</h5>
+                    <a href="{% url 'cases:case_detail' case.id %}#report-notes-section" class="btn btn-sm btn-light">
+                        <i class="bi bi-pencil"></i> Edit Notes
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if has_tech_notes %}
+                        <div class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+                            {{ case.report_notes_to_member|safe }}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger mb-0">
+                            <i class="bi bi-exclamation-circle"></i> <strong>No technical notes have been written.</strong>
+                            <br>Technical notes are visible to the member when the case is released.
+                            <a href="{% url 'cases:case_detail' case.id %}#report-notes-section" class="alert-link">Go back and add notes</a>.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Documents Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-file-earmark"></i> Case Documents ({{ documents.count }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                        <div class="list-group">
+                            {% for doc in documents %}
+                                <div class="list-group-item d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            {% if doc.document_type == 'report' %}
+                                                <i class="bi bi-file-earmark-bar-graph text-primary"></i>
+                                            {% else %}
+                                                <i class="bi bi-file-pdf text-danger"></i>
+                                            {% endif %}
+                                            {{ doc.original_filename|truncatechars:60 }}
+                                        </h6>
+                                        <small class="text-muted">
+                                            {{ doc.get_document_type_display }} &middot; Uploaded {{ doc.uploaded_at|date:"M d, Y" }}
+                                        </small>
+                                    </div>
+                                    <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                        <i class="bi bi-download"></i> View
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="bi bi-exclamation-triangle"></i> No documents on this case.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pre-Completion Checklist -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-clipboard2-check"></i> Pre-Completion Checklist</h5>
+                </div>
+                <div class="card-body">
+                    <form id="completionChecklistForm">
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input completion-check-item" id="check_credit" name="check_credit">
+                            <label class="form-check-label" for="check_credit">
+                                <strong>Credit value is accurate</strong>
+                                <br><small class="text-muted">Current: {{ case.credit_value|default:"Not set" }} &middot; Default for {{ requested_count }} report(s): {{ default_credit }}</small>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input completion-check-item" id="check_reports" name="check_reports">
+                            <label class="form-check-label" for="check_reports">
+                                <strong>All reports uploaded and verified</strong>
+                                <br><small class="text-muted">{{ uploaded_count }} of {{ requested_count }} report(s) uploaded
+                                {% if not reports_match %}<span class="text-warning">(mismatch — override allowed)</span>{% endif %}
+                                </small>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input completion-check-item" id="check_notes" name="check_notes">
+                            <label class="form-check-label" for="check_notes">
+                                <strong>Technical notes reviewed and complete</strong>
+                                <br><small class="text-muted">
+                                    {% if has_tech_notes %}Notes present — preview shown above{% else %}<span class="text-danger">No notes written yet</span>{% endif %}
+                                </small>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" class="form-check-input completion-check-item" id="check_quality" name="check_quality">
+                            <label class="form-check-label" for="check_quality">
+                                <strong>Overall quality verified and ready for member</strong>
+                            </label>
+                        </div>
+                    </form>
+                    <div class="alert alert-info mt-2 mb-0">
+                        <i class="bi bi-info-circle"></i> All items must be checked before completing the case.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Adjustments & Actions -->
+        <div class="col-md-4">
+
+            <!-- Credit Value Adjustment -->
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Credit Value</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-group mb-3">
+                        <label for="creditValue" class="form-label"><strong>Adjust Credit (if needed)</strong></label>
+                        <select class="form-select form-select-lg" id="creditValue" name="credit_value">
+                            <option value="">— No change (keep {{ case.credit_value|default:"current" }}) —</option>
+                            <option value="0.0">0.0 Credits</option>
+                            <option value="0.5">0.5 Credits</option>
+                            <option value="1.0">1.0 Credit</option>
+                            <option value="1.5">1.5 Credits</option>
+                            <option value="2.0">2.0 Credits</option>
+                            <option value="2.5">2.5 Credits</option>
+                            <option value="3.0">3.0 Credits</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            Current: <strong>{{ case.credit_value|default:"Not set" }}</strong> &middot;
+                            Default: {{ default_credit }}
+                        </small>
+                    </div>
+                    <div class="form-group mb-0" id="creditReasonGroup" style="display: none;">
+                        <label for="creditReason" class="form-label"><strong>Reason for change</strong></label>
+                        <textarea class="form-control" id="creditReason" rows="2" placeholder="Brief reason for credit adjustment..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Release Options -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check"></i> Release Options</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3 p-3 border rounded">
+                        <input class="form-check-input" type="radio" name="releaseOption" id="releaseNow" value="now" checked>
+                        <label class="form-check-label" for="releaseNow">
+                            <strong><i class="bi bi-lightning-fill text-warning"></i> Release Now</strong>
+                            <br><small class="text-muted">Member can view results immediately</small>
+                        </label>
+                    </div>
+                    <div class="form-check p-3 border rounded">
+                        <input class="form-check-input" type="radio" name="releaseOption" id="scheduleRelease" value="schedule">
+                        <label class="form-check-label" for="scheduleRelease">
+                            <strong><i class="bi bi-hourglass-split text-info"></i> Schedule Release</strong>
+                            <br><small class="text-muted">Member will see on a specific date/time</small>
+                        </label>
+                    </div>
+                    <div id="releaseDateTimeGroup" style="display: none; margin-top: 15px;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="releaseDate" class="form-label">Release Date <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="releaseDate">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="releaseTime" class="form-label">Time (CST) <span class="text-danger">*</span></label>
+                                <input type="time" class="form-control" id="releaseTime" value="09:00">
+                            </div>
+                        </div>
+                        <div class="mt-2 p-2 bg-light rounded">
+                            <div id="releaseSummary">
+                                <small class="text-muted">Select date and time above</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="card mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-check-square"></i> Decision</h5>
+                </div>
+                <div class="card-body d-grid gap-2">
+                    <button id="completeBtn" class="btn btn-outline-success btn-lg" onclick="submitCompletion()">
+                        <i class="bi bi-check-circle"></i> Complete Case
+                    </button>
+                    <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-left"></i> Back to Case
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Show/hide release date picker
+document.querySelectorAll('input[name="releaseOption"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        document.getElementById('releaseDateTimeGroup').style.display =
+            this.value === 'schedule' ? 'block' : 'none';
+    });
+});
+
+// Set minimum date for release scheduler
+document.addEventListener('DOMContentLoaded', function() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const minDate = tomorrow.toISOString().split('T')[0];
+    const dateInput = document.getElementById('releaseDate');
+    if (dateInput) dateInput.min = minDate;
+
+    // Update summary when date/time changes
+    dateInput.addEventListener('change', updateReleaseSummary);
+    document.getElementById('releaseTime').addEventListener('change', updateReleaseSummary);
+});
+
+function updateReleaseSummary() {
+    const releaseDate = document.getElementById('releaseDate').value;
+    const releaseTime = document.getElementById('releaseTime').value;
+    const summaryDiv = document.getElementById('releaseSummary');
+    if (!releaseDate || !releaseTime) {
+        summaryDiv.innerHTML = '<small class="text-muted">Select date and time above</small>';
+        return;
+    }
+    const dateObj = new Date(releaseDate + 'T00:00:00');
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    const dateFormatted = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    summaryDiv.innerHTML = `<strong>Scheduled:</strong> ${dayName}, ${dateFormatted} at ${releaseTime} CST`;
+}
+
+// Show credit reason field when credit value is changed
+document.getElementById('creditValue').addEventListener('change', function() {
+    document.getElementById('creditReasonGroup').style.display = this.value ? 'block' : 'none';
+    // Auto-check the credit checklist item when credit is reviewed
+    document.getElementById('check_credit').checked = true;
+});
+
+function submitCompletion() {
+    // Validate all checklist items
+    const checkItems = document.querySelectorAll('.completion-check-item');
+    const unchecked = [];
+    checkItems.forEach(item => {
+        if (!item.checked) {
+            const label = document.querySelector(`label[for="${item.id}"] strong`);
+            unchecked.push(label ? label.textContent.trim() : item.id);
+        }
+    });
+
+    if (unchecked.length > 0) {
+        const itemList = unchecked.map((item, idx) => `${idx + 1}. ${item}`).join('\n');
+        alert('⚠️ Please check ALL items in the Pre-Completion Checklist:\n\n' + itemList);
+        return;
+    }
+
+    // Gather release options
+    const releaseNow = document.getElementById('releaseNow').checked;
+    let releaseOption = 'now';
+    let releaseDateTime = null;
+
+    if (!releaseNow) {
+        releaseOption = 'schedule';
+        const rd = document.getElementById('releaseDate').value;
+        const rt = document.getElementById('releaseTime').value;
+        if (!rd) { alert('Please select a release date.'); return; }
+        if (!rt) { alert('Please select a release time.'); return; }
+
+        // Validate release date is not after the due date
+        const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
+        if (caseDueDate && rd > caseDueDate) {
+            alert('Error: Release date cannot be after the case due date (' +
+                new Date(caseDueDate + 'T00:00:00').toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}) +
+                '). Please select an earlier date.');
+            return;
+        }
+        releaseDateTime = `${rd} ${rt}`;
+    }
+
+    // Gather credit adjustment
+    const creditValue = document.getElementById('creditValue').value;
+    const creditReason = document.getElementById('creditReason') ? document.getElementById('creditReason').value : '';
+
+    // Gather checklist states for audit
+    const checklist = {};
+    checkItems.forEach(item => {
+        checklist[item.name] = item.checked;
+    });
+
+    // Report mismatch override
+    const reportsMatch = {{ reports_match|yesno:"true,false" }};
+    const overrideIncomplete = !reportsMatch;
+
+    const btn = document.getElementById('completeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+
+    // Submit completion with all data in one request
+    fetch('{% url "cases:mark_case_completed" case.id %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+        body: JSON.stringify({
+            release_option: releaseOption,
+            release_datetime: releaseDateTime,
+            override_incomplete: overrideIncomplete,
+            completion_review: true,
+            completion_checklist: checklist,
+            credit_adjusted: !!creditValue,
+            credit_value: creditValue || null,
+            credit_reason: creditReason
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = '{% url "cases:case_detail" case.id %}?completed=true';
+        } else {
+            alert('Error: ' + (data.error || 'Failed to complete case'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Complete Case';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An unexpected error occurred.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Complete Case';
+    });
+}
+</script>
+{% endblock %}

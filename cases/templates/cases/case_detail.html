@@ -1612,9 +1612,9 @@
                                     <button type="button" class="btn btn-outline-info" onclick="showResumeFromHoldModal()">
                                         <i class="bi bi-play-circle"></i> Resume from Hold
                                     </button>
-                                    <button type="button" class="btn btn-outline-success" id="markCompletedBtn" onclick="markCaseCompleted()">
+                                    <a href="{% url 'cases:completion_review' case.id %}" class="btn btn-outline-success">
                                         <i class="bi bi-check-circle"></i> Mark as Completed
-                                    </button>
+                                    </a>
                                     <hr>
                                     <small class="text-muted">
                                         <i class="bi bi-info-circle"></i> This case is currently on hold. You can resume processing or mark it as completed.
@@ -1639,16 +1639,16 @@
                                         <i class="bi bi-info-circle"></i> Upload reports and add technical notes, then submit for senior tech review.
                                     </small>
                                     {% else %}
-                                    <!-- Level 2/3 Tech: Mark as Completed (direct) -->
-                                    <button type="button" class="btn btn-outline-success" id="markCompletedBtn" onclick="markCaseCompleted()">
+                                    <!-- Level 2/3 Tech: Mark as Completed (via pre-completion review) -->
+                                    <a href="{% url 'cases:completion_review' case.id %}" class="btn btn-outline-success" id="markCompletedBtn">
                                         <i class="bi bi-check-circle"></i> Mark as Completed
-                                    </button>
+                                    </a>
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
                                     <hr>
                                     <small class="text-muted" id="actionHelp">
-                                        <i class="bi bi-info-circle"></i> At least one report must be uploaded before marking as completed.
+                                        <i class="bi bi-info-circle"></i> Review credit, reports, and notes before completing.
                                     </small>
                                     {% endif %}
                                 {% endif %}

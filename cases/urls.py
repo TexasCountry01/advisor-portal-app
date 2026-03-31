@@ -56,6 +56,7 @@ urlpatterns = [
     path('<int:case_id>/upload-member-document/', views.upload_member_document_to_completed_case, name='upload_member_document_completed'),
     path('<int:case_id>/resubmit/', views.resubmit_case, name='resubmit_case'),
     path('<int:case_id>/validate-completion/', views.validate_case_completion, name='validate_case_completion'),
+    path('<int:case_id>/completion-review/', views.completion_review, name='completion_review'),
     path('<int:case_id>/mark-completed/', views.mark_case_completed, name='mark_case_completed'),
     path('<int:case_id>/mark-incomplete/', views.mark_case_incomplete, name='mark_case_incomplete'),
     path('<int:case_id>/release-immediately/', views.release_case_immediately, name='release_case_immediately'),
