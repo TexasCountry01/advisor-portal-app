@@ -188,32 +188,6 @@ def submit_case(request):
                     message=notes.strip()
                 )
             
-            # Log case submission to audit trail
-            if action == 'submit':
-                from core.models import AuditLog
-                submit_metadata = {
-                    'urgency': urgency,
-                    'document_count': 0,  # Will be updated after file uploads
-                }
-                submit_description = f'Case submitted for {fed_first_name} {fed_last_name}'
-                
-                # Add delegate context if submitting on behalf of another member
-                if user.id != advisor.id:
-                    submit_metadata['submitted_by_delegate'] = True
-                    submit_metadata['delegate_id'] = user.id
-                    submit_metadata['delegate_name'] = user.get_full_name()
-                    submit_metadata['delegate_email'] = user.email
-                    submit_metadata['on_behalf_of'] = advisor.get_full_name()
-                    submit_description = f'Case submitted for {fed_first_name} {fed_last_name} by delegate {user.get_full_name()} on behalf of {advisor.get_full_name()}'
-                
-                AuditLog.log_activity(
-                    user=user,
-                    action_type='case_submitted',
-                    case=case,
-                    description=submit_description,
-                    metadata=submit_metadata
-                )
-            
             # Calculate and set default credit value
             from cases.services.credit_service import calculate_default_credit, set_case_credit
             default_credit = calculate_default_credit(num_reports)
@@ -242,6 +216,32 @@ def submit_case(request):
             
             # Get document count
             doc_count = case.documents.count()
+            
+            # Log case submission to audit trail (after file uploads so document_count is accurate)
+            if action == 'submit':
+                from core.models import AuditLog
+                submit_metadata = {
+                    'urgency': urgency,
+                    'document_count': doc_count,
+                }
+                submit_description = f'Case submitted for {fed_first_name} {fed_last_name}'
+                
+                # Add delegate context if submitting on behalf of another member
+                if user.id != advisor.id:
+                    submit_metadata['submitted_by_delegate'] = True
+                    submit_metadata['delegate_id'] = user.id
+                    submit_metadata['delegate_name'] = user.get_full_name()
+                    submit_metadata['delegate_email'] = user.email
+                    submit_metadata['on_behalf_of'] = advisor.get_full_name()
+                    submit_description = f'Case submitted for {fed_first_name} {fed_last_name} by delegate {user.get_full_name()} on behalf of {advisor.get_full_name()}'
+                
+                AuditLog.log_activity(
+                    user=user,
+                    action_type='case_submitted',
+                    case=case,
+                    description=submit_description,
+                    metadata=submit_metadata
+                )
             doc_count_msg = f'Documents uploaded: {doc_count}.' if doc_count > 0 else 'No documents uploaded.'
             
             # Determine if this is rushed
