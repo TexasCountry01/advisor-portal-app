@@ -1570,7 +1570,8 @@
                     </div>
                 </div>
 
-                <!-- Actions -->
+                <!-- Actions (only show when user has actionable options) -->
+                {% if case.assigned_to == user or user.role in 'administrator,manager' or case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' %}
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Actions</h5>
@@ -1661,20 +1662,12 @@
                                 <small class="text-muted d-block mt-2">
                                     <i class="bi bi-info-circle"></i> Admin/Manager: You can put this case on hold without taking ownership.
                                 </small>
-                                {% else %}
-                                <div class="alert alert-info mb-0">
-                                    <i class="bi bi-info-circle"></i> Use the "Take Ownership" button at the top to begin processing this case.
-                                </div>
                                 {% endif %}
-                            {% else %}
-                                <!-- Fallback - should not normally reach here -->
-                                <div class="alert alert-info mb-0">
-                                    <i class="bi bi-info-circle"></i> No actions available at this time.
-                                </div>
                             {% endif %}
                         </div>
                     </div>
                 </div>
+                {% endif %}
             {% endif %}
         </div>
     </div>
