@@ -986,11 +986,11 @@
                 #memberNotesContent p { margin: 0 0 6px; }
             </style>
             <div class="card mb-4 border-info">
-                <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
+                <div class="card-header bg-info d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-white">
                         <i class="bi bi-sticky"></i> Technical Notes
                     </h5>
-                    <a href="{% url 'cases:generate_report_notes_pdf' case.id %}" class="btn btn-outline-info btn-sm" download>
+                    <a href="{% url 'cases:generate_report_notes_pdf' case.id %}" class="btn btn-outline-light btn-sm" download>
                         <i class="bi bi-file-earmark-pdf"></i> Download as PDF
                     </a>
                 </div>
@@ -1016,11 +1016,11 @@
                 #techNotesPreviewContent p { margin: 0 0 6px; }
             </style>
             <div class="card mb-4 border-info" id="techNotesPreviewCard" {% if not case.report_notes_to_member %}style="display:none;"{% endif %}>
-                <div class="card-header bg-info bg-opacity-10 d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
+                <div class="card-header bg-info d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 text-white">
                         <i class="bi bi-sticky"></i> Technical Notes
                     </h5>
-                    <a href="{% url 'cases:generate_report_notes_pdf' case.id %}" class="btn btn-outline-info btn-sm" download>
+                    <a href="{% url 'cases:generate_report_notes_pdf' case.id %}" class="btn btn-outline-light btn-sm" download>
                         <i class="bi bi-file-earmark-pdf"></i> Download as PDF
                     </a>
                 </div>
@@ -1113,7 +1113,7 @@
                             </thead>
                             <tbody>
                                 {% for event in case_event_logs %}
-                                {% if event.action_type in 'case_submitted,case_resubmitted,case_accepted,case_held,case_resumed,case_completed,member_document_uploaded' %}
+                                {% if event.action_type == 'case_submitted' or event.action_type == 'case_resubmitted' or event.action_type == 'case_accepted' or event.action_type == 'case_held' or event.action_type == 'case_resumed' or event.action_type == 'case_completed' or event.action_type == 'member_document_uploaded' %}
                                 <tr>
                                     <td class="text-muted">
                                         {{ event.timestamp|date:"m/d/Y" }}<br>
