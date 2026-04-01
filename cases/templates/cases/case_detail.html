@@ -3991,14 +3991,10 @@ function acceptAndPutOnHold() {
                         <label for="cancelReason" class="form-label">Reason for Cancellation <span class="text-danger">*</span></label>
                         <textarea id="cancelReason" name="cancellation_reason" class="form-control" rows="3" placeholder="Please explain why you want to cancel this case..." required></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label for="cancelNotes" class="form-label">Additional Notes (Optional)</label>
-                        <textarea id="cancelNotes" name="member_notes" class="form-control" rows="2" placeholder="Any additional context..."></textarea>
-                    </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Never Mind</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Go Back</button>
                 <button type="button" class="btn btn-danger" onclick="submitCancelRequest()">
                     <i class="bi bi-x-circle"></i> Cancel Case
                 </button>
@@ -4151,12 +4147,10 @@ function submitCancelRequest() {
         alert('Please provide a reason for cancellation');
         return;
     }
-    const notes = document.getElementById('cancelNotes').value.trim();
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
     const formData = new FormData();
     formData.append('request_type', 'cancellation');
     formData.append('cancellation_reason', reason);
-    formData.append('member_notes', notes);
 
     fetch(`/cases/{{ case.id }}/request-update/`, {
         method: 'POST',
