@@ -1330,7 +1330,10 @@ def case_detail(request, pk):
             return redirect('cases:case_detail', pk=case.id)
     
     # Get related documents - ordered by type for proper grouping in template
-    documents = CaseDocument.objects.filter(case=case).order_by('document_type', '-uploaded_at')
+    # 'documents' = member-submitted docs (exclude tech 'report' type)
+    # 'tech_documents' = technician/staff uploaded docs (report type only)
+    all_documents = CaseDocument.objects.filter(case=case).order_by('document_type', '-uploaded_at')
+    documents = all_documents.exclude(document_type='report')
     
     # Get case notes (technician/internal notes)
     from cases.models import CaseNote, CaseReport
@@ -1369,7 +1372,7 @@ def case_detail(request, pk):
             can_view_report = False
     
     # Get technician documents only
-    tech_documents = documents.filter(document_type='report').order_by('-uploaded_at')
+    tech_documents = all_documents.filter(document_type='report').order_by('-uploaded_at')
     
     # Get case reports
     reports = case.reports.all().order_by('report_number')
