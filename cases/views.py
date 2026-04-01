@@ -6345,7 +6345,7 @@ def create_case_change_request(request, case_id):
                 try:
                     from core.models import StaffNotification
                     StaffNotification.objects.create(
-                        recipient=case.assigned_to,
+                        user=case.assigned_to,
                         case=case,
                         notification_type='member_change_request',
                         title=f'Case Canceled by Member',
