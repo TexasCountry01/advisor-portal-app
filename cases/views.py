@@ -1371,8 +1371,8 @@ def case_detail(request, pk):
         if not case_is_released:
             can_view_report = False
     
-    # Get technician documents only
-    tech_documents = all_documents.filter(document_type='report').order_by('-uploaded_at')
+    # Get technician documents (resources uploaded by staff, excludes reports)
+    tech_documents = all_documents.filter(document_type='other').order_by('-uploaded_at')
     
     # Get case reports
     reports = case.reports.all().order_by('report_number')
@@ -2739,11 +2739,13 @@ def upload_technician_document(request, case_id):
         
         # For members uploading to draft cases, use 'fact_finder' type
         # For members uploading after submission, use 'supporting' type
-        # For technicians, use 'report' type
+        # For technicians, use 'report' unless uploading a resource
         if user.role == 'member':
             doc_type = 'fact_finder' if case.status == 'draft' else 'supporting'
         else:
-            doc_type = 'report'
+            # Allow staff to specify 'other' for additional resources vs 'report' for reports
+            requested_type = request.POST.get('document_type', 'report')
+            doc_type = 'other' if requested_type == 'other' else 'report'
         
         uploaded_count = 0
         for document_file in document_files:
@@ -3131,7 +3133,7 @@ def completion_review(request, case_id):
 
     # Documents
     documents = case.documents.all().order_by('document_type', '-uploaded_at')
-    tech_documents = documents.filter(document_type='report')
+    tech_documents = documents.filter(document_type='other')
 
     # Credit info
     from cases.services.credit_service import calculate_default_credit
