@@ -1113,7 +1113,7 @@
                             </thead>
                             <tbody>
                                 {% for event in case_event_logs %}
-                                {% if event.action_type == 'case_submitted' or event.action_type == 'case_resubmitted' or event.action_type == 'case_accepted' or event.action_type == 'case_held' or event.action_type == 'case_resumed' or event.action_type == 'case_completed' or event.action_type == 'member_document_uploaded' %}
+                                {% if event.action_type == 'case_submitted' or event.action_type == 'case_resubmitted' or event.action_type == 'case_held' or event.action_type == 'case_completed' or event.action_type == 'member_document_uploaded' %}
                                 <tr>
                                     <td class="text-muted">
                                         {{ event.timestamp|date:"m/d/Y" }}<br>
@@ -1124,12 +1124,8 @@
                                             <span class="badge bg-info"><i class="bi bi-send me-1"></i>Submitted</span>
                                         {% elif event.action_type == 'case_resubmitted' %}
                                             <span class="badge bg-info"><i class="bi bi-arrow-repeat me-1"></i>Resubmitted</span>
-                                        {% elif event.action_type == 'case_accepted' %}
-                                            <span class="badge bg-primary"><i class="bi bi-check-circle me-1"></i>Accepted</span>
                                         {% elif event.action_type == 'case_held' %}
                                             <span class="badge bg-warning text-dark"><i class="bi bi-pause-circle me-1"></i>Put on Hold</span>
-                                        {% elif event.action_type == 'case_resumed' %}
-                                            <span class="badge bg-info"><i class="bi bi-play-circle me-1"></i>Resumed</span>
                                         {% elif event.action_type == 'case_completed' %}
                                             <span class="badge bg-success"><i class="bi bi-check2-all me-1"></i>Completed</span>
                                         {% elif event.action_type == 'member_document_uploaded' %}
