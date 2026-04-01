@@ -6749,8 +6749,8 @@ def deny_change_request(request, request_id):
 @require_http_methods(["GET"])
 def get_staff_notifications(request):
     """
-    Get all notifications for the logged-in staff member.
-    Returns StaffNotification records (excludes messaging — those go to Messages tab).
+    Get all staff notifications (shared team view).
+    All staff see ALL notifications regardless of which tech owns the case.
     """
     from core.models import StaffNotification
 
@@ -6759,7 +6759,7 @@ def get_staff_notifications(request):
         return JsonResponse({'success': False, 'error': 'Staff only'}, status=403)
 
     try:
-        notifications = StaffNotification.objects.filter(user=user).order_by('-created_at')
+        notifications = StaffNotification.objects.all().order_by('-created_at')
 
         page_num = request.GET.get('page', 1)
         paginator = Paginator(notifications, 20)
@@ -6807,7 +6807,7 @@ def mark_staff_notification_read(request, notification_id):
         return JsonResponse({'success': False, 'error': 'Staff only'}, status=403)
 
     try:
-        notif = get_object_or_404(StaffNotification, id=notification_id, user=user)
+        notif = get_object_or_404(StaffNotification, id=notification_id)
         if not notif.is_read:
             notif.is_read = True
             notif.read_at = timezone.now()
@@ -6831,7 +6831,7 @@ def mark_all_staff_notifications_read(request):
     try:
         now = timezone.now()
         count = StaffNotification.objects.filter(
-            user=user, is_read=False
+            is_read=False
         ).update(is_read=True, read_at=now)
         return JsonResponse({'success': True, 'marked_count': count})
     except Exception as e:
