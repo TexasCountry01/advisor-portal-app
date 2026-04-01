@@ -3149,6 +3149,7 @@ def completion_review(request, case_id):
         'documents': documents,
         'tech_documents': tech_documents,
         'default_credit': default_credit,
+        'report_number_choices': range(1, max(requested_count, uploaded_count) + 2),
         'page_title': f'Pre-Completion Review - {case.external_case_id}',
     }
 
