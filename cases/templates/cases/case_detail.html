@@ -92,15 +92,15 @@
             {% endif %}
         </div>
         <div class="col-auto d-flex align-items-center gap-2">
-            {% if user.role == 'member' and case.status != 'submitted' and case.status != 'draft' and case.status != 'completed' and case.status != 'hold' and case.status != 'cancelled' %}
-                <a href="{% url 'cases:edit_case' case.id %}" class="btn btn-outline-warning">
-                    <i class="bi bi-pencil"></i> Edit Case
-                </a>
-            {% endif %}
             {% if user.role == 'member' %}
                 <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if case.status != 'submitted' and case.status != 'draft' and case.status != 'completed' and case.status != 'hold' and case.status != 'cancelled' %}
+                <a href="{% url 'cases:edit_case' case.id %}" class="btn btn-outline-warning">
+                    <i class="bi bi-pencil"></i> Edit Case
+                </a>
+                {% endif %}
                 {% if case.status == 'completed' and case.actual_release_date %}
                     {% if not case.resubmitted_cases.exists %}
                     <!-- Request Modification Button - only within 60 days of release, hidden if already has resubmission -->
@@ -129,11 +129,6 @@
                 <a href="{% url 'cases:edit_case' case.id %}" class="btn btn-outline-warning">
                     <i class="bi bi-pencil"></i> Edit Draft
                 </a>
-                {% endif %}
-                {% if case.status in 'submitted,accepted,hold,pending_review,resubmitted,needs_resubmission' and can_edit %}
-                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelCaseModal">
-                    <i class="bi bi-x-circle"></i> Cancel Case
-                </button>
                 {% endif %}
             {% elif user.role == 'technician' %}
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
