@@ -2279,8 +2279,8 @@ def reassign_case(request, case_id):
                     StaffNotification.objects.create(
                         user=new_technician,
                         notification_type='case_assigned',
-                        title=f'Case {case.external_case_id} Assigned to You',
-                        message=f'Case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}) has been reassigned to you by {user.get_full_name() or user.username}. Reason: {reason}',
+                        title=f'{case.employee_first_name} {case.employee_last_name} — Case Assigned to You',
+                        message=f'{case.employee_first_name} {case.employee_last_name} case has been reassigned to you by {user.get_full_name() or user.username}. Reason: {reason}',
                         case=case,
                         is_read=False
                     )
@@ -2792,8 +2792,8 @@ def upload_technician_document(request, case_id):
                     StaffNotification.objects.create(
                         user=case.assigned_to,
                         notification_type='member_document_uploaded',
-                        title=f'New Document on Case {case.external_case_id}',
-                        message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                        title=f'New Document — {case.employee_first_name} {case.employee_last_name}',
+                        message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) for {case.employee_first_name} {case.employee_last_name}.',
                         case=case,
                         is_read=False
                     )
@@ -3372,8 +3372,8 @@ def upload_member_document_to_completed_case(request, case_id):
                     StaffNotification.objects.create(
                         user=case.assigned_to,
                         notification_type='member_document_uploaded',
-                        title=f'New Document on Case {case.external_case_id}',
-                        message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                        title=f'New Document — {case.employee_first_name} {case.employee_last_name}',
+                        message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) for {case.employee_first_name} {case.employee_last_name}',
                         case=case,
                         is_read=False
                     )
@@ -3928,7 +3928,7 @@ def add_case_message(request, pk):
                         user=case.assigned_to,
                         case=case,
                         notification_type='case_chat_message',
-                        title=f'New message on Case {case.external_case_id}',
+                        title=f'New message — {case.employee_first_name} {case.employee_last_name}',
                         message=f'{user.get_full_name() or user.username}: {preview}',
                         is_read=False
                     )
@@ -4410,8 +4410,8 @@ def request_modification(request, pk):
                     user=case.assigned_to,
                     case=case,
                     notification_type='case_modification_error',
-                    title=f'ProFeds Error: Case {case.external_case_id}',
-                    message=f'Member {user.get_full_name()} flagged a modification request for case {case.external_case_id} as a ProFeds error. New modification case: {new_case.external_case_id}'
+                    title=f'ProFeds Error: {case.employee_first_name} {case.employee_last_name}',
+                    message=f'Member {user.get_full_name()} flagged a modification request for {case.employee_first_name} {case.employee_last_name} as a ProFeds error.'
                 )
             
             # Send in-app notifications to all managers and admins
@@ -4424,8 +4424,8 @@ def request_modification(request, pk):
                         user=staff_user,
                         case=case,
                         notification_type='case_modification_error',
-                        title=f'ProFeds Error Alert: Case {case.external_case_id}',
-                        message=f'Member {user.get_full_name()} flagged modification for case {case.external_case_id} (Tech: {case.assigned_to.get_full_name()}) as ProFeds error. New case: {new_case.external_case_id}'
+                        title=f'ProFeds Error Alert: {case.employee_first_name} {case.employee_last_name}',
+                        message=f'Member {user.get_full_name()} flagged modification for {case.employee_first_name} {case.employee_last_name} (Tech: {case.assigned_to.get_full_name()}) as ProFeds error.'
                     )
         
         return JsonResponse({
@@ -5591,8 +5591,8 @@ def approve_case_review(request, case_id):
                 user=case.assigned_to,
                 case=case,
                 notification_type='quality_review_feedback',
-                title=f'Case Approved: {case.external_case_id}',
-                message=f'Your case {case.external_case_id} has been approved by {user.get_full_name() or user.username} and {release_msg}.{" Notes: " + review_notes if review_notes else ""}'
+                title=f'Case Approved: {case.employee_first_name} {case.employee_last_name}',
+                message=f'{case.employee_first_name} {case.employee_last_name} case has been approved by {user.get_full_name() or user.username} and {release_msg}.{" Notes: " + review_notes if review_notes else ""}'
             )
         
         # Send email notification to Level 1 technician
@@ -5701,8 +5701,8 @@ def request_case_revisions(request, case_id):
                 user=case.assigned_to,
                 case=case,
                 notification_type='quality_review_feedback',
-                title=f'Revisions Requested: {case.external_case_id}',
-                message=f'Your case {case.external_case_id} has been reviewed by {user.get_full_name() or user.username} and revisions are requested. Feedback: {revision_feedback}'
+                title=f'Revisions Requested: {case.employee_first_name} {case.employee_last_name}',
+                message=f'{case.employee_first_name} {case.employee_last_name} case has been reviewed by {user.get_full_name() or user.username} and revisions are requested. Feedback: {revision_feedback}'
             )
         
         # Send email notification to Level 1 technician
@@ -5813,8 +5813,8 @@ def correct_case_review(request, case_id):
                 user=case.assigned_to,
                 case=case,
                 notification_type='quality_review_feedback',
-                title=f'Corrections Applied: {case.external_case_id}',
-                message=f'Your case {case.external_case_id} has been completed with corrections applied by {user.get_full_name() or user.username}. Notes: {correction_notes}'
+                title=f'Corrections Applied: {case.employee_first_name} {case.employee_last_name}',
+                message=f'{case.employee_first_name} {case.employee_last_name} case has been completed with corrections applied by {user.get_full_name() or user.username}. Notes: {correction_notes}'
             )
         
         # Send email notification to Level 1 technician
@@ -6339,7 +6339,7 @@ def create_case_change_request(request, case_id):
                     member=case.member,
                     notification_type='case_released',
                     title=f'Case Canceled by Member',
-                    message=f'{user.get_full_name() or user.username} canceled case {case.external_case_id}. Reason: {cancellation_reason}',
+                    message=f'{user.get_full_name() or user.username} canceled {case.employee_first_name} {case.employee_last_name} case. Reason: {cancellation_reason}',
                 )
                 # Create StaffNotification for the assigned technician
                 try:
@@ -6349,7 +6349,7 @@ def create_case_change_request(request, case_id):
                         case=case,
                         notification_type='member_change_request',
                         title=f'Case Canceled by Member',
-                        message=f'{user.get_full_name() or user.username} canceled case {case.external_case_id}. Reason: {cancellation_reason}',
+                        message=f'{user.get_full_name() or user.username} canceled {case.employee_first_name} {case.employee_last_name} case. Reason: {cancellation_reason}',
                     )
                 except Exception as e:
                     logger.error(f'Error creating StaffNotification for cancellation: {str(e)}')
@@ -6413,7 +6413,7 @@ def create_case_change_request(request, case_id):
                     user=case.assigned_to,
                     case=case,
                     notification_type='member_change_request',
-                    title=f'Change Request: {case.external_case_id}',
+                    title=f'Change Request: {case.employee_first_name} {case.employee_last_name}',
                     message=f'{user.get_full_name() or user.username} requested {request_type.replace("_", " ")}.' + (f' Notes: {member_notes[:150]}' if member_notes else ''),
                     is_read=False
                 )
@@ -6699,8 +6699,8 @@ def upload_member_documents(request, case_id):
                 StaffNotification.objects.create(
                     user=case.assigned_to,
                     notification_type='member_document_uploaded',
-                    title=f'New Document on Case {case.external_case_id}',
-                    message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) to case {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}).',
+                    title=f'New Document — {case.employee_first_name} {case.employee_last_name}',
+                    message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) for {case.employee_first_name} {case.employee_last_name}.',
                     case=case,
                     is_read=False
                 )
@@ -6775,7 +6775,7 @@ def get_staff_notifications(request):
             notification_list.append({
                 'id': notif.id,
                 'case_id': notif.case_id,
-                'case_code': notif.case.external_case_id if notif.case else None,
+                'employee_name': f'{notif.case.employee_first_name} {notif.case.employee_last_name}' if notif.case else None,
                 'notification_type': notif.notification_type,
                 'notification_type_display': notif.get_notification_type_display(),
                 'title': notif.title,
