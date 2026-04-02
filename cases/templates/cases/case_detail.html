@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load file_filters %}
 
 {% block title %}Case {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
@@ -894,16 +895,15 @@
                                     {% if report.report_file %}
                                     <i class="bi bi-file-earmark"></i>
                                     <a href="{{ report.report_file.url }}" target="_blank" class="text-decoration-none">
-                                        <strong>{{ case.employee_last_name }}, {{ case.employee_first_name }} – {{ case.member.get_full_name|default:case.member.username }}{% if case.reports.count > 1 %} (Report #{{ report.report_number }}){% endif %}</strong>
+                                        <strong>Report #{{ report.report_number }}: {{ report.report_file.name|filename }}</strong>
                                     </a>
                                     {% else %}
                                     <i class="bi bi-file-earmark"></i>
-                                    <strong>{{ case.employee_last_name }}, {{ case.employee_first_name }} – {{ case.member.get_full_name|default:case.member.username }}{% if case.reports.count > 1 %} (Report #{{ report.report_number }}){% endif %}</strong>
+                                    <strong>Report #{{ report.report_number }}: No file uploaded</strong>
                                     {% endif %}
-                                    <br><small class="text-muted">
-                                        Status: <span class="badge bg-secondary">{{ report.get_status_display }}</span>
-                                        {% if report.notes %}| Notes: {{ report.notes|truncatewords:10 }}{% endif %}
-                                    </small>
+                                    {% if report.notes %}
+                                    <br><small class="text-muted">Notes: {{ report.notes|truncatewords:10 }}</small>
+                                    {% endif %}
                                 </div>
                                 <div class="text-end">
                                     {% if report.report_file %}

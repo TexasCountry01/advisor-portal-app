@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load file_filters %}
 
 {% block title %}Pre-Completion Review - {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
 
@@ -68,7 +69,7 @@
                                     <div>
                                         <strong>Report {{ report.report_number }}</strong>
                                         {% if report.report_file %}
-                                            <small class="text-muted ms-2"><i class="bi bi-paperclip"></i> {{ report.report_file.name|cut:"case_reports/" }}</small>
+                                            <small class="text-muted ms-2"><i class="bi bi-paperclip"></i> {{ report.report_file.name|filename }}</small>
                                         {% endif %}
                                     </div>
                                     {% if report.report_file %}
