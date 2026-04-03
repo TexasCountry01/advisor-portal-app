@@ -521,24 +521,22 @@
                                     <span class="badge bg-secondary">{{ case.get_status_display }}</span>
                                 {% endif %}
                             {% elif user.role == 'technician' %}
-                                {% if case.assigned_to and case.assigned_to.id == user.id %}
-                                    <span class="badge bg-primary">Working</span>
+                                {% if case.status == 'draft' %}
+                                    <span class="badge bg-secondary">Draft</span>
+                                {% elif case.status == 'submitted' %}
+                                    <span class="badge bg-info">Submitted</span>
+                                {% elif case.status == 'accepted' %}
+                                    <span class="badge bg-primary">Accepted</span>
+                                {% elif case.status == 'hold' %}
+                                    <span class="badge bg-danger">Hold</span>
+                                {% elif case.status == 'pending_review' %}
+                                    <span class="badge bg-warning text-dark">Pending Review</span>
+                                {% elif case.status == 'completed' %}
+                                    <span class="badge bg-success">Completed</span>
+                                {% elif case.status == 'cancelled' %}
+                                    <span class="badge bg-dark">Canceled</span>
                                 {% else %}
-                                    {% if case.status == 'draft' %}
-                                        <span class="badge bg-secondary">Draft</span>
-                                    {% elif case.status == 'submitted' %}
-                                        <span class="badge bg-info">Submitted</span>
-                                    {% elif case.status == 'accepted' %}
-                                        <span class="badge bg-primary">Accepted</span>
-                                    {% elif case.status == 'pending_review' %}
-                                        <span class="badge bg-warning text-dark">Pending Review</span>
-                                    {% elif case.status == 'completed' %}
-                                        <span class="badge bg-success">Completed</span>
-                                    {% elif case.status == 'cancelled' %}
-                                        <span class="badge bg-dark">Canceled</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">{{ case.get_status_display }}</span>
-                                    {% endif %}
+                                    <span class="badge bg-secondary">{{ case.get_status_display }}</span>
                                 {% endif %}
                             {% else %}
                                 {% if case.status == 'draft' %}
