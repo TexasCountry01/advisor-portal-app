@@ -83,7 +83,7 @@ Managers oversee technician operations and case workflows:
 - ✓ Performance metrics (case completion, quality)
 - ✓ Overdue cases alerts
 - ✓ Email notification status for completed cases
-- ✓ Monitor case release scheduling
+- ✓ Monitor case release scheduling (tech-controlled per-case)
 
 ### 2. **Manage Case Assignments**
 - ✓ View unassigned cases (queue) with "Review & Accept" needed
@@ -106,7 +106,7 @@ Managers oversee technician operations and case workflows:
   - Audit trail automatically recorded
 - ✓ Balance workload across team
 - ✓ Assign based on expertise/urgency
-- ✓ Verify email notifications are scheduled correctly
+- ✓ Verify email notifications are sent correctly after release
 
 ### 2A. **Dashboard Status Improvements** (NEW - Jan 2026)
 - ✓ **Status badge hover tooltips:**
@@ -187,6 +187,7 @@ While **technicians (Level 2/3)** perform technical case reviews, **managers** o
 - ✓ Release immediately if needed (rush)
 - ✓ Approve delayed releases
 - ✓ Contact member if issues
+- ℹ️ Technicians now control release timing per-case on the Pre-Completion Review page (Release Now or Schedule Release)
 
 ### 7. **Hold Management**
 - ✓ View cases placed on hold

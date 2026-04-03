@@ -31,13 +31,16 @@ Members interact with cases through three primary actions:
 ### 2. **Submitted Status - Collaboration Features**
 - ✓ View case details (limited)
 - ✓ See status updates
+- ✓ **Edit Case** button available — update your case even after submission
 - ✓ Add new documents/information while case is being reviewed
 - ✓ See when technician adds information
 - ✓ Member update timestamps tracked
 - ✓ Can see general timeline
 - ✗ Cannot see reports yet
+- ✗ Cannot see tech-uploaded resources (Additional Resources are staff-only)
 
 **What You Can Do:**
+- Edit your case details even after submitting (click **"Edit Case"** button)
 - Proactively add supporting documents or clarifications
 - Technician sees notification when you add info
 - Helps speed up case processing
@@ -129,10 +132,10 @@ Members interact with cases through three primary actions:
 
 ## Email Notification System
 
-When a case is marked "Completed" by your technician, an **automatic email notification** is scheduled:
+When a case is marked "Completed" by your technician, an **automatic email notification** is sent:
 
-- **Immediate Release (0 hours)**: You receive email immediately
-- **Scheduled Release (1-24 hours)**: You receive email on the scheduled release date
+- **Release Now** (default): You receive email immediately when the case is released
+- **Scheduled Release**: You receive email on the scheduled release date/time
 - **Email includes**: 
   - Case ID and employee name
   - Case completion date
@@ -182,6 +185,7 @@ The staff team can see on the case detail page:
 | **Submit New Case**   | Dashboard → "Submit New Case"        | Create & submit new case  |
 | **View Cases**        | Dashboard → Case List                | Browse all your cases     |
 | **View Case Details** | Dashboard → Case → Click             | See case status & details |
+| **Edit Case**         | Case Detail (Submitted) → Edit Case | Update submitted case     |
 | **Download Reports**  | Case Detail (if released) → Download | Get completed reports     |
 | **Add Comments**      | Case Detail → Comments Section       | Add notes/questions       |
 | **Edit Draft**        | Case Detail (Draft only) → Edit      | Modify draft case         |

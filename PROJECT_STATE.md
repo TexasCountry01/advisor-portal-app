@@ -1,11 +1,11 @@
-# ProFeds Advisor Portal — Project State Reference
+# ProFeds Report Portal — Project State Reference
 
-> **This document is the single source of truth for the current state of the Advisor Portal application.**
+> **This document is the single source of truth for the current state of the ProFeds Report Portal application.**
 > It is intended to be read by GitHub Copilot (or any AI assistant) at the start of a session to
 > quickly understand the project's infrastructure, credentials, deployment, and codebase layout.
 >
-> **Last Updated:** March 1, 2026
-> **Current Git Commit:** `17f2975` — SSO infrastructure, MemberDelegate, dashboard toggle
+> **Last Updated:** March 30, 2026
+> **Current Git Commit:** `5e9b023` — Show Edit Case button for members on submitted cases
 
 ---
 
@@ -13,6 +13,7 @@
 
 The Advisor Portal is a case-management application for **ProFeds**, a federal employee benefits consulting firm. Financial advisors (members) submit benefits-analysis requests, which are processed by Benefits Technicians. The system manages the complete lifecycle — submission, investigation, quality review, and report release.
 
+- **Application Name:** ProFeds Report Portal (branded across all templates)
 - **Framework:** Django 5.0.7
 - **Language:** Python 3.11.2 (servers) / Python 3.12.10 (local dev)
 - **Database:** SQLite (local), MySQL (TEST & PROD — DigitalOcean Managed)
@@ -101,16 +102,20 @@ The Advisor Portal is a case-management application for **ProFeds**, a federal e
 | **Repository** | `https://github.com/TexasCountry01/advisor-portal-app.git` |
 | **Branch** | `main` (primary) |
 | **Other Branches** | `badge-button-styling` (inactive) |
-| **Latest Commit** | `17f2975` — "SSO infrastructure, MemberDelegate model, dashboard toggle, delegate case submission" |
+| **Latest Commit** | `5e9b023` — "Show Edit Case button for members on submitted cases" |
 | **Auth Method** | HTTPS with GitHub credentials cached |
 
 ### Recent Commit History
 ```
-17f2975  SSO infrastructure, MemberDelegate model, dashboard toggle, delegate case submission
-a24f4c8  Fix: notification badge linking to wrong dashboard URL for members
-b500f23  Member dashboard: show member name column, submit case form UI polish
-ec0f44e  Beta feedback, case detail, fact finder PDF, submit case form
-be2c3cc  Workspace cleanup: organize docs and scripts into archive folders
+5e9b023  Show Edit Case button for members on submitted cases
+d147905  Fix Submitted Documents showing tech-uploaded files: exclude 'other' document type
+9ff8cea  Fix report validation: allow extra reports beyond requested count
+093cb93  Make Reports and Additional Resources layout consistent: notes prefix and date placement
+7c1417b  Rename 'Advisor Portal' to 'ProFeds Report Portal' across all templates
+c920c6c  Redesign pre-completion review: simplify header, inline TinyMCE notes editor, Release Case button
+86658cf  Fix: Cancellation notification using wrong field name
+5a57241  Fix: Show employee name instead of case number in staff notifications
+c8bde87  Fix: Show ALL staff notifications to all techs, not just for owned cases
 ```
 
 ---
@@ -348,15 +353,12 @@ advisor-portal-app/
 ├── MEMBER_WORKFLOW.md                  # Member capabilities & flows
 ├── ADMINISTRATOR_WORKFLOW.md           # Admin capabilities
 ├── MANAGER_WORKFLOW.md                 # Manager (read-only) capabilities
-├── WP_FUSION_INTEGRATION_GUIDE.md      # WP Fusion integration points (40+ placeholders)
-├── WP_FUSION_SSO_IMPLEMENTATION.md     # SSO working document — decisions, status, file list
-├── WP_FUSION_SSO_MEETING_PREP.md       # SSO meeting prep for WP developer
-├── WP_DEV_SSO_REQUIREMENTS.md          # Formatted email to WP developer
 ├── CRON_JOB_SETUP.md                   # Cron job documentation
 ├── DEPLOYMENT_GUIDE.md                 # Full deployment guide
 ├── DEPLOYMENT_QUICK_REFERENCE.md       # Quick deploy commands
 ├── DATABASE_SETUP_GUIDE.md             # Database configuration
 ├── QUICK_START_GUIDE.md                # Getting started guide
+├── RELEASE_NOTES_2026-03-29.md         # Latest release notes
 ├── PROJECT_STATE.md                    # THIS FILE — project state reference
 │
 ├── # Deploy Scripts (root)
@@ -369,9 +371,12 @@ advisor-portal-app/
 ├── update-server-config.sh
 │
 ├── docs/archive/                 # 138 archived implementation/analysis docs
-├── _archived_files/              # Archived data files, old code
+├── _archived_files/              # Archived data files, old code, SSO/WP Fusion docs
 │   ├── scripts/                  # 50+ archived one-off Python scripts
-│   └── debug_scripts/            # Archived debug scripts
+│   ├── debug_scripts/            # Archived debug scripts
+│   ├── SSO_DECISIONS_SUMMARY.md  # Archived from root
+│   ├── WP_FUSION_*.md            # Archived WP Fusion SSO docs
+│   └── WP_DEV_*.txt/md           # Archived WP developer correspondence
 │
 ├── venv/                         # Local Python virtual environment (gitignored)
 └── .venv/                        # Alternative venv (gitignored)
@@ -415,7 +420,8 @@ advisor-portal-app/
 - Technician levels (L1/L2/L3) with tier validation
 - Quality review workflow (approve/revise/correct)
 - Email notification system (10+ email types, master toggle)
-- Case release scheduling (immediate + scheduled + cron batch)
+- Case release scheduling (immediate + scheduled, tech-controlled per-case via Pre-Completion Review page)
+- Pre-Completion Review page (inline TinyMCE notes editor, report upload, credit adjustment, release options)
 - Hold/resume with member notifications
 - Case resubmission and modification (60-day window)
 - Two-way messaging (member ↔ technician)
@@ -429,6 +435,7 @@ advisor-portal-app/
 - Comprehensive audit trail (58 action types, 9 reports)
 - 4 role-specific dashboards with sorting, filtering, column preferences
 - Member change requests (due date extension, cancellation)
+- Edit Case for submitted cases (members can update after submission)
 - System settings (5 tabs with toggle persistence)
 - Accessibility (font size adjustment, sticky nav)
 - PDF generation (report notes, FFF)
@@ -443,7 +450,7 @@ advisor-portal-app/
 - Authentication handled by GHL — tags are authorization only
 - `contact_id` field on User model (immutable CRM sync key)
 - **Blocked on:** WP dev confirming endpoints, registering callback URLs, providing sample JSON
-- **See:** `WP_FUSION_SSO_IMPLEMENTATION.md` for full working document
+- **See:** `_archived_files/WP_FUSION_SSO_IMPLEMENTATION.md` for full working document
 
 ### 🔲 Planned / Not Yet Started
 - `sync_wp_users` management command (initial population — blocked on sample JSON)
@@ -538,9 +545,9 @@ When resuming work on this project:
 5. **Path difference is critical** — TEST is `/home/dev/advisor-portal-app`, PROD is `/var/www/advisor-portal`. Every SSH command, cron job, and service config uses these paths.
 6. **Local uses SQLite, servers use MySQL** — schema is identical but engines differ. Always test migrations locally before deploying.
 7. **The `.gitignore` excludes** `test_*.py`, `check_*.py`, `_temp_scripts/`, `.env`, `db.sqlite3`, `venv/`, `media/`, `staticfiles/`, `*.log`, `*.sql`. Be aware of what's tracked vs not.
-8. **134 archived docs** are in `docs/archive/` and **50+ archived scripts** are in `_archived_files/scripts/`. These are historical — the 12 docs in root are the current authoritative references.
+8. **Archived docs** are in `docs/archive/` (138 docs), `_archived_files/` (data files, old code, SSO/WP Fusion docs, scripts). These are historical — the docs in root are the current authoritative references.
 9. **SSH uses `id_ed25519` key** — no SSH config file, just `ssh dev@<IP>`.
-10. **WP Fusion SSO** is the next major feature planned — see `WP_FUSION_SSO_MEETING_PREP.md` and `WP_FUSION_INTEGRATION_GUIDE.md` for full context.
+10. **WP Fusion SSO** is the next major feature planned — see `_archived_files/WP_FUSION_SSO_MEETING_PREP.md` and `_archived_files/WP_FUSION_INTEGRATION_GUIDE.md` for full context (archived from root during cleanup).
 
 ---
 

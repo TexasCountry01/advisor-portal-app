@@ -93,16 +93,28 @@ Technicians process cases through acceptance, investigation, and completion:
   - `document_uploaded` - Tracked if member uploads docs while on hold
   - `case_resumed` - Logged when hold is lifted with reason for resuming
 
-### 5. **Completing Case**
-- ✓ Mark as "Completed"
-- ✓ Select release option:
-  - **Release Now** - Member sees results immediately
-  - **Schedule Release** - Select specific date & time (CST) when member should receive notification
-    - Date picker: Choose any date from tomorrow to 60 days in advance
-    - Time picker: Select time in CST (default 9:00 AM)
-    - Use case: "Release results on Feb 15 at 2:00 PM CST"
+### 5. **Completing Case — Pre-Completion Review Page**
+When you click "Mark as Complete" from a case, you are taken to the **Pre-Completion Review** page. This single page lets you review everything, edit notes, adjust credit, and release — all without navigating away.
+
+**Page Layout:**
+- **Green header** shows Employee name, Member name, and Due Date (large `fs-4` font)
+- **Left column (8-wide):**
+  - **Reports section** — shows uploaded vs requested count, with inline "Upload Report" button/modal
+  - **Technical Notes Preview** — rendered HTML preview of notes to member, with **"Edit Notes"** button that opens an inline TinyMCE rich text editor (same editor as case detail page). Save/Cancel without leaving the page.
+- **Right column (4-wide):**
+  - **Credit Value** — adjust credit (0.0–3.0) with reason field
+  - **Release Options** card:
+    - **Release Now** (default, pre-selected) — Member sees results immediately
+    - **Schedule Release** — Pick specific date & time (CST), minimum tomorrow, cannot exceed due date
+  - **"Release Case"** button (green, large) in card footer
+  - **"Back to Case"** link below
+
+- ✓ Inline TinyMCE notes editor — edit and save notes via AJAX without leaving the page
+- ✓ Upload reports directly from the review page modal
+- ✓ Credit value adjustment with optional reason
 - ✓ Email notification automatically scheduled with release
 - ✓ Works regardless of whether Level 1 or Level 2/3 technician
+- ✓ Report validation allows extra reports (only checks all requested reports are present)
 
 ### 6. **Completed Case - Awaiting Release**
 - ✓ Can still add internal notes
@@ -114,31 +126,30 @@ Technicians process cases through acceptance, investigation, and completion:
 ## Release Timing: How It Works
 
 ✅ **Correct Behavior:**
-- Admin sets default delay in System Settings (0-24 hours CST)
-- When YOU mark a case "Complete", system AUTOMATICALLY uses that default
-- You do NOT select the delay - admin controls it
-- Email notification is TIED to release delay (sent same time as release)
-- If immediate (0 hrs): Member sees report NOW and gets email immediately
-- If delayed (1-24 hrs): System schedules both release AND email notification for same date/time
-- Cron job processes both release and email sending on scheduled date
+- On the Pre-Completion Review page, YOU select the release option:
+  - **Release Now** (default) — Case released immediately, member sees report and gets email right away
+  - **Schedule Release** — Pick a specific date & time (CST). Member sees report on that date.
+- Email notification is TIED to release timing (sent when case is released)
+- If scheduled: Cron job runs daily at noon UTC to process scheduled releases and send emails
+- Release date cannot exceed the case due date (validated client-side)
 
-**Exception**: If case is already scheduled and member needs rush processing, you can click "Release Immediately" to override the schedule and trigger email immediately.
+**Exception**: If case is already scheduled and member needs rush processing, staff can click "Release Immediately" on the case detail page to override the schedule.
 
 ---
 
 ## Email Notification System
 
 ### How It Works:
-1. **On Case Completion** (marked as Completed):
-   - System sets `scheduled_email_date` = completion delay date/time (CST)
-   - System sets `actual_email_sent_date` = NULL (awaiting send)
+1. **On Case Completion** (Release Case clicked on Pre-Completion Review page):
+   - If **Release Now**: Case released immediately, email sent immediately
+   - If **Schedule Release**: System sets `scheduled_email_date` to chosen date/time (CST)
 
-2. **On Release** (if 0 hrs delay):
+2. **On Release Now** (immediate):
    - Both release AND email happen immediately
-   - Member sees "Member Notified" with timestamp on case detail
+   - Member sees \"Member Notified\" with timestamp on case detail
 
-3. **On Scheduled Release** (if 1-24 hrs delay):
-   - Cron job runs daily (configured time)
+3. **On Scheduled Release**:
+   - Cron job runs daily at noon UTC
    - Finds all cases with `scheduled_email_date <= today`
    - Sends email notification to member
    - Sets `actual_email_sent_date` to timestamp
@@ -204,6 +215,7 @@ My Dashboard shows:
 - ✓ Internal notes system (only visible to tech/admin)
 - ✓ Case timeline showing all actions
 - ✓ Member communication (public notes)
+- ✓ Additional Resources section (tech-uploaded files, hidden from member's Submitted Documents view)
 
 ### Reporting
 - ✓ Upload investigation report
@@ -211,18 +223,14 @@ My Dashboard shows:
 - ✓ Document evidence/findings
 - ✓ Attach supporting evidence
 
-### Release Timing Settings (Configured by Admin)
+### Release Timing Settings (Technician-Controlled)
 
-| Setting | Effect | When Used |
-|---------|--------|----------|
-| **0 hours** | Immediate release to member | For quick turnaround cases |
-| **1 hour** | Member sees in 1 hour (CST) | Minimal delay |
-| **2 hours** | Member sees in 2 hours (CST) | Standard (common default) |
-| **3 hours** | Member sees in 3 hours (CST) | Quality review window |
-| **4 hours** | Member sees in 4 hours (CST) | Extended review |
-| **5 hours** | Member sees in 5 hours (CST) | Maximum delay window |
+| Option | Effect | When Used |
+|--------|--------|----------|
+| **Release Now** | Immediate release to member | Default — member sees report right away |
+| **Schedule Release** | Member sees on chosen date/time (CST) | When you want to delay delivery to a specific date |
 
-**You do NOT select these - Admin configures once for entire team.**
+**You select the release option on the Pre-Completion Review page.**
 
 ---
 
@@ -317,21 +325,24 @@ My Dashboard shows:
 1. Case is Accepted and assigned to you
 2. Review fact-finder & documents
 3. Perform investigation
-4. Upload report
-5. Click "Mark as Complete"
-6. System automatically uses Admin's configured delay
-7. Case released to member based on admin setting
-   - If admin set 0 hrs: Report visible now
-   - If admin set 2 hrs: Report visible in 2 hours (CST)
+4. Upload report(s)
+5. Click "Mark as Complete" → taken to **Pre-Completion Review** page
+6. Review reports, edit technical notes (inline TinyMCE editor), adjust credit if needed
+7. Select release option (Release Now is default)
+8. Click **"Release Case"** button
+9. Case released to member based on your selection
+   - Release Now: Report visible immediately
+   - Scheduled: Report visible on chosen date/time (CST)
 
 ### Workflow C: "Complex Investigation"
 1. Review & Accept case (see Workflow A)
 2. Full investigation (8-12 hours)
 3. Multiple document requests from member
-4. Upload comprehensive report
-5. Click "Mark as Complete"
-6. System applies Admin's default delay automatically
-7. Member sees report when scheduled (no additional action needed)
+4. Upload comprehensive report(s)
+5. Click "Mark as Complete" → Pre-Completion Review page
+6. Review all reports, finalize technical notes, adjust credit if needed
+7. Select release option (Release Now or Schedule Release)
+8. Click **"Release Case"**
 
 ### Workflow D: "Resubmitted Case"
 1. See case with "Needs Resubmission" status
@@ -348,9 +359,9 @@ My Dashboard shows:
 2. New documents from member (updated info)
 3. Review what changed
 4. Incorporate into report
-5. Click "Mark as Complete"
-6. System applies Admin's default delay
-7. Member gets updated report at scheduled release time
+5. Click "Mark as Complete" → Pre-Completion Review page
+6. Select release option and click **"Release Case"**
+7. Member gets updated report based on release selection
 
 ---
 

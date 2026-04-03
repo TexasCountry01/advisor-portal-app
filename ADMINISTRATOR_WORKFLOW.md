@@ -80,13 +80,13 @@ Administrators manage system-wide configuration and integrity:
 - ✗ Delete accounts (use deactivate instead)
 
 ### 2. **System Settings**
-- ✓ Set default case completion delay (0-24 hours CST)
-- ✓ Enable/disable scheduled releases
-- ✓ Enable/disable delayed email notifications
+- ✓ Enable/disable scheduled releases (system-wide toggle)
+- ✓ Enable/disable batch release processing (cron job toggle)
+- ✓ Enable/disable email notifications (system-wide toggle)
 - ✓ Configure API settings
-- ✓ Set batch processing schedules
-- ✓ Configure email notifications
+- ✓ Configure email notification settings
 - ✓ Manage database settings
+- ✓ **Note:** Technicians now control per-case release timing on the Pre-Completion Review page (Release Now or Schedule Release). Admin toggles control system-wide processing.
 - ✓ **Column visibility settings (dashboard defaults)**
   - Configure default column visibility for all dashboards
   - Settings can be customized per-user (each user saves own preferences)
@@ -398,14 +398,14 @@ Monitor Holds:
 Navigate: Admin Console → System Settings → Release Settings
 
 Current setting:
-├─ Default Completion Delay: 2 Hours (CST)
-└─ Scheduled Releases: Enabled
+├─ Scheduled Releases: Enabled/Disabled
+├─ Batch Release Enabled: Toggle on/off (cron job processing)
+├─ Email Notifications Enabled: Toggle on/off
 
-Make changes:
-├─ Default Completion Delay: Select from 0-5 hours
-├─ Scheduled Releases: Toggle on/off
-├─ Batch Release Time: Set time for auto-release
-└─ Release Date Picker: Enable/disable
+Note: Technicians now control release timing per-case
+      on the Pre-Completion Review page (Release Now or Schedule Release).
+      Admin toggles control whether scheduled releases and emails are
+      processed system-wide.
 
 Save: Changes take effect immediately
 Log: Change recorded in audit trail
