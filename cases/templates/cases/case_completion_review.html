@@ -14,36 +14,17 @@
                     <h4 class="mb-0"><i class="bi bi-clipboard2-check"></i> Pre-Completion Review</h4>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row text-center">
                         <div class="col-md-4">
-                            <p><strong>Employee:</strong> {{ case.employee_first_name }} {{ case.employee_last_name }}</p>
-                            <p><strong>Case ID:</strong> {{ case.external_case_id }}</p>
-                            <p><strong>Member (Advisor):</strong> {{ case.member.get_full_name }} ({{ case.workshop_code }})</p>
+                            <span class="fs-4"><strong>Employee:</strong> {{ case.employee_first_name }} {{ case.employee_last_name }}</span>
                         </div>
                         <div class="col-md-4">
-                            <p><strong>Tier:</strong> <span class="badge bg-info">{{ case.get_tier_display|default:"Not Set" }}</span></p>
-                            <p><strong>Assigned To:</strong> {{ case.assigned_to.get_full_name|default:"Unassigned" }}</p>
-                            <p><strong>Accepted:</strong> {{ case.date_accepted|date:"M d, Y g:i A"|default:"N/A" }}</p>
+                            <span class="fs-4"><strong>Member:</strong> {{ case.member.get_full_name }}</span>
                         </div>
                         <div class="col-md-4">
-                            <p><strong>Reports Requested:</strong> {{ requested_count }}</p>
-                            <p><strong>Reports Uploaded:</strong>
-                                {% if reports_match %}
-                                    <span class="badge bg-success">{{ uploaded_count }} of {{ requested_count }}</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark">{{ uploaded_count }} of {{ requested_count }}</span>
-                                {% endif %}
-                            </p>
-                            <p><strong>Status:</strong> <span class="badge bg-primary">{{ case.get_status_display }}</span></p>
+                            <span class="fs-4"><strong>Due Date:</strong> {{ case.date_due|date:"F j, Y"|default:"Not Set" }}</span>
                         </div>
                     </div>
-                    {% if case.date_due %}
-                    <div class="row mt-3">
-                        <div class="col-12 text-center">
-                            <span class="fs-4"><strong>Due Date:</strong> {{ case.date_due|date:"F j, Y" }}</span>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -99,22 +80,36 @@
             <div class="card mb-4">
                 <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-journal-text"></i> Technical Notes to Member (Preview)</h5>
-                    <a href="{% url 'cases:case_detail' case.id %}#report-notes-section" class="btn btn-sm btn-light">
+                    <button type="button" class="btn btn-sm btn-light" id="editNotesBtn" onclick="toggleNotesEdit()">
                         <i class="bi bi-pencil"></i> Edit Notes
-                    </a>
+                    </button>
                 </div>
                 <div class="card-body">
-                    {% if has_tech_notes %}
-                        <div class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
-                            {{ case.report_notes_to_member|safe }}
+                    <!-- Preview Mode -->
+                    <div id="notesPreview">
+                        {% if has_tech_notes %}
+                            <div class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">
+                                {{ case.report_notes_to_member|safe }}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger mb-0">
+                                <i class="bi bi-exclamation-circle"></i> <strong>No technical notes have been written.</strong>
+                                <br>Technical notes are visible to the member when the case is released.
+                            </div>
+                        {% endif %}
+                    </div>
+                    <!-- Edit Mode -->
+                    <div id="notesEdit" style="display: none;">
+                        <textarea id="notesTextarea" class="tinymce-editor">{{ case.report_notes_to_member|safe }}</textarea>
+                        <div class="mt-2 d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="cancelNotesEdit()">
+                                <i class="bi bi-x-lg"></i> Cancel
+                            </button>
+                            <button type="button" class="btn btn-success btn-sm" id="saveNotesBtn" onclick="saveNotes()">
+                                <i class="bi bi-check-lg"></i> Save Notes
+                            </button>
                         </div>
-                    {% else %}
-                        <div class="alert alert-danger mb-0">
-                            <i class="bi bi-exclamation-circle"></i> <strong>No technical notes have been written.</strong>
-                            <br>Technical notes are visible to the member when the case is released.
-                            <a href="{% url 'cases:case_detail' case.id %}#report-notes-section" class="alert-link">Go back and add notes</a>.
-                        </div>
-                    {% endif %}
+                    </div>
                 </div>
             </div>
 
@@ -126,7 +121,7 @@
 
             <!-- Credit Value Adjustment -->
             <div class="card mb-4">
-                <div class="card-header bg-warning text-dark">
+                <div class="card-header bg-warning text-white">
                     <h5 class="mb-0"><i class="bi bi-currency-dollar"></i> Credit Value</h5>
                 </div>
                 <div class="card-body">
@@ -192,18 +187,12 @@
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="card mb-4 border-success">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0"><i class="bi bi-check-square"></i> Decision</h5>
-                </div>
-                <div class="card-body d-grid gap-2">
-                    <button id="completeBtn" class="btn btn-outline-success btn-lg" onclick="submitCompletion()">
-                        <i class="bi bi-check-circle"></i> Complete Case
+                <!-- Release & Navigation Buttons -->
+                <div class="card-footer d-grid gap-2">
+                    <button id="completeBtn" class="btn btn-success btn-lg" onclick="submitCompletion()">
+                        <i class="bi bi-check-circle"></i> Release Case
                     </button>
-                    <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-outline-secondary btn-lg">
+                    <a href="{% url 'cases:case_detail' case.id %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left"></i> Back to Case
                     </a>
                 </div>
@@ -250,6 +239,9 @@
         </div>
     </div>
 </div>
+
+<!-- TinyMCE Library -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
 
 <script>
 // Show/hide release date picker
@@ -380,14 +372,114 @@ function submitCompletion() {
         } else {
             alert('Error: ' + (data.error || 'Failed to complete case'));
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check-circle"></i> Complete Case';
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Release Case';
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('An unexpected error occurred.');
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-circle"></i> Complete Case';
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Release Case';
+    });
+}
+
+// TinyMCE initialization
+let notesEditorInitialized = false;
+
+function initTinyMCE() {
+    if (notesEditorInitialized) return Promise.resolve();
+    return tinymce.init({
+        selector: '#notesTextarea',
+        plugins: 'link image paste code advlist lists',
+        toolbar: 'formatselect | bold italic underline forecolor | link image | numlist bullist | code',
+        menubar: false,
+        statusbar: false,
+        height: 450,
+        resize: false,
+        branding: false,
+        promotion: false,
+        convert_urls: false,
+        relative_urls: false,
+        content_style: 'body { font-size: 13px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; } h1 { font-size: 16px; margin: 10px 0 5px; } h2 { font-size: 15px; margin: 8px 0 4px; } h3 { font-size: 14px; margin: 6px 0 3px; } p { margin: 0 0 6px; } img { max-width: 100%; height: auto; }',
+        file_picker_types: 'image',
+        images_file_types: 'jpg,jpeg,png,gif,webp,bmp,svg,heic,heif,tiff',
+        paste_data_images: true,
+        license_key: 'gpl',
+        images_upload_handler: function(blobInfo, progress) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', blobInfo.blob(), blobInfo.filename());
+                fetch('/cases/upload-image/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                    credentials: 'same-origin'
+                })
+                .then(resp => resp.json())
+                .then(data => {
+                    if (data.location) resolve(data.location);
+                    else reject('Upload failed');
+                })
+                .catch(() => reject('Upload failed'));
+            });
+        },
+        setup: function(editor) {
+            notesEditorInitialized = true;
+        }
+    });
+}
+
+// Inline notes editing functions
+function toggleNotesEdit() {
+    document.getElementById('notesPreview').style.display = 'none';
+    document.getElementById('notesEdit').style.display = 'block';
+    document.getElementById('editNotesBtn').style.display = 'none';
+    initTinyMCE();
+}
+
+function cancelNotesEdit() {
+    document.getElementById('notesEdit').style.display = 'none';
+    document.getElementById('notesPreview').style.display = 'block';
+    document.getElementById('editNotesBtn').style.display = '';
+}
+
+function saveNotes() {
+    const btn = document.getElementById('saveNotesBtn');
+    const editor = tinymce.get('notesTextarea');
+    const notesText = editor ? editor.getContent() : document.getElementById('notesTextarea').value;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Saving...';
+
+    const formData = new FormData();
+    formData.append('report_notes_to_member', notesText);
+
+    fetch('{% url "cases:save_report_notes" case.id %}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+        credentials: 'same-origin'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const previewDiv = document.getElementById('notesPreview');
+            if (notesText.trim()) {
+                previewDiv.innerHTML = '<div class="border rounded p-3 bg-light" style="max-height: 400px; overflow-y: auto;">' + notesText + '</div>';
+            } else {
+                previewDiv.innerHTML = '<div class="alert alert-danger mb-0"><i class="bi bi-exclamation-circle"></i> <strong>No technical notes have been written.</strong><br>Technical notes are visible to the member when the case is released.</div>';
+            }
+            cancelNotesEdit();
+        } else {
+            alert('Error saving notes: ' + (data.error || 'Unknown error'));
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Save Notes';
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving notes.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check-lg"></i> Save Notes';
     });
 }
 </script>

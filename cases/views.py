@@ -3839,7 +3839,7 @@ def save_report_notes(request, pk):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     # Case must be in appropriate status
-    if case.status not in ['accepted', 'pending_review', 'completed']:
+    if case.status not in ['accepted', 'pending_review', 'completed', 'hold']:
         return JsonResponse({'error': 'Cannot add notes to case in this status'}, status=400)
     
     try:
