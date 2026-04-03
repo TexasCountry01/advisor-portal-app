@@ -2871,7 +2871,7 @@ def mark_case_completed(request, case_id):
     
     override_incomplete = body_data.get('override_incomplete', False)
     
-    if uploaded_report_numbers != required_report_numbers and not override_incomplete:
+    if not required_report_numbers.issubset(uploaded_report_numbers) and not override_incomplete:
         missing_reports = required_report_numbers - uploaded_report_numbers
         missing_str = ', '.join(str(r) for r in sorted(missing_reports))
         return JsonResponse({
