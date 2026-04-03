@@ -934,24 +934,26 @@
                                     <a href="{{ doc.file.url }}" target="_blank" class="text-decoration-none">
                                         <strong>{{ doc.original_filename }}</strong>
                                     </a>
-                                    <br><small class="text-muted">
-                                        {% if doc.notes %}{{ doc.notes|truncatewords:15 }}<br>{% endif %}
-                                        Uploaded by {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }} on {{ doc.uploaded_at|date:"m/d/Y H:i" }}
-                                    </small>
-                                </div>
-                                <div class="text-end d-flex gap-1">
-                                    <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
-                                        <i class="bi bi-download"></i>
-                                    </a>
-                                    {% if can_edit %}
-                                    <form method="post" action="{% url 'cases:delete_document' doc.id %}" class="d-inline"
-                                          onsubmit="return confirm('Delete {{ doc.original_filename|escapejs }}?')">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete document">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
+                                    {% if doc.notes %}
+                                    <br><small class="text-muted">Notes: {{ doc.notes|truncatewords:15 }}</small>
                                     {% endif %}
+                                </div>
+                                <div class="text-end">
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        {% if can_edit %}
+                                        <form method="post" action="{% url 'cases:delete_document' doc.id %}" class="d-inline"
+                                              onsubmit="return confirm('Delete {{ doc.original_filename|escapejs }}?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete document">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">{{ doc.uploaded_at|date:"m/d/Y H:i" }}</small>
                                 </div>
                             </div>
                         </div>
