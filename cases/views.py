@@ -2828,7 +2828,7 @@ def validate_case_completion(request, case_id):
     uploaded_report_numbers = set(CaseReport.objects.filter(case=case).values_list('report_number', flat=True))
     required_report_numbers = set(range(1, case.num_reports_requested + 1))
     
-    if uploaded_report_numbers != required_report_numbers:
+    if not required_report_numbers.issubset(uploaded_report_numbers):
         missing_reports = required_report_numbers - uploaded_report_numbers
         missing_str = ', '.join(str(r) for r in sorted(missing_reports))
         # Allow override - return warning but allow technician to proceed
