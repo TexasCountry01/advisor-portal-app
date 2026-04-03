@@ -1330,10 +1330,10 @@ def case_detail(request, pk):
             return redirect('cases:case_detail', pk=case.id)
     
     # Get related documents - ordered by type for proper grouping in template
-    # 'documents' = member-submitted docs (exclude tech 'report' type)
-    # 'tech_documents' = technician/staff uploaded docs (report type only)
+    # 'documents' = member-submitted docs (exclude tech 'report' and 'other' types)
+    # 'tech_documents' = technician/staff uploaded docs ('other' type)
     all_documents = CaseDocument.objects.filter(case=case).order_by('document_type', '-uploaded_at')
-    documents = all_documents.exclude(document_type='report')
+    documents = all_documents.exclude(document_type__in=['report', 'other'])
     
     # Get case notes (technician/internal notes)
     from cases.models import CaseNote, CaseReport
