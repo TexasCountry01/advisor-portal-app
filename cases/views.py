@@ -4301,9 +4301,17 @@ def request_modification(request, pk):
     if case.status != 'completed' or not case.actual_release_date:
         return JsonResponse({'error': 'Can only request modification for completed cases'}, status=400)
     
-    # Check 60-day limit
+    # Prevent duplicate rapid-fire submissions (within 60 seconds)
     from datetime import timedelta
     from django.utils import timezone as tz
+    recent_mod = Case.objects.filter(
+        original_case=case,
+        date_submitted__gte=tz.now() - timedelta(seconds=60)
+    ).exists()
+    if recent_mod:
+        return JsonResponse({'error': 'A modification request was already submitted for this case. Please wait.'}, status=400)
+    
+    # Check 60-day limit
     release_date = case.actual_release_date
     if isinstance(release_date, str):
         from django.utils.dateparse import parse_datetime
@@ -4411,13 +4419,13 @@ def request_modification(request, pk):
                     case=case,
                     notification_type='case_modification_error',
                     title=f'ProFeds Error: {case.employee_first_name} {case.employee_last_name}',
-                    message=f'Member {user.get_full_name()} flagged a modification request for {case.employee_first_name} {case.employee_last_name} as a ProFeds error.'
+                    message=f'Member {user.get_full_name()} flagged a modification request for {case.employee_first_name} {case.employee_last_name} as a ProFeds error. New case: {new_case.external_case_id}'
                 )
             
             # Send in-app notifications to all managers and admins
             from core.models import StaffNotification
             from accounts.models import User
-            staff_users = User.objects.filter(role__in=['manager', 'administrator'])
+            staff_users = User.objects.filter(role__in=['manager', 'administrator']).exclude(pk=case.assigned_to_id)
             for staff_user in staff_users:
                 if is_profeds_error:
                     StaffNotification.objects.create(
@@ -4425,7 +4433,7 @@ def request_modification(request, pk):
                         case=case,
                         notification_type='case_modification_error',
                         title=f'ProFeds Error Alert: {case.employee_first_name} {case.employee_last_name}',
-                        message=f'Member {user.get_full_name()} flagged modification for {case.employee_first_name} {case.employee_last_name} (Tech: {case.assigned_to.get_full_name()}) as ProFeds error.'
+                        message=f'Member {user.get_full_name()} flagged modification for {case.employee_first_name} {case.employee_last_name} (Tech: {case.assigned_to.get_full_name()}) as ProFeds error. New case: {new_case.external_case_id}'
                     )
         
         return JsonResponse({
