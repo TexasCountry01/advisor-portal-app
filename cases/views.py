@@ -589,8 +589,8 @@ def admin_dashboard(request):
     members = User.objects.filter(role='member', is_active=True).order_by('username')
     technicians = User.objects.filter(role='technician', is_active=True).order_by('username')
     
-    # Calculate comprehensive statistics
-    all_cases = Case.objects.all()
+    # Calculate comprehensive statistics (exclude drafts - those are member-only)
+    all_cases = Case.objects.exclude(status='draft')
     
     # Get active users (currently logged in) from sessions
     from django.contrib.sessions.models import Session
@@ -761,8 +761,8 @@ def manager_dashboard(request):
     members = User.objects.filter(role='member', is_active=True).order_by('username')
     technicians = User.objects.filter(role='technician', is_active=True).order_by('username')
     
-    # Calculate comprehensive analytics statistics
-    all_cases = Case.objects.all()
+    # Calculate comprehensive analytics statistics (exclude drafts - those are member-only)
+    all_cases = Case.objects.exclude(status='draft')
     completed_cases = all_cases.filter(status='completed')
     
     submitted_count = all_cases.filter(status='submitted').count()
