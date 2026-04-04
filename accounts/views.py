@@ -741,18 +741,18 @@ def delegate_management(request):
     # Get all active members for dropdowns
     all_members = User.objects.filter(
         role='member', is_active=True
-    ).order_by('last_name', 'first_name')
+    ).order_by('workshop_code', 'last_name', 'first_name')
     
     # Get all active users who could be delegates (members with portal accounts)
     all_possible_delegates = User.objects.filter(
         role='member', is_active=True
-    ).order_by('last_name', 'first_name')
+    ).order_by('workshop_code', 'last_name', 'first_name')
     
     # Get existing delegate assignments from MemberDelegate model
     from accounts.models import MemberDelegate
     assignments_qs = MemberDelegate.objects.select_related(
         'delegate', 'member', 'assigned_by'
-    ).all().order_by('member__last_name', 'member__first_name')
+    ).all().order_by('member__workshop_code', 'member__last_name', 'member__first_name')
     
     # Build assignment data for template
     assignments = []
