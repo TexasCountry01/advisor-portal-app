@@ -164,17 +164,16 @@ class Command(BaseCommand):
         # --- Disk (Media Files) ---
         self.stdout.write('')
         self.stdout.write('--- STORAGE ---')
-        for dir_name in ['media', 'case_documents']:
-            if os.path.exists(dir_name):
-                file_count = 0
-                total_size = 0
-                for dp, dn, fns in os.walk(dir_name):
-                    for f in fns:
-                        fp = os.path.join(dp, f)
-                        file_count += 1
-                        total_size += os.path.getsize(fp)
-                size_mb = total_size / (1024 * 1024)
-                self.stdout.write('%-20s %d files (%.1f MB)' % (dir_name + ':', file_count, size_mb))
+        if os.path.exists('media'):
+            file_count = 0
+            total_size = 0
+            for dp, dn, fns in os.walk('media'):
+                for f in fns:
+                    fp = os.path.join(dp, f)
+                    file_count += 1
+                    total_size += os.path.getsize(fp)
+            size_mb = total_size / (1024 * 1024)
+            self.stdout.write('Media Files:      %d files (%.1f MB)' % (file_count, size_mb))
 
         self.stdout.write('')
         self.stdout.write('=' * 70)
