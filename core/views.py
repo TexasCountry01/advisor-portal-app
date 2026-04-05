@@ -6,6 +6,9 @@ from django.contrib import messages
 from django.urls import reverse
 from django.http import JsonResponse
 from .models import SystemSettings, BetaFeedback
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def is_admin(user):
@@ -129,6 +132,12 @@ def system_settings(request):
             # Technical Notes Template
             settings.technical_notes_template = request.POST.get('technical_notes_template', '')
             
+            # Feedback Notification Emails
+            settings.feedback_email_1 = request.POST.get('feedback_email_1', '').strip()
+            settings.feedback_email_1_enabled = request.POST.get('feedback_email_1_enabled') == 'on'
+            settings.feedback_email_2 = request.POST.get('feedback_email_2', '').strip()
+            settings.feedback_email_2_enabled = request.POST.get('feedback_email_2_enabled') == 'on'
+            
             settings.updated_by = request.user
             settings.save()
             
@@ -183,6 +192,57 @@ def submit_beta_feedback(request):
                 user=request.user,
                 feedback=feedback_text
             )
+            
+            # Send feedback notification emails if configured
+            _send_feedback_notification_emails(request.user, feedback_text)
+            
             return JsonResponse({'success': True, 'message': 'Thank you for your feedback!'})
         return JsonResponse({'success': False, 'message': 'Please enter some feedback.'}, status=400)
     return JsonResponse({'success': False, 'message': 'Invalid request.'}, status=405)
+
+
+def _send_feedback_notification_emails(user, feedback_text):
+    """Send notification emails for new portal feedback based on system settings."""
+    try:
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.utils.html import strip_tags
+        from django.conf import settings as django_settings
+        from django.utils import timezone
+        
+        system_settings = SystemSettings.get_settings()
+        
+        recipients = []
+        if system_settings.feedback_email_1 and system_settings.feedback_email_1_enabled:
+            recipients.append(system_settings.feedback_email_1)
+        if system_settings.feedback_email_2 and system_settings.feedback_email_2_enabled:
+            recipients.append(system_settings.feedback_email_2)
+        
+        if not recipients:
+            return
+        
+        site_url = getattr(django_settings, 'SITE_URL', 'https://portal.profeds.com')
+        context = {
+            'user_name': user.get_full_name() or user.username,
+            'user_email': user.email,
+            'feedback_text': feedback_text,
+            'submitted_at': timezone.now().strftime('%B %d, %Y at %I:%M %p CST'),
+            'feedback_report_url': f'{site_url}/reports/beta-feedback/',
+        }
+        
+        html_message = render_to_string('emails/feedback_notification.html', context)
+        text_message = strip_tags(html_message)
+        
+        for recipient in recipients:
+            send_mail(
+                subject='New Portal Feedback Submitted',
+                message=text_message,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[recipient],
+                html_message=html_message,
+                fail_silently=True,
+            )
+        
+        logger.info(f'Feedback notification emails sent to {recipients}')
+    except Exception as e:
+        logger.error(f'Failed to send feedback notification emails: {e}')

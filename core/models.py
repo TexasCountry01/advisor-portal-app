@@ -327,6 +327,26 @@ class SystemSettings(models.Model):
         help_text='HTML template pre-populated into Technical Notes when a case is accepted. Editable by admins.'
     )
     
+    # Feedback Notification Emails
+    feedback_email_1 = models.EmailField(
+        blank=True,
+        default='',
+        help_text='First email address to notify when portal feedback is submitted'
+    )
+    feedback_email_1_enabled = models.BooleanField(
+        default=False,
+        help_text='Enable notifications to feedback email 1'
+    )
+    feedback_email_2 = models.EmailField(
+        blank=True,
+        default='',
+        help_text='Second email address to notify when portal feedback is submitted'
+    )
+    feedback_email_2_enabled = models.BooleanField(
+        default=False,
+        help_text='Enable notifications to feedback email 2'
+    )
+    
     # Data Sync Access Codes (hidden from UI — admin panel only)
     admin_sync_code = models.CharField(
         max_length=50,

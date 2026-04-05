@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .wrapper { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+        .header { background-color: #ffffff; padding: 25px 20px 15px 30px; text-align: left; border-bottom: 2px solid #072A84; }
+        .body-content { padding: 30px 30px 20px 30px; }
+        .body-content p { margin: 0 0 16px 0; font-size: 15px; color: #333333; }
+        .cta-button { display: inline-block; background-color: #072A84; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; margin: 10px 0; }
+        .footer { background-color: #f8f8f8; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0; }
+        .footer p { margin: 4px 0; font-size: 12px; color: #999999; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <strong style="font-size: 18px; color: #072A84;">ProFeds Report Portal</strong>
+        </div>
+        <div class="body-content">
+            <p><strong>New Portal Feedback Received</strong></p>
+
+            <p>A member has submitted feedback through the portal:</p>
+
+            <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+                <tr>
+                    <td style="padding: 8px 12px; background-color: #f8f9fa; font-weight: bold; width: 120px; border: 1px solid #dee2e6;">Name</td>
+                    <td style="padding: 8px 12px; border: 1px solid #dee2e6;">{{ user_name }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 12px; background-color: #f8f9fa; font-weight: bold; border: 1px solid #dee2e6;">Email</td>
+                    <td style="padding: 8px 12px; border: 1px solid #dee2e6;">{{ user_email }}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 12px; background-color: #f8f9fa; font-weight: bold; border: 1px solid #dee2e6;">Date</td>
+                    <td style="padding: 8px 12px; border: 1px solid #dee2e6;">{{ submitted_at }}</td>
+                </tr>
+            </table>
+
+            <div style="background-color: #f8f9fa; border-left: 4px solid #072A84; padding: 15px; margin: 16px 0; border-radius: 4px;">
+                {{ feedback_text|linebreaksbr }}
+            </div>
+
+            <p style="text-align: center;">
+                <a href="{{ feedback_report_url }}" class="cta-button">VIEW FEEDBACK REPORT</a>
+            </p>
+
+            <br>
+            <p>Thank you,</p>
+            <p><strong>ProFeds Report Portal</strong></p>
+        </div>
+        <div class="footer">
+            <p>This is an automated notification from ProFeds Report Portal.</p>
+        </div>
+    </div>
+</body>
+</html>
