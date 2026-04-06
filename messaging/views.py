@@ -325,12 +325,9 @@ def broadcast_message(request):
 
     from accounts.models import User as UserModel, MemberDelegate
 
-    # Get target audience: active members/delegates who have cases
+    # Get target audience: all active members/delegates
     target_users = UserModel.objects.filter(
         is_active=True
-    ).filter(
-        Q(submitted_cases__isnull=False) |
-        Q(delegated_members__isnull=False)
     ).exclude(
         role__in=STAFF_ROLES
     ).distinct()
