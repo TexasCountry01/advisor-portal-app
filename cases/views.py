@@ -270,9 +270,11 @@ def member_dashboard(request):
         'total_cases': all_cases.count(),
         'draft': all_cases.filter(status='draft').count(),
         'submitted': all_cases.filter(status='submitted').count(),
-        'accepted': all_cases.filter(status='accepted').count(),
+        'accepted': all_cases.filter(
+            Q(status='accepted') | Q(status='completed', actual_release_date__isnull=True)
+        ).count(),
         'resubmitted': all_cases.filter(status='resubmitted').count(),
-        'completed': all_cases.filter(status='completed').count(),
+        'completed': all_cases.filter(status='completed', actual_release_date__isnull=False).count(),
         'cancelled': all_cases.filter(status='cancelled').count(),
         'rush': all_cases.filter(urgency='rush').count(),
     }
