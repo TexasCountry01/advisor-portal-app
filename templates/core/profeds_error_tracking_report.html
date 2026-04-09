@@ -114,7 +114,7 @@
                             {% for case in error_cases %}
                                 <tr class="align-middle">
                                     <td>
-                                        <a href="{% url 'case_detail' case.pk %}">
+                                        <a href="{% url 'cases:case_detail' case.pk %}">
                                             <strong>{{ case.employee_first_name }} {{ case.employee_last_name }}</strong>
                                         </a>
                                     </td>
