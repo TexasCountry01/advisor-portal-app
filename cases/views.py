@@ -6790,8 +6790,8 @@ def deny_change_request(request, request_id):
 @require_http_methods(["GET"])
 def get_staff_notifications(request):
     """
-    Get all staff notifications (shared team view).
-    All staff see ALL notifications regardless of which tech owns the case.
+    Get staff notifications for the logged-in user.
+    Each staff member only sees notifications addressed to them.
     """
     from core.models import StaffNotification
 
@@ -6800,7 +6800,7 @@ def get_staff_notifications(request):
         return JsonResponse({'success': False, 'error': 'Staff only'}, status=403)
 
     try:
-        notifications = StaffNotification.objects.all().order_by('-created_at')
+        notifications = StaffNotification.objects.filter(user=user).order_by('-created_at')
 
         page_num = request.GET.get('page', 1)
         paginator = Paginator(notifications, 20)
@@ -6872,7 +6872,7 @@ def mark_all_staff_notifications_read(request):
     try:
         now = timezone.now()
         count = StaffNotification.objects.filter(
-            is_read=False
+            user=user, is_read=False
         ).update(is_read=True, read_at=now)
         return JsonResponse({'success': True, 'marked_count': count})
     except Exception as e:

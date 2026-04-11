@@ -754,6 +754,14 @@ def delegate_management(request):
         'delegate', 'member', 'assigned_by'
     ).all().order_by('member__workshop_code', 'member__last_name', 'member__first_name')
     
+    # Apply GET filters
+    member_filter = request.GET.get('member', '')
+    delegate_filter = request.GET.get('delegate', '')
+    if member_filter:
+        assignments_qs = assignments_qs.filter(member_id=member_filter)
+    if delegate_filter:
+        assignments_qs = assignments_qs.filter(delegate_id=delegate_filter)
+    
     # Build assignment data for template
     assignments = []
     for a in assignments_qs:
