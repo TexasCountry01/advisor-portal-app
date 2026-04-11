@@ -63,17 +63,22 @@ class Command(BaseCommand):
                 )
             )
             
-            # Create in-app notification for member
+            # Create in-app notification for member (respects global portal toggle)
             try:
                 employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-                CaseNotification.objects.create(
-                    case=case,
-                    member=case.member,
-                    notification_type='case_released',
-                    title=f'Your case for {employee_name} is completed',
-                    message=f'Your case for {employee_name} has been completed and is ready for you to review.'
-                )
-                self.stdout.write(f'  🔔 Notification created for {case.member.username}')
+
+                # Only create if member hasn't disabled in-app alerts
+                if getattr(case.member, 'portal_notifications_enabled', True):
+                    CaseNotification.objects.create(
+                        case=case,
+                        member=case.member,
+                        notification_type='case_released',
+                        title=f'Your case for {employee_name} is completed',
+                        message=f'Your case for {employee_name} has been completed and is ready for you to review.'
+                    )
+                    self.stdout.write(f'  🔔 Notification created for {case.member.username}')
+                else:
+                    self.stdout.write(f'  🔕 Portal notification suppressed by preference for {case.member.username}')
             except Exception as e:
                 logger.error(f'Failed to create notification for {case.external_case_id}: {str(e)}')
             

@@ -82,9 +82,40 @@ def logout_view(request):
 
 @login_required
 def profile(request):
-    """User profile page"""
+    """
+    User profile page — shows profile info + notification alert settings.
+
+    Members see:
+      1. Their own alert settings (email on/off, in-app on/off)
+      2. Members they are a delegate for (per-assignment email/in-app toggles)
+      3. Their current delegates (read-only list)
+
+    Pure delegates see:
+      1. Members they are a delegate for (per-assignment email/in-app toggles)
+    """
+    user = request.user
+
+    delegate_for_assignments = []   # MemberDelegate rows where this user IS the delegate
+    my_delegates = []               # MemberDelegate rows where this user IS the member
+
+    if user.role == 'member' or getattr(user, 'is_pure_delegate', False):
+        from accounts.models import MemberDelegate
+
+        # Members this user delegates FOR (they act on behalf of these members)
+        delegate_for_assignments = list(
+            MemberDelegate.objects.filter(delegate=user).select_related('member')
+        )
+
+        # This member's own delegates (read-only display)
+        if user.role == 'member' and not getattr(user, 'is_pure_delegate', False):
+            my_delegates = list(
+                MemberDelegate.objects.filter(member=user).select_related('delegate')
+            )
+
     return render(request, 'core/profile.html', {
-        'user': request.user
+        'user': user,
+        'delegate_for_assignments': delegate_for_assignments,
+        'my_delegates': my_delegates,
     })
 
 
@@ -179,6 +210,59 @@ def update_font_size(request):
         else:
             messages.error(request, 'Invalid font size value')
     
+    return redirect('profile')
+
+
+@login_required
+def update_notification_preferences(request):
+    """
+    Save the member's global email/in-app notification toggles.
+    Two checkboxes: email_notifications_enabled, portal_notifications_enabled.
+    Unchecked = absent from POST = disabled.
+    """
+    if request.method != 'POST':
+        return redirect('profile')
+
+    user = request.user
+    user.email_notifications_enabled = request.POST.get('email_notifications_enabled') == '1'
+    user.portal_notifications_enabled = request.POST.get('portal_notifications_enabled') == '1'
+    user.save(update_fields=['email_notifications_enabled', 'portal_notifications_enabled'])
+
+    messages.success(request, 'Alert settings saved.')
+    return redirect('profile')
+
+
+@login_required
+def update_delegate_notifications(request):
+    """
+    Let a delegate toggle their own email/portal flags for a specific
+    MemberDelegate assignment.  Accepts POST with:
+        assignment_id  — the MemberDelegate PK
+        email_notifications — '1' if checked
+        portal_notifications — '1' if checked
+    """
+    if request.method != 'POST':
+        return redirect('profile')
+
+    from accounts.models import MemberDelegate
+
+    assignment_id = request.POST.get('assignment_id')
+    if not assignment_id:
+        messages.error(request, 'Missing assignment.')
+        return redirect('profile')
+
+    try:
+        assignment = MemberDelegate.objects.get(pk=assignment_id, delegate=request.user)
+    except MemberDelegate.DoesNotExist:
+        messages.error(request, 'Delegate assignment not found.')
+        return redirect('profile')
+
+    assignment.email_notifications = request.POST.get('email_notifications') == '1'
+    assignment.portal_notifications = request.POST.get('portal_notifications') == '1'
+    assignment.save(update_fields=['email_notifications', 'portal_notifications'])
+
+    member_name = assignment.member.get_full_name() or assignment.member.username
+    messages.success(request, f'Notification settings updated for {member_name}.')
     return redirect('profile')
 
 

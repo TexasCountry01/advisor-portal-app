@@ -19,6 +19,33 @@ from urllib.parse import urlencode
 logger = logging.getLogger(__name__)
 
 
+# ============================================================================
+# HELPER: Create a CaseNotification only if the member's global
+# portal_notifications_enabled flag is True (User model field).
+# ============================================================================
+
+def _create_case_notification_if_allowed(*, case, member, notification_type, **kwargs):
+    """
+    Wrapper around CaseNotification.objects.create that checks the
+    member's User.portal_notifications_enabled flag.
+
+    Returns the created CaseNotification, or None if the member has
+    disabled in-app notifications.
+    """
+    from cases.models import CaseNotification
+
+    if member and not getattr(member, 'portal_notifications_enabled', True):
+        logger.info(
+            f'Portal notification suppressed for {member.username} '
+            f'(type={notification_type}) — user disabled in-app alerts'
+        )
+        return None
+
+    return CaseNotification.objects.create(
+        case=case, member=member, notification_type=notification_type, **kwargs
+    )
+
+
 def build_filter_params(request):
     """
     Build a query string with all current filter parameters.
@@ -1127,10 +1154,10 @@ def accept_case(request, pk):
                     hold_duration_days=None
                 )
                 
-                # Create hold notification for member
+                # Create hold notification for member (respects portal preference)
                 if case.member:
                     employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-                    CaseNotification.objects.create(
+                    _create_case_notification_if_allowed(
                         case=case,
                         member=case.member,
                         notification_type='case_put_on_hold',
@@ -1501,10 +1528,10 @@ def release_case_immediately(request, case_id):
         case.scheduled_release_date = None
         case.save()
         
-        # Create in-app notification for member
+        # Create in-app notification for member (respects portal preference)
         from cases.models import CaseNotification
         employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-        CaseNotification.objects.create(
+        _create_case_notification_if_allowed(
             case=case,
             member=case.member,
             notification_type='case_released',
@@ -1743,7 +1770,7 @@ def put_case_on_hold(request, case_id):
             # Only create notification if case has a member
             if case.member:
                 employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-                notification = CaseNotification.objects.create(
+                notification = _create_case_notification_if_allowed(
                     case=case,
                     member=case.member,
                     notification_type='case_put_on_hold',
@@ -1933,7 +1960,7 @@ def resume_case_from_hold(request, case_id):
                 employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
                 if case.member:
                     try:
-                        notification = CaseNotification.objects.create(
+                        notification = _create_case_notification_if_allowed(
                             case=case,
                             member=case.member,
                             notification_type='case_resumed',
@@ -3068,10 +3095,10 @@ def mark_case_completed(request, case_id):
             
             # Create notification and send email to member (only if immediately released)
             if case.actual_release_date and case.status == 'completed':
-                # Create in-app notification for member
+                # Create in-app notification for member (respects portal preference)
                 from cases.models import CaseNotification
                 employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-                CaseNotification.objects.create(
+                _create_case_notification_if_allowed(
                     case=case,
                     member=case.member,
                     notification_type='case_released',
@@ -3986,14 +4013,18 @@ def add_case_message(request, pk):
                     
                     logger.info(f'Creating CaseNotification: title="New Chat for {employee_name} case", message="{preview}"')
                     
-                    notification = CaseNotification.objects.create(
+                    # Respects member's portal preference for case_chat
+                    notification = _create_case_notification_if_allowed(
                         case=case,
                         member=case.member,
                         notification_type='member_update_received',
                         title=f'New Chat for {employee_name} case',
                         message=preview
                     )
-                    logger.info(f'CaseNotification created successfully: {notification.id}')
+                    if notification:
+                        logger.info(f'CaseNotification created successfully: {notification.id}')
+                    else:
+                        logger.info(f'CaseNotification suppressed by member preference (case_chat)')
                 except Exception as e:
                     logger.error(f'Error creating CaseNotification for member: {str(e)}')
                     import traceback
@@ -4033,9 +4064,9 @@ def add_case_message(request, pk):
                         text_message = render_to_string('emails/tech_comment_notification.txt', email_context)
                         html_message = render_to_string('emails/tech_comment_notification.html', email_context)
                         
-                        # Get all recipients (member + delegates)
+                        # Get all recipients (member + delegates) — respects case_chat preference
                         from cases.services.email_service import get_case_recipient_emails
-                        chat_recipients = get_case_recipient_emails(case)
+                        chat_recipients = get_case_recipient_emails(case, notification_type='case_chat')
                         
                         send_mail(
                             subject=email_subject,
@@ -5579,7 +5610,7 @@ def approve_case_review(request, case_id):
         from cases.models import CaseNotification
         if case.actual_release_date:
             employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-            CaseNotification.objects.create(
+            _create_case_notification_if_allowed(
                 case=case,
                 member=case.member,
                 notification_type='case_released',

@@ -66,6 +66,20 @@ class User(AbstractUser):
         help_text='True if user has only the "Portal access: Delegate" tag (admin assistant, no own cases). '
                   'False if also a member/advisor. Set automatically by SSO on each login.'
     )
+    # ------------------------------------------------------------------
+    # Global notification toggles (member/delegate self-service).
+    # These control whether the user receives ANY email or in-app alerts
+    # for their own cases.  Delegates additionally have per-assignment
+    # toggles on MemberDelegate (email_notifications, portal_notifications).
+    # ------------------------------------------------------------------
+    email_notifications_enabled = models.BooleanField(
+        default=True,
+        help_text='Member/delegate opt-in for email notifications on their own cases.'
+    )
+    portal_notifications_enabled = models.BooleanField(
+        default=True,
+        help_text='Member/delegate opt-in for in-app (portal) notifications on their own cases.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -194,6 +208,98 @@ class UserPreference(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.preference_key}"
+
+
+# ============================================================================
+# NOTIFICATION PREFERENCES (per-user, per-type granular control)
+# ============================================================================
+
+class NotificationPreference(models.Model):
+    """
+    Per-user, per-notification-type preference for email and in-app alerts.
+
+    Members and delegates can toggle each notification type independently.
+    Preferences are checked at send-time by email_service.py and
+    CaseNotification/messaging creation code.
+
+    If no row exists for a user+type combo, the default is ENABLED for both
+    channels (opt-out model — users must explicitly disable).
+
+    Notification types mirror the active member-facing events:
+      - case_on_hold:   Case placed on hold by technician
+      - case_resumed:    Case resumed from hold
+      - case_chat:       New message/comment from technician on a case
+      - case_completed:  Case finished and released (report ready)
+      - messaging_reply: Staff reply in the general messaging/Q&A system
+    """
+
+    NOTIFICATION_TYPE_CHOICES = [
+        ('case_on_hold', 'Case Placed on Hold'),
+        ('case_resumed', 'Case Resumed from Hold'),
+        ('case_chat', 'New Case Chat Message'),
+        ('case_completed', 'Case Completed (Report Ready)'),
+        ('messaging_reply', 'General Messaging Reply'),
+    ]
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notification_preferences',
+        help_text='The member or delegate who owns this preference'
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NOTIFICATION_TYPE_CHOICES,
+        help_text='Which notification event this preference controls'
+    )
+    email_enabled = models.BooleanField(
+        default=True,
+        help_text='Receive email notifications for this event type'
+    )
+    portal_enabled = models.BooleanField(
+        default=True,
+        help_text='Receive in-app (portal) notifications for this event type'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'notification_type')
+        verbose_name = 'Notification Preference'
+        verbose_name_plural = 'Notification Preferences'
+        indexes = [
+            models.Index(fields=['user', 'notification_type']),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} - {self.notification_type} (email={self.email_enabled}, portal={self.portal_enabled})"
+
+    # ------------------------------------------------------------------
+    # Helper: look up a single preference for a user+type, returning
+    # defaults (both enabled) when no row exists yet.
+    # ------------------------------------------------------------------
+    @classmethod
+    def get_pref(cls, user, notification_type):
+        """
+        Return (email_enabled, portal_enabled) for the given user+type.
+        Returns (True, True) if no preference row exists (opt-out model).
+        """
+        try:
+            pref = cls.objects.get(user=user, notification_type=notification_type)
+            return pref.email_enabled, pref.portal_enabled
+        except cls.DoesNotExist:
+            return True, True
+
+    @classmethod
+    def is_email_enabled(cls, user, notification_type):
+        """Quick check: should this user get EMAIL for this type?"""
+        email_on, _ = cls.get_pref(user, notification_type)
+        return email_on
+
+    @classmethod
+    def is_portal_enabled(cls, user, notification_type):
+        """Quick check: should this user get IN-APP alert for this type?"""
+        _, portal_on = cls.get_pref(user, notification_type)
+        return portal_on
 
 
 class AuditLog(models.Model):

@@ -216,16 +216,23 @@ def reply(request, pk):
             defaults={'conversation': conversation}
         )
         # Send email notification to the member (non-broadcast conversations only)
+        # Respects the member's global email_notifications_enabled flag
         if not conversation.is_broadcast:
             try:
                 from cases.services.email_service import send_email_notification, _get_notification_email, should_send_emails
-                member_email = _get_notification_email(conversation.started_by)
-                if member_email and should_send_emails():
+
+                member = conversation.started_by
+                member_email = _get_notification_email(member)
+
+                # Check member's global email toggle (default=True)
+                email_allowed = getattr(member, 'email_notifications_enabled', True)
+
+                if member_email and should_send_emails() and email_allowed:
                     send_email_notification(
                         subject='New Response to Your Question - ProFeds Benefits Team',
                         template_name='message_reply_notification.html',
                         context={
-                            'member_first_name': conversation.started_by.first_name or conversation.started_by.username,
+                            'member_first_name': member.first_name or member.username,
                             'conversation_url': f"{getattr(__import__('django.conf', fromlist=['settings']).settings, 'SITE_URL', 'https://reports.profeds.com')}/messages/{conversation.pk}/",
                         },
                         recipient_email=member_email,

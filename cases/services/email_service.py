@@ -33,17 +33,30 @@ def _get_notification_email(user):
     return override.strip() if override.strip() else user.email
 
 
-def get_case_recipient_emails(case):
+def get_case_recipient_emails(case, notification_type=None):
     """Get all email recipients for a case: member + their delegates.
-    Respects notification_email overrides for each user.
-    Returns a list of unique email addresses."""
+
+    Checks the member's global User.email_notifications_enabled flag.
+    Delegates are included only when their per-assignment
+    MemberDelegate.email_notifications flag is True.
+
+    The notification_type arg is accepted for forward-compatibility
+    but is not used for filtering at this time (global on/off only).
+
+    Returns a list of unique email addresses.
+    """
     recipients = []
+
+    # --- Member ---
     if case.member and case.member.email:
-        email = _get_notification_email(case.member)
-        if email:
-            recipients.append(email)
-    
-    # Add delegate emails (only those with email_notifications enabled)
+        # Respect the member's global email toggle (default=True)
+        if getattr(case.member, 'email_notifications_enabled', True):
+            email = _get_notification_email(case.member)
+            if email:
+                recipients.append(email)
+
+    # --- Delegates ---
+    # Included when their per-assignment email_notifications flag is True.
     try:
         from accounts.models import MemberDelegate
         delegates = MemberDelegate.objects.filter(
@@ -55,7 +68,7 @@ def get_case_recipient_emails(case):
                 recipients.append(email)
     except Exception as e:
         logger.warning(f'Error fetching delegate emails for case {case.id}: {e}')
-    
+
     return recipients
 
 
@@ -397,7 +410,8 @@ def send_case_completed_email(case, request=None, user=None):
         text_message = render_to_string('emails/case_completed.txt', email_context)
         html_message = render_to_string('emails/case_completed.html', email_context)
 
-        recipient_list = get_case_recipient_emails(case)
+        # Get recipients — respects member + delegate notification preferences
+        recipient_list = get_case_recipient_emails(case, notification_type='case_completed')
 
         send_mail(
             subject=email_subject,
