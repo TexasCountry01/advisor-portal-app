@@ -1,118 +1,56 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            line-height: 1.6;
-            color: #333333;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .wrapper {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-        }
-        .header {
-            background-color: #ffffff;
-            padding: 25px 20px 15px 30px;
-            text-align: left;
-            border-bottom: 2px solid #072A84;
-        }
-        .header img {
-            max-width: 180px;
-            height: auto;
-        }
-        .body-content {
-            padding: 30px 30px 20px 30px;
-        }
-        .body-content p {
-            margin: 0 0 16px 0;
-            font-size: 15px;
-            color: #333333;
-        }
-        .cta-button {
-            display: inline-block;
-            background-color: #072A84;
-            color: #ffffff !important;
-            padding: 14px 32px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 16px;
-            margin: 10px 0;
-        }
-        .cta-button:hover {
-            background-color: #15325a;
-        }
-        .hold-reason {
-            background-color: #fff8e1;
-            border-left: 4px solid #f9a825;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 3px;
-            font-size: 14px;
-        }
-        .hold-reason strong {
-            display: block;
-            margin-bottom: 6px;
-            color: #333333;
-        }
-        .footer {
-            background-color: #f8f8f8;
-            padding: 20px 30px;
-            text-align: center;
-            border-top: 1px solid #e0e0e0;
-        }
-        .footer p {
-            margin: 4px 0;
-            font-size: 12px;
-            color: #999999;
-        }
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <!-- Header -->
-        <div class="header">
-            {% if logo_url %}
-            <img src="{{ logo_url }}" alt="FedImpact" style="max-width: 180px; height: auto;">
-            {% endif %}
-        </div>
+<body style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 25px 20px 15px 30px; text-align: left; border-bottom: 2px solid #072A84;">
+                            {% if logo_url %}
+                            <img src="{{ logo_url }}" alt="FedImpact" width="180" style="width: 180px; height: auto; display: block;">
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Hi {{ member_first_name }},</p>
 
-        <!-- Body -->
-        <div class="body-content">
-            <p>Hi {{ member_first_name }},</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Uh oh! It looks like we need some additional information to complete the report for <strong>{{ employee_name }}</strong>.</p>
 
-            <p>Uh oh! It looks like we need some additional information to complete the report for <strong>{{ employee_name }}</strong>.</p>
+                            <div style="background-color: #fff8e1; border-left: 4px solid #f9a825; padding: 15px; margin: 20px 0; border-radius: 3px; font-size: 14px;">
+                                <strong style="display: block; margin-bottom: 6px; color: #333333;">Reason for hold:</strong>
+                                {{ hold_reason }}
+                            </div>
 
-            <div class="hold-reason">
-                <strong>Reason for hold:</strong>
-                {{ hold_reason }}
-            </div>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Please log in to your account and review the details of this case:</p>
 
-            <p>Please log in to your account and review the details of this case:</p>
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 10px auto;">
+                                <tr>
+                                    <td align="center" bgcolor="#072A84" style="background-color: #072A84; border-radius: 5px;">
+                                        <a href="{{ case_detail_url }}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none;">CLICK HERE</a>
+                                    </td>
+                                </tr>
+                            </table>
 
-            <p style="text-align: center;">
-                <a href="{{ case_detail_url }}" class="cta-button">CLICK HERE</a>
-            </p>
+                            <p style="margin: 16px 0 16px 0; font-size: 15px; color: #333333;">If you have any questions, feel free to use the <strong>chat box</strong> on the case details page to communicate directly with the Benefits Team.</p>
 
-            <p>If you have any questions, feel free to use the <strong>chat box</strong> on the case details page to communicate directly with the Benefits Team.</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Please provide the requested information as quickly as possible so we can stay on track with your due date.</p>
 
-            <p>Please provide the requested information as quickly as possible so we can stay on track with your due date.</p>
-
-            <br>
-            <p>
-                Thank you,
-            </p>
-            <p>
-                <strong>The ProFeds Benefits Team</strong>
-            </p>
-        </div>
-    </div>
+                            <br>
+                            <p style="margin: 0 0 4px 0; font-size: 15px; color: #333333;">Thank you,</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;"><strong>The ProFeds Benefits Team</strong></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

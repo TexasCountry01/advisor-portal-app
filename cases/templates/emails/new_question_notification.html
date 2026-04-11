@@ -3,52 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4; }
-        .wrapper { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-        .header { background-color: #ffffff; padding: 25px 20px 15px 30px; text-align: left; border-bottom: 2px solid #072A84; }
-        .body-content { padding: 30px 30px 20px 30px; }
-        .body-content p { margin: 0 0 16px 0; font-size: 15px; color: #333333; }
-        .cta-button { display: inline-block; background-color: #072A84; color: #ffffff !important; padding: 14px 32px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; margin: 10px 0; }
-        .footer { background-color: #f8f8f8; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0; }
-        .footer p { margin: 4px 0; font-size: 12px; color: #999999; }
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <div class="header">
-            {% if logo_url %}<img src="{{ logo_url }}" alt="FedImpact" style="max-width: 180px; height: auto;">{% endif %}
-        </div>
-        <div class="body-content">
-            <p>Hi {{ staff_first_name }},</p>
-
-            <p>A new question has been submitted by <strong>{{ member_name }}</strong>:</p>
-
-            {% if is_urgent %}
-            <div style="background-color: #F2D1D1; border-left: 4px solid #C00000; padding: 10px 15px; margin: 16px 0; border-radius: 4px;">
-                <strong style="color: #C00000;">⚠ URGENT</strong>
-            </div>
-            {% endif %}
-
-            <p><strong>Subject:</strong> {{ subject }}</p>
-
-            <div style="background-color: #f8f9fa; border-left: 4px solid #072A84; padding: 15px; margin: 16px 0; border-radius: 4px;">
-                {{ body|linebreaksbr }}
-            </div>
-
-            <p>You can view and respond to this question in the portal:</p>
-
-            <p style="text-align: center;">
-                <a href="{{ conversation_url }}" class="cta-button">VIEW QUESTION</a>
-            </p>
-
-            <br>
-            <p>Thank you,</p>
-            <p><strong>The ProFeds Report Portal</strong></p>
-        </div>
-        <div class="footer">
-            <p>This is an automated notification from the ProFeds Report Portal.</p>
-        </div>
-    </div>
+<body style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff;">
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 25px 20px 15px 30px; text-align: left; border-bottom: 2px solid #072A84;">
+                            {% if logo_url %}<img src="{{ logo_url }}" alt="FedImpact" width="180" style="width: 180px; height: auto; display: block;">{% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Hi {{ staff_first_name }},</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">A new question has been submitted by <strong>{{ member_name }}</strong>:</p>
+                            {% if is_urgent %}
+                            <div style="background-color: #F2D1D1; border-left: 4px solid #C00000; padding: 10px 15px; margin: 16px 0; border-radius: 4px;">
+                                <strong style="color: #C00000;">&#9888; URGENT</strong>
+                            </div>
+                            {% endif %}
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;"><strong>Subject:</strong> {{ subject }}</p>
+                            <div style="background-color: #f8f9fa; border-left: 4px solid #072A84; padding: 15px; margin: 16px 0; border-radius: 4px;">
+                                {{ body|linebreaksbr }}
+                            </div>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">You can view and respond to this question in the portal:</p>
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 10px auto;">
+                                <tr>
+                                    <td align="center" bgcolor="#072A84" style="background-color: #072A84; border-radius: 5px;">
+                                        <a href="{{ conversation_url }}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none;">VIEW QUESTION</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <br>
+                            <p style="margin: 0 0 4px 0; font-size: 15px; color: #333333;">Thank you,</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;"><strong>The ProFeds Report Portal</strong></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #f8f8f8; padding: 20px 30px; text-align: center; border-top: 1px solid #e0e0e0;">
+                            <p style="margin: 4px 0; font-size: 12px; color: #999999;">This is an automated notification from the ProFeds Report Portal.</p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
