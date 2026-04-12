@@ -297,14 +297,11 @@
                         <span>{{ assignment.delegate.get_full_name|default:assignment.delegate.username }}</span>
                         <span class="d-flex gap-2 align-items-center">
                             <span class="badge bg-success">Active</span>
-                            <form method="post" action="{% url 'request_remove_delegate' %}" class="d-inline"
-                                  onsubmit="return confirm('Request to remove this delegate?');">
-                                {% csrf_token %}
-                                <input type="hidden" name="assignment_id" value="{{ assignment.pk }}">
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="bi bi-person-x"></i> Remove
-                                </button>
-                            </form>
+                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#removeDelegateModal{{ assignment.pk }}">
+                                <i class="bi bi-person-x"></i> Remove
+                            </button>
                         </span>
                     </li>
                     {% endfor %}
@@ -357,8 +354,8 @@
                                        placeholder="Their email address">
                             </div>
                             <div class="mb-3">
-                                <label for="notes" class="form-label"><strong>Notes</strong></label>
-                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                <label for="add_notes" class="form-label"><strong>Notes</strong></label>
+                                <textarea class="form-control" id="add_notes" name="notes" rows="3"
                                           placeholder="Any additional information (optional)"></textarea>
                             </div>
                         </div>
@@ -372,6 +369,66 @@
                 </div>
             </div>
         </div>
+
+        {# Remove Delegate Modals — one per active delegate #}
+        {% for assignment in my_delegates %}
+        <div class="modal fade" id="removeDelegateModal{{ assignment.pk }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" action="{% url 'request_remove_delegate' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="assignment_id" value="{{ assignment.pk }}">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="bi bi-person-x text-danger"></i> Request to Remove Delegate Permissions for {{ assignment.delegate.get_full_name|default:assignment.delegate.username }}
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning mb-3">
+                                <i class="bi bi-exclamation-triangle"></i> <strong>This will take effect immediately.</strong>
+                                {{ assignment.delegate.get_full_name|default:assignment.delegate.username }} will no longer be able to view or manage your cases.
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label"><strong>Is this person still with your firm?</strong> <span class="text-danger">*</span></label>
+
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="still_with_firm"
+                                           id="firm_no_{{ assignment.pk }}" value="no" required>
+                                    <label class="form-check-label" for="firm_no_{{ assignment.pk }}">
+                                        <strong class="text-danger">No — They no longer work at my firm</strong>
+                                        <div class="text-muted small">This will remove ALL access to the ProFeds Portal and ProFeds.com</div>
+                                    </label>
+                                </div>
+
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="still_with_firm"
+                                           id="firm_yes_{{ assignment.pk }}" value="yes" required>
+                                    <label class="form-check-label" for="firm_yes_{{ assignment.pk }}">
+                                        <strong>Yes — They still work at my firm, but will no longer manage my cases</strong>
+                                        <div class="text-muted small">This will remove their access only to YOUR cases in the ProFeds Portal</div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="remove_notes_{{ assignment.pk }}" class="form-label"><strong>Notes</strong></label>
+                                <textarea class="form-control" id="remove_notes_{{ assignment.pk }}" name="notes" rows="3"
+                                          placeholder="Any additional details for our team (optional)"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-person-x"></i> Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
         {% endif %}
 
 

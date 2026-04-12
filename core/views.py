@@ -233,9 +233,29 @@ def update_notification_preferences(request):
         return redirect('profile')
 
     user = request.user
-    user.email_notifications_enabled = request.POST.get('email_notifications_enabled') == '1'
+    old_email = user.email_notifications_enabled
+    new_email = request.POST.get('email_notifications_enabled') == '1'
+
+    user.email_notifications_enabled = new_email
     user.portal_notifications_enabled = True  # Always enabled — not user-controllable
     user.save(update_fields=['email_notifications_enabled', 'portal_notifications_enabled'])
+
+    # Audit log if email preference actually changed
+    if old_email != new_email:
+        from core.models import AuditLog
+        user_name = user.get_full_name() or user.username
+        status = 'ON' if new_email else 'OFF'
+        AuditLog.objects.create(
+            user=user,
+            action_type='notification_preferences_changed',
+            description=f'{user_name} turned email notifications {status}.',
+            ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip() or None,
+            metadata={
+                'preference': 'email_notifications_enabled',
+                'old_value': old_email,
+                'new_value': new_email,
+            },
+        )
 
     messages.success(request, 'Alert settings saved.')
     return redirect('profile')
@@ -266,11 +286,46 @@ def update_delegate_notifications(request):
         messages.error(request, 'Delegate assignment not found.')
         return redirect('profile')
 
-    assignment.email_notifications = request.POST.get('email_notifications') == '1'
-    assignment.portal_notifications = request.POST.get('portal_notifications') == '1'
+    old_email = assignment.email_notifications
+    old_portal = assignment.portal_notifications
+    new_email = request.POST.get('email_notifications') == '1'
+    new_portal = request.POST.get('portal_notifications') == '1'
+
+    assignment.email_notifications = new_email
+    assignment.portal_notifications = new_portal
     assignment.save(update_fields=['email_notifications', 'portal_notifications'])
 
     member_name = assignment.member.get_full_name() or assignment.member.username
+
+    # Audit log if any preference changed
+    changes = {}
+    if old_email != new_email:
+        changes['email_notifications'] = {'old': old_email, 'new': new_email}
+    if old_portal != new_portal:
+        changes['portal_notifications'] = {'old': old_portal, 'new': new_portal}
+
+    if changes:
+        from core.models import AuditLog
+        delegate_name = request.user.get_full_name() or request.user.username
+        changed_items = ', '.join(
+            f"{k.replace('_', ' ')} {'ON' if v['new'] else 'OFF'}" for k, v in changes.items()
+        )
+        AuditLog.objects.create(
+            user=request.user,
+            action_type='notification_preferences_changed',
+            description=(
+                f'Delegate {delegate_name} changed alert settings for member {member_name}: {changed_items}.'
+            ),
+            related_user=assignment.member,
+            ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip() or None,
+            metadata={
+                'assignment_id': assignment.pk,
+                'member_id': assignment.member.pk,
+                'member_name': member_name,
+                'changes': changes,
+            },
+        )
+
     messages.success(request, f'Notification settings updated for {member_name}.')
     return redirect('profile')
 
@@ -282,6 +337,7 @@ def request_add_delegate(request):
         return redirect('profile')
 
     from accounts.models import DelegateRequest
+    from core.models import AuditLog
 
     delegate_name = request.POST.get('delegate_name', '').strip()
     delegate_email = request.POST.get('delegate_email', '').strip()
@@ -299,6 +355,25 @@ def request_add_delegate(request):
         notes=notes,
     )
 
+    # Audit log
+    member_name = request.user.get_full_name() or request.user.username
+    AuditLog.objects.create(
+        user=request.user,
+        action_type='delegate_add_requested',
+        description=(
+            f'{member_name} requested to add delegate "{delegate_name}" ({delegate_email}).'
+        ),
+        ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip() or None,
+        metadata={
+            'delegate_request_id': dr.pk,
+            'delegate_name': delegate_name,
+            'delegate_email': delegate_email,
+            'notes': notes,
+            'member_id': request.user.pk,
+            'member_name': member_name,
+        },
+    )
+
     _send_delegate_request_email(request.user, dr)
     messages.success(request, f'Request to add "{delegate_name}" as a delegate has been submitted. You will be notified when it is processed.')
     return redirect('profile')
@@ -306,11 +381,12 @@ def request_add_delegate(request):
 
 @login_required
 def request_remove_delegate(request):
-    """Member requests to remove an existing delegate. Sends email to staff."""
+    """Member requests to remove a delegate. Immediately disconnects + emails staff."""
     if request.method != 'POST':
         return redirect('profile')
 
     from accounts.models import DelegateRequest, MemberDelegate
+    from core.models import AuditLog
 
     assignment_id = request.POST.get('assignment_id')
     if not assignment_id:
@@ -323,21 +399,91 @@ def request_remove_delegate(request):
         messages.error(request, 'Delegate assignment not found.')
         return redirect('profile')
 
-    delegate_name = assignment.delegate.get_full_name() or assignment.delegate.username
+    # Capture delegate info before deletion
+    delegate_user = assignment.delegate
+    delegate_name = delegate_user.get_full_name() or delegate_user.username
+    delegate_email = delegate_user.email or ''
+    still_with_firm_val = request.POST.get('still_with_firm')
+    still_with_firm = still_with_firm_val == 'yes' if still_with_firm_val else None
+    notes = request.POST.get('notes', '').strip()
 
+    # Create the request record (before deleting assignment)
     dr = DelegateRequest.objects.create(
         requested_by=request.user,
         request_type='remove',
         delegate_name=delegate_name,
-        existing_assignment=assignment,
+        delegate_email=delegate_email,
+        existing_assignment=None,  # Will be deleted, so don't FK
+        still_with_firm=still_with_firm,
+        notes=notes,
+        status='approved',  # Immediately processed
     )
 
-    _send_delegate_request_email(request.user, dr)
-    messages.success(request, f'Request to remove "{delegate_name}" as a delegate has been submitted. You will be notified when it is processed.')
+    # Immediately delete the delegate assignment
+    assignment.delete()
+
+    # Audit log — verbose
+    member_name = request.user.get_full_name() or request.user.username
+    firm_status = 'Still with firm' if still_with_firm else 'No longer with firm' if still_with_firm is not None else 'Not specified'
+    AuditLog.objects.create(
+        user=request.user,
+        action_type='delegate_remove_requested',
+        description=(
+            f'{member_name} requested removal of delegate "{delegate_name}" ({delegate_email}). '
+            f'Firm status: {firm_status}. Assignment immediately disconnected.'
+        ),
+        related_user=delegate_user,
+        ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip() or None,
+        metadata={
+            'delegate_request_id': dr.pk,
+            'delegate_name': delegate_name,
+            'delegate_email': delegate_email,
+            'still_with_firm': still_with_firm,
+            'notes': notes,
+            'member_id': request.user.pk,
+            'member_name': member_name,
+        },
+    )
+
+    # If delegate is no longer with the firm, deactivate their account
+    # (only if they have no remaining delegate assignments)
+    account_deactivated = False
+    if still_with_firm is False:
+        remaining = MemberDelegate.objects.filter(delegate=delegate_user).count()
+        if remaining == 0 and delegate_user.is_active:
+            delegate_user.is_active = False
+            delegate_user.save(update_fields=['is_active'])
+            account_deactivated = True
+            AuditLog.objects.create(
+                user=request.user,
+                action_type='delegate_remove_requested',
+                description=(
+                    f'Delegate account "{delegate_name}" ({delegate_email}) automatically deactivated. '
+                    f'Reason: reported as no longer with firm by {member_name}, and no remaining delegate assignments.'
+                ),
+                related_user=delegate_user,
+                ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip() or None,
+                metadata={
+                    'delegate_request_id': dr.pk,
+                    'action': 'account_deactivated',
+                    'delegate_user_id': delegate_user.pk,
+                    'delegate_name': delegate_name,
+                    'delegate_email': delegate_email,
+                    'remaining_assignments': 0,
+                    'deactivated_by_member_id': request.user.pk,
+                    'deactivated_by_member_name': member_name,
+                },
+            )
+            logger.info(f'Delegate user {delegate_user.pk} ({delegate_name}) deactivated — no longer with firm, 0 remaining assignments')
+
+    # Email staff so they can update GHL
+    _send_delegate_request_email(request.user, dr, account_deactivated=account_deactivated)
+
+    messages.success(request, f'"{delegate_name}" has been removed as your delegate. Our team has been notified.')
     return redirect('profile')
 
 
-def _send_delegate_request_email(member, delegate_request):
+def _send_delegate_request_email(member, delegate_request, account_deactivated=False):
     """Send notification email to L3 techs, admins, and managers about a delegate request."""
     try:
         from django.core.mail import send_mail
@@ -377,17 +523,48 @@ def _send_delegate_request_email(member, delegate_request):
         ]
         if delegate_request.delegate_email:
             lines.append(f'Delegate Email: {delegate_request.delegate_email}')
+
+        # Include firm status for removal requests
+        if delegate_request.request_type == 'remove' and delegate_request.still_with_firm is not None:
+            if delegate_request.still_with_firm:
+                lines.append('Still with firm: YES — still works at the firm, just removed from member\'s cases')
+            else:
+                lines.append('Still with firm: NO — no longer works at the firm (remove ALL portal + website access)')
+
         if delegate_request.notes:
             lines.append(f'Notes: {delegate_request.notes}')
 
-        lines += [
-            '',
-            'Action Required:',
-            '1. Process in GHL (GoHighLevel) first',
-            '2. Then add/remove the delegate assignment in the portal',
-            '',
-            'This request is pending until processed by staff.',
-        ]
+        if delegate_request.request_type == 'remove':
+            lines += [
+                '',
+                'Portal Access Update:',
+                f'- The delegate assignment has ALREADY been removed in the portal.',
+                f'- {delegate_request.delegate_name} can no longer view or manage cases for {member_name}.',
+                '',
+                'GHL Action Required:',
+            ]
+            if delegate_request.still_with_firm is False:
+                lines.append('- Remove ALL GHL access (contact no longer with firm)')
+                if account_deactivated:
+                    lines += [
+                        '',
+                        'ACCOUNT DEACTIVATED:',
+                        f'- {delegate_request.delegate_name} portal account has been AUTOMATICALLY DEACTIVATED.',
+                        '- They had no remaining delegate assignments.',
+                        '- Their account and full audit history are preserved (not deleted).',
+                        '- To reactivate, go to the admin panel and set is_active=True.',
+                    ]
+            else:
+                lines.append('- Update GHL delegate tags as needed')
+        else:
+            lines += [
+                '',
+                'Action Required:',
+                '1. Process in GHL (GoHighLevel) first',
+                '2. Then add the delegate assignment in the portal',
+                '',
+                'This request is pending until processed by staff.',
+            ]
 
         text_message = '\n'.join(lines)
 

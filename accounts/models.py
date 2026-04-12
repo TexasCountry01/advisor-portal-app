@@ -236,6 +236,11 @@ class DelegateRequest(models.Model):
         blank=True,
         help_text='Additional notes from the member'
     )
+    still_with_firm = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text='For remove requests: True if delegate still works at the firm, False if they left'
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
     processed_by = models.ForeignKey(
         User,
