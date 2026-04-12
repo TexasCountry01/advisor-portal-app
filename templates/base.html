@@ -13,7 +13,7 @@
     
     <!-- Custom CSS -->
     {% load static %}
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v={{ ASSET_VERSION }}">
     
     {% block extra_css %}{% endblock %}
 </head>
@@ -513,7 +513,7 @@
     </script>
 
     <!-- Custom JS -->
-    <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/main.js' %}?v={{ ASSET_VERSION }}"></script>
     
     {% if user.is_authenticated and user.role == 'member' %}
     <!-- Portal Feedback Modal -->
