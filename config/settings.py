@@ -202,6 +202,10 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@profeds.com')
 
+# Safe domains for TestSafeEmailBackend (comma-separated in .env)
+# Only emails to these domains are delivered on the test server
+EMAIL_SAFE_DOMAINS = config('EMAIL_SAFE_DOMAINS', default='profeds.com,sbcglobal.net')
+
 # Site URL for building absolute links in emails
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
