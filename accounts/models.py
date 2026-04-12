@@ -192,6 +192,70 @@ class MemberDelegate(models.Model):
         return f"{self.delegate.get_full_name()} → {self.member.get_full_name()}"
 
 
+class DelegateRequest(models.Model):
+    """
+    A member's request to add or remove a delegate.
+    Staff (L3 Tech, Admin, Manager) must process this in GHL before
+    granting/revoking portal access.
+    """
+    REQUEST_TYPE_CHOICES = [
+        ('add', 'Add Delegate'),
+        ('remove', 'Remove Delegate'),
+    ]
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('denied', 'Denied'),
+    ]
+
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='delegate_requests_made',
+        help_text='The member who submitted the request'
+    )
+    request_type = models.CharField(max_length=10, choices=REQUEST_TYPE_CHOICES)
+    delegate_name = models.CharField(
+        max_length=200,
+        help_text='Name of the person to add/remove as delegate'
+    )
+    delegate_email = models.EmailField(
+        blank=True,
+        help_text='Email of the person to add as delegate (for add requests)'
+    )
+    # If removing an existing delegate, link to the assignment
+    existing_assignment = models.ForeignKey(
+        'MemberDelegate',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='removal_requests',
+        help_text='The delegate assignment to remove (for remove requests)'
+    )
+    notes = models.TextField(
+        blank=True,
+        help_text='Additional notes from the member'
+    )
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    processed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='delegate_requests_processed',
+    )
+    processed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Delegate Request'
+        verbose_name_plural = 'Delegate Requests'
+
+    def __str__(self):
+        return f"{self.get_request_type_display()} - {self.delegate_name} (by {self.requested_by})"
+
+
 class UserPreference(models.Model):
     """Store user dashboard preferences (column visibility, order, etc.)"""
     

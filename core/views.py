@@ -112,10 +112,19 @@ def profile(request):
                 MemberDelegate.objects.filter(member=user).select_related('delegate')
             )
 
+    # Pending delegate requests for this member
+    pending_delegate_requests = []
+    if user.role == 'member' and not getattr(user, 'is_pure_delegate', False):
+        from accounts.models import DelegateRequest
+        pending_delegate_requests = list(
+            DelegateRequest.objects.filter(requested_by=user, status='pending')
+        )
+
     return render(request, 'core/profile.html', {
         'user': user,
         'delegate_for_assignments': delegate_for_assignments,
         'my_delegates': my_delegates,
+        'pending_delegate_requests': pending_delegate_requests,
     })
 
 
@@ -225,7 +234,7 @@ def update_notification_preferences(request):
 
     user = request.user
     user.email_notifications_enabled = request.POST.get('email_notifications_enabled') == '1'
-    user.portal_notifications_enabled = request.POST.get('portal_notifications_enabled') == '1'
+    user.portal_notifications_enabled = True  # Always enabled — not user-controllable
     user.save(update_fields=['email_notifications_enabled', 'portal_notifications_enabled'])
 
     messages.success(request, 'Alert settings saved.')
@@ -264,6 +273,134 @@ def update_delegate_notifications(request):
     member_name = assignment.member.get_full_name() or assignment.member.username
     messages.success(request, f'Notification settings updated for {member_name}.')
     return redirect('profile')
+
+
+@login_required
+def request_add_delegate(request):
+    """Member requests to add a new delegate. Sends email to staff."""
+    if request.method != 'POST':
+        return redirect('profile')
+
+    from accounts.models import DelegateRequest
+
+    delegate_name = request.POST.get('delegate_name', '').strip()
+    delegate_email = request.POST.get('delegate_email', '').strip()
+    notes = request.POST.get('notes', '').strip()
+
+    if not delegate_name:
+        messages.error(request, 'Delegate name is required.')
+        return redirect('profile')
+
+    dr = DelegateRequest.objects.create(
+        requested_by=request.user,
+        request_type='add',
+        delegate_name=delegate_name,
+        delegate_email=delegate_email,
+        notes=notes,
+    )
+
+    _send_delegate_request_email(request.user, dr)
+    messages.success(request, f'Request to add "{delegate_name}" as a delegate has been submitted. You will be notified when it is processed.')
+    return redirect('profile')
+
+
+@login_required
+def request_remove_delegate(request):
+    """Member requests to remove an existing delegate. Sends email to staff."""
+    if request.method != 'POST':
+        return redirect('profile')
+
+    from accounts.models import DelegateRequest, MemberDelegate
+
+    assignment_id = request.POST.get('assignment_id')
+    if not assignment_id:
+        messages.error(request, 'Missing delegate assignment.')
+        return redirect('profile')
+
+    try:
+        assignment = MemberDelegate.objects.get(pk=assignment_id, member=request.user)
+    except MemberDelegate.DoesNotExist:
+        messages.error(request, 'Delegate assignment not found.')
+        return redirect('profile')
+
+    delegate_name = assignment.delegate.get_full_name() or assignment.delegate.username
+
+    dr = DelegateRequest.objects.create(
+        requested_by=request.user,
+        request_type='remove',
+        delegate_name=delegate_name,
+        existing_assignment=assignment,
+    )
+
+    _send_delegate_request_email(request.user, dr)
+    messages.success(request, f'Request to remove "{delegate_name}" as a delegate has been submitted. You will be notified when it is processed.')
+    return redirect('profile')
+
+
+def _send_delegate_request_email(member, delegate_request):
+    """Send notification email to L3 techs, admins, and managers about a delegate request."""
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings as django_settings
+        from accounts.models import User
+
+        # Recipients: L3 techs + admins + managers
+        staff = User.objects.filter(
+            is_active=True,
+            role__in=['administrator', 'manager'],
+        ).values_list('email', flat=True)
+
+        l3_techs = User.objects.filter(
+            is_active=True,
+            role='technician',
+            user_level='level_3',
+        ).values_list('email', flat=True)
+
+        recipients = list(set(list(staff) + list(l3_techs)))
+        recipients = [e for e in recipients if e]
+
+        if not recipients:
+            logger.warning('No staff recipients for delegate request email')
+            return
+
+        member_name = member.get_full_name() or member.username
+        action = 'ADD' if delegate_request.request_type == 'add' else 'REMOVE'
+
+        subject = f'Delegate Request: {action} — {delegate_request.delegate_name} (from {member_name})'
+
+        lines = [
+            f'A member has submitted a request to {action.lower()} a delegate.',
+            '',
+            f'Member: {member_name} ({member.email})',
+            f'Request Type: {action}',
+            f'Delegate Name: {delegate_request.delegate_name}',
+        ]
+        if delegate_request.delegate_email:
+            lines.append(f'Delegate Email: {delegate_request.delegate_email}')
+        if delegate_request.notes:
+            lines.append(f'Notes: {delegate_request.notes}')
+
+        lines += [
+            '',
+            'Action Required:',
+            '1. Process in GHL (GoHighLevel) first',
+            '2. Then add/remove the delegate assignment in the portal',
+            '',
+            'This request is pending until processed by staff.',
+        ]
+
+        text_message = '\n'.join(lines)
+
+        send_mail(
+            subject=subject,
+            message=text_message,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            fail_silently=True,
+        )
+        logger.info(f'Delegate request email sent to {recipients} for {delegate_request}')
+    except Exception as e:
+        logger.error(f'Error sending delegate request email: {e}')
 
 
 @login_required

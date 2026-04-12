@@ -52,15 +52,6 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-md-4">
-                        <strong>Username:</strong>
-                    </div>
-                    <div class="col-md-8">
-                        {{ user.username }}
-                    </div>
-                </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-4">
                         <strong>Email:</strong>
                     </div>
                     <div class="col-md-8">
@@ -86,6 +77,7 @@
                     </div>
                 </div>
 
+                {% if user.role != 'member' %}
                 <div class="row mb-3">
                     <div class="col-md-4">
                         <strong>Role:</strong>
@@ -94,6 +86,7 @@
                         <span class="badge bg-primary">{{ user.get_role_display }}</span>
                     </div>
                 </div>
+                {% endif %}
 
                 {% if user.role == 'technician' and user.user_level %}
                 <div class="row mb-3">
@@ -112,7 +105,7 @@
                         <strong>Workshop Code:</strong>
                     </div>
                     <div class="col-md-8">
-                        <code>{{ user.workshop_code }}</code>
+                        {{ user.workshop_code }}
                     </div>
                 </div>
                 {% endif %}
@@ -127,15 +120,6 @@
                     </div>
                 </div>
                 {% endif %}
-
-                <div class="row mb-3">
-                    <div class="col-md-4">
-                        <strong>Member Since:</strong>
-                    </div>
-                    <div class="col-md-8">
-                        {{ user.date_joined|date:"F j, Y" }}
-                    </div>
-                </div>
 
                 <div class="row mb-3">
                     <div class="col-md-4">
@@ -191,7 +175,7 @@
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    Control how you are notified about activity on your own cases.
+                    Control how YOU are alerted about activity on YOUR OWN cases.
                 </p>
 
                 <form method="post" action="{% url 'update_notification_preferences' %}">
@@ -199,14 +183,14 @@
 
                     <div class="form-check form-switch mb-2">
                         <input class="form-check-input" type="checkbox" role="switch"
-                               name="portal_notifications_enabled" value="1"
                                id="portal_notifications_enabled"
-                               {% if user.portal_notifications_enabled %}checked{% endif %}>
+                               checked disabled>
                         <label class="form-check-label" for="portal_notifications_enabled">
                             <strong>In-app notifications</strong>
+                            <i class="bi bi-lock-fill text-muted ms-1" title="Always enabled"></i>
                         </label>
                         <div class="text-muted small ms-4">
-                            <em>Show alerts inside the portal for holds, chats, and completed cases.</em>
+                            <em>In-app alerts are always enabled and cannot be turned off.</em>
                         </div>
                     </div>
 
@@ -223,7 +207,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary btn-sm">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-save"></i> Save Alert Settings
                     </button>
                 </form>
@@ -242,8 +226,8 @@
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    You are a delegate for the members listed below.
-                    These settings are independent for each member you represent.
+                    You are a delegate for the members listed below. You have permission to
+                    manage cases on their behalf. Control how YOU are alerted about activity on THEIR cases.
                 </p>
 
                 <table class="table table-sm table-bordered align-middle mb-0">
@@ -289,28 +273,103 @@
         {% endif %}
 
         {# ================================================================ #}
-        {# MY DELEGATES — read-only list of who can act on this member's    #}
-        {# behalf.  Delegates manage their own alert preferences.           #}
+        {# MY DELEGATES — list of who can act on this member's behalf.      #}
+        {# Members can request to add or remove delegates.                  #}
         {# ================================================================ #}
-        {% if my_delegates %}
+        {% if user.role == 'member' and not user.is_pure_delegate %}
         <div class="card mt-3">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="bi bi-person-check"></i> My Delegates</h5>
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addDelegateModal">
+                    <i class="bi bi-person-plus"></i> Request to Add a Delegate
+                </button>
             </div>
             <div class="card-body">
                 <p class="text-muted mb-3">
-                    These people can submit and view cases on your behalf.
+                    These people can manage cases on your behalf.
                     Each delegate manages their own alert preferences.
                 </p>
 
+                {% if my_delegates or pending_delegate_requests %}
                 <ul class="list-group list-group-flush">
                     {% for assignment in my_delegates %}
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{ assignment.delegate.get_full_name|default:assignment.delegate.username }}
-                        <span class="badge bg-success">Active</span>
+                        <span>{{ assignment.delegate.get_full_name|default:assignment.delegate.username }}</span>
+                        <span class="d-flex gap-2 align-items-center">
+                            <span class="badge bg-success">Active</span>
+                            <form method="post" action="{% url 'request_remove_delegate' %}" class="d-inline"
+                                  onsubmit="return confirm('Request to remove this delegate?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="assignment_id" value="{{ assignment.pk }}">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-person-x"></i> Remove
+                                </button>
+                            </form>
+                        </span>
+                    </li>
+                    {% endfor %}
+
+                    {% for req in pending_delegate_requests %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>
+                            {{ req.delegate_name }}
+                            {% if req.request_type == 'add' %}
+                                <small class="text-muted">(add request)</small>
+                            {% else %}
+                                <small class="text-muted">(removal request)</small>
+                            {% endif %}
+                        </span>
+                        <span class="badge bg-warning text-dark">Pending</span>
                     </li>
                     {% endfor %}
                 </ul>
+                {% else %}
+                <p class="text-muted mb-0"><em>No delegates assigned.</em></p>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Add Delegate Request Modal #}
+        <div class="modal fade" id="addDelegateModal" tabindex="-1" aria-labelledby="addDelegateModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form method="post" action="{% url 'request_add_delegate' %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addDelegateModalLabel">
+                                <i class="bi bi-person-plus"></i> Request to Add a Delegate
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted small">
+                                Submit a request to add someone as your delegate. Our team will process this
+                                request and notify you when access has been granted.
+                            </p>
+                            <div class="mb-3">
+                                <label for="delegate_name" class="form-label"><strong>Delegate Name</strong> <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="delegate_name" name="delegate_name" required
+                                       placeholder="Full name of the person">
+                            </div>
+                            <div class="mb-3">
+                                <label for="delegate_email" class="form-label"><strong>Delegate Email</strong></label>
+                                <input type="email" class="form-control" id="delegate_email" name="delegate_email"
+                                       placeholder="Their email address">
+                            </div>
+                            <div class="mb-3">
+                                <label for="notes" class="form-label"><strong>Notes</strong></label>
+                                <textarea class="form-control" id="notes" name="notes" rows="3"
+                                          placeholder="Any additional information (optional)"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Submit Request
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
         {% endif %}
