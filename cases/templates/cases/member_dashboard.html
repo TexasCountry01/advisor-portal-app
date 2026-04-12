@@ -30,8 +30,8 @@
             {% endif %}
         </div>
         <div class="col-auto d-flex align-items-center">
-            <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#needHelpModal">
-                <i class="bi bi-question-circle"></i> Need help?
+            <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#helpFeedbackModal">
+                <i class="bi bi-question-circle"></i> Help & Feedback
             </button>
         </div>
 
@@ -979,27 +979,111 @@ function refreshBadgeCounts() {
 setInterval(refreshBadgeCounts, 30000);
 </script>
 
-<!-- Need Help Modal -->
-<div class="modal fade" id="needHelpModal" tabindex="-1">
+<!-- Help & Feedback Modal -->
+<div class="modal fade" id="helpFeedbackModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-question-circle"></i> Need help?
+                    <i class="bi bi-question-circle"></i> Help & Feedback
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Use this form to submit questions that are <strong>not case specific</strong>. For case specific questions, please use the <strong>case chat</strong> feature for that employee's case.</p>
+                <h6 class="fw-bold"><i class="bi bi-envelope"></i> Need Help?</h6>
+                <p class="small">For questions that are <strong>not case specific</strong>, send us a message. For case-specific questions, use the <strong>case chat</strong> feature on that employee's case.</p>
+                <a href="{% url 'messaging:new_conversation' %}" class="btn btn-info text-white mb-3">
+                    <i class="bi bi-envelope"></i> Send a Message
+                </a>
+
+                <hr>
+
+                <h6 class="fw-bold"><i class="bi bi-chat-dots"></i> Portal Feedback</h6>
+                <p class="small text-muted">Share any feedback, suggestions, or issues you've encountered.</p>
+                <div id="helpFeedbackAlert" style="display:none;" class="alert" role="alert"></div>
+                <textarea id="helpFeedbackText" class="form-control" rows="4" placeholder="Type your feedback here..." maxlength="2000"></textarea>
+                <small class="text-muted mt-1 d-block"><span id="helpFeedbackCharCount">0</span>/2000 characters</small>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <a href="{% url 'messaging:new_conversation' %}" class="btn btn-info text-white">
-                    <i class="bi bi-envelope"></i> Send a Message
-                </a>
+                <button type="button" class="btn btn-primary" id="helpSubmitFeedbackBtn">
+                    <i class="bi bi-send"></i> Submit Feedback
+                </button>
             </div>
         </div>
     </div>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const feedbackText = document.getElementById('helpFeedbackText');
+    const charCount = document.getElementById('helpFeedbackCharCount');
+    const submitBtn = document.getElementById('helpSubmitFeedbackBtn');
+    const feedbackAlert = document.getElementById('helpFeedbackAlert');
+
+    if (feedbackText) {
+        feedbackText.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+    }
+
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+            const text = feedbackText.value.trim();
+            if (!text) {
+                feedbackAlert.className = 'alert alert-warning';
+                feedbackAlert.textContent = 'Please enter some feedback before submitting.';
+                feedbackAlert.style.display = 'block';
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Submitting...';
+
+            fetch('{% url "submit_beta_feedback" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken'),
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'feedback=' + encodeURIComponent(text)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    feedbackAlert.className = 'alert alert-success';
+                    feedbackAlert.textContent = data.message;
+                    feedbackAlert.style.display = 'block';
+                    feedbackText.value = '';
+                    charCount.textContent = '0';
+                    setTimeout(() => {
+                        bootstrap.Modal.getInstance(document.getElementById('helpFeedbackModal')).hide();
+                        feedbackAlert.style.display = 'none';
+                    }, 1500);
+                } else {
+                    feedbackAlert.className = 'alert alert-danger';
+                    feedbackAlert.textContent = data.message;
+                    feedbackAlert.style.display = 'block';
+                }
+            })
+            .catch(() => {
+                feedbackAlert.className = 'alert alert-danger';
+                feedbackAlert.textContent = 'An error occurred. Please try again.';
+                feedbackAlert.style.display = 'block';
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-send"></i> Submit Feedback';
+            });
+        });
+    }
+
+    function getCookie(name) {
+        let value = '; ' + document.cookie;
+        let parts = value.split('; ' + name + '=');
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+});
+</script>
 
 {% endblock %}

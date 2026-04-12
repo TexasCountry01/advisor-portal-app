@@ -84,11 +84,6 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#betaFeedbackModal">
-                                    <i class="bi bi-chat-dots"></i> Portal Feedback
-                                </a>
-                            </li>
-                            <li class="nav-item">
                                 <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
                                     <i class="bi bi-envelope"></i> Messages
                                     <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
@@ -161,6 +156,11 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'profile' %}" title="Profile">
                                 <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="https://profeds.com" target="_blank" rel="noopener noreferrer" title="Visit ProFeds.com">
+                                <i class="bi bi-globe"></i> ProFeds.com
                             </a>
                         </li>
                         <li class="nav-item">
