@@ -306,8 +306,11 @@ def reopen_conversation(request, pk):
 @login_required
 @require_http_methods(["GET"])
 def unread_count(request):
-    """API: return total unread message count for nav badge."""
-    count = MessageReadStatus.objects.filter(user=request.user).values(
+    """API: return total unread message count for nav badge (open conversations only)."""
+    count = MessageReadStatus.objects.filter(
+        user=request.user,
+        conversation__status='open',
+    ).values(
         'conversation'
     ).distinct().count()
     return JsonResponse({'count': count})
