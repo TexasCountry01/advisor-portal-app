@@ -487,10 +487,10 @@ class Case(models.Model):
     
     @property
     def requires_review(self):
-        """Check if case requires quality review (Level 1 technician)"""
-        if self.assigned_to and self.assigned_to.user_level == 'level_1':
-            return True
-        return False
+        """Check if case requires quality review based on per-tech, per-tier settings."""
+        if not self.assigned_to or not self.tier:
+            return False
+        return TechReviewSetting.review_required_for(self.assigned_to, self.tier)
     
     @property
     def get_report_numbers(self):
@@ -734,6 +734,150 @@ class CaseReviewHistory(models.Model):
     
     def __str__(self):
         return f"Review {self.review_action} - Case {self.case.external_case_id} by {self.reviewed_by.username if self.reviewed_by else 'Unknown'}"
+
+
+class TechReviewSetting(models.Model):
+    """Per-technician, per-tier review requirement toggle.
+
+    Determines whether a specific tech must have cases of a given tier
+    reviewed before release.  Defaults are derived from the tech's level
+    when no row exists (Level 1 → review required, Level 2/3 → not required).
+    An explicit row overrides the default.
+    """
+    technician = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='review_settings',
+        limit_choices_to={'role': 'technician'},
+    )
+    tier = models.CharField(max_length=10, choices=Case.TIER_CHOICES)
+    requires_review = models.BooleanField(
+        default=True,
+        help_text='If True, cases of this tier completed by this tech must be reviewed before release.'
+    )
+    set_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='+',
+        help_text='Admin/manager/L3 tech who last changed this setting.'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('technician', 'tier')
+        verbose_name = 'Tech Review Setting'
+        ordering = ['technician', 'tier']
+
+    def __str__(self):
+        status = 'required' if self.requires_review else 'not required'
+        return f'{self.technician.get_full_name()} — {self.get_tier_display()} review {status}'
+
+    @classmethod
+    def review_required_for(cls, technician, tier):
+        """Return True if the given technician must have cases of this tier reviewed.
+
+        Logic:
+          1. If an explicit TechReviewSetting row exists → use it.
+          2. Otherwise fall back to the default for the tech's level:
+             - Level 1: review required
+             - Level 2, Level 3: review NOT required
+        """
+        try:
+            setting = cls.objects.get(technician=technician, tier=tier)
+            return setting.requires_review
+        except cls.DoesNotExist:
+            # Default: Level 1 requires review, others don't
+            if technician is None:
+                return False
+            return technician.user_level == 'level_1'
+
+
+class CaseReviewRequest(models.Model):
+    """Tracks ad-hoc review requests from any technician on a specific case.
+
+    Supports escalation chains (Ileana → Tiffany → Chris) by linking
+    to a parent request.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending Review'),
+        ('approved', 'Approved'),
+        ('pushed_back', 'Pushed Back'),
+        ('released', 'Released to Member'),
+        ('escalated', 'Escalated to Another Reviewer'),
+        ('cancelled', 'Cancelled'),
+    ]
+
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='review_requests',
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='review_requests_made',
+        help_text='Technician who asked for the review.'
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='review_requests_received',
+        help_text='Specific tech chosen as reviewer. NULL = all senior techs notified.'
+    )
+    notes = models.TextField(
+        help_text='What help is needed / review feedback.'
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    parent_request = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='escalations',
+        help_text='If escalated, points to the request that was escalated from.'
+    )
+    response_notes = models.TextField(
+        blank=True,
+        help_text='Notes from the reviewer when approving/pushing back.'
+    )
+    responded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='review_responses_given',
+    )
+    responded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['case', '-created_at']),
+            models.Index(fields=['reviewer', 'status']),
+            models.Index(fields=['requested_by', '-created_at']),
+        ]
+
+    def __str__(self):
+        reviewer_name = self.reviewer.get_full_name() if self.reviewer else 'All Senior Techs'
+        return f'Review request on Case {self.case.external_case_id} → {reviewer_name} ({self.status})'
+
+    @property
+    def is_pending(self):
+        return self.status == 'pending'
+
+    def get_chain(self):
+        """Return the full escalation chain as a list, oldest first."""
+        chain = [self]
+        current = self
+        while current.parent_request:
+            current = current.parent_request
+            chain.append(current)
+        chain.reverse()
+        return chain
 
 
 class CreditAuditLog(models.Model):

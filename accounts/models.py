@@ -80,6 +80,17 @@ class User(AbstractUser):
         default=True,
         help_text='Member/delegate opt-in for in-app (portal) notifications on their own cases.'
     )
+    # ------------------------------------------------------------------
+    # Granular staff permissions (independently grantable by admin/manager)
+    # ------------------------------------------------------------------
+    can_manage_review_settings = models.BooleanField(
+        default=False,
+        help_text='Can toggle review-required settings for other technicians. Granted to L3 techs at admin discretion.'
+    )
+    can_manage_delegates = models.BooleanField(
+        default=False,
+        help_text='Can access the Delegate Management page. Granted to L3 techs at admin discretion.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

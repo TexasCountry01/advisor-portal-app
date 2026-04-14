@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% block title %}Review Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-gear"></i> Review Settings</h2>
+        <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Per-Technician Review Requirements</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">
+                Configure which technicians require quality review at each case tier. 
+                By default, Tier 1 work requires review and Tier 2/3 does not. 
+                Toggle individual settings to override the defaults.
+            </p>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Technician</th>
+                            <th>Level</th>
+                            {% for tier_key, tier_label in tiers %}
+                            <th class="text-center">{{ tier_label }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tech in tech_data %}
+                        <tr>
+                            <td>
+                                <strong>{{ tech.user.get_full_name|default:tech.user.username }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if tech.user.user_level == 'level_1' %}info{% elif tech.user.user_level == 'level_2' %}primary{% else %}dark{% endif %}">
+                                    {{ tech.user.get_user_level_display }}
+                                </span>
+                            </td>
+                            {% for tier in tech.tiers %}
+                            <td class="text-center">
+                                <div class="form-check form-switch d-inline-block">
+                                    <input class="form-check-input" type="checkbox" role="switch"
+                                        id="review_{{ tech.user.pk }}_{{ tier.tier_key }}"
+                                        data-tech-id="{{ tech.user.pk }}"
+                                        data-tier="{{ tier.tier_key }}"
+                                        {% if tier.requires_review %}checked{% endif %}
+                                        onchange="toggleReviewSetting(this)">
+                                </div>
+                                <br>
+                                <small class="text-muted">
+                                    {% if tier.is_default %}
+                                        <em>Default</em>
+                                    {% else %}
+                                        Set by {{ tier.set_by }}
+                                    {% endif %}
+                                </small>
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">No active technicians found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-info-circle"></i> How Review Settings Work</h5>
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                <li><strong>Toggle ON</strong>: When the technician marks a case at that tier as completed, it automatically goes to <code>Pending Review</code> instead of <code>Completed</code>.</li>
+                <li><strong>Toggle OFF</strong>: The case goes directly to <code>Completed</code> and can be released to the member immediately.</li>
+                <li><strong>Default behavior</strong>: Tier 1 requires review (ON), Tier 2 and Tier 3 do not (OFF). These defaults apply when no explicit setting exists for a technician.</li>
+                <li><strong>Ad-hoc reviews</strong>: Any technician can still request an ad-hoc review from the case detail page, regardless of these settings.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleReviewSetting(checkbox) {
+    const techId = checkbox.dataset.techId;
+    const tier = checkbox.dataset.tier;
+    const requiresReview = checkbox.checked;
+
+    fetch('{% url "cases:update_review_setting" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            technician_id: parseInt(techId),
+            tier: tier,
+            requires_review: requiresReview
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Update the "Set by" text
+            const smallEl = checkbox.closest('td').querySelector('small');
+            if (smallEl) {
+                smallEl.innerHTML = 'Set by {{ user.get_full_name|default:user.username }}';
+            }
+        } else {
+            alert(data.error || 'An error occurred.');
+            checkbox.checked = !checkbox.checked; // Revert
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('An error occurred while updating the setting.');
+        checkbox.checked = !checkbox.checked; // Revert
+    });
+}
+</script>
+{% endblock %}

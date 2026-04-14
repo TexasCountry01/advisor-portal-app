@@ -70,6 +70,12 @@ class AuditLog(models.Model):
         ('delegate_add_requested', 'Delegate Add Requested'),
         ('delegate_remove_requested', 'Delegate Remove Requested'),
         ('notification_preferences_changed', 'Notification Preferences Changed'),
+        ('review_setting_changed', 'Review Setting Changed'),
+        ('review_requested', 'Review Requested'),
+        ('review_escalated', 'Review Escalated'),
+        ('review_pushed_back', 'Review Pushed Back'),
+        ('review_released', 'Review Released to Member'),
+        ('permission_changed', 'Permission Changed'),
         ('sso_login_failed', 'SSO Login Failed'),
         ('sso_auto_provision', 'SSO User Auto-Provisioned'),
         ('sso_sync', 'SSO Profile Synced'),
@@ -411,6 +417,8 @@ class StaffNotification(models.Model):
         ('member_document_uploaded', 'Member Uploaded Document'),
         ('case_chat_message', 'New Case Chat Message'),
         ('member_change_request', 'Member Change Request'),
+        ('review_requested', 'Review Requested'),
+        ('review_action_taken', 'Review Action Taken'),
         ('system_alert', 'System Alert'),
     ]
     

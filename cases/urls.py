@@ -89,6 +89,16 @@ urlpatterns = [
     path('<int:case_id>/review/correct/', views.correct_case_review, name='correct_case_review'),
     path('<int:case_id>/submit-for-review/', views.submit_for_review, name='submit_for_review'),
     
+    # Ad-hoc Review Requests
+    path('<int:case_id>/request-review/', views.request_review, name='request_review'),
+    path('<int:case_id>/review-requests/', views.get_review_requests, name='get_review_requests'),
+    path('review-request/<int:review_request_id>/respond/', views.respond_to_review_request, name='respond_to_review_request'),
+    path('api/eligible-reviewers/', views.get_eligible_reviewers, name='get_eligible_reviewers'),
+    
+    # Review Settings Management
+    path('review-settings/', views.review_settings_page, name='review_settings'),
+    path('review-settings/update/', views.update_review_setting, name='update_review_setting'),
+    
     # Audit trails
     path('audit/', views.audit_log_dashboard, name='audit_log_dashboard'),
     path('<int:case_id>/audit-history/', views.case_audit_history, name='case_audit_history'),

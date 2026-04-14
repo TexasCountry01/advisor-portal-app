@@ -1614,6 +1614,9 @@
                                     <button type="button" class="btn btn-outline-primary" id="submitForReviewBtn" onclick="submitForReview()">
                                         <i class="bi bi-arrow-right-circle"></i> Submit for Review
                                     </button>
+                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#requestReviewModal">
+                                        <i class="bi bi-person-check"></i> Request Ad-hoc Review
+                                    </button>
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
@@ -1626,6 +1629,9 @@
                                     <a href="{% url 'cases:completion_review' case.id %}" class="btn btn-outline-success" id="markCompletedBtn">
                                         <i class="bi bi-check-circle"></i> Mark as Completed
                                     </a>
+                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#requestReviewModal">
+                                        <i class="bi bi-person-check"></i> Request Ad-hoc Review
+                                    </button>
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
@@ -1650,6 +1656,20 @@
                     </div>
                 </div>
                 {% endif %}
+
+                <!-- Ad-hoc Review Requests Panel -->
+                {% if user.role == 'technician' or user.role in 'administrator,manager' %}
+                <div class="card mt-3" id="reviewRequestsCard" style="display:none;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-person-check"></i> Review Requests</h5>
+                        <span class="badge bg-info" id="reviewRequestCount">0</span>
+                    </div>
+                    <div class="card-body p-0" id="reviewRequestsList">
+                        <div class="text-center text-muted py-3">Loading...</div>
+                    </div>
+                </div>
+                {% endif %}
+
             {% endif %}
         </div>
     </div>
@@ -3878,6 +3898,76 @@ function acceptAndPutOnHold() {
 
 {% endif %}
 
+<!-- Request Ad-hoc Review Modal -->
+<div class="modal fade" id="requestReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-person-check"></i> Request Ad-hoc Review</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Request a senior technician, administrator, or manager to review this case before you complete it.</p>
+                <div class="mb-3">
+                    <label for="reviewReviewer" class="form-label">Request Review From</label>
+                    <select class="form-select" id="reviewReviewer">
+                        <option value="">Any Senior Technician / Admin</option>
+                    </select>
+                    <small class="text-muted">Leave blank to notify all eligible reviewers.</small>
+                </div>
+                <div class="mb-3">
+                    <label for="reviewNotes" class="form-label">What do you need reviewed? <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="reviewNotes" rows="4" placeholder="Describe what you'd like a second opinion on..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info text-white" onclick="submitReviewRequest()">
+                    <i class="bi bi-send"></i> Submit Request
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Respond to Review Request Modal -->
+<div class="modal fade" id="respondReviewModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-chat-dots"></i> Respond to Review Request</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="respondReviewRequestInfo" class="mb-3"></div>
+                <div class="mb-3">
+                    <label for="respondNotes" class="form-label">Response Notes</label>
+                    <textarea class="form-control" id="respondNotes" rows="3" placeholder="Add your response notes..."></textarea>
+                </div>
+                <div id="escalateToGroup" class="mb-3" style="display:none;">
+                    <label for="escalateToSelect" class="form-label">Escalate To</label>
+                    <select class="form-select" id="escalateToSelect">
+                        <option value="">Any Senior Technician / Admin</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <input type="hidden" id="respondReviewRequestId" value="">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="respondToReview('pushed_back')">
+                    <i class="bi bi-arrow-return-left"></i> Push Back
+                </button>
+                <button type="button" class="btn btn-info text-white" onclick="showEscalateOption()">
+                    <i class="bi bi-arrow-up-circle"></i> Escalate
+                </button>
+                <button type="button" class="btn btn-success" onclick="respondToReview('approved')">
+                    <i class="bi bi-check-circle"></i> Approve
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Put on Hold Modal (Outside conditional - available for all cases) -->
 <div class="modal fade" id="putOnHoldModal" tabindex="-1">
     <div class="modal-dialog">
@@ -4183,6 +4273,218 @@ function submitCancelRequest() {
         alert('An error occurred while sending your cancellation request.');
     });
 }
+
+// ============================================================================
+// AD-HOC REVIEW REQUEST FUNCTIONS
+// ============================================================================
+
+// Load eligible reviewers into dropdown
+function loadEligibleReviewers() {
+    fetch('{% url "cases:get_eligible_reviewers" %}', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const select = document.getElementById('reviewReviewer');
+            const escalateSelect = document.getElementById('escalateToSelect');
+            data.reviewers.forEach(rev => {
+                const label = rev.name + (rev.level ? ` (${rev.level})` : ` (${rev.role})`);
+                const opt = new Option(label, rev.id);
+                select.add(opt.cloneNode(true));
+                if (escalateSelect) escalateSelect.add(opt);
+            });
+        }
+    })
+    .catch(err => console.error('Error loading reviewers:', err));
+}
+
+// Submit a new review request
+function submitReviewRequest() {
+    const notes = document.getElementById('reviewNotes').value.trim();
+    if (!notes) {
+        alert('Please describe what you need reviewed.');
+        return;
+    }
+    const reviewerId = document.getElementById('reviewReviewer').value;
+    const body = { notes: notes };
+    if (reviewerId) body.reviewer_id = parseInt(reviewerId);
+
+    fetch('{% url "cases:request_review" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('requestReviewModal'));
+            if (modal) modal.hide();
+            document.getElementById('reviewNotes').value = '';
+            const alertHtml = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+            loadReviewRequests();
+        } else {
+            alert(data.error || 'An error occurred.');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('An error occurred while submitting the review request.');
+    });
+}
+
+// Load review requests for this case
+function loadReviewRequests() {
+    fetch('{% url "cases:get_review_requests" case.id %}', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        const card = document.getElementById('reviewRequestsCard');
+        const list = document.getElementById('reviewRequestsList');
+        const count = document.getElementById('reviewRequestCount');
+        const requests = data.review_requests;
+
+        if (requests.length === 0) {
+            card.style.display = 'none';
+            return;
+        }
+
+        card.style.display = 'block';
+        count.textContent = requests.filter(r => r.is_pending).length || '';
+
+        let html = '<ul class="list-group list-group-flush">';
+        requests.forEach(rr => {
+            const statusColors = {
+                'pending': 'warning',
+                'approved': 'success',
+                'pushed_back': 'danger',
+                'released': 'info',
+                'escalated': 'primary',
+                'cancelled': 'secondary'
+            };
+            const badgeColor = statusColors[rr.status] || 'secondary';
+            const date = new Date(rr.created_at).toLocaleDateString('en-US', {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'});
+
+            html += `<li class="list-group-item">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${rr.requested_by}</strong> &rarr; ${rr.reviewer}
+                        <br><small class="text-muted">${date}</small>
+                        <br><small>${rr.notes}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${badgeColor}">${rr.status_display}</span>`;
+
+            // Show respond button for pending requests if user is a reviewer
+            {% if user.role in 'administrator,manager' or user.user_level in 'level_2,level_3' %}
+            if (rr.is_pending) {
+                html += `<br><button class="btn btn-sm btn-outline-primary mt-1" onclick="openRespondModal(${rr.id}, '${rr.requested_by}', '${rr.notes.replace(/'/g, "\\'")}')">
+                    <i class="bi bi-reply"></i> Respond
+                </button>`;
+            }
+            {% endif %}
+
+            if (rr.response_notes) {
+                html += `<br><small class="text-muted mt-1 d-block"><em>${rr.responded_by}: ${rr.response_notes}</em></small>`;
+            }
+
+            html += `</div></div></li>`;
+        });
+        html += '</ul>';
+        list.innerHTML = html;
+    })
+    .catch(err => console.error('Error loading review requests:', err));
+}
+
+// Open respond modal
+function openRespondModal(requestId, requesterName, notes) {
+    document.getElementById('respondReviewRequestId').value = requestId;
+    document.getElementById('respondReviewRequestInfo').innerHTML = `
+        <div class="alert alert-light">
+            <strong>Request from:</strong> ${requesterName}<br>
+            <strong>Notes:</strong> ${notes}
+        </div>
+    `;
+    document.getElementById('respondNotes').value = '';
+    document.getElementById('escalateToGroup').style.display = 'none';
+    const modal = new bootstrap.Modal(document.getElementById('respondReviewModal'));
+    modal.show();
+}
+
+// Show escalate option
+function showEscalateOption() {
+    const group = document.getElementById('escalateToGroup');
+    if (group.style.display === 'none') {
+        group.style.display = 'block';
+    } else {
+        respondToReview('escalated');
+    }
+}
+
+// Respond to a review request
+function respondToReview(action) {
+    const requestId = document.getElementById('respondReviewRequestId').value;
+    const notes = document.getElementById('respondNotes').value.trim();
+
+    if ((action === 'pushed_back' || action === 'escalated') && !notes) {
+        alert('Notes are required when pushing back or escalating.');
+        return;
+    }
+
+    const body = { action: action, response_notes: notes };
+    if (action === 'escalated') {
+        const escalateTo = document.getElementById('escalateToSelect').value;
+        if (escalateTo) body.escalate_to_id = parseInt(escalateTo);
+    }
+
+    fetch(`/cases/review-request/${requestId}/respond/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(body)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('respondReviewModal'));
+            if (modal) modal.hide();
+            const alertHtml = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="bi bi-check-circle"></i> ${data.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>`;
+            document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
+            loadReviewRequests();
+            if (action === 'released') {
+                setTimeout(() => location.reload(), 2000);
+            }
+        } else {
+            alert(data.error || 'An error occurred.');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('An error occurred while responding to the review request.');
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadEligibleReviewers();
+    loadReviewRequests();
+});
 </script>
 
 {% endblock %}

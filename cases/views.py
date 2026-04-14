@@ -2915,19 +2915,19 @@ def mark_case_completed(request, case_id):
             from core.models import SystemSettings
             from cases.models import CaseReviewHistory
             
-            # Determine if case requires review (Level 1 technician work)
-            if case.assigned_to and case.assigned_to.user_level == 'level_1':
-                # Level 1 technician work must go to pending_review status
+            # Determine if case requires review (based on TechReviewSetting per-tech per-tier)
+            if case.requires_review:
+                # This technician's work at this tier requires review
                 case.status = 'pending_review'
                 # Log the submission for review in audit trail
                 CaseReviewHistory.objects.create(
                     case=case,
                     original_technician=case.assigned_to,
                     review_action='submitted_for_review',
-                    review_notes=f'Case submitted by Level 1 technician {case.assigned_to.username} for quality review'
+                    review_notes=f'Case submitted by {case.assigned_to.get_full_name() or case.assigned_to.username} ({case.assigned_to.get_user_level_display()}) for quality review'
                 )
             else:
-                # Level 2/3 technician work can go directly to completed
+                # This technician's work at this tier does not require review
                 case.status = 'completed'
             
             # Handle release scheduling - new datetime format or legacy hours format
@@ -5982,6 +5982,475 @@ def submit_for_review(request, case_id):
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+# ============================================================================
+# AD-HOC REVIEW REQUEST VIEWS (Any technician can request a review)
+# ============================================================================
+
+@login_required
+@require_http_methods(["POST"])
+def request_review(request, case_id):
+    """Any technician can request an ad-hoc review from a senior tech/admin/manager."""
+    from cases.models import CaseReviewRequest
+    from core.models import AuditLog, StaffNotification
+
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+
+    # Permission: only the assigned technician can request a review
+    if user.role != 'technician' or case.assigned_to != user:
+        return JsonResponse({'success': False, 'error': 'Only the assigned technician can request a review.'}, status=403)
+
+    # Case must be in a workable status
+    if case.status not in ('accepted', 'hold'):
+        return JsonResponse({
+            'success': False,
+            'error': f'Cannot request review when case is in {case.get_status_display()} status.'
+        }, status=400)
+
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        body = {}
+
+    reviewer_id = body.get('reviewer_id')
+    notes = body.get('notes', '').strip()
+
+    if not notes:
+        return JsonResponse({'success': False, 'error': 'Please provide notes explaining what you need reviewed.'}, status=400)
+
+    # Resolve reviewer (optional – None means "any senior")
+    reviewer = None
+    if reviewer_id:
+        reviewer = User.objects.filter(pk=reviewer_id).first()
+        if not reviewer or (reviewer.role == 'technician' and reviewer.user_level not in ('level_2', 'level_3')):
+            return JsonResponse({'success': False, 'error': 'Selected reviewer is not a senior technician, administrator, or manager.'}, status=400)
+
+    review_request = CaseReviewRequest.objects.create(
+        case=case,
+        requested_by=user,
+        reviewer=reviewer,
+        notes=notes,
+        status='pending',
+    )
+
+    # Audit log
+    AuditLog.log_activity(
+        user=user,
+        action_type='review_requested',
+        case=case,
+        description=f'{user.get_full_name() or user.username} requested a review' + (f' from {reviewer.get_full_name() or reviewer.username}' if reviewer else ' from any senior technician'),
+        metadata={
+            'review_request_id': review_request.pk,
+            'reviewer': reviewer.username if reviewer else None,
+            'notes': notes,
+        },
+    )
+
+    # Notify the reviewer (or all eligible reviewers)
+    employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+    if reviewer:
+        StaffNotification.objects.create(
+            user=reviewer,
+            case=case,
+            notification_type='review_requested',
+            title=f'Review Requested: {employee_name}',
+            message=f'{user.get_full_name() or user.username} is requesting your review on the case for {employee_name}. Notes: {notes}',
+        )
+    else:
+        # Notify all L2/L3 techs + admins + managers
+        eligible = User.objects.filter(
+            Q(role='technician', user_level__in=['level_2', 'level_3']) |
+            Q(role__in=['administrator', 'manager']),
+            is_active=True,
+        ).exclude(pk=user.pk)
+        for eligible_user in eligible:
+            StaffNotification.objects.create(
+                user=eligible_user,
+                case=case,
+                notification_type='review_requested',
+                title=f'Review Requested: {employee_name}',
+                message=f'{user.get_full_name() or user.username} is requesting a review on the case for {employee_name}. Notes: {notes}',
+            )
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Review request submitted for {employee_name}.',
+        'review_request_id': review_request.pk,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def respond_to_review_request(request, review_request_id):
+    """Respond to an ad-hoc review request: approve, push_back, release, escalate, or cancel."""
+    from cases.models import CaseReviewRequest
+    from core.models import AuditLog, StaffNotification
+
+    user = request.user
+    review_request = get_object_or_404(CaseReviewRequest, pk=review_request_id)
+    case = review_request.case
+
+    # Permission: senior techs, admins, managers, or the original requester (for cancel)
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        body = {}
+
+    action = body.get('action')  # approved, pushed_back, released, escalated, cancelled
+    response_notes = body.get('response_notes', '').strip()
+
+    valid_actions = ['approved', 'pushed_back', 'released', 'escalated', 'cancelled']
+    if action not in valid_actions:
+        return JsonResponse({'success': False, 'error': f'Invalid action. Must be one of: {", ".join(valid_actions)}'}, status=400)
+
+    # Cancel can only be done by the requester
+    if action == 'cancelled':
+        if user != review_request.requested_by and user.role not in ('administrator', 'manager'):
+            return JsonResponse({'success': False, 'error': 'Only the requester or an admin/manager can cancel a review request.'}, status=403)
+    else:
+        # Other actions require reviewer privileges
+        is_reviewer = (user.role == 'technician' and user.user_level in ('level_2', 'level_3')) or user.role in ('administrator', 'manager')
+        if not is_reviewer:
+            return JsonResponse({'success': False, 'error': 'You do not have permission to respond to review requests.'}, status=403)
+
+    if not review_request.is_pending:
+        return JsonResponse({'success': False, 'error': 'This review request has already been responded to.'}, status=400)
+
+    # Require notes for push_back and escalate
+    if action in ('pushed_back', 'escalated') and not response_notes:
+        return JsonResponse({'success': False, 'error': 'Notes are required when pushing back or escalating.'}, status=400)
+
+    # Handle escalation — create a new chained request
+    escalate_to_id = body.get('escalate_to_id')
+    if action == 'escalated':
+        escalate_to = None
+        if escalate_to_id:
+            escalate_to = User.objects.filter(pk=escalate_to_id).first()
+            if not escalate_to:
+                return JsonResponse({'success': False, 'error': 'Escalation target user not found.'}, status=400)
+
+        # Close the current request
+        review_request.status = 'escalated'
+        review_request.response_notes = response_notes
+        review_request.responded_by = user
+        review_request.responded_at = timezone.now()
+        review_request.save()
+
+        # Create a new chained request
+        new_request = CaseReviewRequest.objects.create(
+            case=case,
+            requested_by=user,
+            reviewer=escalate_to,
+            notes=f'Escalated from {user.get_full_name() or user.username}: {response_notes}',
+            status='pending',
+            parent_request=review_request,
+        )
+
+        # Audit
+        AuditLog.log_activity(
+            user=user,
+            action_type='review_escalated',
+            case=case,
+            description=f'{user.get_full_name() or user.username} escalated review request' + (f' to {escalate_to.get_full_name() or escalate_to.username}' if escalate_to else ''),
+            metadata={
+                'original_request_id': review_request.pk,
+                'new_request_id': new_request.pk,
+                'escalated_to': escalate_to.username if escalate_to else None,
+                'notes': response_notes,
+            },
+        )
+
+        # Notify the escalation target
+        employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+        if escalate_to:
+            StaffNotification.objects.create(
+                user=escalate_to,
+                case=case,
+                notification_type='review_requested',
+                title=f'Escalated Review: {employee_name}',
+                message=f'{user.get_full_name() or user.username} escalated a review request for {employee_name}. Notes: {response_notes}',
+            )
+
+        # Notify original requester
+        StaffNotification.objects.create(
+            user=review_request.requested_by,
+            case=case,
+            notification_type='review_action_taken',
+            title=f'Review Escalated: {employee_name}',
+            message=f'{user.get_full_name() or user.username} escalated your review request for {employee_name}.' + (f' Notes: {response_notes}' if response_notes else ''),
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Review request escalated.',
+            'new_review_request_id': new_request.pk,
+        })
+
+    # Handle all other actions (approved, pushed_back, released, cancelled)
+    review_request.status = action
+    review_request.response_notes = response_notes
+    review_request.responded_by = user
+    review_request.responded_at = timezone.now()
+    review_request.save()
+
+    # Map action to audit action_type
+    action_type_map = {
+        'approved': 'review_requested',
+        'pushed_back': 'review_pushed_back',
+        'released': 'review_released',
+        'cancelled': 'review_requested',
+    }
+    action_label_map = {
+        'approved': 'approved',
+        'pushed_back': 'pushed back',
+        'released': 'released to member',
+        'cancelled': 'cancelled',
+    }
+
+    AuditLog.log_activity(
+        user=user,
+        action_type=action_type_map.get(action, 'review_requested'),
+        case=case,
+        description=f'Review request {action_label_map.get(action, action)} by {user.get_full_name() or user.username}',
+        metadata={
+            'review_request_id': review_request.pk,
+            'action': action,
+            'response_notes': response_notes,
+        },
+    )
+
+    # Notify the original requester
+    employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+    label = action_label_map.get(action, action)
+    StaffNotification.objects.create(
+        user=review_request.requested_by,
+        case=case,
+        notification_type='review_action_taken',
+        title=f'Review {label.title()}: {employee_name}',
+        message=f'{user.get_full_name() or user.username} {label} your review request for {employee_name}.' + (f' Notes: {response_notes}' if response_notes else ''),
+    )
+
+    # If released, mark case as completed and release to member
+    if action == 'released':
+        case.status = 'completed'
+        case.reviewed_by = user
+        case.reviewed_at = timezone.now()
+        case.actual_release_date = timezone.now()
+        case.date_completed = timezone.now()
+        case.scheduled_release_date = None
+        case.scheduled_email_date = None
+        case.save()
+
+        # Create notification for member
+        from cases.models import CaseNotification
+        _create_case_notification_if_allowed(
+            case=case,
+            member=case.member,
+            notification_type='case_released',
+            title=f'Your case for {employee_name} is completed',
+            message=f'Your case for {employee_name} has been completed and is ready for you to review.',
+        )
+
+        # Send case completed email
+        try:
+            from cases.services.email_service import send_case_completed_email
+            send_case_completed_email(case, request=request, user=user)
+        except Exception as email_error:
+            logger.error(f'Failed to send case completed email for case {case.pk}: {email_error}')
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Review request {label}.',
+    })
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_review_requests(request, case_id):
+    """Get all review requests for a case (used by case detail page)."""
+    from cases.models import CaseReviewRequest
+
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+
+    # Permission: assigned tech, admins, managers, or L2/L3 techs
+    if user.role == 'technician' and user.user_level not in ('level_2', 'level_3') and case.assigned_to != user:
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+
+    requests_qs = CaseReviewRequest.objects.filter(case=case).select_related(
+        'requested_by', 'reviewer', 'responded_by', 'parent_request'
+    ).order_by('-created_at')
+
+    data = []
+    for rr in requests_qs:
+        data.append({
+            'id': rr.pk,
+            'requested_by': rr.requested_by.get_full_name() or rr.requested_by.username,
+            'requested_by_id': rr.requested_by.pk,
+            'reviewer': (rr.reviewer.get_full_name() or rr.reviewer.username) if rr.reviewer else 'Any Senior',
+            'reviewer_id': rr.reviewer.pk if rr.reviewer else None,
+            'notes': rr.notes,
+            'status': rr.status,
+            'status_display': rr.get_status_display(),
+            'response_notes': rr.response_notes or '',
+            'responded_by': (rr.responded_by.get_full_name() or rr.responded_by.username) if rr.responded_by else None,
+            'responded_at': rr.responded_at.isoformat() if rr.responded_at else None,
+            'created_at': rr.created_at.isoformat(),
+            'parent_request_id': rr.parent_request.pk if rr.parent_request else None,
+            'is_pending': rr.is_pending,
+        })
+
+    return JsonResponse({'success': True, 'review_requests': data})
+
+
+@login_required
+@require_http_methods(["GET"])
+def get_eligible_reviewers(request):
+    """Return list of eligible reviewers (L2/L3 techs, admins, managers) for the reviewer dropdown."""
+    user = request.user
+    if user.role not in ('technician', 'administrator', 'manager'):
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+
+    eligible = User.objects.filter(
+        Q(role='technician', user_level__in=['level_2', 'level_3']) |
+        Q(role__in=['administrator', 'manager']),
+        is_active=True,
+    ).exclude(pk=user.pk).order_by('first_name', 'last_name')
+
+    data = [{
+        'id': u.pk,
+        'name': u.get_full_name() or u.username,
+        'role': u.get_role_display() if hasattr(u, 'get_role_display') else u.role,
+        'level': u.get_user_level_display() if u.role == 'technician' else '',
+    } for u in eligible]
+
+    return JsonResponse({'success': True, 'reviewers': data})
+
+
+# ============================================================================
+# REVIEW SETTINGS MANAGEMENT (Admin/Manager toggle per-tech per-tier)
+# ============================================================================
+
+@login_required
+@require_http_methods(["GET"])
+def review_settings_page(request):
+    """Page for admins/managers to manage per-tech per-tier review settings."""
+    from cases.models import TechReviewSetting
+
+    user = request.user
+    if user.role not in ('administrator', 'manager') and not user.can_manage_review_settings:
+        return HttpResponseForbidden('You do not have permission to manage review settings.')
+
+    technicians = User.objects.filter(role='technician', is_active=True).order_by('first_name', 'last_name')
+    settings_qs = TechReviewSetting.objects.select_related('technician', 'set_by').all()
+
+    # Build a lookup: {tech_id: {tier: requires_review}}
+    settings_map = {}
+    for s in settings_qs:
+        settings_map.setdefault(s.technician_id, {})[s.tier] = {
+            'requires_review': s.requires_review,
+            'set_by': s.set_by.get_full_name() or s.set_by.username if s.set_by else 'System Default',
+            'updated_at': s.updated_at,
+        }
+
+    tiers = [('tier_1', 'Tier 1'), ('tier_2', 'Tier 2'), ('tier_3', 'Tier 3')]
+    # Default review requirements: tier_1=True, tier_2/tier_3=False
+    tier_defaults = {'tier_1': True, 'tier_2': False, 'tier_3': False}
+
+    tech_data = []
+    for tech in technicians:
+        tech_settings = settings_map.get(tech.pk, {})
+        tier_info = []
+        for tier_key, tier_label in tiers:
+            explicit = tech_settings.get(tier_key)
+            if explicit:
+                requires_review = explicit['requires_review']
+                set_by = explicit['set_by']
+                updated_at = explicit['updated_at']
+                is_default = False
+            else:
+                requires_review = tier_defaults.get(tier_key, False)
+                set_by = 'System Default'
+                updated_at = None
+                is_default = True
+            tier_info.append({
+                'tier_key': tier_key,
+                'tier_label': tier_label,
+                'requires_review': requires_review,
+                'set_by': set_by,
+                'updated_at': updated_at,
+                'is_default': is_default,
+            })
+        tech_data.append({
+            'user': tech,
+            'tiers': tier_info,
+        })
+
+    context = {
+        'tech_data': tech_data,
+        'tiers': tiers,
+    }
+    return render(request, 'cases/review_settings.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_review_setting(request):
+    """Toggle a single per-tech per-tier review setting via AJAX."""
+    from cases.models import TechReviewSetting
+    from core.models import AuditLog
+
+    user = request.user
+    if user.role not in ('administrator', 'manager') and not user.can_manage_review_settings:
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        body = {}
+
+    tech_id = body.get('technician_id')
+    tier = body.get('tier')
+    requires_review = body.get('requires_review')
+
+    if not tech_id or not tier or requires_review is None:
+        return JsonResponse({'success': False, 'error': 'Missing required fields.'}, status=400)
+
+    if tier not in ('tier_1', 'tier_2', 'tier_3'):
+        return JsonResponse({'success': False, 'error': 'Invalid tier.'}, status=400)
+
+    technician = User.objects.filter(pk=tech_id, role='technician').first()
+    if not technician:
+        return JsonResponse({'success': False, 'error': 'Technician not found.'}, status=400)
+
+    setting, created = TechReviewSetting.objects.update_or_create(
+        technician=technician,
+        tier=tier,
+        defaults={
+            'requires_review': bool(requires_review),
+            'set_by': user,
+        },
+    )
+
+    AuditLog.log_activity(
+        user=user,
+        action_type='review_setting_changed',
+        description=f'Review setting for {technician.get_full_name() or technician.username} {tier} set to {"required" if requires_review else "not required"}',
+        metadata={
+            'technician_id': technician.pk,
+            'technician': technician.username,
+            'tier': tier,
+            'requires_review': bool(requires_review),
+            'was_created': created,
+        },
+    )
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Review {"required" if requires_review else "not required"} for {technician.get_full_name() or technician.username} at {tier}.',
+    })
 
 
 @login_required
