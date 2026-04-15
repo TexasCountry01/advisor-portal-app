@@ -95,6 +95,13 @@
                                     <i class="bi bi-kanban"></i> Dashboard
                                 </a>
                             </li>
+                            {% if user.can_manage_review_settings %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'cases:review_settings' %}">
+                                    <i class="bi bi-clipboard-check"></i> Review Settings
+                                </a>
+                            </li>
+                            {% endif %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
                                     <i class="bi bi-envelope"></i> Messages
@@ -114,6 +121,11 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link" href="{% url 'cases:review_settings' %}">
+                                    <i class="bi bi-clipboard-check"></i> Review Settings
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
                                     <i class="bi bi-envelope"></i> Messages
                                     <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
@@ -129,6 +141,11 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'cases:manager_dashboard' %}">
                                     <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'cases:review_settings' %}">
+                                    <i class="bi bi-clipboard-check"></i> Review Settings
                                 </a>
                             </li>
                             <li class="nav-item">

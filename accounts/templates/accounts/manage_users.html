@@ -206,6 +206,8 @@
                                                                     data-user-name="{{ user.get_full_name|default:user.username }}"
                                                                     data-user-role="{{ user.role }}"
                                                                     data-user-level="{{ user.user_level }}"
+                                                                    data-user-can-manage-review="{{ user.can_manage_review_settings|yesno:'true,false' }}"
+                                                                    data-user-can-manage-delegates="{{ user.can_manage_delegates|yesno:'true,false' }}"
                                                                     title="Edit Role">
                                                                 <i class="bi bi-pencil"></i> Edit
                                                             </button>
@@ -275,6 +277,24 @@
                             <option value="level_3">Level 3 - Senior Technician</option>
                         </select>
                     </div>
+
+                    <div class="mb-3" id="editPermissionsContainer" style="display: none;">
+                        <label class="form-label">Staff Permissions</label>
+                        <div class="form-check form-switch mb-2">
+                            <input class="form-check-input" type="checkbox" role="switch" name="can_manage_review_settings" id="editCanManageReview" value="on">
+                            <label class="form-check-label" for="editCanManageReview">
+                                Can Manage Review Settings
+                            </label>
+                            <div class="form-text small text-muted">Allows this user to toggle mandatory review for other technicians.</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" name="can_manage_delegates" id="editCanManageDelegates" value="on">
+                            <label class="form-check-label" for="editCanManageDelegates">
+                                Can Manage Delegates
+                            </label>
+                            <div class="form-text small text-muted">Allows this user to access the Delegate Management page.</div>
+                        </div>
+                    </div>
                     
                     <div class="alert alert-warning small mb-0">
                         <i class="bi bi-exclamation-triangle"></i>
@@ -326,6 +346,8 @@ editRoleModal.addEventListener('show.bs.modal', function(event) {
     const userName = button.getAttribute('data-user-name');
     const userRole = button.getAttribute('data-user-role');
     const userLevel = button.getAttribute('data-user-level');
+    const canManageReview = button.getAttribute('data-user-can-manage-review') === 'true';
+    const canManageDelegates = button.getAttribute('data-user-can-manage-delegates') === 'true';
     
     // Set form action
     document.getElementById('editRoleForm').action = '/accounts/edit-user-role/' + userId + '/';
@@ -339,15 +361,21 @@ editRoleModal.addEventListener('show.bs.modal', function(event) {
     // Set current level
     document.getElementById('editLevelSelect').value = userLevel || '';
     
-    // Show/hide level field
-    const editLevelContainer = document.getElementById('editLevelContainer');
-    editLevelContainer.style.display = (userRole === 'technician') ? 'block' : 'none';
+    // Set permission checkboxes
+    document.getElementById('editCanManageReview').checked = canManageReview;
+    document.getElementById('editCanManageDelegates').checked = canManageDelegates;
+    
+    // Show/hide level and permissions fields
+    const isTech = (userRole === 'technician');
+    document.getElementById('editLevelContainer').style.display = isTech ? 'block' : 'none';
+    document.getElementById('editPermissionsContainer').style.display = isTech ? 'block' : 'none';
 });
 
-// Show/hide level field when role changes in modal
+// Show/hide level and permissions fields when role changes in modal
 document.getElementById('editRoleSelect').addEventListener('change', function() {
-    const editLevelContainer = document.getElementById('editLevelContainer');
-    editLevelContainer.style.display = (this.value === 'technician') ? 'block' : 'none';
+    const isTech = (this.value === 'technician');
+    document.getElementById('editLevelContainer').style.display = isTech ? 'block' : 'none';
+    document.getElementById('editPermissionsContainer').style.display = isTech ? 'block' : 'none';
 });
 {% endif %}
 </script>

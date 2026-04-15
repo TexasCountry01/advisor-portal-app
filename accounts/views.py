@@ -233,10 +233,27 @@ def edit_user_role(request, user_id):
             if new_level in valid_levels and new_level != old_level:
                 target_user.user_level = new_level
                 changes.append(f'level: {old_level or "none"} → {new_level}')
+            
+            # Update staff permissions (only for technicians)
+            new_can_manage_review = request.POST.get('can_manage_review_settings') == 'on'
+            new_can_manage_delegates = request.POST.get('can_manage_delegates') == 'on'
+            
+            if target_user.can_manage_review_settings != new_can_manage_review:
+                target_user.can_manage_review_settings = new_can_manage_review
+                changes.append(f'can_manage_review_settings: {"on" if new_can_manage_review else "off"}')
+            if target_user.can_manage_delegates != new_can_manage_delegates:
+                target_user.can_manage_delegates = new_can_manage_delegates
+                changes.append(f'can_manage_delegates: {"on" if new_can_manage_delegates else "off"}')
         elif target_user.user_level:
-            # Clear level if no longer a technician
+            # Clear level and permissions if no longer a technician
             changes.append(f'level: {target_user.user_level} → cleared')
             target_user.user_level = ''
+            if target_user.can_manage_review_settings:
+                target_user.can_manage_review_settings = False
+                changes.append('can_manage_review_settings: off')
+            if target_user.can_manage_delegates:
+                target_user.can_manage_delegates = False
+                changes.append('can_manage_delegates: off')
         
         if changes:
             target_user.save()
