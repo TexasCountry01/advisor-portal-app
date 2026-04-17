@@ -181,7 +181,15 @@ def member_dashboard(request):
         has_unread_notif = Exists(CaseNotification.objects.filter(
             case=OuterRef('pk'), member=OuterRef('member'), is_read=False
         ).exclude(notification_type='member_update_received'))
-        cases = cases.filter(Q(status__in=status_filter) | has_unread_msg | has_unread_notif)
+        # For members: treat completed-but-unreleased cases as 'accepted' for filtering
+        status_q = Q(status__in=status_filter)
+        if 'accepted' in status_filter and 'completed' not in status_filter:
+            # "Accepted" filter should also match completed-but-unreleased cases
+            status_q = status_q | Q(status='completed', actual_release_date__isnull=True)
+        if 'completed' in status_filter and 'accepted' not in status_filter:
+            # "Completed" filter should only match actually-released cases
+            status_q = status_q & ~Q(status='completed', actual_release_date__isnull=True)
+        cases = cases.filter(status_q | has_unread_msg | has_unread_notif)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)

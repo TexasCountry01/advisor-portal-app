@@ -559,11 +559,21 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <strong>Date Completed:</strong><br>
-                            {% if case.date_completed %}
-                                {{ case.date_completed|date:"m/d/Y" }}
+                            {% if user.role == 'member' %}
+                                {# Members only see completion date after case is released #}
+                                <strong>Date Completed:</strong><br>
+                                {% if case.actual_release_date %}
+                                    {{ case.actual_release_date|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">Not completed</span>
+                                {% endif %}
                             {% else %}
-                                <span class="text-muted">Not completed</span>
+                                <strong>Date Completed:</strong><br>
+                                {% if case.date_completed %}
+                                    {{ case.date_completed|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="text-muted">Not completed</span>
+                                {% endif %}
                             {% endif %}
                         </div>
                         {% if case.date_completed %}
