@@ -1,5 +1,18 @@
+import os
+import uuid
+
 from django.db import models
 from django.conf import settings
+
+ALLOWED_CHAT_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+MAX_CHAT_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+def message_image_upload_path(instance, filename):
+    """Upload path for general message images: message_images/convo_<id>/<uuid>.<ext>"""
+    ext = os.path.splitext(filename)[1].lower()
+    safe_name = f'{uuid.uuid4().hex}{ext}'
+    return f'message_images/convo_{instance.conversation_id}/{safe_name}'
 
 
 class Conversation(models.Model):
@@ -64,7 +77,13 @@ class Message(models.Model):
         on_delete=models.CASCADE,
         related_name='general_messages',
     )
-    body = models.TextField()
+    body = models.TextField(blank=True)
+    image = models.ImageField(
+        upload_to=message_image_upload_path,
+        blank=True,
+        null=True,
+        help_text='Optional screenshot or image attachment'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

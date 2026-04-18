@@ -8,6 +8,18 @@ import os
 from datetime import datetime
 
 
+ALLOWED_CHAT_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+MAX_CHAT_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+def chat_image_upload_path(instance, filename):
+    """Upload path for case chat images: chat_images/case_<id>/<filename>"""
+    import uuid
+    ext = os.path.splitext(filename)[1].lower()
+    safe_name = f'{uuid.uuid4().hex}{ext}'
+    return f'chat_images/case_{instance.case_id}/{safe_name}'
+
+
 def case_document_upload_path(instance, filename):
     """
     Rename uploaded files to include employee's last name (beneficiary).
@@ -1188,6 +1200,13 @@ class CaseMessage(models.Model):
     created_at = models.DateTimeField(
         auto_now_add=True,
         help_text='When message was created'
+    )
+    
+    image = models.ImageField(
+        upload_to=chat_image_upload_path,
+        blank=True,
+        null=True,
+        help_text='Optional screenshot or image attachment'
     )
     
     updated_at = models.DateTimeField(

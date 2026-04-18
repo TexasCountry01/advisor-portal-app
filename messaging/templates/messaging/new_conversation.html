@@ -21,7 +21,7 @@
 
     <div class="card">
         <div class="card-body">
-            <form method="post">
+            <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="subject" class="form-label fw-bold">Subject</label>
@@ -34,6 +34,11 @@
                     <textarea class="form-control" id="body" name="body" rows="6"
                               placeholder="Provide details about your question..."
                               required>{{ body|default:'' }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Attach Screenshot <span class="text-muted fw-normal">(optional)</span></label>
+                    <input type="file" class="form-control" name="image" accept="image/png,image/jpeg,image/gif,image/webp">
+                    <small class="text-muted">PNG, JPEG, GIF, or WebP. Max 5 MB.</small>
                 </div>
                 <div class="mb-3">
                     <div class="form-check">

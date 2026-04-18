@@ -1056,14 +1056,28 @@
                     </div>
 
                     <!-- Add Message Form -->
-                    <form id="message-form" class="mt-3">
+                    <form id="message-form" class="mt-3" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="form-group">
-                            <textarea class="form-control" name="message" rows="3" placeholder="Add a message..." required></textarea>
+                            <textarea class="form-control" name="message" rows="3" placeholder="Add a message..."></textarea>
                         </div>
-                        <button type="submit" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-chat-left-plus"></i> Send Message
-                        </button>
+                        <div id="image-preview-container" class="mt-2" style="display:none;">
+                            <div class="d-inline-block position-relative">
+                                <img id="image-preview" src="" alt="Preview" style="max-height:120px; border-radius:6px; border:1px solid #ddd;">
+                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" onclick="clearImageAttachment()" style="transform:translate(30%,-30%); border-radius:50%; padding:2px 6px; font-size:0.7rem;">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-chat-left-plus"></i> Send Message
+                            </button>
+                            <label class="btn btn-sm btn-outline-secondary mb-0" for="chat-image-input" title="Attach a screenshot">
+                                <i class="bi bi-image"></i> Attach Image
+                            </label>
+                            <input type="file" id="chat-image-input" name="image" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;" onchange="previewChatImage(this)">
+                        </div>
                     </form>
                     {% endif %}
                 </div>
@@ -2515,7 +2529,8 @@ function displayMessages(messages) {
                             <small class="text-muted d-block mt-1">${msg.created_at}</small>
                         </div>
                     </div>
-                    <p class="mt-3 mb-0">${escapeHtml(msg.message)}</p>
+                    ${msg.message ? `<p class="mt-3 mb-0">${escapeHtml(msg.message)}</p>` : ''}
+                    ${msg.image_url ? `<div class="mt-2"><a href="${msg.image_url}" target="_blank" rel="noopener"><img src="${msg.image_url}" alt="Attachment" style="max-width:100%; max-height:300px; border-radius:6px; border:1px solid #ddd; cursor:pointer;"></a></div>` : ''}
                 </div>
             </div>
         `;
@@ -2533,6 +2548,33 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// Image attachment preview
+function previewChatImage(input) {
+    const container = document.getElementById('image-preview-container');
+    const img = document.getElementById('image-preview');
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image must be under 5 MB.');
+            input.value = '';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            img.src = e.target.result;
+            container.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function clearImageAttachment() {
+    const input = document.getElementById('chat-image-input');
+    const container = document.getElementById('image-preview-container');
+    if (input) input.value = '';
+    if (container) container.style.display = 'none';
+}
+
 // Handle message form submission
 document.addEventListener('DOMContentLoaded', function() {
     const messageForm = document.getElementById('message-form');
@@ -2541,24 +2583,20 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const caseId = {{ case.id }};
-            const messageText = this.querySelector('textarea[name="message"]').value;
+            const formData = new FormData(this);
             
             fetch(`/cases/${caseId}/add-message/`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
-                body: new URLSearchParams({
-                    'message': messageText
-                })
+                body: formData
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Clear form
                     messageForm.reset();
-                    // Reload messages
+                    clearImageAttachment();
                     loadMessages();
                 } else {
                     alert('Error: ' + (data.error || 'Failed to send message'));

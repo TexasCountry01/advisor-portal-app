@@ -119,6 +119,21 @@ def new_conversation(request):
                 'send_email': send_email,
             })
 
+        # Validate image if provided
+        image_file = request.FILES.get('image')
+        if image_file:
+            from messaging.models import ALLOWED_CHAT_IMAGE_TYPES, MAX_CHAT_IMAGE_SIZE
+            if image_file.content_type not in ALLOWED_CHAT_IMAGE_TYPES:
+                return render(request, 'messaging/new_conversation.html', {
+                    'error': 'Only PNG, JPEG, GIF, and WebP images are allowed.',
+                    'subject': subject, 'body': body, 'is_urgent': is_urgent,
+                })
+            if image_file.size > MAX_CHAT_IMAGE_SIZE:
+                return render(request, 'messaging/new_conversation.html', {
+                    'error': 'Image must be under 5 MB.',
+                    'subject': subject, 'body': body, 'is_urgent': is_urgent,
+                })
+
         # Create conversation + first message
         conversation = Conversation.objects.create(
             subject=subject,
@@ -129,6 +144,7 @@ def new_conversation(request):
             conversation=conversation,
             author=user,
             body=body,
+            image=image_file,
         )
 
         # Create unread records for all active staff
@@ -189,13 +205,24 @@ def reply(request, pk):
         return JsonResponse({'error': 'Access denied'}, status=403)
 
     body = request.POST.get('body', '').strip()
-    if not body:
-        return JsonResponse({'error': 'Message cannot be empty'}, status=400)
-
+    image_file = request.FILES.get('image')
+    
+    if not body and not image_file:
+        return JsonResponse({'error': 'Message or image is required'}, status=400)
+    
+    # Validate image if provided
+    if image_file:
+        from messaging.models import ALLOWED_CHAT_IMAGE_TYPES, MAX_CHAT_IMAGE_SIZE
+        if image_file.content_type not in ALLOWED_CHAT_IMAGE_TYPES:
+            return JsonResponse({'error': 'Only PNG, JPEG, GIF, and WebP images are allowed.'}, status=400)
+        if image_file.size > MAX_CHAT_IMAGE_SIZE:
+            return JsonResponse({'error': 'Image must be under 5 MB.'}, status=400)
+    
     msg = Message.objects.create(
         conversation=conversation,
         author=user,
         body=body,
+        image=image_file,
     )
 
     # Update conversation timestamp

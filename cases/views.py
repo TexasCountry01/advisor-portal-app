@@ -3928,15 +3928,25 @@ def add_case_message(request, pk):
     
     try:
         message_text = request.POST.get('message', '').strip()
+        image_file = request.FILES.get('image')
         
-        if not message_text:
-            return JsonResponse({'error': 'Message cannot be empty'}, status=400)
+        if not message_text and not image_file:
+            return JsonResponse({'error': 'Message or image is required'}, status=400)
+        
+        # Validate image if provided
+        if image_file:
+            from cases.models import ALLOWED_CHAT_IMAGE_TYPES, MAX_CHAT_IMAGE_SIZE
+            if image_file.content_type not in ALLOWED_CHAT_IMAGE_TYPES:
+                return JsonResponse({'error': 'Only PNG, JPEG, GIF, and WebP images are allowed.'}, status=400)
+            if image_file.size > MAX_CHAT_IMAGE_SIZE:
+                return JsonResponse({'error': 'Image must be under 5 MB.'}, status=400)
         
         # Create message
         msg = CaseMessage.objects.create(
             case=case,
             author=user,
-            message=message_text
+            message=message_text,
+            image=image_file
         )
         
         # Import CaseNotification for notification creation
@@ -4171,6 +4181,7 @@ def get_case_messages(request, pk):
                 'author_id': msg.author.id,
                 'author_role': msg.author.role,
                 'message': msg.message,
+                'image_url': msg.image.url if msg.image else None,
                 'created_at': created_at_cst.strftime('%b %d, %Y %I:%M %p %Z'),
                 'updated_at': updated_at_cst.strftime('%b %d, %Y %I:%M %p %Z'),
                 'is_author': msg.author == user
