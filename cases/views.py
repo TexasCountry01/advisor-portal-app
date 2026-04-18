@@ -5926,8 +5926,9 @@ def correct_case_review(request, case_id):
 @login_required
 @require_http_methods(["POST"])
 def submit_for_review(request, case_id):
-    """Level 1 technician submits case for quality review (without release scheduling)"""
+    """Technician submits case for quality review by a senior tech."""
     from cases.models import CaseReviewHistory
+    from core.models import AuditLog, StaffNotification
     
     user = request.user
     case = get_object_or_404(Case, id=case_id)
@@ -5944,6 +5945,20 @@ def submit_for_review(request, case_id):
     
     if request.method == 'POST':
         try:
+            # Parse optional notes and reviewer from request body
+            try:
+                body = json.loads(request.body) if request.body else {}
+            except json.JSONDecodeError:
+                body = {}
+            
+            tech_notes = body.get('notes', '').strip()
+            reviewer_id = body.get('reviewer_id')
+            
+            # Resolve optional reviewer
+            reviewer = None
+            if reviewer_id:
+                reviewer = User.objects.filter(pk=reviewer_id).first()
+            
             # Set case to pending_review
             case.status = 'pending_review'
             case.review_status = None  # Clear any previous revision status
@@ -5963,8 +5978,11 @@ def submit_for_review(request, case_id):
                 review_notes = f'Case resubmitted for review by {user.get_full_name() or user.username} after revisions (revision #{previous_reviews})'
                 action = 'resubmitted'
             else:
-                review_notes = f'Case submitted for review by Level 1 technician {user.get_full_name() or user.username}'
+                review_notes = f'Case submitted for review by {user.get_full_name() or user.username}'
                 action = 'submitted_for_review'
+            
+            if tech_notes:
+                review_notes += f' — Notes: {tech_notes}'
             
             CaseReviewHistory.objects.create(
                 case=case,
@@ -5973,15 +5991,50 @@ def submit_for_review(request, case_id):
                 review_notes=review_notes
             )
             
+            # Notify reviewer(s)
+            employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+            notification_msg = f'{user.get_full_name() or user.username} submitted the case for {employee_name} for review.'
+            if tech_notes:
+                notification_msg += f' Notes: {tech_notes}'
+            
+            if reviewer:
+                StaffNotification.objects.create(
+                    user=reviewer,
+                    case=case,
+                    notification_type='review_requested',
+                    title=f'Review Requested: {employee_name}',
+                    message=notification_msg,
+                )
+            else:
+                # Notify all L2/L3 techs + admins + managers
+                from django.db.models import Q
+                eligible = User.objects.filter(
+                    Q(role='technician', user_level__in=['level_2', 'level_3']) |
+                    Q(role__in=['administrator', 'manager']),
+                    is_active=True,
+                ).exclude(pk=user.pk)
+                for eligible_user in eligible:
+                    StaffNotification.objects.create(
+                        user=eligible_user,
+                        case=case,
+                        notification_type='review_requested',
+                        title=f'Review Requested: {employee_name}',
+                        message=notification_msg,
+                    )
+            
             # Log to audit trail
-            from core.models import AuditLog
             AuditLog.log_activity(
                 user=user,
                 action_type='case_submitted_for_review',
                 case=case,
                 description=review_notes,
                 changes={'status': {'from': 'accepted', 'to': 'pending_review'}},
-                metadata={'submitted_by': user.username, 'resubmission': previous_reviews > 0}
+                metadata={
+                    'submitted_by': user.username,
+                    'resubmission': previous_reviews > 0,
+                    'reviewer': reviewer.username if reviewer else None,
+                    'notes': tech_notes or None,
+                }
             )
             
             return JsonResponse({

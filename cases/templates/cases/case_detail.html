@@ -1620,12 +1620,9 @@
                                     </div>
                                 {% else %}
                                     {% if case.requires_review %}
-                                    <!-- Review required: Submit for Review (primary action) -->
+                                    <!-- Review required: Submit for Review only -->
                                     <button type="button" class="btn btn-outline-primary" id="submitForReviewBtn" onclick="submitForReview()">
                                         <i class="bi bi-arrow-right-circle"></i> Submit for Review
-                                    </button>
-                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#requestReviewModal">
-                                        <i class="bi bi-person-check"></i> Request Ad-hoc Review
                                     </button>
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
@@ -1635,19 +1632,19 @@
                                         <i class="bi bi-info-circle"></i> Upload reports and add technical notes, then submit for senior tech review.
                                     </small>
                                     {% else %}
-                                    <!-- No review required: Mark as Completed (via pre-completion review) -->
+                                    <!-- No review required: Mark as Completed + optional Submit for Review -->
                                     <a href="{% url 'cases:completion_review' case.id %}" class="btn btn-outline-success" id="markCompletedBtn">
                                         <i class="bi bi-check-circle"></i> Mark as Completed
                                     </a>
-                                    <button type="button" class="btn btn-outline-info btn-sm" data-bs-toggle="modal" data-bs-target="#requestReviewModal">
-                                        <i class="bi bi-person-check"></i> Request Ad-hoc Review
+                                    <button type="button" class="btn btn-outline-primary" id="submitForReviewBtn" onclick="submitForReview()">
+                                        <i class="bi bi-arrow-right-circle"></i> Submit for Review
                                     </button>
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
                                     <hr>
                                     <small class="text-muted" id="actionHelp">
-                                        <i class="bi bi-info-circle"></i> Review credit, reports, and notes before completing.
+                                        <i class="bi bi-info-circle"></i> Complete the case yourself, or submit for a senior tech to review first.
                                     </small>
                                     {% endif %}
                                 {% endif %}
@@ -1843,7 +1840,11 @@ function submitForReview() {
         if (!data.valid) {
             if (data.canOverride) {
                 if (confirm(data.error + '\n\n' + data.warning + '\n\nSubmit for review anyway?')) {
-                    doSubmitForReview();
+                    // Validation overridden - show modal
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+                    const modal = new bootstrap.Modal(document.getElementById('submitForReviewModal'));
+                    modal.show();
                     return;
                 }
             } else {
@@ -1853,7 +1854,11 @@ function submitForReview() {
             btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
             return;
         }
-        doSubmitForReview();
+        // Validation passed - show modal for notes/reviewer selection
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+        const modal = new bootstrap.Modal(document.getElementById('submitForReviewModal'));
+        modal.show();
     })
     .catch(error => {
         console.error('Error:', error);
@@ -1864,8 +1869,15 @@ function submitForReview() {
 }
 
 function doSubmitForReview() {
-    const btn = document.getElementById('submitForReviewBtn');
+    const btn = document.getElementById('submitReviewModalBtn');
+    btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Submitting...';
+    
+    const notes = document.getElementById('reviewNotes').value.trim();
+    const reviewerId = document.getElementById('reviewReviewer').value;
+    const body = {};
+    if (notes) body.notes = notes;
+    if (reviewerId) body.reviewer_id = parseInt(reviewerId);
     
     fetch('{% url "cases:submit_for_review" case.id %}', {
         method: 'POST',
@@ -1873,11 +1885,13 @@ function doSubmitForReview() {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token }}'
         },
-        body: JSON.stringify({})
+        body: JSON.stringify(body)
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('submitForReviewModal'));
+            if (modal) modal.hide();
             const alertHtml = `
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
                     <i class="bi bi-check-circle"></i> ${data.message}
@@ -1889,14 +1903,14 @@ function doSubmitForReview() {
         } else {
             alert(data.error || 'An error occurred.');
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+            btn.innerHTML = '<i class="bi bi-send"></i> Submit for Review';
         }
     })
     .catch(error => {
         console.error('Error:', error);
         alert('An error occurred while submitting for review.');
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
+        btn.innerHTML = '<i class="bi bi-send"></i> Submit for Review';
     });
 }
 
@@ -3908,16 +3922,16 @@ function acceptAndPutOnHold() {
 
 {% endif %}
 
-<!-- Request Ad-hoc Review Modal -->
-<div class="modal fade" id="requestReviewModal" tabindex="-1">
+<!-- Submit for Review Modal -->
+<div class="modal fade" id="submitForReviewModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white">
-                <h5 class="modal-title"><i class="bi bi-person-check"></i> Request Ad-hoc Review</h5>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-arrow-right-circle"></i> Submit for Review</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Request a senior technician, administrator, or manager to review this case before you complete it.</p>
+                <p>Submit this case for a senior technician to review before it is sent to the member.</p>
                 <div class="mb-3">
                     <label for="reviewReviewer" class="form-label">Request Review From</label>
                     <select class="form-select" id="reviewReviewer">
@@ -3926,14 +3940,14 @@ function acceptAndPutOnHold() {
                     <small class="text-muted">Leave blank to notify all eligible reviewers.</small>
                 </div>
                 <div class="mb-3">
-                    <label for="reviewNotes" class="form-label">What do you need reviewed? <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="reviewNotes" rows="4" placeholder="Describe what you'd like a second opinion on..." required></textarea>
+                    <label for="reviewNotes" class="form-label">Notes for Reviewer <span class="text-muted">(optional)</span></label>
+                    <textarea class="form-control" id="reviewNotes" rows="4" placeholder="Add any context or specific areas you'd like the reviewer to check..."></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-info text-white" onclick="submitReviewRequest()">
-                    <i class="bi bi-send"></i> Submit Request
+                <button type="button" class="btn btn-primary" id="submitReviewModalBtn" onclick="doSubmitForReview()">
+                    <i class="bi bi-send"></i> Submit for Review
                 </button>
             </div>
         </div>
@@ -4285,7 +4299,7 @@ function submitCancelRequest() {
 }
 
 // ============================================================================
-// AD-HOC REVIEW REQUEST FUNCTIONS
+// REVIEW FUNCTIONS
 // ============================================================================
 
 // Load eligible reviewers into dropdown
@@ -4302,53 +4316,12 @@ function loadEligibleReviewers() {
             data.reviewers.forEach(rev => {
                 const label = rev.name + (rev.level ? ` (${rev.level})` : ` (${rev.role})`);
                 const opt = new Option(label, rev.id);
-                select.add(opt.cloneNode(true));
+                if (select) select.add(opt.cloneNode(true));
                 if (escalateSelect) escalateSelect.add(opt);
             });
         }
     })
     .catch(err => console.error('Error loading reviewers:', err));
-}
-
-// Submit a new review request
-function submitReviewRequest() {
-    const notes = document.getElementById('reviewNotes').value.trim();
-    if (!notes) {
-        alert('Please describe what you need reviewed.');
-        return;
-    }
-    const reviewerId = document.getElementById('reviewReviewer').value;
-    const body = { notes: notes };
-    if (reviewerId) body.reviewer_id = parseInt(reviewerId);
-
-    fetch('{% url "cases:request_review" case.id %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: JSON.stringify(body)
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('requestReviewModal'));
-            if (modal) modal.hide();
-            document.getElementById('reviewNotes').value = '';
-            const alertHtml = `<div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="bi bi-check-circle"></i> ${data.message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>`;
-            document.querySelector('.container-fluid').insertAdjacentHTML('afterbegin', alertHtml);
-            loadReviewRequests();
-        } else {
-            alert(data.error || 'An error occurred.');
-        }
-    })
-    .catch(err => {
-        console.error('Error:', err);
-        alert('An error occurred while submitting the review request.');
-    });
 }
 
 // Load review requests for this case
