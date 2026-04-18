@@ -1619,6 +1619,10 @@
                                 <div class="alert alert-info mb-3">
                                     <strong><i class="bi bi-check-circle"></i> Quality Review Required</strong>
                                     <p class="mb-0 small">Review and approve this case from Level 1 technician {{ case.assigned_to.first_name }} {{ case.assigned_to.last_name }}</p>
+                                    {% if latest_review_event.metadata.notes %}
+                                    <hr class="my-2">
+                                    <p class="mb-0 small"><strong>Notes from tech:</strong> {{ latest_review_event.metadata.notes }}</p>
+                                    {% endif %}
                                 </div>
                                 
                                 <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#approveReviewModal">
