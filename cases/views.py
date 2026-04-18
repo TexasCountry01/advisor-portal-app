@@ -3679,6 +3679,55 @@ def adjust_case_credit(request, case_id):
 
 
 @login_required
+def adjust_reports_requested(request, case_id):
+    """Adjust the number of reports requested for a case."""
+    case = get_object_or_404(Case, pk=case_id)
+    user = request.user
+    
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+    
+    if request.method == 'POST':
+        try:
+            num_reports = int(request.POST.get('num_reports_requested', 0))
+            reason = request.POST.get('reason', 'Manual adjustment')
+            
+            if num_reports < 1 or num_reports > 9:
+                return JsonResponse({'success': False, 'error': 'Number of reports must be between 1 and 9'})
+            
+            old_value = case.num_reports_requested
+            case.num_reports_requested = num_reports
+            case.save(update_fields=['num_reports_requested'])
+            
+            from core.models import AuditLog
+            AuditLog.log_activity(
+                user=user,
+                action_type='case_updated',
+                case=case,
+                description=f'Reports requested changed from {old_value} to {num_reports}. Reason: {reason}',
+                changes={'num_reports_requested': {'from': old_value, 'to': num_reports}},
+                metadata={'reason': reason, 'updated_by': user.username}
+            )
+            
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Reports requested updated to {num_reports}',
+                    'new_value': num_reports
+                })
+            else:
+                return redirect('cases:case_detail', pk=case_id)
+                
+        except (ValueError, TypeError):
+            return JsonResponse({'success': False, 'error': 'Invalid number'})
+        except Exception as e:
+            logger.error(f'Error adjusting reports requested for case {case_id}: {str(e)}', exc_info=True)
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'POST request required'}, status=400)
+
+
+@login_required
 def credit_audit_trail(request, case_id=None):
     """View credit audit trail for cases - Manager/Admin only."""
     user = request.user

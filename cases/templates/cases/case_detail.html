@@ -425,7 +425,14 @@
                                     {% endfor %}
                                 </select>
                             {% else %}
-                                {{ case.num_reports_requested }}
+                                <div class="d-flex align-items-center gap-2">
+                                    <span id="reportDisplay">{{ case.num_reports_requested }}</span>
+                                    {% if user.role == 'technician' or user.role == 'administrator' or user.role == 'manager' %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#reportsRequestedModal">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
                             {% endif %}
                         </div>
                     </div>
@@ -2933,6 +2940,44 @@ function submitCreditAdjustment() {
     });
 }
 
+// Reports requested adjustment handler
+function submitReportsAdjustment() {
+    const numReports = document.getElementById('reportsRequestedSelect').value;
+    const reason = document.getElementById('reportsReason').value || 'Manual adjustment';
+    
+    const formData = new FormData();
+    formData.append('num_reports_requested', numReports);
+    formData.append('reason', reason);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+    fetch('{% url "cases:adjust_reports_requested" case.id %}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('reportDisplay').textContent = data.new_value;
+            const modal = bootstrap.Modal.getInstance(document.getElementById('reportsRequestedModal'));
+            if (modal) modal.hide();
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = '<strong>Success!</strong> Reports requested updated to ' + data.new_value + '.<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            const firstRow = document.querySelector('.container-fluid .row');
+            if (firstRow && firstRow.parentNode) {
+                firstRow.parentNode.insertBefore(alertDiv, firstRow);
+            }
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating reports requested.');
+    });
+}
+
 // Take Ownership Function (for technicians)
 function takeOwnership(caseId) {
     if (!confirm('Take ownership of this case?')) {
@@ -3048,6 +3093,36 @@ function releaseImmediately(caseId) {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="submitCreditAdjustment()">Save Credit Adjustment</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reassign Modal -->
+<div class="modal fade" id="reportsRequestedModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adjust Reports Requested</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="reportsRequestedSelect" class="form-label">Number of Reports</label>
+                    <select class="form-select" id="reportsRequestedSelect">
+                        {% for i in "123456789" %}
+                            <option value="{{ i }}" {% if case.num_reports_requested == i|add:0 %}selected{% endif %}>{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="reportsReason" class="form-label">Reason for Change</label>
+                    <textarea class="form-control" id="reportsReason" rows="2" placeholder="e.g. Member requested 4 reports in case notes"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitReportsAdjustment()">Save</button>
             </div>
         </div>
     </div>
