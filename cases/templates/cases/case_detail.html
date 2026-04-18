@@ -1500,6 +1500,8 @@
                                                 <span class="badge bg-primary"><i class="bi bi-person-fill me-1"></i>Ownership Claimed</span>
                                             {% elif event.action_type == 'admin_ownership' %}
                                                 <span class="badge bg-danger"><i class="bi bi-shield-lock me-1"></i>Admin Ownership</span>
+                                            {% elif event.action_type == 'case_submitted_for_review' %}
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i>Submitted for Review</span>
                                             {% elif event.action_type == 'document_uploaded' or event.action_type == 'member_document_uploaded' %}
                                                 <span class="badge bg-info"><i class="bi bi-file-earmark-arrow-up me-1"></i>Doc Uploaded</span>
                                             {% else %}
@@ -1547,6 +1549,9 @@
                                                 {% if event.metadata.rejection_notes %}<br><small>{{ event.metadata.rejection_notes|truncatewords:12 }}</small>{% endif %}
                                             {% elif event.action_type == 'case_cancelled' %}
                                                 Via member request
+                                            {% elif event.action_type == 'case_submitted_for_review' %}
+                                                {% if event.metadata.reviewer %}Reviewer: {{ event.metadata.reviewer }}{% endif %}
+                                                {% if event.metadata.notes %}<br><small>{{ event.metadata.notes }}</small>{% endif %}
                                             {% elif event.action_type == 'document_uploaded' %}
                                                 {% if event.metadata.original_filename %}{{ event.metadata.original_filename|truncatewords:5 }}{% endif %}
                                             {% elif event.action_type == 'member_document_uploaded' %}
@@ -1655,7 +1660,10 @@
                                     <!-- Case is pending quality review -->
                                     <div class="alert alert-info mb-0">
                                         <strong><i class="bi bi-hourglass-split"></i> Awaiting Quality Review</strong>
-                                        <p class="mb-0 small mt-1">This case has been submitted for review by a senior technician. You'll be notified when it's reviewed.</p>
+                                        <p class="mb-0 small mt-1">
+                                            Submitted by {{ latest_review_event.user.get_full_name|default:latest_review_event.user.username }}{% if latest_review_event.metadata.reviewer %} &middot; Reviewer: {{ latest_review_event.metadata.reviewer }}{% endif %}{% if latest_review_event %}<br>{{ latest_review_event.timestamp|date:"m/d/Y h:i A" }}{% endif %}
+                                        </p>
+                                        <p class="mb-0 small mt-1 text-muted">You'll be notified when it's reviewed.</p>
                                     </div>
                                 {% else %}
                                     {% if case.requires_review %}

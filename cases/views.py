@@ -1468,6 +1468,7 @@ def case_detail(request, pk):
             'case_cancelled',
             'case_ownership_taken',
             'admin_ownership',
+            'case_submitted_for_review',
             'document_uploaded',
             'member_document_uploaded',
         ]
@@ -1491,6 +1492,14 @@ def case_detail(request, pk):
         case=case,
         action_type='case_held'
     ).order_by('-timestamp').first()
+
+    # Get latest review submission event for pending_review display
+    latest_review_event = None
+    if case.status == 'pending_review':
+        latest_review_event = AuditLog.objects.filter(
+            case=case,
+            action_type='case_submitted_for_review'
+        ).select_related('user').order_by('-timestamp').first()
     
     context = {
         'case': case,
@@ -1509,6 +1518,7 @@ def case_detail(request, pk):
         'acceptance_details': acceptance_details,
         'case_event_logs': case_event_logs,
         'hold_event_log': hold_event_log,
+        'latest_review_event': latest_review_event,
         'user': user,
     }
     
