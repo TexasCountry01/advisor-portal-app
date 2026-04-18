@@ -464,7 +464,8 @@ def technician_dashboard(request):
         'status', '-status',
         'urgency', '-urgency',
         'tier', '-tier',
-        'assigned_to', '-assigned_to'
+        'assigned_to', '-assigned_to',
+        'credit_value', '-credit_value'
     ]
     if sort_by in allowed_sorts:
         cases = cases.order_by(sort_by)
@@ -5488,6 +5489,7 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'status', 'label': 'Status'},
             {'id': 'assigned_to', 'label': 'Assigned To'},
             {'id': 'tier', 'label': 'Tier'},
+            {'id': 'credits', 'label': 'Credits'},
             {'id': 'actions', 'label': 'Actions'},
         ],
         'default_hidden': []

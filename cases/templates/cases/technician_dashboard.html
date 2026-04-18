@@ -341,6 +341,7 @@
                             <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
                             <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}" title="Click to sort by Assigned To">Assigned To</a></th>
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}" title="Click to sort by Tier">Tier</a></th>
+                            <th data-column-id="credits" {% if 'credits' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'credit_value' %}sort=-credit_value{% else %}sort=credit_value{% endif %}" title="Click to sort by Credits">Credits</a></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -452,6 +453,13 @@
                             <td class="column-tier {% if 'tier' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.tier %}
                                     {{ case.get_tier_display }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td class="column-credits {% if 'credits' not in visible_columns %}column-hidden{% endif %}">
+                                {% if case.credit_value is not None %}
+                                    {{ case.credit_value }}
                                 {% else %}
                                     —
                                 {% endif %}
