@@ -1072,7 +1072,8 @@ def accept_case(request, pk):
             
             # Update case
             case.status = 'accepted'
-            case.tier = tier
+            # Normalize tier value: form sends '1','2','3' but model expects 'tier_1','tier_2','tier_3'
+            case.tier = f'tier_{tier}' if tier and not tier.startswith('tier_') else tier
             case.date_accepted = timezone.now()
             case.accepted_by = user  # Track who did the acceptance (validation review)
             
