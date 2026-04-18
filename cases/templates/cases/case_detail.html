@@ -976,7 +976,7 @@
                                         <a href="{{ doc.file.url }}" class="btn btn-sm btn-outline-primary" download>
                                             <i class="bi bi-download"></i>
                                         </a>
-                                        {% if can_edit %}
+                                        {% if can_upload_reports %}
                                         <form method="post" action="{% url 'cases:delete_document' doc.id %}" class="d-inline"
                                               onsubmit="return confirm('Delete {{ doc.original_filename|escapejs }}?')">
                                             {% csrf_token %}
