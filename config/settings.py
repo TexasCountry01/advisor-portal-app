@@ -32,6 +32,9 @@ ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver'
 # Feature flags
 ENABLE_DATA_SYNC = config('ENABLE_DATA_SYNC', default=False, cast=bool)
 
+# Environment identifier: 'production', 'test', or 'local'
+ENVIRONMENT = config('ENVIRONMENT', default='local')
+
 INTERNAL_IPS = ['127.0.0.1']
 
 
@@ -80,6 +83,7 @@ TEMPLATES = [
                 'django.template.context_processors.static',
                 'django.template.context_processors.csrf',
                 'core.context_processors.asset_version',
+                'core.context_processors.environment',
             ],
         },
     },

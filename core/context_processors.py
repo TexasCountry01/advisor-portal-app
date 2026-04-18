@@ -25,3 +25,8 @@ except Exception:
 
 def asset_version(request):
     return {'ASSET_VERSION': _version}
+
+
+def environment(request):
+    from django.conf import settings
+    return {'ENVIRONMENT': getattr(settings, 'ENVIRONMENT', 'local')}
