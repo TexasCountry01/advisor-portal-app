@@ -148,6 +148,36 @@ document.addEventListener('DOMContentLoaded', function() {
     if (container) {
         container.scrollTop = container.scrollHeight;
     }
+
+    // Clipboard paste support for message images
+    const msgTextarea = document.querySelector('textarea[name="body"]');
+    if (msgTextarea) {
+        msgTextarea.addEventListener('paste', function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Image must be under 5 MB.');
+                        return;
+                    }
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    const input = document.getElementById('msg-image-input');
+                    input.files = dataTransfer.files;
+                    // Trigger preview
+                    const reader = new FileReader();
+                    reader.onload = function(ev) {
+                        document.getElementById('msg-image-preview').src = ev.target.result;
+                        document.getElementById('msg-image-preview-container').style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

@@ -2600,6 +2600,31 @@ function clearImageAttachment() {
     if (container) container.style.display = 'none';
 }
 
+// Clipboard paste support for chat images
+document.addEventListener('DOMContentLoaded', function() {
+    const chatTextarea = document.querySelector('#message-form textarea[name="message"]');
+    if (chatTextarea) {
+        chatTextarea.addEventListener('paste', function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Image must be under 5 MB.');
+                        return;
+                    }
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+                    document.getElementById('chat-image-input').files = dataTransfer.files;
+                    previewChatImage(document.getElementById('chat-image-input'));
+                    e.preventDefault();
+                    break;
+                }
+            }
+        });
+    }
+});
+
 // Handle message form submission
 document.addEventListener('DOMContentLoaded', function() {
     const messageForm = document.getElementById('message-form');
