@@ -24,7 +24,14 @@
                     <li class="breadcrumb-item active">{{ case.employee_first_name }} {{ case.employee_last_name }}</li>
                 </ol>
             </nav>
-            <h2 class="mb-1">{{ case.employee_first_name }} {{ case.employee_last_name }}</h2>
+            <h2 class="mb-1">
+                <span id="employeeNameDisplay">{{ case.employee_first_name }} {{ case.employee_last_name }}</span>
+                {% if user.role in 'technician,manager,administrator' %}
+                    <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#editEmployeeNameModal" title="Edit Employee Name">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                {% endif %}
+            </h2>
             <!-- Status Badge (under employee name) -->
             {% if user.role == 'member' %}
                 {% if case.status == 'draft' %}
@@ -2989,6 +2996,56 @@ function submitReportsAdjustment() {
     });
 }
 
+function submitEmployeeNameEdit() {
+    const firstName = document.getElementById('empFirstName').value.trim();
+    const lastName = document.getElementById('empLastName').value.trim();
+    const reason = document.getElementById('empNameReason').value || 'Name correction';
+
+    if (!firstName || !lastName) {
+        alert('Both first name and last name are required.');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('employee_first_name', firstName);
+    formData.append('employee_last_name', lastName);
+    formData.append('reason', reason);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch('{% url "cases:edit_employee_name" case.id %}', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const fullName = data.first_name + ' ' + data.last_name;
+            document.getElementById('employeeNameDisplay').textContent = fullName;
+            document.title = 'Case ' + fullName;
+            const breadcrumbItems = document.querySelectorAll('.breadcrumb-item.active');
+            if (breadcrumbItems.length) {
+                breadcrumbItems[breadcrumbItems.length - 1].textContent = fullName;
+            }
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editEmployeeNameModal'));
+            if (modal) modal.hide();
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = '<strong>Success!</strong> Employee name updated to ' + fullName + '.<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            const firstRow = document.querySelector('.container-fluid .row');
+            if (firstRow && firstRow.parentNode) {
+                firstRow.parentNode.insertBefore(alertDiv, firstRow);
+            }
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the employee name.');
+    });
+}
+
 // Take Ownership Function (for technicians)
 function takeOwnership(caseId) {
     if (!confirm('Take ownership of this case?')) {
@@ -3134,6 +3191,36 @@ function releaseImmediately(caseId) {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="submitReportsAdjustment()">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Employee Name Modal -->
+<div class="modal fade" id="editEmployeeNameModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Employee Name</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="empFirstName" class="form-label">First Name</label>
+                    <input type="text" class="form-control" id="empFirstName" value="{{ case.employee_first_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="empLastName" class="form-label">Last Name</label>
+                    <input type="text" class="form-control" id="empLastName" value="{{ case.employee_last_name }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="empNameReason" class="form-label">Reason for Change</label>
+                    <textarea class="form-control" id="empNameReason" rows="2" placeholder="e.g. Name was misspelled on original submission"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitEmployeeNameEdit()">Save</button>
             </div>
         </div>
     </div>

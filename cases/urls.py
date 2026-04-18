@@ -37,6 +37,7 @@ urlpatterns = [
     path('<int:case_id>/take-ownership/', views.take_case_ownership, name='take_case_ownership'),
     path('<int:case_id>/adjust-credit/', views.adjust_case_credit, name='adjust_case_credit'),
     path('<int:case_id>/adjust-reports-requested/', views.adjust_reports_requested, name='adjust_reports_requested'),
+    path('<int:case_id>/edit-employee-name/', views.edit_employee_name, name='edit_employee_name'),
     path('<int:pk>/save-report-notes/', views.save_report_notes, name='save_report_notes'),
     path('<int:pk>/download-notes-pdf/', views.generate_report_notes_pdf, name='generate_report_notes_pdf'),
     path('<int:pk>/edit-details/', views.edit_case_details, name='edit_case_details'),

@@ -3766,6 +3766,62 @@ def adjust_reports_requested(request, case_id):
 
 
 @login_required
+def edit_employee_name(request, case_id):
+    """Edit the federal employee's name on a case (inline pencil edit)."""
+    case = get_object_or_404(Case, pk=case_id)
+    user = request.user
+
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+
+    if request.method == 'POST':
+        first_name = request.POST.get('employee_first_name', '').strip()
+        last_name = request.POST.get('employee_last_name', '').strip()
+        reason = request.POST.get('reason', 'Name correction')
+
+        if not first_name or not last_name:
+            return JsonResponse({'success': False, 'error': 'Both first name and last name are required.'})
+
+        old_first = case.employee_first_name
+        old_last = case.employee_last_name
+
+        if old_first == first_name and old_last == last_name:
+            return JsonResponse({'success': False, 'error': 'No changes detected.'})
+
+        case.employee_first_name = first_name
+        case.employee_last_name = last_name
+        case.save(update_fields=['employee_first_name', 'employee_last_name'])
+
+        from core.models import AuditLog
+        changes = {}
+        if old_first != first_name:
+            changes['employee_first_name'] = {'from': old_first, 'to': first_name}
+        if old_last != last_name:
+            changes['employee_last_name'] = {'from': old_last, 'to': last_name}
+
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_updated',
+            case=case,
+            description=f'Employee name changed from "{old_first} {old_last}" to "{first_name} {last_name}". Reason: {reason}',
+            changes=changes,
+            metadata={'reason': reason, 'updated_by': user.username}
+        )
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'message': f'Employee name updated to {first_name} {last_name}',
+                'first_name': first_name,
+                'last_name': last_name,
+            })
+        else:
+            return redirect('cases:case_detail', pk=case_id)
+
+    return JsonResponse({'success': False, 'error': 'POST request required'}, status=400)
+
+
+@login_required
 def credit_audit_trail(request, case_id=None):
     """View credit audit trail for cases - Manager/Admin only."""
     user = request.user
