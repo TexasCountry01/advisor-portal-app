@@ -2663,6 +2663,44 @@ def delete_case_note(request, case_id, note_id):
 
 
 @login_required
+@require_http_methods(["POST"])
+def delete_case_report(request, case_id, report_id):
+    """Delete a report from a case (technician/admin/manager only)."""
+    from cases.models import CaseReport
+    
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+    report = get_object_or_404(CaseReport, id=report_id, case=case)
+    
+    if user.role not in ['technician', 'administrator', 'manager']:
+        messages.error(request, 'Permission denied.')
+        return redirect('cases:case_detail', pk=case_id)
+    
+    report_num = report.report_number
+    filename = report.report_file.name if report.report_file else 'No file'
+    
+    # Delete the physical file
+    if report.report_file:
+        report.report_file.delete(save=False)
+    
+    # Delete the report record
+    report.delete()
+    
+    # Audit log
+    from core.models import AuditLog
+    AuditLog.log_activity(
+        user=user,
+        action_type='case_updated',
+        case=case,
+        description=f'Deleted Report #{report_num} ({filename})',
+        metadata={'report_number': report_num, 'filename': filename, 'deleted_by': user.username}
+    )
+    
+    messages.success(request, f'Report #{report_num} deleted.')
+    return redirect('cases:case_detail', pk=case_id)
+
+
+@login_required
 def upload_case_report(request, case_id):
     """Upload a completed report for a case (technician/admin only)"""
     from cases.models import CaseReport

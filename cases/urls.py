@@ -53,6 +53,7 @@ urlpatterns = [
     path('<int:case_id>/add-note/', views.add_case_note, name='add_case_note'),
     path('<int:case_id>/delete-note/<int:note_id>/', views.delete_case_note, name='delete_case_note'),
     path('<int:case_id>/upload-report/', views.upload_case_report, name='upload_case_report'),
+    path('<int:case_id>/delete-report/<int:report_id>/', views.delete_case_report, name='delete_report'),
     path('<int:case_id>/upload-tech-document/', views.upload_technician_document, name='upload_technician_document'),
     path('<int:case_id>/upload-member-document/', views.upload_member_document_to_completed_case, name='upload_member_document_completed'),
     path('<int:case_id>/resubmit/', views.resubmit_case, name='resubmit_case'),

@@ -922,11 +922,22 @@
                                 </div>
                                 <div class="text-end">
                                     {% if report.report_file %}
-                                    <a href="{{ report.report_file.url }}" class="btn btn-sm btn-outline-primary" download>
-                                        <i class="bi bi-download"></i>
-                                    </a>
+                                    <div class="d-flex gap-1 justify-content-end">
+                                        <a href="{{ report.report_file.url }}" class="btn btn-sm btn-outline-primary" download>
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                        {% if user.role == 'technician' or user.role == 'administrator' or user.role == 'manager' %}
+                                        <form method="post" action="{% url 'cases:delete_report' case.id report.id %}" class="d-inline"
+                                              onsubmit="return confirm('Delete Report #{{ report.report_number }}? This cannot be undone.')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete report">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
                                     {% endif %}
-                                    <br><small class="text-muted">{{ report.updated_at|date:"m/d/Y H:i" }}</small>
+                                    <small class="text-muted">{{ report.updated_at|date:"m/d/Y H:i" }}</small>
                                 </div>
                             </div>
                         </div>
