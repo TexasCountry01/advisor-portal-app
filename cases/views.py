@@ -2950,8 +2950,7 @@ def validate_case_completion(request, case_id):
         return JsonResponse({
             'valid': False,
             'canOverride': True,
-            'error': f'All {case.num_reports_requested} reports must be uploaded. Missing: Report {missing_str}',
-            'warning': f'This case was requested with {case.num_reports_requested} reports, but only {len(uploaded_report_numbers)} report(s) have been submitted. Would you like to proceed with completion anyway?'
+            'warning': f'This case was requested with {case.num_reports_requested} report(s), but only {len(uploaded_report_numbers)} have been uploaded.'
         }, status=200)  # Return 200 instead of 400 since this is overridable
     
     # All validations passed

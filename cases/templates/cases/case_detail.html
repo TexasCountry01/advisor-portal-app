@@ -1957,7 +1957,7 @@ function submitForReview() {
     .then(data => {
         if (!data.valid) {
             if (data.canOverride) {
-                if (confirm(data.error + '\n\n' + data.warning + '\n\nSubmit for review anyway?')) {
+                if (confirm(data.warning + '\n\nSubmit for review anyway?')) {
                     // Validation overridden - show modal
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-arrow-right-circle"></i> Submit for Review';
