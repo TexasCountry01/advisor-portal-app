@@ -2941,9 +2941,10 @@ def mark_case_completed(request, case_id):
     if user.role not in ['technician', 'administrator', 'manager']:
         return JsonResponse({'success': False, 'error': 'You do not have permission to mark this case as completed.'}, status=403)
     
-    # Check if technician owns the case
+    # Check if technician owns the case (or is the reviewer completing with corrections)
     if user.role == 'technician' and case.assigned_to != user:
-        return JsonResponse({'success': False, 'error': 'You can only mark cases you are assigned to as completed.'}, status=403)
+        if not (case.reviewed_by == user and case.review_status == 'corrections_needed'):
+            return JsonResponse({'success': False, 'error': 'You can only mark cases you are assigned to as completed.'}, status=403)
     
     # Check if ALL requested reports have been uploaded
     from cases.models import CaseReport
@@ -2974,7 +2975,8 @@ def mark_case_completed(request, case_id):
             from cases.models import CaseReviewHistory
             
             # Determine if case requires review (based on TechReviewSetting per-tech per-tier)
-            if case.requires_review:
+            # Skip review routing if reviewer is completing with corrections (already reviewed)
+            if case.requires_review and case.review_status != 'corrections_needed':
                 # This technician's work at this tier requires review
                 case.status = 'pending_review'
                 # Log the submission for review in audit trail
@@ -3198,10 +3200,11 @@ def completion_review(request, case_id):
         messages.error(request, 'You do not have permission to complete cases.')
         return redirect('cases:case_detail', pk=case_id)
 
-    # Technicians must own the case
+    # Technicians must own the case (or be the reviewer completing with corrections)
     if user.role == 'technician' and case.assigned_to != user:
-        messages.error(request, 'You can only complete cases assigned to you.')
-        return redirect('cases:case_detail', pk=case_id)
+        if not (case.reviewed_by == user and case.review_status == 'corrections_needed'):
+            messages.error(request, 'You can only complete cases assigned to you.')
+            return redirect('cases:case_detail', pk=case_id)
 
     # Case must be in a completable status
     if case.status not in ['accepted', 'hold']:
@@ -6003,14 +6006,12 @@ def correct_case_review(request, case_id):
         if not correction_notes:
             return _review_error(request, case_id, 'Correction notes are required.')
         
-        # Mark case as completed with corrections
-        case.status = 'completed'
+        # Record corrections but transition to completion review instead of auto-completing
+        case.status = 'accepted'  # Allow completion_review to process
         case.reviewed_by = user
         case.reviewed_at = timezone.now()
         case.review_status = 'corrections_needed'
         case.review_notes = correction_notes
-        case.date_completed = timezone.now()
-        case.actual_release_date = timezone.now()
         case.save()
         
         # Create audit trail entry
@@ -6033,56 +6034,19 @@ def correct_case_review(request, case_id):
                 message=f'{case.employee_first_name} {case.employee_last_name} case has been completed with corrections applied by {user.get_full_name() or user.username}. Notes: {correction_notes}'
             )
         
-        # Send email notification to Level 1 technician
-        if case.assigned_to and case.assigned_to.email:
-            try:
-                from django.core.mail import send_mail
-                from django.template.loader import render_to_string
-                from cases.services.email_service import should_send_emails
-                
-                if should_send_emails():
-                    email_context = {
-                        'technician_name': case.assigned_to.get_full_name() or case.assigned_to.username,
-                        'case_id': case.external_case_id,
-                        'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
-                        'reviewer_name': user.get_full_name() or user.username,
-                        'reviewed_at': timezone.now(),
-                        'correction_notes': correction_notes,
-                        'case_detail_url': f"{request.build_absolute_uri('/')}cases/{case.pk}/"
-                    }
-                    html_message = render_to_string('emails/case_corrections_notification.html', email_context)
-                    send_mail(
-                        subject=f'Case for {case.employee_first_name} {case.employee_last_name} - Completed with Corrections',
-                        message=f'Case for {case.employee_first_name} {case.employee_last_name} has been completed with corrections by the reviewer. Notes: {correction_notes}',
-                        from_email='noreply@advisor-portal.com',
-                        recipient_list=[case.assigned_to.email],
-                        html_message=html_message,
-                        fail_silently=True
-                    )
-            except Exception as e:
-                print(f'Error sending corrections email: {str(e)}')
-        
-        messages.success(request, f'Corrections applied to {case.employee_first_name} {case.employee_last_name} case - marked as completed.')
-        
         # Log to audit trail
         from core.models import AuditLog
         AuditLog.log_activity(
             user=user,
             action_type='case_review_corrected',
             case=case,
-            description=f'Case corrected and completed by {user.get_full_name() or user.username}',
-            changes={'status': {'from': 'pending_review', 'to': 'completed'}},
+            description=f'Case corrected by {user.get_full_name() or user.username} — proceeding to completion review',
+            changes={'status': {'from': 'pending_review', 'to': 'accepted'}},
             metadata={'correction_notes': correction_notes, 'reviewed_by': user.username}
         )
         
-        # Return redirect for standard form POST, JSON for AJAX
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'message': f'Corrections applied and case completed',
-                'redirect_url': str(reverse('cases:case_detail', kwargs={'pk': case_id}))
-            })
-        return redirect('cases:case_detail', pk=case_id)
+        messages.success(request, f'Corrections recorded. Please review and complete the case.')
+        return redirect('cases:completion_review', case_id=case_id)
     except Exception as e:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': str(e)}, status=500)

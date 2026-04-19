@@ -4160,7 +4160,7 @@ function acceptAndPutOnHold() {
             <form method="post" action="{% url 'cases:correct_case_review' case.id %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <p>Use this option when <strong>you (the reviewer) made the corrections yourself</strong> instead of sending it back to the original technician. The case will be completed and released immediately.</p>
+                    <p>Use this option when <strong>you (the reviewer) made the corrections yourself</strong> instead of sending it back to the original technician. You'll be taken to the completion review to verify credits, tech notes, and schedule the release.</p>
                     <div class="alert alert-info small">
                         <i class="bi bi-info-circle"></i> The corrections you document here will be recorded in the audit trail so the original technician can learn from them.
                     </div>
