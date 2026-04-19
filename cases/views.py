@@ -6506,33 +6506,47 @@ def get_eligible_reviewers(request):
     if user.role not in ('technician', 'administrator', 'manager'):
         return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
 
-    # Build filter based on submitter's level
-    if user.role == 'technician' and user.user_level == 'level_1':
-        # L1 can be reviewed by L2, L3, or admin
-        eligible = User.objects.filter(
-            Q(role='technician', user_level__in=['level_2', 'level_3']) |
-            Q(role='administrator'),
-            is_active=True,
-        ).exclude(pk=user.pk)
-    elif user.role == 'technician' and user.user_level == 'level_2':
-        # L2 can be reviewed by L3 or admin
-        eligible = User.objects.filter(
-            Q(role='technician', user_level='level_3') |
-            Q(role='administrator'),
-            is_active=True,
-        ).exclude(pk=user.pk)
-    elif user.role == 'technician' and user.user_level == 'level_3':
-        # L3 can only be reviewed by admin
-        eligible = User.objects.filter(
-            role='administrator',
-            is_active=True,
-        ).exclude(pk=user.pk)
-    else:
-        # Admin/manager submitting — show other admins
-        eligible = User.objects.filter(
-            role='administrator',
-            is_active=True,
-        ).exclude(pk=user.pk)
+    # =========================================================================
+    # TEMPORARY OVERRIDE: Only Tiffany Widelski and Chris Kowalik as reviewers.
+    # Remove this block and uncomment the level-based logic below to restore
+    # full reviewer filtering by tech level.
+    # Added: 2026-04-19 per user request
+    # =========================================================================
+    eligible = User.objects.filter(
+        pk__in=[15, 23],  # 15=Chris Kowalik (admin), 23=Tiffany Widelski (L3 tech)
+        is_active=True,
+    ).exclude(pk=user.pk)
+
+    # =========================================================================
+    # ORIGINAL LEVEL-BASED LOGIC (commented out — restore when ready):
+    # =========================================================================
+    # # Build filter based on submitter's level
+    # if user.role == 'technician' and user.user_level == 'level_1':
+    #     # L1 can be reviewed by L2, L3, or admin
+    #     eligible = User.objects.filter(
+    #         Q(role='technician', user_level__in=['level_2', 'level_3']) |
+    #         Q(role='administrator'),
+    #         is_active=True,
+    #     ).exclude(pk=user.pk)
+    # elif user.role == 'technician' and user.user_level == 'level_2':
+    #     # L2 can be reviewed by L3 or admin
+    #     eligible = User.objects.filter(
+    #         Q(role='technician', user_level='level_3') |
+    #         Q(role='administrator'),
+    #         is_active=True,
+    #     ).exclude(pk=user.pk)
+    # elif user.role == 'technician' and user.user_level == 'level_3':
+    #     # L3 can only be reviewed by admin
+    #     eligible = User.objects.filter(
+    #         role='administrator',
+    #         is_active=True,
+    #     ).exclude(pk=user.pk)
+    # else:
+    #     # Admin/manager submitting — show other admins
+    #     eligible = User.objects.filter(
+    #         role='administrator',
+    #         is_active=True,
+    #     ).exclude(pk=user.pk)
 
     # Only filter out test accounts on production
     if settings.ENVIRONMENT != 'test':
