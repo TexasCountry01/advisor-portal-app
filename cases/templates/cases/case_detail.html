@@ -26,6 +26,9 @@
             </nav>
             <h2 class="mb-1">
                 <span id="employeeNameDisplay">{{ case.employee_first_name }} {{ case.employee_last_name }}</span>
+                {% if case.external_case_id %}
+                    <small class="text-muted fs-6 ms-2">Case #{{ case.external_case_id }}</small>
+                {% endif %}
                 {% if user.role in 'technician,manager,administrator' %}
                     <button type="button" class="btn btn-sm btn-outline-secondary ms-2" data-bs-toggle="modal" data-bs-target="#editEmployeeNameModal" title="Edit Employee Name">
                         <i class="bi bi-pencil"></i>

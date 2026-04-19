@@ -3160,6 +3160,8 @@ def mark_case_completed(request, case_id):
                 'release_option': release_option,
                 'scheduled_release_date': str(case.scheduled_release_date) if case.scheduled_release_date else None,
                 'actual_release_date': str(case.actual_release_date) if case.actual_release_date else None,
+                'external_case_id': case.external_case_id,
+                'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
             }
             
             # Include pre-completion review checklist data if submitted from the review page
@@ -3178,7 +3180,13 @@ def mark_case_completed(request, case_id):
                 case=case,
                 description=f'Case marked as {case.status} - {release_msg}',
                 metadata=completion_metadata,
+                ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
             )
+            
+            # Add case note for completion (audit trail in case notes timeline)
+            from cases.models import CaseNote
+            complete_note = f'[Case Completed] Marked as {case.status} by {request.user.get_full_name() or request.user.username}. {release_msg}'
+            CaseNote.objects.create(case=case, author=request.user, note=complete_note, is_internal=True)
             
             # Create notification and send email to member (only if immediately released)
             if case.actual_release_date and case.status == 'completed':
@@ -5805,7 +5813,13 @@ def approve_case_review(request, case_id):
             case=case,
             description=f'Case review approved by {user.get_full_name() or user.username}',
             changes={'status': {'from': 'pending_review', 'to': 'accepted'}},
-            metadata={'review_notes': review_notes, 'reviewed_by': user.username}
+            metadata={
+                'review_notes': review_notes,
+                'reviewed_by': user.username,
+                'external_case_id': case.external_case_id,
+                'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
+            },
+            ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
         )
         
         messages.success(request, f'Case approved. Please verify credits, tech notes, and schedule the release.')
@@ -5914,7 +5928,13 @@ def request_case_revisions(request, case_id):
             case=case,
             description=f'Revisions requested by {user.get_full_name() or user.username}',
             changes={'status': {'from': 'pending_review', 'to': 'accepted'}},
-            metadata={'revision_feedback': revision_feedback, 'reviewed_by': user.username}
+            metadata={
+                'revision_feedback': revision_feedback,
+                'reviewed_by': user.username,
+                'external_case_id': case.external_case_id,
+                'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
+            },
+            ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
         )
         
         # Return redirect for standard form POST, JSON for AJAX
@@ -5998,7 +6018,13 @@ def correct_case_review(request, case_id):
             case=case,
             description=f'Case corrected by {user.get_full_name() or user.username} — proceeding to completion review',
             changes={'status': {'from': 'pending_review', 'to': 'accepted'}},
-            metadata={'correction_notes': correction_notes, 'reviewed_by': user.username}
+            metadata={
+                'correction_notes': correction_notes,
+                'reviewed_by': user.username,
+                'external_case_id': case.external_case_id,
+                'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
+            },
+            ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
         )
         
         messages.success(request, f'Corrections recorded. Please review and complete the case.')
@@ -6130,7 +6156,10 @@ def submit_for_review(request, case_id):
                     'resubmission': previous_reviews > 0,
                     'reviewer': reviewer.username if reviewer else None,
                     'notes': tech_notes or None,
-                }
+                    'external_case_id': case.external_case_id,
+                    'employee_name': f'{case.employee_first_name} {case.employee_last_name}',
+                },
+                ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
             )
             
             return JsonResponse({

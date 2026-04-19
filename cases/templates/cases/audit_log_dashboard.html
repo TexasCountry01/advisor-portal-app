@@ -157,7 +157,7 @@
                                 <th width="12%">Date/Time</th>
                                 <th width="12%">Action</th>
                                 <th width="12%">User</th>
-                                <th width="13%">Case ID</th>
+                                <th width="13%">Case</th>
                                 <th width="51%">Details</th>
                             </tr>
                         </thead>
@@ -204,7 +204,12 @@
                                             <a href="{% url 'cases:case_audit_history' log.case.id %}" class="text-decoration-none">
                                                 <strong>{{ log.case.employee_first_name }} {{ log.case.employee_last_name }}</strong>
                                             </a><br>
-                                            <small class="text-muted">{{ log.case.employee_first_name }} {{ log.case.employee_last_name }}</small>
+                                            {% if log.case.external_case_id %}
+                                                <small class="text-muted">#{{ log.case.external_case_id }}</small>
+                                            {% endif %}
+                                        {% elif log.metadata.external_case_id %}
+                                            <small class="text-muted">#{{ log.metadata.external_case_id }}</small><br>
+                                            <small class="text-muted">{{ log.metadata.employee_name }}</small>
                                         {% else %}
                                             <span class="text-muted">—</span>
                                         {% endif %}
