@@ -795,6 +795,9 @@ class TechReviewSetting(models.Model):
              - Level 1: review required
              - Level 2, Level 3: review NOT required
         """
+        # Normalize tier: '1' → 'tier_1', '2' → 'tier_2', etc.
+        if tier and not tier.startswith('tier_'):
+            tier = f'tier_{tier}'
         try:
             setting = cls.objects.get(technician=technician, tier=tier)
             return setting.requires_review
