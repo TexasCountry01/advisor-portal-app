@@ -228,6 +228,23 @@
     </div>
     {% endif %}
 
+    <!-- REVIEWER CHECKLIST PENDING BANNER - Show when reviewer approved/corrected but hasn't completed -->
+    {% if case.reviewed_by == user and case.review_status in 'approved,corrections_needed' and case.status in 'accepted,hold' %}
+    <div class="alert alert-success border-2 border-success mb-4" role="alert">
+        <div class="d-flex align-items-start">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mt-0">
+                    <i class="bi bi-clipboard-check"></i>
+                    <strong>Review {% if case.review_status == 'approved' %}Approved{% else %}Corrections Applied{% endif %} &mdash; Checklist Pending</strong>
+                </h5>
+                <p class="mb-0 small">
+                    You've {% if case.review_status == 'approved' %}approved{% else %}applied corrections to{% endif %} this case. Use the <strong>Continue to Checklist</strong> button in the Actions section below to finalize reports, credit value, tech notes, and schedule the release.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- REVISION REQUESTED BANNER - Show to Level 1 tech when their case was returned with feedback -->
     {% if case.review_status == 'revisions_requested' and case.status == 'accepted' and user.role == 'technician' and case.assigned_to == user %}
     <div class="alert alert-warning border-2 border-warning mb-4" role="alert">
@@ -1644,7 +1661,7 @@
                 </div>
 
                 <!-- Actions (only show when user has actionable options) -->
-                {% if case.assigned_to == user or user.role in 'administrator,manager' or case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' %}
+                {% if case.assigned_to == user or user.role in 'administrator,manager' or case.status == 'pending_review' and user.role == 'technician' and user.user_level in 'level_2,level_3' or case.reviewed_by == user and case.review_status in 'approved,corrections_needed' and case.status in 'accepted,hold' %}
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Actions</h5>
@@ -1671,6 +1688,15 @@
                                 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#correctionsModal">
                                     <i class="bi bi-wrench"></i> Fix & Complete Myself
                                 </button>
+                            {% elif case.reviewed_by == user and case.review_status in 'approved,corrections_needed' and case.status in 'accepted,hold' %}
+                                <!-- Reviewer approved/corrected but hasn't completed yet -->
+                                <div class="alert alert-info mb-3">
+                                    <strong><i class="bi bi-clipboard-check"></i> Review {% if case.review_status == 'approved' %}Approved{% else %}Corrections Applied{% endif %}</strong>
+                                    <p class="mb-0 small mt-1">Continue to the pre-completion checklist to finalize and schedule the release.</p>
+                                </div>
+                                <a href="{% url 'cases:completion_review' case.id %}" class="btn btn-success">
+                                    <i class="bi bi-check-circle"></i> Continue to Checklist
+                                </a>
                             {% elif case.assigned_to == user %}
                                 <!-- Standard Technician Actions -->
                                 {% if case.status == 'completed' %}
