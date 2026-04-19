@@ -1691,7 +1691,7 @@
                                         <i class="bi bi-play-circle"></i> Resume from Hold
                                     </button>
                                     <a href="{% url 'cases:completion_review' case.id %}" class="btn btn-outline-success">
-                                        <i class="bi bi-check-circle"></i> Mark as Completed
+                                        <i class="bi bi-check-circle"></i> Checklist to Complete
                                     </a>
                                     <hr>
                                     <small class="text-muted">
@@ -1722,7 +1722,7 @@
                                     {% else %}
                                     <!-- No review required OR post-revision: Mark as Completed + optional Submit for Review -->
                                     <a href="{% url 'cases:completion_review' case.id %}" class="btn btn-outline-success" id="markCompletedBtn">
-                                        <i class="bi bi-check-circle"></i> Mark as Completed
+                                        <i class="bi bi-check-circle"></i> Checklist to Complete
                                     </a>
                                     <button type="button" class="btn btn-outline-primary" id="submitForReviewBtn" onclick="submitForReview()">
                                         <i class="bi bi-arrow-right-circle"></i> Submit for Review
@@ -2049,7 +2049,7 @@ function markCaseCompleted() {
                 document.querySelector('.card-body').insertAdjacentHTML('beforebegin', alertHtml);
             }
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Checklist to Complete';
             return;
         }
         
@@ -2057,13 +2057,13 @@ function markCaseCompleted() {
         const releaseModal = new bootstrap.Modal(document.getElementById('releaseOptionsModal'));
         releaseModal.show();
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Checklist to Complete';
     })
     .catch(error => {
         console.error('Error:', error);
         alert('An error occurred while validating your request.');
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-check-circle"></i> Mark as Completed';
+        btn.innerHTML = '<i class="bi bi-check-circle"></i> Checklist to Complete';
     });
 }
 
