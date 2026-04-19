@@ -1417,7 +1417,9 @@ def case_detail(request, pk):
     reports = case.reports.all().order_by('report_number')
     
     # Only technicians and administrators can upload reports
-    can_upload_reports = user.role in ['technician', 'administrator'] and can_edit
+    # Also allow the reviewer to upload during pending_review
+    is_reviewer = (case.status == 'pending_review' and user.role in ['technician', 'administrator'] and case.assigned_to != user)
+    can_upload_reports = (user.role in ['technician', 'administrator'] and can_edit) or is_reviewer
 
     # Calculate the next available report number for additional uploads
     existing_report_numbers = set(case.reports.values_list('report_number', flat=True))
@@ -5843,6 +5845,13 @@ def approve_case_review(request, case_id):
             except Exception as e:
                 print(f'Error sending approval email: {str(e)}')
         
+        # Create internal note for the approval
+        from cases.models import CaseNote
+        approve_note = f'[Review Approved] Case approved by {user.get_full_name() or user.username} — {release_msg}'
+        if review_notes:
+            approve_note += f'\nNotes: {review_notes}'
+        CaseNote.objects.create(case=case, author=user, note=approve_note, is_internal=True)
+
         messages.success(request, f'Case for {case.employee_first_name} {case.employee_last_name} approved and {release_msg}.')
         
         # Log to audit trail
@@ -5953,6 +5962,11 @@ def request_case_revisions(request, case_id):
             except Exception as e:
                 print(f'Error sending revision request email: {str(e)}')
         
+        # Create internal note for the revision request
+        from cases.models import CaseNote
+        revision_note = f'[Revisions Requested] Revisions requested by {user.get_full_name() or user.username}\nFeedback: {revision_feedback}'
+        CaseNote.objects.create(case=case, author=user, note=revision_note, is_internal=True)
+
         messages.success(request, f'Revisions requested for {case.employee_first_name} {case.employee_last_name} case.')
         
         # Log to audit trail
@@ -6034,6 +6048,11 @@ def correct_case_review(request, case_id):
                 message=f'{case.employee_first_name} {case.employee_last_name} case has been completed with corrections applied by {user.get_full_name() or user.username}. Notes: {correction_notes}'
             )
         
+        # Create internal note for the corrections
+        from cases.models import CaseNote
+        correction_note = f'[Corrections Applied] Corrections applied by {user.get_full_name() or user.username}\nNotes: {correction_notes}'
+        CaseNote.objects.create(case=case, author=user, note=correction_note, is_internal=True)
+
         # Log to audit trail
         from core.models import AuditLog
         AuditLog.log_activity(
@@ -6153,6 +6172,15 @@ def submit_for_review(request, case_id):
                         message=notification_msg,
                     )
             
+            # Create internal note for the review submission
+            from cases.models import CaseNote
+            note_text = f'[Review Submitted] Case submitted for quality review by {user.get_full_name() or user.username}'
+            if reviewer:
+                note_text += f' — Reviewer: {reviewer.get_full_name() or reviewer.username}'
+            if tech_notes:
+                note_text += f'\nNotes: {tech_notes}'
+            CaseNote.objects.create(case=case, author=user, note=note_text, is_internal=True)
+
             # Log to audit trail
             AuditLog.log_activity(
                 user=user,

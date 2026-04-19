@@ -197,6 +197,37 @@
         </div>
     </div>
 
+    <!-- PENDING REVIEW BANNER - Show to reviewer when case is awaiting their review -->
+    {% if case.status == 'pending_review' and user.role in 'technician,administrator' and case.assigned_to != user %}
+    <div class="alert alert-warning border-2 border-warning mb-4" role="alert">
+        <div class="d-flex align-items-start">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mt-0">
+                    <i class="bi bi-clipboard-check"></i>
+                    <strong>Case Pending Your Review</strong>
+                </h5>
+                {% if case.assigned_to %}
+                <p class="mb-2"><strong>Submitted by:</strong> {{ case.assigned_to.get_full_name|default:case.assigned_to.username }}
+                    {% if case.assigned_to.user_level %} ({{ case.assigned_to.get_user_level_display }}){% endif %}
+                </p>
+                {% endif %}
+                {% if latest_review_event %}
+                <p class="mb-2"><strong>Submitted:</strong> {{ latest_review_event.timestamp|date:"m/d/Y H:i" }}</p>
+                {% endif %}
+                {% if latest_review_event.metadata.notes %}
+                <div class="p-3 bg-white border rounded mb-3">
+                    <strong>Notes from Tech:</strong>
+                    <p class="mb-0 mt-1">{{ latest_review_event.metadata.notes }}</p>
+                </div>
+                {% endif %}
+                <p class="mb-0 small text-muted">
+                    <i class="bi bi-info-circle"></i> Use the <strong>Actions</strong> section below to approve, request revisions, or fix &amp; complete this case.
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- REVISION REQUESTED BANNER - Show to Level 1 tech when their case was returned with feedback -->
     {% if case.review_status == 'revisions_requested' and case.status == 'accepted' and user.role == 'technician' and case.assigned_to == user %}
     <div class="alert alert-warning border-2 border-warning mb-4" role="alert">
