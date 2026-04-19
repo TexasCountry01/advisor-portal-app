@@ -41,6 +41,74 @@
         </div>
     </div>
 
+    <!-- REVIEW ALERT BANNERS -->
+    {% if my_cases_pending_review %}
+    <div class="alert alert-warning border-2 border-warning mb-3" role="alert">
+        <div class="d-flex align-items-start justify-content-between">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-2">
+                    <i class="bi bi-hourglass-split"></i> {{ my_cases_pending_review|length }} Case{{ my_cases_pending_review|length|pluralize }} Pending Review
+                </h5>
+                <p class="mb-2 small text-muted">Your case{{ my_cases_pending_review|length|pluralize }} {{ my_cases_pending_review|length|pluralize:"is,are" }} awaiting quality review:</p>
+                <ul class="mb-0">
+                    {% for c in my_cases_pending_review %}
+                    <li>
+                        <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
+                        {% if c.reviewed_by %}<span class="text-muted small"> — Reviewer: {{ c.reviewed_by.get_full_name|default:c.reviewed_by.username }}</span>{% endif %}
+                        <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-warning ms-2"><i class="bi bi-eye"></i> See Case Details</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if my_cases_needing_revision %}
+    <div class="alert alert-warning border-2 border-danger mb-3" role="alert">
+        <div class="d-flex align-items-start justify-content-between">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-2">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ my_cases_needing_revision|length }} Case{{ my_cases_needing_revision|length|pluralize }} Need{{ my_cases_needing_revision|length|pluralize:"s," }} Revisions
+                </h5>
+                <p class="mb-2 small text-muted">Revisions have been requested on your case{{ my_cases_needing_revision|length|pluralize }}:</p>
+                <ul class="mb-0">
+                    {% for c in my_cases_needing_revision %}
+                    <li>
+                        <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
+                        {% if c.reviewed_by %}<span class="text-muted small"> — Reviewer: {{ c.reviewed_by.get_full_name|default:c.reviewed_by.username }}</span>{% endif %}
+                        {% if c.review_notes %}<br><span class="small">Feedback: {{ c.review_notes|truncatewords:20 }}</span>{% endif %}
+                        <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-danger ms-2"><i class="bi bi-eye"></i> See Case Details</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.user_level in 'level_2,level_3' and cases_awaiting_my_review %}
+    <div class="alert alert-warning border-2 border-warning mb-3" role="alert">
+        <div class="d-flex align-items-start justify-content-between">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-2">
+                    <i class="bi bi-clipboard-check"></i> {{ cases_awaiting_my_review|length }} Case{{ cases_awaiting_my_review|length|pluralize }} Awaiting Your Review
+                </h5>
+                <p class="mb-2 small text-muted">The following case{{ cases_awaiting_my_review|length|pluralize }} {{ cases_awaiting_my_review|length|pluralize:"is,are" }} pending quality review:</p>
+                <ul class="mb-0">
+                    {% for c in cases_awaiting_my_review %}
+                    <li>
+                        <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
+                        {% if c.assigned_to %}<span class="text-muted small"> — Submitted by: {{ c.assigned_to.get_full_name|default:c.assigned_to.username }}</span>{% endif %}
+                        <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-warning ms-2"><i class="bi bi-eye"></i> Review Case</a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Filters + View Options + Stats (All in One Card) -->
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">

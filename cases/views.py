@@ -517,6 +517,26 @@ def technician_dashboard(request):
     context['all_columns'] = DASHBOARD_COLUMN_CONFIG['technician_dashboard']['available_columns']
     context['admin_preview'] = admin_preview
     
+    # Review alert banners for technicians
+    # 1. Cases this tech submitted that are pending review (L1 tech waiting for review)
+    my_cases_pending_review = Case.objects.filter(
+        assigned_to=user, status='pending_review'
+    ).select_related('reviewed_by').order_by('-date_submitted')
+    
+    # 2. Cases with revisions requested that belong to this tech (L1 tech needs to revise)
+    my_cases_needing_revision = Case.objects.filter(
+        assigned_to=user, status='accepted', review_status='revisions_requested'
+    ).select_related('reviewed_by').order_by('-date_submitted')
+    
+    # 3. Cases awaiting this tech's review (L2/L3 reviewer)
+    cases_awaiting_my_review = Case.objects.filter(
+        status='pending_review'
+    ).exclude(assigned_to=user).select_related('assigned_to', 'reviewed_by').order_by('-date_submitted')
+    
+    context['my_cases_pending_review'] = my_cases_pending_review
+    context['my_cases_needing_revision'] = my_cases_needing_revision
+    context['cases_awaiting_my_review'] = cases_awaiting_my_review
+    
     return render(request, 'cases/technician_dashboard.html', context)
 
 
