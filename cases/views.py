@@ -6509,8 +6509,13 @@ def get_eligible_reviewers(request):
         Q(role='technician', user_level__in=['level_2', 'level_3']) |
         Q(role__in=['administrator', 'manager']),
         is_active=True,
-        is_test_account=False,
-    ).exclude(pk=user.pk).order_by('first_name', 'last_name')
+    ).exclude(pk=user.pk)
+
+    # Only filter out test accounts on production
+    if settings.ENVIRONMENT != 'test':
+        eligible = eligible.filter(is_test_account=False)
+
+    eligible = eligible.order_by('first_name', 'last_name')
 
     data = [{
         'id': u.pk,
