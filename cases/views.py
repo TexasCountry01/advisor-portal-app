@@ -2727,10 +2727,11 @@ def upload_case_report(request, case_id):
         messages.error(request, 'You do not have permission to upload reports to this case.')
         return redirect('cases:case_detail', pk=case_id)
     
-    # Check if technician owns the case
+    # Check if technician owns the case (or is the reviewer on a pending_review case)
     if user.role == 'technician' and case.assigned_to != user:
-        messages.error(request, 'You can only upload reports to cases you are assigned to.')
-        return redirect('cases:case_detail', pk=case_id)
+        if not (case.status == 'pending_review' and user.user_level in ['level_2', 'level_3']):
+            messages.error(request, 'You can only upload reports to cases you are assigned to.')
+            return redirect('cases:case_detail', pk=case_id)
     
     if request.method == 'POST':
         report_file = request.FILES.get('report_file')
@@ -2795,9 +2796,10 @@ def upload_technician_document(request, case_id):
     if user.role in ['technician', 'administrator', 'manager']:
         # Technicians and admins can upload
         if user.role == 'technician' and case.assigned_to != user:
-            # Technician must own the case
-            messages.error(request, 'You can only upload documents to cases you are assigned to.')
-            return redirect('cases:case_detail', pk=case_id)
+            # Technician must own the case, unless they're a reviewer on a pending_review case
+            if not (case.status == 'pending_review' and user.user_level in ['level_2', 'level_3']):
+                messages.error(request, 'You can only upload documents to cases you are assigned to.')
+                return redirect('cases:case_detail', pk=case_id)
         can_upload = True
     elif user.role == 'member' and case.status in ['draft', 'submitted', 'accepted', 'hold', 'pending_review', 'resubmitted', 'needs_resubmission']:
         # Members can upload to their own cases (or delegated cases) in active statuses
