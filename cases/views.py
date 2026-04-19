@@ -6509,6 +6509,7 @@ def get_eligible_reviewers(request):
         Q(role='technician', user_level__in=['level_2', 'level_3']) |
         Q(role__in=['administrator', 'manager']),
         is_active=True,
+        is_test_account=False,
     ).exclude(pk=user.pk).order_by('first_name', 'last_name')
 
     data = [{
