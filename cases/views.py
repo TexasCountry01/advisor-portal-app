@@ -6507,7 +6507,7 @@ def get_eligible_reviewers(request):
 
     eligible = User.objects.filter(
         Q(role='technician', user_level__in=['level_2', 'level_3']) |
-        Q(role__in=['administrator', 'manager']),
+        Q(role='administrator'),
         is_active=True,
     ).exclude(pk=user.pk)
 
