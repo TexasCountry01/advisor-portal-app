@@ -2747,9 +2747,11 @@ def upload_case_report(request, case_id):
         messages.error(request, 'You do not have permission to upload reports to this case.')
         return redirect('cases:case_detail', pk=case_id)
     
-    # Check if technician owns the case (or is the reviewer on a pending_review case)
+    # Check if technician owns the case (or is the reviewer)
     if user.role == 'technician' and case.assigned_to != user:
-        if not (case.status == 'pending_review' and user.user_level in ['level_2', 'level_3']):
+        is_reviewer_on_pending = case.status == 'pending_review' and user.user_level in ['level_2', 'level_3']
+        is_reviewer_on_completion = case.reviewed_by == user and case.review_status in ['corrections_needed', 'approved'] and case.status in ['accepted', 'hold']
+        if not (is_reviewer_on_pending or is_reviewer_on_completion):
             messages.error(request, 'You can only upload reports to cases you are assigned to.')
             return redirect('cases:case_detail', pk=case_id)
     
@@ -2816,8 +2818,10 @@ def upload_technician_document(request, case_id):
     if user.role in ['technician', 'administrator', 'manager']:
         # Technicians and admins can upload
         if user.role == 'technician' and case.assigned_to != user:
-            # Technician must own the case, unless they're a reviewer on a pending_review case
-            if not (case.status == 'pending_review' and user.user_level in ['level_2', 'level_3']):
+            # Technician must own the case, unless they're a reviewer
+            is_reviewer_on_pending = case.status == 'pending_review' and user.user_level in ['level_2', 'level_3']
+            is_reviewer_on_completion = case.reviewed_by == user and case.review_status in ['corrections_needed', 'approved'] and case.status in ['accepted', 'hold']
+            if not (is_reviewer_on_pending or is_reviewer_on_completion):
                 messages.error(request, 'You can only upload documents to cases you are assigned to.')
                 return redirect('cases:case_detail', pk=case_id)
         can_upload = True
