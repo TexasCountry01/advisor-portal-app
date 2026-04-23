@@ -14,10 +14,10 @@
 # ==============================================================================
 #
 # WORKFLOW: 4 STEPS
-# 1. Verify .env database configuration (MySQL, NOT SQLite)
-# 2. Pull latest changes from GitHub
-# 3. Run Django migrations on MySQL database
-# 4. Restart Gunicorn application server
+# 1. Commit & push all local changes to GitHub
+# 2. Verify .env database configuration (MySQL, NOT SQLite)
+# 3. Pull latest changes from GitHub on TEST server
+# 4. Run Django migrations + Restart Gunicorn
 #
 # Security Notes:
 # - Database password stored securely in remote .env file (NOT in this script)
@@ -46,8 +46,30 @@ Write-Host "Deploying to Test Server" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# STEP 1: Ensure .env has correct database configuration
-Write-Host "[1/4] Verifying database configuration (.env)..." -ForegroundColor Yellow
+# STEP 1: Commit and push all local changes to GitHub
+Write-Host "[1/5] Committing and pushing local changes to GitHub..." -ForegroundColor Yellow
+
+$gitStatus = git status --porcelain
+if ($gitStatus) {
+    git add -A
+    git commit -m "Deploy: super dev exclusion, dynamic technicians, reviewer logic restored"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Git commit failed!" -ForegroundColor Red
+        exit 1
+    }
+    git push origin main
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERROR: Git push failed!" -ForegroundColor Red
+        exit 1
+    }
+    Write-Host "OK - Changes committed and pushed" -ForegroundColor Green
+} else {
+    Write-Host "OK - No local changes to commit (already up to date)" -ForegroundColor Green
+}
+Write-Host ""
+
+# STEP 2: Ensure .env has correct database configuration
+Write-Host "[2/5] Verifying database configuration (.env)..." -ForegroundColor Yellow
 
 # NOTE: The .env file already exists on the remote server with all necessary configuration
 # including the database password. We just verify it exists and contains required keys.
@@ -56,8 +78,8 @@ ssh $testServerUser@$testServerHost "cd $projectPath && if [ -f .env ]; then ech
 Write-Host "OK - Database configuration verified" -ForegroundColor Green
 Write-Host ""
 
-# STEP 2: Pull latest changes from GitHub
-Write-Host "[2/4] Pulling latest changes from GitHub..." -ForegroundColor Yellow
+# STEP 3: Pull latest changes from GitHub
+Write-Host "[3/5] Pulling latest changes from GitHub..." -ForegroundColor Yellow
 ssh $testServerUser@$testServerHost "cd $projectPath && git pull origin main"
 
 if ($LASTEXITCODE -ne 0) {
@@ -68,18 +90,12 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "OK - Git pull completed" -ForegroundColor Green
 Write-Host ""
 
-# STEP 3: Run database migrations
-Write-Host "[3/4] Running database migrations..." -ForegroundColor Yellow
+# STEP 4: Run database migrations
+Write-Host "[4/4] Running database migrations and restarting Gunicorn..." -ForegroundColor Yellow
 ssh $testServerUser@$testServerHost "cd $projectPath && source $venvPath/bin/activate && python manage.py migrate"
 
 Write-Host "OK - Migrations completed" -ForegroundColor Green
 Write-Host ""
-
-# STEP 4: Restart Gunicorn
-Write-Host "[4/4] Restarting Gunicorn..." -ForegroundColor Yellow
-
-# STEP 4: Restart Gunicorn
-Write-Host "[4/4] Restarting Gunicorn..." -ForegroundColor Yellow
 
 ssh $testServerUser@$testServerHost "pkill -f gunicorn"
 Start-Sleep -Seconds 2
@@ -114,6 +130,7 @@ Write-Host "SUCCESS - Deployment completed!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
 Write-Host "What was deployed:" -ForegroundColor Cyan
+Write-Host "  - Local changes committed and pushed to GitHub" -ForegroundColor Cyan
 Write-Host "  - Database configuration verified (.env)" -ForegroundColor Cyan
 Write-Host "  - Latest changes pulled from GitHub" -ForegroundColor Cyan
 Write-Host "  - Database migrations applied" -ForegroundColor Cyan

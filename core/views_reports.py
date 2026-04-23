@@ -12,12 +12,28 @@ from datetime import timedelta
 import csv
 from cases.models import Case
 from accounts.models import User
-from core.models import BetaFeedback
+from core.models import BetaFeedback, SystemSettings
 
 
 def is_admin(user):
     """Helper function to check if user is admin or manager"""
     return user.is_authenticated and user.role in ['administrator', 'manager']
+
+
+def _get_super_dev_email():
+    """Return configured super-dev email from system settings."""
+    try:
+        return (SystemSettings.get_settings().super_dev_email or '').strip().lower()
+    except Exception:
+        return ''
+
+
+def _exclude_super_dev_users(queryset):
+    """Exclude configured super-dev account from report user metrics."""
+    super_dev_email = _get_super_dev_email()
+    if not super_dev_email:
+        return queryset
+    return queryset.exclude(email__iexact=super_dev_email)
 
 
 @login_required
@@ -111,7 +127,7 @@ def get_all_reports_data(date_from=None, date_to=None):
         approval_rate = 0
     
     # Member activity
-    total_members = User.objects.filter(role='member').count()
+    total_members = _exclude_super_dev_users(User.objects.filter(role='member')).count()
     members_with_cases = cases_qs.filter(
         member__isnull=False
     ).values('member_id').distinct().count()
@@ -159,9 +175,9 @@ def get_all_reports_data(date_from=None, date_to=None):
     
     # === TECHNICIAN WORKLOAD ===
     # Group by user level
-    level_1_techs = User.objects.filter(role='technician', user_level='level_1').count()
-    level_2_techs = User.objects.filter(role='technician', user_level='level_2').count()
-    level_3_techs = User.objects.filter(role='technician', user_level='level_3').count()
+    level_1_techs = _exclude_super_dev_users(User.objects.filter(role='technician', user_level='level_1')).count()
+    level_2_techs = _exclude_super_dev_users(User.objects.filter(role='technician', user_level='level_2')).count()
+    level_3_techs = _exclude_super_dev_users(User.objects.filter(role='technician', user_level='level_3')).count()
     
     # Recent cases based on date filter (use custom date range if provided, else last 30 days)
     if date_from or date_to:

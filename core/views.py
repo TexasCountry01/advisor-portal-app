@@ -177,6 +177,9 @@ def system_settings(request):
             settings.feedback_email_1_enabled = request.POST.get('feedback_email_1_enabled') == 'on'
             settings.feedback_email_2 = request.POST.get('feedback_email_2', '').strip()
             settings.feedback_email_2_enabled = request.POST.get('feedback_email_2_enabled') == 'on'
+
+            # Super-dev account policy
+            settings.super_dev_email = request.POST.get('super_dev_email', '').strip().lower()
             
             settings.updated_by = request.user
             settings.save()

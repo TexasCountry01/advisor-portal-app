@@ -356,6 +356,13 @@ class SystemSettings(models.Model):
         default=False,
         help_text='Enable notifications to feedback email 2'
     )
+
+    # Super-dev account policy
+    super_dev_email = models.EmailField(
+        blank=True,
+        default='',
+        help_text='Optional dev/monitor account email to exclude from reviewer dropdowns and user counts.'
+    )
     
     # Data Sync Access Codes (hidden from UI — admin panel only)
     admin_sync_code = models.CharField(

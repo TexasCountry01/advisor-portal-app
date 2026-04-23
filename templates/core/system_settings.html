@@ -63,6 +63,11 @@
                     <i class="bi bi-chat-left-dots"></i> Feedback Alerts
                 </button>
             </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="super-dev-tab" data-bs-toggle="tab" data-bs-target="#super-dev" type="button" role="tab" aria-controls="super-dev" aria-selected="false">
+                    <i class="bi bi-person-gear"></i> Super Dev Access
+                </button>
+            </li>
         </ul>
 
         <!-- Tab Content -->
@@ -495,6 +500,38 @@
 
                         <div class="alert alert-info" role="alert">
                             <i class="bi bi-info-circle"></i> <strong>Note:</strong> Feedback notification emails are sent independently of the master email toggle. They will be sent as long as the individual toggle is enabled and an email address is provided.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Super Dev Access Tab -->
+            <div class="tab-pane fade" id="super-dev" role="tabpanel" aria-labelledby="super-dev-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4">Super Dev Account Policy</h5>
+                        <p class="text-muted mb-3">
+                            Configure one dev/monitor account email that should keep portal access but be excluded from
+                            reviewer dropdowns and operational user counts across all environments.
+                        </p>
+
+                        <div class="mb-3">
+                            <label for="super_dev_email" class="form-label">Super Dev Email</label>
+                            <input type="email"
+                                   class="form-control"
+                                   id="super_dev_email"
+                                   name="super_dev_email"
+                                   value="{{ settings.super_dev_email }}"
+                                   placeholder="name@example.com">
+                            <small class="text-muted">
+                                Leave blank to disable this exclusion policy.
+                            </small>
+                        </div>
+
+                        <div class="alert alert-info mb-0" role="alert">
+                            <i class="bi bi-info-circle"></i>
+                            This policy excludes the configured email from reviewer eligibility and user-count metrics only.
+                            It does not block login or remove role-based portal access.
                         </div>
                     </div>
                 </div>

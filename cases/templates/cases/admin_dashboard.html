@@ -50,46 +50,50 @@
                     opacity: 0.9;
                     margin-top: 6px;
                 }
+                #view-stats-container .tile-link {
+                    text-decoration: none;
+                    display: inline-block;
+                }
+                #view-stats-container .tile-link.active .stat-mini {
+                    outline: 3px solid #0d6efd;
+                    outline-offset: 1px;
+                }
             </style>
-            <!-- Stats Row (Right side only) -->
-            <div class="row mb-3" id="top-row">
-                <div class="col-auto ms-auto d-flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">{{ stats.total }}</div>
-                        <div class="stat-mini-label">Total</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">{{ stats.total_members }}</div>
-                        <div class="stat-mini-label">Members</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">{{ stats.total_technicians }}</div>
-                        <div class="stat-mini-label">Techs</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">{{ stats.requiring_review }}</div>
-                        <div class="stat-mini-label">Review</div>
-                    </div>
-                    <div class="stat-mini" style="background: linear-gradient(135deg, #0dcaf0 0%, #0a9bc4 100%);">
-                        <div class="stat-mini-value">{{ stats.resubmitted }}</div>
-                        <div class="stat-mini-label">Resubmitted</div>
-                    </div>
-                    <div class="stat-mini">
-                        <div class="stat-mini-value">{{ stats.unassigned }}</div>
-                        <div class="stat-mini-label">Unassigned</div>
-                    </div>
-                    <div class="stat-mini" style="background: linear-gradient(135deg, #C00000 0%, #9A0000 100%);">
-                        <div class="stat-mini-value">{{ stats.rush }}</div>
-                        <div class="stat-mini-label">Rush</div>
+            <!-- Quick Tech Row -->
+            <div class="row mb-3">
+                <div class="col d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
+                    <small class="text-muted">Pending:</small>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'cases:admin_dashboard' %}?quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Cases</a>
+                        {% for tech in quick_technicians %}
+                        <a href="{% url 'cases:admin_dashboard' %}?quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == tech.username %}active{% endif %}">{{ tech.first_name }}</a>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
+
+            <!-- Clickable Fast-Filter Tiles -->
+            <div class="row mb-3">
+                <div class="col d-flex gap-2" style="flex-wrap: wrap; justify-content: flex-end;">
+                    <a class="tile-link {% if quick_filter == 'submitted' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=submitted"><div class="stat-mini bg-secondary"><div class="stat-mini-value">{{ quick_tiles.submitted }}</div><div class="stat-mini-label">Submitted</div></div></a>
+                    <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=pending"><div class="stat-mini"><div class="stat-mini-value">{{ quick_tiles.pending }}</div><div class="stat-mini-label">Pending</div></div></a>
+                    <a class="tile-link {% if quick_filter == 'scheduled' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=scheduled"><div class="stat-mini" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);"><div class="stat-mini-value">{{ quick_tiles.scheduled }}</div><div class="stat-mini-label">Scheduled</div></div></a>
+                    <a class="tile-link {% if quick_filter == 'need_review' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=need_review"><div class="stat-mini" style="background: linear-gradient(135deg, #51216b 0%, #3f1853 100%);"><div class="stat-mini-value">{{ quick_tiles.need_review }}</div><div class="stat-mini-label">Need Review</div></div></a>
+                    <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=on_hold"><div class="stat-mini" style="background: linear-gradient(135deg, #e6a400 0%, #c48a14 100%);"><div class="stat-mini-value">{{ quick_tiles.on_hold }}</div><div class="stat-mini-label">On Hold</div></div></a>
+                    <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=alerts"><div class="stat-mini" style="background: linear-gradient(135deg, #c00000 0%, #9a0000 100%);"><div class="stat-mini-value">{{ quick_tiles.alerts }}</div><div class="stat-mini-label">Alerts</div></div></a>
+                    <a class="tile-link {% if quick_filter == 'due_today' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=due_today"><div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a00000 100%);"><div class="stat-mini-value">{{ quick_tiles.due_today }}</div><div class="stat-mini-label">Due Today</div></div></a>
+                    <a class="tile-link {% if quick_filter == 'due_tomorrow' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=due_tomorrow"><div class="stat-mini" style="background: linear-gradient(135deg, #b30000 0%, #850000 100%);"><div class="stat-mini-value">{{ quick_tiles.due_tomorrow }}</div><div class="stat-mini-label">Due Tomorrow</div></div></a>
+                </div>
+            </div>
+
         </div>
 
         <!-- Filter Form (Collapsible) -->
         <div class="collapse" id="filter-container">
         <div class="card-body border-top">
             <form method="get" action="{% url 'cases:admin_dashboard' %}" class="row g-3" id="filter-row">
+                <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
+                <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
                 <!-- Status Filter - Multiple Checkboxes -->
                 <div class="col-md-3">
                     <label class="form-label">Status (Multiple)</label>

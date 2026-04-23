@@ -11,9 +11,11 @@ from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
 from accounts.models import User
+from core.models import SystemSettings
 from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage, UnreadMessage
 import logging
 import json
+from datetime import timedelta
 from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
@@ -46,6 +48,35 @@ def _create_case_notification_if_allowed(*, case, member, notification_type, **k
     )
 
 
+def _get_active_technicians():
+    """
+    Fetch all active technician users sorted by first name.
+    Returns list of dicts: [{'username': 'tiffany', 'first_name': 'Tiffany'}, ...]
+    """
+    technicians = _exclude_super_dev_users(User.objects.filter(
+        role='technician',
+        is_active=True
+    )).order_by('first_name').values('username', 'first_name')
+    
+    return [{'username': t['username'], 'first_name': t['first_name']} for t in technicians]
+
+
+def _get_super_dev_email():
+    """Return the configured super-dev user email from system settings."""
+    try:
+        return (SystemSettings.get_settings().super_dev_email or '').strip().lower()
+    except Exception:
+        return ''
+
+
+def _exclude_super_dev_users(queryset):
+    """Exclude configured super-dev user from operational user querysets."""
+    super_dev_email = _get_super_dev_email()
+    if not super_dev_email:
+        return queryset
+    return queryset.exclude(email__iexact=super_dev_email)
+
+
 def build_filter_params(request):
     """
     Build a query string with all current filter parameters.
@@ -59,12 +90,131 @@ def build_filter_params(request):
         params['status'] = status_list
     
     # Preserve other filters
-    for param in ['urgency', 'tier', 'member', 'technician', 'date_range', 'date_from', 'date_to', 'search']:
+    for param in ['urgency', 'tier', 'member', 'technician', 'date_range', 'date_from', 'date_to', 'search', 'quick_filter', 'quick_tech', 'view', 'assigned']:
         value = request.GET.get(param)
         if value:
             params[param] = value
     
     return params
+
+
+def _apply_staff_quick_filter(queryset, quick_filter, user):
+    """Apply tile-style quick filters for technician/manager/admin dashboards."""
+    from django.db.models import Exists, OuterRef
+
+    today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
+
+    if quick_filter == 'submitted':
+        return queryset.filter(status='submitted')
+    if quick_filter == 'pending':
+        return queryset.exclude(status='completed')
+    if quick_filter == 'scheduled':
+        return queryset.filter(
+            status='completed',
+            actual_release_date__isnull=True,
+            scheduled_release_date__isnull=False
+        )
+    if quick_filter == 'need_review':
+        return queryset.filter(status='pending_review')
+    if quick_filter == 'on_hold':
+        return queryset.filter(status='hold')
+    if quick_filter == 'alerts':
+        has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+        return queryset.filter(Q(has_member_updates=True) | Q(has_profeds_error=True) | has_unread)
+    if quick_filter == 'due_today':
+        return queryset.filter(date_due=today).exclude(status='completed')
+    if quick_filter == 'due_tomorrow':
+        return queryset.filter(date_due=tomorrow).exclude(status='completed')
+
+    return queryset
+
+
+def _build_staff_quick_tiles(queryset, user):
+    """Build tile counts for technician/manager/admin dashboards."""
+    from django.db.models import Exists, OuterRef
+
+    today = timezone.now().date()
+    tomorrow = today + timedelta(days=1)
+    has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+
+    return {
+        'submitted': queryset.filter(status='submitted').count(),
+        'pending': queryset.exclude(status='completed').count(),
+        'scheduled': queryset.filter(
+            status='completed',
+            actual_release_date__isnull=True,
+            scheduled_release_date__isnull=False
+        ).count(),
+        'need_review': queryset.filter(status='pending_review').count(),
+        'on_hold': queryset.filter(status='hold').count(),
+        'alerts': queryset.filter(Q(has_member_updates=True) | Q(has_profeds_error=True) | has_unread).count(),
+        'due_today': queryset.filter(date_due=today).exclude(status='completed').count(),
+        'due_tomorrow': queryset.filter(date_due=tomorrow).exclude(status='completed').count(),
+    }
+
+
+def _apply_member_quick_filter(queryset, quick_filter, user):
+    """Apply tile-style quick filters for member dashboard."""
+    from django.db.models import Exists, OuterRef
+    from cases.models import CaseNotification
+
+    now = timezone.now()
+    ready_since = now - timedelta(days=14)
+
+    if quick_filter == 'ready_14d':
+        return queryset.filter(
+            status='completed',
+            actual_release_date__isnull=False,
+            actual_release_date__gte=ready_since
+        )
+    if quick_filter == 'pending':
+        return queryset.exclude(status__in=['completed', 'cancelled', 'draft'])
+    if quick_filter == 'on_hold':
+        return queryset.filter(status='hold')
+    if quick_filter == 'alerts':
+        has_unread_msg = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+        has_unread_notif = Exists(
+            CaseNotification.objects.filter(
+                case=OuterRef('pk'),
+                member=OuterRef('member'),
+                is_read=False
+            ).exclude(notification_type='member_update_received')
+        )
+        return queryset.filter(has_unread_msg | has_unread_notif)
+    if quick_filter == 'drafts':
+        return queryset.filter(status='draft')
+
+    return queryset
+
+
+def _build_member_quick_tiles(queryset, user):
+    """Build tile counts for member dashboard."""
+    from django.db.models import Exists, OuterRef
+    from cases.models import CaseNotification
+
+    now = timezone.now()
+    ready_since = now - timedelta(days=14)
+    has_unread_msg = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+    has_unread_notif = Exists(
+        CaseNotification.objects.filter(
+            case=OuterRef('pk'),
+            member=OuterRef('member'),
+            is_read=False
+        ).exclude(notification_type='member_update_received')
+    )
+
+    return {
+        'ready_14d': queryset.filter(
+            status='completed',
+            actual_release_date__isnull=False,
+            actual_release_date__gte=ready_since
+        ).count(),
+        'pending': queryset.exclude(status__in=['completed', 'cancelled', 'draft']).count(),
+        'on_hold': queryset.filter(status='hold').count(),
+        'alerts': queryset.filter(has_unread_msg | has_unread_notif).count(),
+        'drafts': queryset.filter(status='draft').count(),
+    }
 
 
 # DEV ONLY - Form preview without authentication
@@ -167,6 +317,7 @@ def member_dashboard(request):
     custom_date_from = request.GET.get('date_from')
     custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
+    quick_filter = request.GET.get('quick_filter', '')
     sort_by = request.GET.get('sort')
     if sort_by:
         save_user_sort_preference(user, 'member_dashboard', sort_by)
@@ -221,6 +372,13 @@ def member_dashboard(request):
             Q(employee_first_name__icontains=search_query) |
             Q(employee_last_name__icontains=search_query)
         )
+
+    # Apply quick tile filter after regular filters so users can combine controls.
+    if quick_filter:
+        cases = _apply_member_quick_filter(cases, quick_filter, user)
+
+    if quick_filter == 'ready_14d' and not request.GET.get('sort'):
+        sort_by = '-date_completed'
     
     # Add unread count to each case:
     # 1. UnreadMessage (chat messages) — keyed by logged-in user
@@ -313,6 +471,7 @@ def member_dashboard(request):
         'cancelled': all_cases.filter(status='cancelled').count(),
         'rush': all_cases.filter(urgency='rush').count(),
     }
+    member_quick_tiles = _build_member_quick_tiles(all_cases, user)
     
     # Get column visibility settings
     visible_columns = get_user_visible_columns(user, 'member_dashboard')
@@ -348,6 +507,8 @@ def member_dashboard(request):
         'active_view': active_view,
         'delegated_members': delegated_members,
         'admin_preview': admin_preview,
+        'quick_filter': quick_filter,
+        'member_quick_tiles': member_quick_tiles,
     }
     
     return render(request, 'cases/member_dashboard.html', context)
@@ -398,6 +559,8 @@ def technician_dashboard(request):
     custom_date_from = request.GET.get('date_from')
     custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
+    quick_filter = request.GET.get('quick_filter', '')
+    quick_tech = request.GET.get('quick_tech', 'all')
     sort_by = request.GET.get('sort')
     if sort_by:
         save_user_sort_preference(user, 'technician_dashboard', sort_by)
@@ -408,6 +571,14 @@ def technician_dashboard(request):
     # Apply "My Cases" filter
     if assigned_filter == 'mine':
         cases = cases.filter(assigned_to=user)
+
+    # Apply quick technician filter from top buttons.
+    if quick_tech and quick_tech != 'all':
+        try:
+            tech_user = User.objects.get(username__iexact=quick_tech, role='technician', is_active=True)
+            cases = cases.filter(assigned_to=tech_user)
+        except User.DoesNotExist:
+            pass  # Filter not applied if technician doesn't exist
     
     # Apply multi-status filter (override: always include cases with unread notifications)
     if status_filters:
@@ -451,6 +622,12 @@ def technician_dashboard(request):
             Q(member__first_name__icontains=search_query) |
             Q(member__last_name__icontains=search_query)
         )
+
+    # Build tile counts before applying the active quick tile filter.
+    tile_scope_cases = cases
+
+    if quick_filter:
+        cases = _apply_staff_quick_filter(cases, quick_filter, user)
     
     # Handle sorting
     allowed_sorts = [
@@ -483,6 +660,7 @@ def technician_dashboard(request):
         'completed': cases.filter(status='completed').count(),
         'rush': cases.filter(urgency='rush').count(),
     }
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
     
     # Add unread message count to each case
     for case in cases:
@@ -490,9 +668,12 @@ def technician_dashboard(request):
         case.unread_message_count = unread_count
     
     # Get available technicians and administrators for assignment dropdown
-    technicians = User.objects.filter(
+    technicians = _exclude_super_dev_users(User.objects.filter(
         role__in=['technician', 'administrator']
-    ).order_by('last_name', 'first_name')
+    )).order_by('last_name', 'first_name')
+    
+    # Get active technicians for quick-filter buttons
+    quick_technicians = _get_active_technicians()
     
     context = {
         'cases': cases,
@@ -509,6 +690,10 @@ def technician_dashboard(request):
         'technicians': technicians,
         'dashboard_type': 'technician',
         'filter_params': build_filter_params(request),
+        'quick_filter': quick_filter,
+        'quick_tech': quick_tech,
+        'quick_technicians': quick_technicians,
+        'quick_tiles': quick_tiles,
     }
     
     # Add column visibility data
@@ -568,6 +753,8 @@ def admin_dashboard(request):
     custom_date_from = request.GET.get('date_from')
     custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
+    quick_filter = request.GET.get('quick_filter', '')
+    quick_tech = request.GET.get('quick_tech', 'all')
     sort_by = request.GET.get('sort')
     if sort_by:
         save_user_sort_preference(user, 'admin_dashboard', sort_by)
@@ -588,6 +775,13 @@ def admin_dashboard(request):
     
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
+
+    if quick_tech and quick_tech != 'all':
+        try:
+            tech_user = User.objects.get(username__iexact=quick_tech, role='technician', is_active=True)
+            cases = cases.filter(assigned_to=tech_user)
+        except User.DoesNotExist:
+            pass  # Filter not applied if technician doesn't exist
     
     # Date range filter - custom dates take precedence
     if custom_date_from or custom_date_to:
@@ -620,6 +814,10 @@ def admin_dashboard(request):
             Q(member__last_name__icontains=search_query) |
             Q(client_email__icontains=search_query)
         )
+
+    tile_scope_cases = cases
+    if quick_filter:
+        cases = _apply_staff_quick_filter(cases, quick_filter, user)
     
     # Handle sorting
     allowed_sorts = [
@@ -643,9 +841,8 @@ def admin_dashboard(request):
         cases = cases.order_by('-date_submitted')
     
     # Get related data for filters
-    from accounts.models import User
-    members = User.objects.filter(role='member', is_active=True).order_by('username')
-    technicians = User.objects.filter(role='technician', is_active=True).order_by('username')
+    members = _exclude_super_dev_users(User.objects.filter(role='member', is_active=True)).order_by('username')
+    technicians = _exclude_super_dev_users(User.objects.filter(role='technician', is_active=True)).order_by('username')
     
     # Calculate comprehensive statistics (exclude drafts - those are member-only)
     all_cases = Case.objects.exclude(status='draft')
@@ -662,8 +859,8 @@ def admin_dashboard(request):
             active_user_ids.add(int(user_id))
     
     # Count active members and technicians
-    active_members = User.objects.filter(id__in=active_user_ids, role='member').count()
-    active_technicians = User.objects.filter(id__in=active_user_ids, role='technician').count()
+    active_members = _exclude_super_dev_users(User.objects.filter(id__in=active_user_ids, role='member')).count()
+    active_technicians = _exclude_super_dev_users(User.objects.filter(id__in=active_user_ids, role='technician')).count()
     
     stats = {
         'total': all_cases.count(),
@@ -679,6 +876,10 @@ def admin_dashboard(request):
         'unassigned': all_cases.filter(assigned_to__isnull=True).count(),
         'requiring_review': all_cases.filter(status='pending_review').count(),
     }
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    
+    # Get active technicians for quick-filter buttons
+    quick_technicians = _get_active_technicians()
     
     # Add unread message count to each case
     for case in cases:
@@ -705,6 +906,10 @@ def admin_dashboard(request):
         'all_columns': DASHBOARD_COLUMN_CONFIG['admin_dashboard']['available_columns'],
         'filter_params': build_filter_params(request),
         'enable_data_sync': settings.ENABLE_DATA_SYNC,
+        'quick_filter': quick_filter,
+        'quick_tech': quick_tech,
+        'quick_technicians': quick_technicians,
+        'quick_tiles': quick_tiles,
     }
     
     return render(request, 'cases/admin_dashboard.html', context)
@@ -740,6 +945,8 @@ def manager_dashboard(request):
     custom_date_from = request.GET.get('date_from')
     custom_date_to = request.GET.get('date_to')
     search_query = request.GET.get('search')
+    quick_filter = request.GET.get('quick_filter', '')
+    quick_tech = request.GET.get('quick_tech', 'all')
     sort_by = request.GET.get('sort')
     if sort_by:
         save_user_sort_preference(user, 'manager_dashboard', sort_by)
@@ -760,6 +967,13 @@ def manager_dashboard(request):
     
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
+
+    if quick_tech and quick_tech != 'all':
+        try:
+            tech_user = User.objects.get(username__iexact=quick_tech, role='technician', is_active=True)
+            cases = cases.filter(assigned_to=tech_user)
+        except User.DoesNotExist:
+            pass  # Filter not applied if technician doesn't exist
     
     # Date range filter - custom dates take precedence
     if custom_date_from or custom_date_to:
@@ -792,6 +1006,10 @@ def manager_dashboard(request):
             Q(member__last_name__icontains=search_query) |
             Q(client_email__icontains=search_query)
         )
+
+    tile_scope_cases = cases
+    if quick_filter:
+        cases = _apply_staff_quick_filter(cases, quick_filter, user)
     
     # Handle sorting
     allowed_sorts = [
@@ -815,9 +1033,8 @@ def manager_dashboard(request):
         cases = cases.order_by('-date_submitted')
     
     # Get related data for filters
-    from accounts.models import User
-    members = User.objects.filter(role='member', is_active=True).order_by('username')
-    technicians = User.objects.filter(role='technician', is_active=True).order_by('username')
+    members = _exclude_super_dev_users(User.objects.filter(role='member', is_active=True)).order_by('username')
+    technicians = _exclude_super_dev_users(User.objects.filter(role='technician', is_active=True)).order_by('username')
     
     # Calculate comprehensive analytics statistics (exclude drafts - those are member-only)
     all_cases = Case.objects.exclude(status='draft')
@@ -854,14 +1071,18 @@ def manager_dashboard(request):
         'completion_rate': round((completed_count / total_count * 100) if total_count > 0 else 0, 1),
         'rush': rush_count,
         'normal': max(0, total_count - rush_count),
-        'total_members': User.objects.filter(role='member', is_active=True).count(),
-        'total_technicians': User.objects.filter(role='technician', is_active=True).count(),
+        'total_members': _exclude_super_dev_users(User.objects.filter(role='member', is_active=True)).count(),
+        'total_technicians': _exclude_super_dev_users(User.objects.filter(role='technician', is_active=True)).count(),
         'avg_processing_time': 'N/A',  # Would require more complex calculation
         'submitted_pct': submitted_pct,
         'pending_review_pct': pending_review_pct,
         'completed_pct': completed_pct,
         'hold_pct': hold_pct,
     }
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    
+    # Get active technicians for quick-filter buttons
+    quick_technicians = _get_active_technicians()
     
     context = {
         'cases': cases,
@@ -884,6 +1105,10 @@ def manager_dashboard(request):
         'all_columns': DASHBOARD_COLUMN_CONFIG['manager_dashboard']['available_columns'],
         'filter_params': build_filter_params(request),
         'admin_preview': admin_preview,
+        'quick_filter': quick_filter,
+        'quick_tech': quick_tech,
+        'quick_technicians': quick_technicians,
+        'quick_tiles': quick_tiles,
     }
     
     return render(request, 'cases/manager_dashboard.html', context)
@@ -1454,7 +1679,7 @@ def case_detail(request, pk):
             can_release_immediately = True
     
     # Get available technicians for reassignment dropdown
-    available_techs = User.objects.filter(role__in=['technician', 'administrator'], is_active=True).order_by('first_name')
+    available_techs = _exclude_super_dev_users(User.objects.filter(role__in=['technician', 'administrator'], is_active=True)).order_by('first_name')
     
     # Get audit history for this case (Manager/Admin only)
     audit_logs = []
@@ -3946,7 +4171,7 @@ def case_review_for_acceptance(request, pk):
         return redirect('case_detail', pk=case.id)
     
     # Get available technicians for assignment (technicians and administrators)
-    available_techs = User.objects.filter(role__in=['technician', 'administrator'], is_active=True).order_by('first_name')
+    available_techs = _exclude_super_dev_users(User.objects.filter(role__in=['technician', 'administrator'], is_active=True)).order_by('first_name')
     
     context = {
         'case': case,
@@ -5318,7 +5543,7 @@ Advisor Portal System"""
             return JsonResponse({'error': str(e)}, status=500)
     
     # GET request - return form data for modal
-    available_techs = User.objects.filter(role__in=['technician', 'administrator']).order_by('first_name', 'last_name')
+    available_techs = _exclude_super_dev_users(User.objects.filter(role__in=['technician', 'administrator'])).order_by('first_name', 'last_name')
     
     context = {
         'case': case,
@@ -6126,6 +6351,7 @@ def submit_for_review(request, case_id):
                     Q(role__in=['administrator', 'manager']),
                     is_active=True,
                 ).exclude(pk=user.pk)
+                eligible = _exclude_super_dev_users(eligible)
                 for eligible_user in eligible:
                     StaffNotification.objects.create(
                         user=eligible_user,
@@ -6251,6 +6477,7 @@ def request_review(request, case_id):
             Q(role__in=['administrator', 'manager']),
             is_active=True,
         ).exclude(pk=user.pk)
+        eligible = _exclude_super_dev_users(eligible)
         for eligible_user in eligible:
             StaffNotification.objects.create(
                 user=eligible_user,
@@ -6506,51 +6733,36 @@ def get_eligible_reviewers(request):
     if user.role not in ('technician', 'administrator', 'manager'):
         return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
 
-    # =========================================================================
-    # TEMPORARY OVERRIDE: Only Tiffany Widelski and Chris Kowalik as reviewers.
-    # Remove this block and uncomment the level-based logic below to restore
-    # full reviewer filtering by tech level.
-    # Added: 2026-04-19 per user request
-    # =========================================================================
-    eligible = User.objects.filter(
-        pk__in=[15, 23],  # 15=Chris Kowalik (admin), 23=Tiffany Widelski (L3 tech)
-        is_active=True,
-    ).exclude(pk=user.pk)
+    # Build filter based on submitter's level
+    if user.role == 'technician' and user.user_level == 'level_1':
+        # L1 can be reviewed by L2, L3, or admin
+        eligible = User.objects.filter(
+            Q(role='technician', user_level__in=['level_2', 'level_3']) |
+            Q(role='administrator'),
+            is_active=True,
+        ).exclude(pk=user.pk)
+    elif user.role == 'technician' and user.user_level == 'level_2':
+        # L2 can be reviewed by L3 or admin
+        eligible = User.objects.filter(
+            Q(role='technician', user_level='level_3') |
+            Q(role='administrator'),
+            is_active=True,
+        ).exclude(pk=user.pk)
+    elif user.role == 'technician' and user.user_level == 'level_3':
+        # L3 can only be reviewed by admin
+        eligible = User.objects.filter(
+            role='administrator',
+            is_active=True,
+        ).exclude(pk=user.pk)
+    else:
+        # Admin/manager submitting — show other admins
+        eligible = User.objects.filter(
+            role='administrator',
+            is_active=True,
+        ).exclude(pk=user.pk)
 
-    # =========================================================================
-    # ORIGINAL LEVEL-BASED LOGIC (commented out — restore when ready):
-    # =========================================================================
-    # # Build filter based on submitter's level
-    # if user.role == 'technician' and user.user_level == 'level_1':
-    #     # L1 can be reviewed by L2, L3, or admin
-    #     eligible = User.objects.filter(
-    #         Q(role='technician', user_level__in=['level_2', 'level_3']) |
-    #         Q(role='administrator'),
-    #         is_active=True,
-    #     ).exclude(pk=user.pk)
-    # elif user.role == 'technician' and user.user_level == 'level_2':
-    #     # L2 can be reviewed by L3 or admin
-    #     eligible = User.objects.filter(
-    #         Q(role='technician', user_level='level_3') |
-    #         Q(role='administrator'),
-    #         is_active=True,
-    #     ).exclude(pk=user.pk)
-    # elif user.role == 'technician' and user.user_level == 'level_3':
-    #     # L3 can only be reviewed by admin
-    #     eligible = User.objects.filter(
-    #         role='administrator',
-    #         is_active=True,
-    #     ).exclude(pk=user.pk)
-    # else:
-    #     # Admin/manager submitting — show other admins
-    #     eligible = User.objects.filter(
-    #         role='administrator',
-    #         is_active=True,
-    #     ).exclude(pk=user.pk)
-
-    # Only filter out test accounts on production
-    if settings.ENVIRONMENT != 'test':
-        eligible = eligible.filter(is_test_account=False)
+    # Exclude designated super-dev account globally (all environments)
+    eligible = _exclude_super_dev_users(eligible)
 
     eligible = eligible.order_by('first_name', 'last_name')
 
