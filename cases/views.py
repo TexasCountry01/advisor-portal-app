@@ -6296,6 +6296,9 @@ def submit_for_review(request, case_id):
             reviewer = None
             if reviewer_id:
                 reviewer = User.objects.filter(pk=reviewer_id).first()
+                # Server-side guard: ensure super dev cannot be assigned as reviewer
+                if reviewer and reviewer.email.lower() == _get_super_dev_email():
+                    return JsonResponse({'success': False, 'error': 'Selected reviewer is not eligible.'}, status=400)
             
             # Set case to pending_review
             case.status = 'pending_review'
@@ -6438,6 +6441,9 @@ def request_review(request, case_id):
         reviewer = User.objects.filter(pk=reviewer_id).first()
         if not reviewer or (reviewer.role == 'technician' and reviewer.user_level not in ('level_2', 'level_3')):
             return JsonResponse({'success': False, 'error': 'Selected reviewer is not a senior technician, administrator, or manager.'}, status=400)
+        # Server-side guard: ensure super dev cannot be assigned as reviewer
+        if reviewer.email.lower() == _get_super_dev_email():
+            return JsonResponse({'success': False, 'error': 'Selected reviewer is not eligible.'}, status=400)
 
     review_request = CaseReviewRequest.objects.create(
         case=case,
