@@ -5028,10 +5028,10 @@ def request_modification(request, pk):
         from cases.services.case_id_generator import generate_case_id
         from datetime import date
         
-        # ProFeds error → rush (3-day turnaround), normal mod → standard 7-day turnaround
+        # ProFeds error → 3-day turnaround (not rush — ProFeds absorbs the cost, no Rush badge shown)
         if is_profeds_error:
             mod_due_date = date.today() + timedelta(days=3)
-            mod_urgency = 'rush'
+            mod_urgency = 'normal'
         else:
             mod_due_date = date.today() + timedelta(days=7)
             mod_urgency = 'normal'

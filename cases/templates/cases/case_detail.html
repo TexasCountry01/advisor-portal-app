@@ -1250,7 +1250,7 @@
                             </thead>
                             <tbody>
                                 {% for event in case_event_logs %}
-                                {% if event.action_type == 'case_submitted' or event.action_type == 'case_resubmitted' or event.action_type == 'case_held' or event.action_type == 'case_completed' or event.action_type == 'member_document_uploaded' %}
+                                {% if event.action_type == 'case_submitted' or event.action_type == 'case_resubmitted' or event.action_type == 'case_held' or event.action_type == 'member_document_uploaded' or event.action_type == 'case_completed' and case.actual_release_date %}
                                 <tr>
                                     <td class="text-muted">
                                         {{ event.timestamp|date:"m/d/Y" }}<br>
