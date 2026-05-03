@@ -3574,6 +3574,9 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
             <i class="bi bi-sticky"></i> Technical Notes to Member
         </span>
         <div class="floating-window-controls">
+            <button type="button" class="floating-window-btn" onclick="showAdvisorPreview()" title="Preview as Advisor">
+                <i class="bi bi-eye"></i>
+            </button>
             <button type="button" class="floating-window-btn" onclick="minimizeFloatingNotes()" title="Minimize">
                 <i class="bi bi-dash"></i>
             </button>
@@ -3591,6 +3594,30 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
             <i class="bi bi-info-circle"></i> 
             These formatted notes will be visible to the member once the case is released.
         </small>
+    </div>
+</div>
+
+<!-- Advisor Preview Modal -->
+<div class="modal fade" id="advisorPreviewModal" tabindex="-1" aria-labelledby="advisorPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="advisorPreviewModalLabel">
+                    <i class="bi bi-eye"></i> Preview: As Seen by the Advisor
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-info-circle"></i> This is exactly how the notes will appear to the advisor once the case is released. Review and remove any internal formatting cues (colors, highlights) before releasing.
+                </p>
+                <div id="advisorPreviewBody" class="bg-light p-3 rounded border-start border-info border-3" style="line-height: 1.6; font-size: 13px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -3719,7 +3746,7 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
 tinymce.init({
     selector: '.tinymce-editor',
     plugins: 'link image paste code advlist lists',
-    toolbar: 'formatselect | bold italic underline forecolor | link image | numlist bullist | code | inserttemplate',
+    toolbar: 'formatselect | bold italic underline forecolor removeformat | link image | numlist bullist | code | inserttemplate',
     menubar: false,
     statusbar: false,
     height: 550,
@@ -3733,6 +3760,7 @@ tinymce.init({
     images_file_types: 'jpg,jpeg,png,gif,webp,bmp,svg,heic,heif,tiff',
     block_unsupported_drop: false,
     paste_data_images: true,
+    paste_retain_style_values: 'all',
     license_key: 'gpl',
     images_upload_handler: function(blobInfo, progress) {
         const editor = tinymce.activeEditor;
@@ -3980,6 +4008,14 @@ function saveReportNotes(editor) {
         console.error('Error saving notes:', error);
         if (editorContainer) editorContainer.classList.remove('floating-notes-saving');
     });
+}
+
+function showAdvisorPreview() {
+    const editor = tinymce.get('reportNotesTextarea');
+    const content = editor ? editor.getContent() : '';
+    document.getElementById('advisorPreviewBody').innerHTML = content || '<em class="text-muted">No notes written yet.</em>';
+    const modal = new bootstrap.Modal(document.getElementById('advisorPreviewModal'));
+    modal.show();
 }
 </script>
 

@@ -80,9 +80,14 @@
             <div class="card mb-4">
                 <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-journal-text"></i> Technical Notes to Member (Preview)</h5>
-                    <button type="button" class="btn btn-sm btn-light" id="editNotesBtn" onclick="toggleNotesEdit()">
-                        <i class="bi bi-pencil"></i> Edit Notes
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-light" onclick="showAdvisorPreview()">
+                            <i class="bi bi-eye"></i> Preview as Advisor
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light" id="editNotesBtn" onclick="toggleNotesEdit()">
+                            <i class="bi bi-pencil"></i> Edit Notes
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <!-- Preview Mode -->
@@ -196,6 +201,30 @@
                         <i class="bi bi-arrow-left"></i> Back to Case
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Advisor Preview Modal -->
+<div class="modal fade" id="advisorPreviewModal" tabindex="-1" aria-labelledby="advisorPreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="advisorPreviewModalLabel">
+                    <i class="bi bi-eye"></i> Preview: As Seen by the Advisor
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-info-circle"></i> This is exactly how the notes will appear to the advisor once the case is released. Review and remove any internal formatting cues (colors, highlights) before releasing.
+                </p>
+                <div id="advisorPreviewBody" class="bg-light p-3 rounded border-start border-info border-3" style="line-height: 1.6; font-size: 13px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
@@ -391,7 +420,7 @@ function initTinyMCE() {
     return tinymce.init({
         selector: '#notesTextarea',
         plugins: 'link image paste code advlist lists',
-        toolbar: 'formatselect | bold italic underline forecolor | link image | numlist bullist | code',
+        toolbar: 'formatselect | bold italic underline forecolor removeformat | link image | numlist bullist | code',
         menubar: false,
         statusbar: false,
         height: 450,
@@ -404,6 +433,7 @@ function initTinyMCE() {
         file_picker_types: 'image',
         images_file_types: 'jpg,jpeg,png,gif,webp,bmp,svg,heic,heif,tiff',
         paste_data_images: true,
+        paste_retain_style_values: 'all',
         license_key: 'gpl',
         images_upload_handler: function(blobInfo, progress) {
             return new Promise((resolve, reject) => {
@@ -441,6 +471,19 @@ function cancelNotesEdit() {
     document.getElementById('notesEdit').style.display = 'none';
     document.getElementById('notesPreview').style.display = 'block';
     document.getElementById('editNotesBtn').style.display = '';
+}
+
+function showAdvisorPreview() {
+    const editor = tinymce.get('notesTextarea');
+    let content;
+    if (editor) {
+        content = editor.getContent();
+    } else {
+        content = document.getElementById('notesPreview').innerHTML;
+    }
+    document.getElementById('advisorPreviewBody').innerHTML = content || '<em class="text-muted">No notes written yet.</em>';
+    const modal = new bootstrap.Modal(document.getElementById('advisorPreviewModal'));
+    modal.show();
 }
 
 function saveNotes() {
