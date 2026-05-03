@@ -52,6 +52,7 @@ class Case(models.Model):
         ('pending_review', 'Pending Review'),
         ('needs_resubmission', 'Needs Resubmission'),
         ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
     ]
     
     REJECTION_REASON_CHOICES = [
@@ -992,6 +993,7 @@ class CaseNotification(models.Model):
         ('member_update_received', 'Member Update Received'),
         ('case_released', 'Case Released'),
         ('documents_needed', 'Documents Needed'),
+        ('case_declined', 'Case Declined'),
     ]
     
     case = models.ForeignKey(

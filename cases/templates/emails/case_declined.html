@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 25px 20px 15px 30px; text-align: left; border-bottom: 2px solid #072A84;">
+                            {% if logo_url %}
+                            <img src="{{ logo_url }}" alt="ProFeds" width="180" style="width: 180px; height: auto; display: block;">
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Hi {{ member_first_name }},</p>
+
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">We regret to inform you that we are unable to process the report for <strong>{{ employee_name }}</strong> (Case ID: {{ case_id }}).</p>
+
+                            <div style="background-color: #fdecea; border-left: 4px solid #c0392b; padding: 15px; margin: 20px 0; border-radius: 3px; font-size: 14px;">
+                                <strong style="display: block; margin-bottom: 6px; color: #333333;">Reason:</strong>
+                                {{ decline_reason }}
+                            </div>
+
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">If you believe this is an error or have additional questions, please log in to your account and use the <strong>chat box</strong> on the case details page to reach the Benefits Team directly:</p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 10px auto;">
+                                <tr>
+                                    <td align="center" bgcolor="#072A84" style="background-color: #072A84; border-radius: 5px;">
+                                        <a href="{{ case_detail_url }}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none;">VIEW CASE</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <br>
+                            <p style="margin: 0 0 4px 0; font-size: 15px; color: #333333;">Thank you for your understanding,</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;"><strong>The ProFeds Benefits Team</strong></p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

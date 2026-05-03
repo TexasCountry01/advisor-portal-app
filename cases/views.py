@@ -2307,6 +2307,160 @@ def resume_case_from_hold(request, case_id):
 
 
 @login_required
+def decline_case(request, case_id):
+    """
+    Decline a case on behalf of ProFeds staff (Admin/Manager only).
+
+    Used when a submitted case cannot be processed (e.g., NAF employee, out-of-scope
+    request). Sets status to 'cancelled', notifies the member with a reason, and
+    logs a full audit trail. Metadata includes declined_by_staff=True to distinguish
+    this action from a member-initiated cancellation.
+
+    POST JSON:
+        reason (required): Why the case is being declined.
+    """
+    from django.http import JsonResponse
+    from cases.models import CaseNotification
+    from core.models import AuditLog
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.utils import timezone
+
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+
+    if user.role not in ['administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Only administrators and managers can decline cases.'}, status=403)
+
+    declinable_statuses = ['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission']
+    if case.status not in declinable_statuses:
+        return JsonResponse({
+            'success': False,
+            'error': f'This case cannot be declined because its current status is "{case.get_status_display()}".'
+        }, status=400)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+    try:
+        body_data = json.loads(request.body) if request.body else {}
+        reason = body_data.get('reason', '').strip()
+
+        if not reason:
+            return JsonResponse({'success': False, 'error': 'Please provide a reason for declining the case.'}, status=400)
+
+        # Update case status
+        case.status = 'cancelled'
+        case.save(update_fields=['status'])
+
+        # Audit log
+        AuditLog.objects.create(
+            case=case,
+            user=user,
+            action_type='case_cancelled',
+            description=f'Case declined by {user.get_full_name() or user.username}: {reason}',
+            metadata={
+                'declined_by_staff': True,
+                'decline_reason': reason,
+                'declined_by': user.username,
+            }
+        )
+
+        # In-app notification for member
+        if case.member:
+            employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+            notification = _create_case_notification_if_allowed(
+                case=case,
+                member=case.member,
+                notification_type='case_declined',
+                title=f'Your case for {employee_name} has been declined',
+                message=f'Unfortunately, ProFeds is unable to process this case. Please see the reason below.',
+                hold_reason=reason,
+                is_read=False,
+                created_at=timezone.now()
+            )
+
+            AuditLog.objects.create(
+                case=case,
+                user=user,
+                action_type='other',
+                description=f'In-app decline notification created for member ({case.member.email})',
+                metadata={
+                    'notification_id': notification.id,
+                    'notification_type': 'case_declined',
+                    'decline_reason': reason,
+                    'sub_action': 'notification_created'
+                }
+            )
+
+            # Send decline email
+            try:
+                from django.urls import reverse
+                from django.contrib.sites.shortcuts import get_current_site
+                from cases.services.email_service import should_send_emails, get_case_recipient_emails
+                from django.conf import settings as django_settings
+
+                if not should_send_emails():
+                    logger.info(f'Email notifications disabled. Skipped decline email for case {case_id}')
+                else:
+                    protocol = 'https' if request.is_secure() else 'http'
+                    domain = get_current_site(request).domain
+                    base_url = f"{protocol}://{domain}"
+                    case_detail_url = f"{base_url}{reverse('cases:case_detail', args=[case.id])}"
+                    logo_url = f"{base_url}/static/images/RevisedCoverPageLogo.png"
+
+                    email_context = {
+                        'member_name': case.member.get_full_name() or case.member.username,
+                        'member_first_name': case.member.first_name or case.member.username,
+                        'case_id': case.external_case_id,
+                        'employee_name': f"{case.employee_first_name} {case.employee_last_name}",
+                        'decline_reason': reason,
+                        'case_detail_url': case_detail_url,
+                        'logo_url': logo_url,
+                        'app_name': 'Advisor Portal'
+                    }
+
+                    email_subject = f'Case Declined: {case.employee_first_name} {case.employee_last_name}'
+                    text_message = render_to_string('emails/case_declined.txt', email_context)
+                    html_message = render_to_string('emails/case_declined.html', email_context)
+
+                    recipients = get_case_recipient_emails(case)
+                    send_mail(
+                        subject=email_subject,
+                        message=text_message,
+                        from_email=django_settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=recipients,
+                        html_message=html_message,
+                        fail_silently=False
+                    )
+
+                    AuditLog.objects.create(
+                        case=case,
+                        user=user,
+                        action_type='email_notification_sent',
+                        description=f'Decline notification email sent to {recipients}',
+                        metadata={
+                            'email_to': str(recipients),
+                            'email_subject': email_subject,
+                            'decline_reason': reason,
+                        }
+                    )
+
+            except Exception as email_error:
+                logger.error(f'Failed to send decline email for case {case_id}: {str(email_error)}')
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Case {case.external_case_id} has been declined. The member has been notified.',
+            'new_status': case.status,
+        })
+
+    except Exception as e:
+        logger.error(f'Error declining case {case_id}: {str(e)}', exc_info=True)
+        return JsonResponse({'success': False, 'error': f'An error occurred: {str(e)}'}, status=500)
+
+
+@login_required
 def admin_take_ownership(request, case_id):
     """Allow admin to take ownership of a case (becomes the assigned technician)"""
     user = request.user

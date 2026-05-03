@@ -1830,6 +1830,21 @@
                 </div>
                 {% endif %}
 
+                <!-- Decline Case — Admin/Manager only, active cases -->
+                {% if user.role in 'administrator,manager' and case.status in 'submitted,resubmitted,accepted,hold,pending_review,needs_resubmission' %}
+                <div class="card mt-3 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="mb-0"><i class="bi bi-x-octagon"></i> Decline Case</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Use this when ProFeds cannot process the case (e.g., NAF employee, out-of-scope request). The member will be notified with your reason.</p>
+                        <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
+                            <i class="bi bi-x-octagon"></i> Decline This Case
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Ad-hoc Review Requests Panel -->
                 {% if user.role == 'technician' or user.role in 'administrator,manager' %}
                 <div class="card mt-3" id="reviewRequestsCard" style="display:none;">
@@ -4017,6 +4032,45 @@ function showAdvisorPreview() {
     const modal = new bootstrap.Modal(document.getElementById('advisorPreviewModal'));
     modal.show();
 }
+
+function submitDeclineCase() {
+    const reason = document.getElementById('declineReason').value.trim();
+    if (!reason) {
+        document.getElementById('declineReason').classList.add('is-invalid');
+        return;
+    }
+    document.getElementById('declineReason').classList.remove('is-invalid');
+
+    const btn = document.getElementById('confirmDeclineBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Declining...';
+
+    fetch('{% url "cases:decline_case" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]')?.value || ''
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ reason: reason })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('declineCaseModal')).hide();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Could not decline case.'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-x-octagon"></i> Decline Case';
+        }
+    })
+    .catch(err => {
+        console.error('Decline error:', err);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-x-octagon"></i> Decline Case';
+    });
+}
 </script>
 
 <!-- Initial Case Review JavaScript -->
@@ -4454,6 +4508,37 @@ function acceptAndPutOnHold() {
         </div>
     </div>
 </div>
+
+<!-- Decline Case Modal (Admin/Manager only) -->
+{% if user.role in 'administrator,manager' %}
+<div class="modal fade" id="declineCaseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-x-octagon"></i> Decline Case</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning mb-3">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>This action cannot be undone.</strong> The case will be cancelled and the member will be notified with your reason.
+                </div>
+                <div class="mb-3">
+                    <label for="declineReason" class="form-label">Reason for Declining <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="declineReason" rows="3" placeholder="e.g., NAF employee — ProFeds does not handle NAF cases. Please contact your agency HR office for assistance." required></textarea>
+                    <div class="form-text">This message will be sent to the member.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeclineBtn" onclick="submitDeclineCase()">
+                    <i class="bi bi-x-octagon"></i> Decline Case
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Put on Hold Modal (Outside conditional - available for all cases) -->
 <div class="modal fade" id="putOnHoldModal" tabindex="-1">

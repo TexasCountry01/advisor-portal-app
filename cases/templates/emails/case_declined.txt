@@ -1,0 +1,14 @@
+Hi {{ member_first_name }},
+
+We regret to inform you that we are unable to process the report for {{ employee_name }} (Case ID: {{ case_id }}).
+
+Reason:
+{{ decline_reason }}
+
+If you believe this is an error or have questions, please log in to your account and use the chat box on the case details page to reach the Benefits Team directly:
+{{ case_detail_url }}
+
+Thank you for your understanding.
+
+
+The ProFeds Benefits Team
