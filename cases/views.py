@@ -70,11 +70,11 @@ def _get_super_dev_email():
 
 
 def _exclude_super_dev_users(queryset):
-    """Exclude configured super-dev user from operational user querysets."""
+    """Exclude configured super-dev user and test accounts from operational user querysets."""
     super_dev_email = _get_super_dev_email()
-    if not super_dev_email:
-        return queryset
-    return queryset.exclude(email__iexact=super_dev_email)
+    if super_dev_email:
+        queryset = queryset.exclude(email__iexact=super_dev_email)
+    return queryset.exclude(is_test_account=True)
 
 
 def build_filter_params(request):
