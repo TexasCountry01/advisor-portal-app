@@ -22,11 +22,13 @@
                     <i class="bi bi-gear"></i> Management
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="managementDropdown">
+                    {% if user.role != 'technician' or user.can_manage_delegates %}
                     <li>
                         <a class="dropdown-item" href="{% url 'delegate_management' %}">
                             <i class="bi bi-people"></i> Delegate Management
                         </a>
                     </li>
+                    {% endif %}
                     {% if user.role == 'administrator' %}
                     <li><hr class="dropdown-divider"></li>
                     <li><small class="dropdown-header">Admin Only</small></li>
