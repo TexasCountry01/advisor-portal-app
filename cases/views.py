@@ -1718,6 +1718,7 @@ def case_detail(request, pk):
             'case_submitted_for_review',
             'document_uploaded',
             'member_document_uploaded',
+            'error_flag_disputed',
         ]
     ).select_related('user').order_by('-timestamp')
     

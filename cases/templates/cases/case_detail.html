@@ -1602,6 +1602,8 @@
                                                 <span class="badge bg-primary"><i class="bi bi-person-fill me-1"></i>Ownership Claimed</span>
                                             {% elif event.action_type == 'admin_ownership' %}
                                                 <span class="badge bg-danger"><i class="bi bi-shield-lock me-1"></i>Admin Ownership</span>
+                                            {% elif event.action_type == 'error_flag_disputed' %}
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-flag me-1"></i>Error Flag Cleared</span>
                                             {% elif event.action_type == 'case_submitted_for_review' %}
                                                 <span class="badge bg-warning text-dark"><i class="bi bi-eye me-1"></i>Submitted for Review</span>
                                             {% elif event.action_type == 'document_uploaded' or event.action_type == 'member_document_uploaded' %}
@@ -1651,6 +1653,8 @@
                                                 {% if event.metadata.rejection_notes %}<br><small>{{ event.metadata.rejection_notes|truncatewords:12 }}</small>{% endif %}
                                             {% elif event.action_type == 'case_cancelled' %}
                                                 Via member request
+                                            {% elif event.action_type == 'error_flag_disputed' %}
+                                                {% if event.metadata.justification %}{{ event.metadata.justification|truncatewords:15 }}{% endif %}
                                             {% elif event.action_type == 'case_submitted_for_review' %}
                                                 {% if event.metadata.reviewer %}Reviewer: {{ event.metadata.reviewer }}{% endif %}
                                                 {% if event.metadata.notes %}<br><small>{{ event.metadata.notes }}</small>{% endif %}
