@@ -1,6 +1,6 @@
 """
 Django management command to release scheduled cases
-Run this daily via cron: 0 0 * * * cd /path/to/app && python manage.py release_scheduled_cases
+Run this hourly via cron: 0 * * * * cd /path/to/app && python manage.py release_scheduled_cases
 """
 from django.core.management.base import BaseCommand
 from django.utils import timezone

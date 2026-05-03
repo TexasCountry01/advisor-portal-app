@@ -1882,6 +1882,34 @@ def change_release_date(request, case_id):
                     'success': True,
                     'message': 'Case released immediately to member.'
                 })
+            elif action == 'reschedule_delay':
+                # Short delay preset (1h / 2h / 3h / 6h) - compute from now server-side
+                from cases.services.timezone_service import calculate_release_time_cst, convert_to_scheduled_date_cst
+                delay_hours = int(body_data.get('completion_delay_hours', 1))
+                if delay_hours not in [1, 2, 3, 6]:
+                    delay_hours = 1
+                release_time_cst = calculate_release_time_cst(delay_hours)
+                release_dt_utc = convert_to_scheduled_date_cst(release_time_cst)
+                case.scheduled_release_date = release_dt_utc
+                case.scheduled_email_date = release_dt_utc
+                case.save()
+
+                import pytz
+                cst = pytz.timezone('US/Central')
+                release_date_str = release_dt_utc.astimezone(cst).strftime('%b %d, %Y at %I:%M %p %Z')
+
+                AuditLog.log_activity(
+                    user=user,
+                    action_type='other',
+                    case=case,
+                    description=f'Release rescheduled: {delay_hours}h delay from now → {release_date_str} (was {old_release_date})',
+                    metadata={'old_release_date': str(old_release_date), 'new_release_date': str(release_dt_utc), 'delay_hours': delay_hours}
+                )
+
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Release rescheduled for {release_date_str}.'
+                })
             else:
                 # Reschedule
                 new_datetime_str = body_data.get('release_datetime')
