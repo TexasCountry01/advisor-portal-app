@@ -54,7 +54,7 @@ def _get_active_technicians():
     Returns list of dicts: [{'username': 'tiffany', 'first_name': 'Tiffany'}, ...]
     """
     technicians = _exclude_super_dev_users(User.objects.filter(
-        role='technician',
+        role__in=['technician', 'administrator', 'manager'],
         is_active=True
     )).order_by('first_name').values('username', 'first_name')
     
