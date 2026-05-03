@@ -121,7 +121,7 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
         has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-        return queryset.filter(Q(has_member_updates=True) | Q(has_profeds_error=True) | has_unread)
+        return queryset.filter(Q(has_member_updates=True) | has_unread)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status='completed')
     if quick_filter == 'due_tomorrow':
@@ -148,7 +148,7 @@ def _build_staff_quick_tiles(queryset, user):
         ).count(),
         'need_review': queryset.filter(status='pending_review').count(),
         'on_hold': queryset.filter(status='hold').count(),
-        'alerts': queryset.filter(Q(has_member_updates=True) | Q(has_profeds_error=True) | has_unread).count(),
+        'alerts': queryset.filter(Q(has_member_updates=True) | has_unread).count(),
         'due_today': queryset.filter(date_due=today).exclude(status='completed').count(),
         'due_tomorrow': queryset.filter(date_due=tomorrow).exclude(status='completed').count(),
     }
