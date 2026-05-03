@@ -108,7 +108,7 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     if quick_filter == 'submitted':
         return queryset.filter(status='submitted')
     if quick_filter == 'pending':
-        return queryset.exclude(status='completed')
+        return queryset.exclude(status__in=['completed', 'cancelled', 'draft'])
     if quick_filter == 'scheduled':
         return queryset.filter(
             status='completed',
@@ -140,7 +140,7 @@ def _build_staff_quick_tiles(queryset, user):
 
     return {
         'submitted': queryset.filter(status='submitted').count(),
-        'pending': queryset.exclude(status='completed').count(),
+        'pending': queryset.exclude(status__in=['completed', 'cancelled', 'draft']).count(),
         'scheduled': queryset.filter(
             status='completed',
             actual_release_date__isnull=True,
