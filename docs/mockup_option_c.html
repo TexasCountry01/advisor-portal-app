@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Tile Layout — Option C Mockup</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+  body { background: #f4f6f9; padding: 24px; font-family: 'Segoe UI', sans-serif; }
+  h5 { color: #444; margin-bottom: 16px; }
+
+  .stat-mini {
+    width: 95px;
+    flex: 0 0 95px;
+    padding: 8px 6px;
+    border-radius: 8px;
+    color: white;
+    text-align: center;
+    transition: opacity 0.15s;
+    box-sizing: border-box;
+  }
+  .stat-mini:hover { opacity: 0.85; }
+  .stat-mini-value { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
+  .stat-mini-label { font-size: 0.72rem; opacity: 0.92; white-space: nowrap; }
+
+  .tile-link { text-decoration: none; }
+  .tile-link.active .stat-mini { box-shadow: 0 0 0 3px #fff, 0 0 0 5px rgba(0,0,0,0.4); }
+
+  .row-label { padding: 16px 0 6px; font-size: 0.75rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* simulate queue table */
+  .queue-table { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .queue-table table { margin: 0; }
+</style>
+</head>
+<body>
+
+<div style="max-width: 1400px; margin: 0 auto;">
+
+  <h4 class="mb-1">Benefits Technician Dashboard</h4>
+  <p class="text-muted mb-4" style="font-size:0.85rem;">mock up</p>
+
+  <!-- =========================================================
+       ROW 1: View filter (left) + Pending/Tech filter (right)
+  ========================================================== -->
+  <div class="mb-2 p-2 px-3 bg-white rounded shadow-sm d-flex justify-content-between align-items-center">
+
+    <!-- Left: View filter -->
+    <div class="d-flex align-items-center gap-2">
+      <small class="text-muted">View:</small>
+      <div class="btn-group" role="group">
+        <a href="#" class="btn btn-sm btn-primary">All Cases</a>
+        <a href="#" class="btn btn-sm btn-outline-primary">My Cases</a>
+      </div>
+    </div>
+
+    <!-- Right: Tech filter -->
+    <div class="d-flex align-items-center gap-2">
+      <small class="text-muted">Pending:</small>
+      <div class="btn-group" role="group">
+        <a href="#" class="btn btn-sm btn-primary">All Cases</a>
+        <a href="#" class="btn btn-sm btn-outline-primary">Ileana</a>
+        <a href="#" class="btn btn-sm btn-outline-primary">Tiffany</a>
+        <a href="#" class="btn btn-sm btn-outline-primary">Chris</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================
+       ROW 2: All 10 stat tiles — uniform size, one red
+  ========================================================== -->
+  <div class="mb-3 p-2 px-3 bg-white rounded shadow-sm">
+    <div class="d-flex gap-2 flex-wrap" style="justify-content: flex-end;">
+
+      <a class="tile-link" href="#">
+        <div class="stat-mini bg-secondary">
+          <div class="stat-mini-value">4</div>
+          <div class="stat-mini-label">Submitted</div>
+        </div>
+      </a>
+
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+          <div class="stat-mini-value">11</div>
+          <div class="stat-mini-label">Pending</div>
+        </div>
+      </a>
+
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);">
+          <div class="stat-mini-value">7</div>
+          <div class="stat-mini-label">Scheduled</div>
+        </div>
+      </a>
+
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #51216b 0%, #3f1853 100%);">
+          <div class="stat-mini-value">3</div>
+          <div class="stat-mini-label">Need Review</div>
+        </div>
+      </a>
+
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #e6a400 0%, #c48a14 100%);">
+          <div class="stat-mini-value">2</div>
+          <div class="stat-mini-label">On Hold</div>
+        </div>
+      </a>
+
+      <!-- Alerts — red -->
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a30000 100%);">
+          <div class="stat-mini-value">1</div>
+          <div class="stat-mini-label">Alerts</div>
+        </div>
+      </a>
+
+      <!-- Due Today — same red -->
+      <a class="tile-link active" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a30000 100%);">
+          <div class="stat-mini-value">5</div>
+          <div class="stat-mini-label">Due Today</div>
+        </div>
+      </a>
+
+      <!-- Due Tomorrow — same red -->
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a30000 100%);">
+          <div class="stat-mini-value">3</div>
+          <div class="stat-mini-label">Due Tomorrow</div>
+        </div>
+      </a>
+
+      <!-- Due Next 7d — same red (NEW) -->
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a30000 100%);">
+          <div class="stat-mini-value">9</div>
+          <div class="stat-mini-label">Due Next 7d</div>
+        </div>
+      </a>
+
+      <!-- Overdue — same red (NEW) -->
+      <a class="tile-link" href="#">
+        <div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a30000 100%);">
+          <div class="stat-mini-value">2</div>
+          <div class="stat-mini-label">Overdue</div>
+        </div>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- Queue table -->
+  <div class="queue-table">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0">Cases — Due Today</h6>
+      <span class="badge bg-danger">5 cases</span>
+    </div>
+    <table class="table table-sm table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Case #</th><th>Member</th><th>Technician</th><th>Status</th><th>Due Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>2451</td><td>Jane Smith</td><td>Ileana</td><td><span class="badge bg-warning text-dark">Pending</span></td><td>May 3, 2026</td></tr>
+        <tr><td>2449</td><td>Robert Jones</td><td>Tiffany</td><td><span class="badge bg-info text-dark">Scheduled</span></td><td>May 3, 2026</td></tr>
+        <tr><td>2445</td><td>Maria Garcia</td><td>Chris</td><td><span class="badge bg-secondary">Submitted</span></td><td>May 3, 2026</td></tr>
+        <tr><td>2440</td><td>David Lee</td><td>Ileana</td><td><span class="badge bg-warning text-dark">Pending</span></td><td>May 3, 2026</td></tr>
+        <tr><td>2438</td><td>Susan Brown</td><td>Tiffany</td><td><span class="badge text-white" style="background:#51216b;">Need Review</span></td><td>May 3, 2026</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+</body>
+</html>
