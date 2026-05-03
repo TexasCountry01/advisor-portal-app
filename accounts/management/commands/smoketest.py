@@ -407,15 +407,20 @@ class Command(BaseCommand):
         else:
             self._fail('Delegate management (admin)', f'Status {resp.status_code}')
 
-        # Technician should access
+        # Technician should access only if can_manage_delegates=True
         tech = self._get_or_create_tech()
+        tech.can_manage_delegates = True
+        tech.save(update_fields=['can_manage_delegates'])
         client = Client()
         client.force_login(tech)
         resp = client.get(mgmt_url)
         if resp.status_code == 200:
-            self._pass('Delegate management loads for technician')
+            self._pass('Delegate management loads for technician (can_manage_delegates=True)')
         else:
             self._fail('Delegate management (technician)', f'Status {resp.status_code}')
+        # Clean up
+        tech.can_manage_delegates = False
+        tech.save(update_fields=['can_manage_delegates'])
 
         # Regular member should NOT access
         client, user = self._login_client(PERSONA_PICKS['solo_member']['email'])
@@ -476,13 +481,13 @@ class Command(BaseCommand):
 
         case_list_url = reverse('cases:case_list')
 
-        # Admin should see all cases
+        # Admin should see all cases (case_list view redirects to admin_dashboard)
         admin = self._get_or_create_admin()
         client = Client()
         client.force_login(admin)
         resp = client.get(case_list_url)
-        if resp.status_code == 200:
-            self._pass('Case list loads for admin')
+        if resp.status_code in (200, 302):
+            self._pass(f'Case list for admin — status {resp.status_code} (router redirects to dashboard)')
         else:
             self._fail('Case list (admin)', f'Status {resp.status_code}')
 
