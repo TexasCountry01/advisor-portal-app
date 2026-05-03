@@ -453,6 +453,54 @@
                 {% else %}
                 <br><small class="mt-2 d-block">See the modification case linked above for details on the requested changes.</small>
                 {% endif %}
+                <div class="mt-2">
+                    <button type="button" class="btn btn-sm btn-outline-light border-white" data-bs-toggle="modal" data-bs-target="#clearProfedsErrorModal">
+                        <i class="bi bi-x-circle"></i> Dispute &amp; Clear Error Flag
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Clear ProFeds Error Modal -->
+            {% if user.role in 'technician,manager,administrator' and case.has_profeds_error %}
+            <div class="modal fade" id="clearProfedsErrorModal" tabindex="-1" aria-labelledby="clearProfedsErrorModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="clearProfedsErrorModalLabel">
+                                <i class="bi bi-x-circle text-danger"></i> Dispute &amp; Clear Error Flag
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="POST" action="{% url 'cases:clear_profeds_error' case.pk %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <p>You are disputing the member's ProFeds error claim on this case. This action will:</p>
+                                <ul>
+                                    <li>Clear the error flag from this case</li>
+                                    <li>Record your justification permanently in the audit trail</li>
+                                </ul>
+                                <div class="mb-3">
+                                    <label for="clearProfedsJustification" class="form-label fw-bold">
+                                        Justification <span class="text-danger">*</span>
+                                    </label>
+                                    <textarea class="form-control" id="clearProfedsJustification" name="justification"
+                                        rows="4" placeholder="Explain why this error flag is not valid (required)..."
+                                        required></textarea>
+                                </div>
+                                <div class="alert alert-warning mb-0 py-2">
+                                    <small><i class="bi bi-info-circle"></i> This action cannot be undone. Your justification will appear in the case audit trail.</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="bi bi-x-circle"></i> Confirm &amp; Clear Error Flag
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
             {% endif %}
 

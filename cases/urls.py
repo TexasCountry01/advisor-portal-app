@@ -66,6 +66,7 @@ urlpatterns = [
     path('<int:case_id>/change-release-date/', views.change_release_date, name='change_release_date'),
     path('<int:case_id>/put-on-hold/', views.put_case_on_hold, name='put_on_hold'),
     path('<int:case_id>/resume-from-hold/', views.resume_case_from_hold, name='resume_from_hold'),
+    path('<int:case_id>/clear-profeds-error/', views.clear_profeds_error, name='clear_profeds_error'),
     
     # Notification Management Views - Option 3 Premium Features
     path('api/notifications/', views.get_member_notifications, name='get_member_notifications'),

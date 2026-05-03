@@ -82,6 +82,7 @@ class AuditLog(models.Model):
         ('sso_sync', 'SSO Profile Synced'),
         ('wp_user_sync', 'WP User Sync Completed'),
         ('data_sync', 'Data Sync Operation'),
+        ('error_flag_disputed', 'ProFeds Error Flag Disputed'),
         ('other', 'Other Activity'),
     ]
     

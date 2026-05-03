@@ -3554,6 +3554,50 @@ def mark_case_incomplete(request, case_id):
 
 
 @login_required
+def clear_profeds_error(request, case_id):
+    """Clear the ProFeds error flag on a case with a mandatory justification (tech/manager/admin only)"""
+
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'You do not have permission to perform this action.'}, status=403)
+
+    if not case.has_profeds_error:
+        return JsonResponse({'success': False, 'error': 'This case does not have an active error flag.'}, status=400)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+    justification = request.POST.get('justification', '').strip()
+    if not justification:
+        messages.error(request, 'Justification is required to clear the error flag.')
+        return redirect('cases:case_detail', pk=case_id)
+
+    try:
+        case.has_profeds_error = False
+        case.save()
+
+        from core.models import AuditLog
+        AuditLog.log_activity(
+            user=user,
+            action_type='error_flag_disputed',
+            case=case,
+            description=f'ProFeds error flag cleared by {user.get_full_name() or user.username}. Justification: {justification}',
+            metadata={
+                'cleared_by': user.username,
+                'justification': justification,
+            }
+        )
+
+        messages.success(request, 'Error flag has been cleared. Justification recorded in the audit trail.')
+    except Exception as e:
+        messages.error(request, f'Failed to clear error flag: {str(e)}')
+
+    return redirect('cases:case_detail', pk=case_id)
+
+
+@login_required
 def save_view_preference(request, view_type):
     """Save technician's dashboard view preference (all vs mine)"""
     
