@@ -1830,8 +1830,8 @@
                 </div>
                 {% endif %}
 
-                <!-- Decline Case — Admin/Manager only, active cases -->
-                {% if user.role in 'administrator,manager' and case.status in 'submitted,resubmitted,accepted,hold,pending_review,needs_resubmission' %}
+                <!-- Decline Case — Admin/Manager/Technician, active cases -->
+                {% if user.role in 'administrator,manager,technician' and case.status in 'submitted,resubmitted,accepted,hold,pending_review,needs_resubmission' %}
                 <div class="card mt-3 border-danger">
                     <div class="card-header bg-danger text-white">
                         <h5 class="mb-0"><i class="bi bi-x-octagon"></i> Decline Case</h5>
@@ -4510,8 +4510,8 @@ function acceptAndPutOnHold() {
     </div>
 </div>
 
-<!-- Decline Case Modal (Admin/Manager only) -->
-{% if user.role in 'administrator,manager' %}
+<!-- Decline Case Modal -->
+{% if user.role in 'administrator,manager,technician' %}
 <div class="modal fade" id="declineCaseModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">

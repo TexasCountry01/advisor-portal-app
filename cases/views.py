@@ -2309,7 +2309,7 @@ def resume_case_from_hold(request, case_id):
 @login_required
 def decline_case(request, case_id):
     """
-    Decline a case on behalf of ProFeds staff (Admin/Manager only).
+    Decline a case on behalf of ProFeds staff (Admin, Manager, or Technician).
 
     Used when a submitted case cannot be processed (e.g., NAF employee, out-of-scope
     request). Sets status to 'cancelled', notifies the member with a reason, and
@@ -2329,8 +2329,8 @@ def decline_case(request, case_id):
     user = request.user
     case = get_object_or_404(Case, id=case_id)
 
-    if user.role not in ['administrator', 'manager']:
-        return JsonResponse({'success': False, 'error': 'Only administrators and managers can decline cases.'}, status=403)
+    if user.role not in ['administrator', 'manager', 'technician']:
+        return JsonResponse({'success': False, 'error': 'Only staff members can decline cases.'}, status=403)
 
     declinable_statuses = ['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission']
     if case.status not in declinable_statuses:
