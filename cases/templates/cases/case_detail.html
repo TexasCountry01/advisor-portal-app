@@ -3870,11 +3870,25 @@ tinymce.init({
             const notesWindow = document.getElementById('floatingNotesWindow');
             const savedPos = localStorage.getItem('notesWindowPos');
             if (savedPos) {
-                const pos = JSON.parse(savedPos);
-                notesWindow.style.bottom = pos.bottom + 'px';
-                notesWindow.style.right = pos.right + 'px';
-                notesWindow.style.left = 'auto';
-                notesWindow.style.top = 'auto';
+                try {
+                    const pos = JSON.parse(savedPos);
+                    // Validate the position keeps the header on screen.
+                    // With bottom/right positioning: top = innerHeight - bottom - elHeight
+                    // Use 400 as a safe estimate for element height.
+                    const estimatedTop = window.innerHeight - pos.bottom - 400;
+                    const estimatedLeft = window.innerWidth - pos.right - (notesWindow.offsetWidth || 500);
+                    if (estimatedTop < 0 || estimatedLeft < -100 || pos.bottom < 0 || pos.right < 0) {
+                        // Bad position (e.g. dragged off screen) — clear and use default
+                        localStorage.removeItem('notesWindowPos');
+                    } else {
+                        notesWindow.style.bottom = pos.bottom + 'px';
+                        notesWindow.style.right = pos.right + 'px';
+                        notesWindow.style.left = 'auto';
+                        notesWindow.style.top = 'auto';
+                    }
+                } catch(e) {
+                    localStorage.removeItem('notesWindowPos');
+                }
             }
             
             // Restore minimized state (default: HIDDEN on first visit)
@@ -3927,8 +3941,12 @@ function setupFloatingWindowDrag() {
         const x = e.clientX - notesWindowOffset.x;
         const y = e.clientY - notesWindowOffset.y;
         
-        notesWindow.style.left = x + 'px';
-        notesWindow.style.top = y + 'px';
+        // Clamp so the header always stays on screen
+        const clampedX = Math.max(0, Math.min(x, window.innerWidth - notesWindow.offsetWidth));
+        const clampedY = Math.max(0, Math.min(y, window.innerHeight - 60));
+        
+        notesWindow.style.left = clampedX + 'px';
+        notesWindow.style.top = clampedY + 'px';
         notesWindow.style.right = 'auto';
         notesWindow.style.bottom = 'auto';
     });
