@@ -3935,6 +3935,9 @@ function setupFloatingWindowDrag() {
         notesWindowDragging = true;
         notesWindowOffset.x = e.clientX - notesWindow.getBoundingClientRect().left;
         notesWindowOffset.y = e.clientY - notesWindow.getBoundingClientRect().top;
+        // Disable pointer events on TinyMCE iframe so it doesn't steal mousemove/mouseup
+        const tinyIframe = notesWindow.querySelector('iframe');
+        if (tinyIframe) tinyIframe.style.pointerEvents = 'none';
     });
     
     document.addEventListener('mousemove', function(e) {
@@ -3956,6 +3959,9 @@ function setupFloatingWindowDrag() {
     document.addEventListener('mouseup', function() {
         if (notesWindowDragging) {
             notesWindowDragging = false;
+            // Re-enable pointer events on TinyMCE iframe
+            const tinyIframe = notesWindow.querySelector('iframe');
+            if (tinyIframe) tinyIframe.style.pointerEvents = '';
             
             // Save position
             const rect = notesWindow.getBoundingClientRect();
