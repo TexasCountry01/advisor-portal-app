@@ -1350,7 +1350,8 @@ def accept_case(request, pk):
             ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
             
             # Create comprehensive audit log entry
-            description = f"Case accepted as Tier {tier}"
+            member_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+            description = f"Case accepted as Tier {tier} — {case.external_case_id} ({member_name})"
             if case.assigned_to:
                 description += f", assigned to {case.assigned_to.get_full_name() or case.assigned_to.username}"
             if tech_override_reason:
@@ -2503,7 +2504,8 @@ def admin_take_ownership(request, case_id):
         ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
         
         previous_owner_name = previous_owner.get_full_name() if previous_owner else 'Unassigned'
-        description = f"Admin took ownership of case (was: {previous_owner_name})"
+        member_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+        description = f"Admin took ownership of {case.external_case_id} — {member_name} (was: {previous_owner_name})"
         
         AuditLog.log_activity(
             user=user,
@@ -2973,7 +2975,8 @@ def take_case_ownership(request, case_id):
             ip_address = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
             
             old_assignee_name = old_assignee.get_full_name() if old_assignee else 'Unassigned'
-            description = f"Claimed ownership of case (was: {old_assignee_name})"
+            member_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
+            description = f"Claimed ownership of {case.external_case_id} — {member_name} (was: {old_assignee_name})"
             
             AuditLog.log_activity(
                 user=user,
@@ -3586,7 +3589,7 @@ def mark_case_completed(request, case_id):
                 user=request.user,
                 action_type='case_completed',
                 case=case,
-                description=f'Case marked as {case.status} - {release_msg}',
+                description=f'Case marked as {case.status} — {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}) - {release_msg}',
                 metadata=completion_metadata,
                 ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
             )

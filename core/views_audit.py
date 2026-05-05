@@ -82,18 +82,17 @@ def view_audit_log(request):
         except (ValueError, TypeError):
             pass
     
-    # Filter by case ID (only if valid integer)
+    # Filter by case ID (external case ID e.g. WS000-2026-04-0449)
     if case_id and case_id != 'None':
-        try:
-            audit_logs = audit_logs.filter(case_id=int(case_id))
-        except (ValueError, TypeError):
-            pass
+        audit_logs = audit_logs.filter(case__external_case_id__icontains=case_id)
     
-    # Search by username, case number, or description
+    # Search by username, member name, case ID, or description
     if search_query and search_query != 'None':
         audit_logs = audit_logs.filter(
             Q(user__username__icontains=search_query) |
-            Q(case__id__icontains=search_query) |
+            Q(case__external_case_id__icontains=search_query) |
+            Q(case__employee_first_name__icontains=search_query) |
+            Q(case__employee_last_name__icontains=search_query) |
             Q(description__icontains=search_query) |
             Q(user__email__icontains=search_query)
         )
