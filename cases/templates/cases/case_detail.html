@@ -3647,8 +3647,6 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
     style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; display: none;">
     <i class="bi bi-sticky"></i> Notes
 </button>
-<!-- Full-screen overlay that captures all mouse events during drag, preventing TinyMCE iframe from stealing them -->
-<div id="noteDragOverlay" style="display:none; position:fixed; inset:0; z-index:10000; cursor:grabbing;"></div>
 {% endif %}
 
 <!-- TinyMCE Library - Development Mode (No API key required for local development) -->
@@ -3868,7 +3866,6 @@ tinymce.init({
         
         editor.on('init', function() {
             notesLastSaved = editor.getContent();
-            setupFloatingWindowDrag();
             
             // Load saved position from localStorage
             const notesWindow = document.getElementById('floatingNotesWindow');
@@ -3923,21 +3920,38 @@ tinymce.init({
     }
 });
 
-// Floating Notes Window Management
-let notesWindowDragging = false;
-let notesWindowOffset = { x: 0, y: 0 };
-
+// Floating Notes Window Management — drag uses Pointer Capture API so TinyMCE iframe can never steal events
 function setupFloatingWindowDrag() {
     const header = document.querySelector('.floating-window-header');
     const notesWindow = document.getElementById('floatingNotesWindow');
-    const dragOverlay = document.getElementById('noteDragOverlay');
-    
-    if (!header || !notesWindow || !dragOverlay) return;
-    
-    function stopDrag() {
-        if (!notesWindowDragging) return;
-        notesWindowDragging = false;
-        dragOverlay.style.display = 'none';
+    if (!header || !notesWindow) return;
+
+    let offsetX = 0, offsetY = 0;
+
+    header.addEventListener('pointerdown', function(e) {
+        if (e.button !== 0) return;
+        const rect = notesWindow.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        header.setPointerCapture(e.pointerId);  // all future pointer events route to header, bypasses all iframes
+        e.preventDefault();
+    });
+
+    header.addEventListener('pointermove', function(e) {
+        if (!header.hasPointerCapture(e.pointerId)) return;
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        const clampedX = Math.max(0, Math.min(x, window.innerWidth - notesWindow.offsetWidth));
+        const clampedY = Math.max(0, Math.min(y, window.innerHeight - 60));
+        notesWindow.style.left   = clampedX + 'px';
+        notesWindow.style.top    = clampedY + 'px';
+        notesWindow.style.right  = 'auto';
+        notesWindow.style.bottom = 'auto';
+    });
+
+    header.addEventListener('pointerup', function(e) {
+        if (!header.hasPointerCapture(e.pointerId)) return;
+        header.releasePointerCapture(e.pointerId);
         const rect = notesWindow.getBoundingClientRect();
         localStorage.setItem('notesWindowPos', JSON.stringify({
             left: rect.left,
@@ -3945,38 +3959,17 @@ function setupFloatingWindowDrag() {
             right: window.innerWidth - rect.right,
             bottom: window.innerHeight - rect.bottom
         }));
-    }
-
-    function doMove(clientX, clientY) {
-        const x = clientX - notesWindowOffset.x;
-        const y = clientY - notesWindowOffset.y;
-        const clampedX = Math.max(0, Math.min(x, window.innerWidth - notesWindow.offsetWidth));
-        const clampedY = Math.max(0, Math.min(y, window.innerHeight - 60));
-        notesWindow.style.left = clampedX + 'px';
-        notesWindow.style.top = clampedY + 'px';
-        notesWindow.style.right = 'auto';
-        notesWindow.style.bottom = 'auto';
-    }
-
-    header.addEventListener('mousedown', function(e) {
-        if (e.button !== 0) return;
-        notesWindowDragging = true;
-        notesWindowOffset.x = e.clientX - notesWindow.getBoundingClientRect().left;
-        notesWindowOffset.y = e.clientY - notesWindow.getBoundingClientRect().top;
-        // Show full-screen overlay — sits above the TinyMCE iframe so it can't steal events
-        dragOverlay.style.display = 'block';
-        e.preventDefault();
     });
 
-    // Primary listeners on the overlay (covers full screen during drag)
-    dragOverlay.addEventListener('mousemove', function(e) { if (notesWindowDragging) doMove(e.clientX, e.clientY); });
-    dragOverlay.addEventListener('mouseup', stopDrag);
-    dragOverlay.addEventListener('mouseleave', stopDrag);
-
-    // Fallback on document in case mouse leaves overlay
-    document.addEventListener('mousemove', function(e) { if (notesWindowDragging) doMove(e.clientX, e.clientY); });
-    document.addEventListener('mouseup', stopDrag);
+    header.addEventListener('pointercancel', function(e) {
+        header.releasePointerCapture(e.pointerId);
+    });
 }
+
+// Set up drag as soon as DOM is ready — independent of TinyMCE initialization
+document.addEventListener('DOMContentLoaded', function() {
+    setupFloatingWindowDrag();
+});
 
 function openFloatingNotes() {
     const notesWindow = document.getElementById('floatingNotesWindow');
