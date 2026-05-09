@@ -50,15 +50,21 @@ def _create_case_notification_if_allowed(*, case, member, notification_type, **k
 
 def _get_active_technicians():
     """
-    Fetch all active technician users sorted by first name.
-    Returns list of dicts: [{'username': 'tiffany', 'first_name': 'Tiffany'}, ...]
+    Fetch active technician/administrator users for the quick tech filter.
+    Managers are excluded (view-only role, not case workers).
+    Returns list of dicts sorted by preferred display order.
     """
     technicians = _exclude_super_dev_users(User.objects.filter(
-        role__in=['technician', 'administrator', 'manager'],
+        role__in=['technician', 'administrator'],
         is_active=True
-    )).order_by('first_name').values('username', 'first_name')
-    
-    return [{'username': t['username'], 'first_name': t['first_name']} for t in technicians]
+    )).values('username', 'first_name')
+
+    # Preferred display order by first name (case-insensitive); unknowns go to end alphabetically
+    _order = {'ileana': 0, 'tiffany': 1, 'chris': 2}
+    return sorted(
+        [{'username': t['username'], 'first_name': t['first_name']} for t in technicians],
+        key=lambda t: (_order.get(t['first_name'].lower(), 99), t['first_name'].lower())
+    )
 
 
 def _get_super_dev_email():
