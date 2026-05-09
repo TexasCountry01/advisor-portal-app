@@ -1366,7 +1366,7 @@
                             <select class="form-select form-select-sm" id="assignTechInit" name="assign_tech_init">
                                 <option value="">-- Leave Unassigned --</option>
                                 {% for tech in available_techs %}
-                                    <option value="{{ tech.id }}" data-tech-level="{{ tech.user_level }}" data-tech-name="{{ tech.first_name }} {{ tech.last_name }}">{{ tech.first_name }} {{ tech.last_name }} ({{ tech.user_level }})</option>
+                                    <option value="{{ tech.id }}" data-tech-level="{{ tech.user_level }}" data-tech-role="{{ tech.role }}" data-tech-name="{{ tech.first_name }} {{ tech.last_name }}">{{ tech.first_name }} {{ tech.last_name }} {% if tech.role == 'administrator' %}(Admin){% else %}({{ tech.user_level }}){% endif %}</option>
                                 {% endfor %}
                             </select>
                             <small class="text-muted d-block mt-1">
@@ -1488,6 +1488,9 @@
                                 <i class="bi bi-hourglass-split me-1"></i> <strong>Notification Scheduled</strong>
                                 <br><small>Will be sent {{ case.scheduled_email_date|date:"M d, Y" }}</small>
                                 {% if case.member %}<br><small class="text-muted">To: {{ case.member.email }}</small>{% endif %}
+                                {% if user.role in 'technician,administrator,manager' and not case.actual_release_date %}
+                                <br><button type="button" class="btn btn-sm btn-warning mt-1" onclick="sendNow()"><i class="bi bi-send-fill me-1"></i>Send Now</button>
+                                {% endif %}
                             </div>
                             {% else %}
                             <div class="alert alert-warning py-2 mb-0">
@@ -2456,6 +2459,31 @@ function submitChangeReleaseDate() {
         alert('An error occurred.');
         btn.disabled = false;
         btn.innerHTML = '<i class="bi bi-check-circle"></i> Confirm';
+    });
+}
+
+function sendNow() {
+    if (!confirm('Send the case notification to the member right now, instead of waiting for the scheduled date?')) return;
+    fetch('{% url "cases:change_release_date" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ action: 'release_now' })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Could not send now.'));
+        }
+    })
+    .catch(err => {
+        console.error('Send now error:', err);
+        alert('An error occurred.');
     });
 }
 
@@ -4128,6 +4156,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return techOption.getAttribute('data-tech-level');
     }
     
+    function isTechAdmin(techOption) {
+        return techOption.getAttribute('data-tech-role') === 'administrator';
+    }
+    
     function getTechName(techOption) {
         return techOption.getAttribute('data-tech-name');
     }
@@ -4156,6 +4188,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const techLevel = getTechLevel(selectedTechOption);
         const tierMinLevel = tierRequirements[selectedTier].minLevel;
+        
+        // Administrators bypass level checks (same as backend logic)
+        if (isTechAdmin(selectedTechOption)) {
+            return true;
+        }
         
         const techLevelNum = getLevelNumber(techLevel);
         const requiredLevelNum = getLevelNumber(tierMinLevel);
@@ -4249,17 +4286,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // 4. Validate tech/tier compatibility (last)
             if (tech) {
                 const selectedTechOption = assignTechSelect.options[assignTechSelect.selectedIndex];
-                const techLevel = getTechLevel(selectedTechOption);
-                const tierMinLevel = tierRequirements[tier].minLevel;
-                
-                const techLevelNum = getLevelNumber(techLevel);
-                const requiredLevelNum = getLevelNumber(tierMinLevel);
-                
-                if (techLevelNum < requiredLevelNum) {
-                    // Mismatch - admin needs to provide override reason
-                    if (!overrideReason) {
-                        alert('Please provide an override reason explaining why this technician is assigned despite tier level mismatch.');
-                        return;
+                // Administrators bypass level checks
+                if (!isTechAdmin(selectedTechOption)) {
+                    const techLevel = getTechLevel(selectedTechOption);
+                    const tierMinLevel = tierRequirements[tier].minLevel;
+                    
+                    const techLevelNum = getLevelNumber(techLevel);
+                    const requiredLevelNum = getLevelNumber(tierMinLevel);
+                    
+                    if (techLevelNum < requiredLevelNum) {
+                        // Mismatch - admin needs to provide override reason
+                        if (!overrideReason) {
+                            alert('Please provide an override reason explaining why this technician is assigned despite tier level mismatch.');
+                            return;
+                        }
                     }
                 }
             }
