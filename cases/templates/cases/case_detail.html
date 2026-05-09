@@ -3958,6 +3958,8 @@ function setupFloatingWindowDrag() {
 
     header.addEventListener('pointerdown', function(e) {
         if (e.button !== 0) return;
+        // Don't intercept clicks on buttons — let their onclick handlers fire normally
+        if (e.target.closest('button')) return;
         const rect = notesWindow.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
