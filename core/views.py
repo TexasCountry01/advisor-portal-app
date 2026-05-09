@@ -508,6 +508,15 @@ def _send_delegate_request_email(member, delegate_request, account_deactivated=F
         recipients = list(set(list(staff) + list(l3_techs)))
         recipients = [e for e in recipients if e]
 
+        # Exclude super dev account — it has full portal access but is not an operational recipient
+        try:
+            from core.models import SystemSettings
+            super_dev_email = (SystemSettings.get_settings().super_dev_email or '').strip().lower()
+            if super_dev_email:
+                recipients = [e for e in recipients if e.lower() != super_dev_email]
+        except Exception:
+            pass
+
         if not recipients:
             logger.warning('No staff recipients for delegate request email')
             return

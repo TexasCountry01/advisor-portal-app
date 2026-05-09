@@ -3595,6 +3595,9 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
             <i class="bi bi-sticky"></i> Technical Notes to Member
         </span>
         <div class="floating-window-controls">
+            <button type="button" class="floating-window-btn" onclick="toggleRefLibrary()" title="Reference Library">
+                <i class="bi bi-journals"></i>
+            </button>
             <button type="button" class="floating-window-btn" onclick="showAdvisorPreview()" title="Preview as Advisor">
                 <i class="bi bi-eye"></i>
             </button>
@@ -3646,6 +3649,13 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
 <button id="minimizeNotesButton" class="btn btn-outline-primary" onclick="minimizeFloatingNotes()" 
     style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; display: none;">
     <i class="bi bi-sticky"></i> Notes
+</button>
+
+<!-- Standalone Reference Library button - always visible -->
+<button id="refLibFixedBtn" class="btn btn-outline-secondary" onclick="toggleRefLibrary()"
+    title="Reference Library"
+    style="position: fixed; bottom: 20px; right: 90px; z-index: 9998;">
+    <i class="bi bi-journals"></i> Reference
 </button>
 {% endif %}
 
@@ -5074,5 +5084,152 @@ document.addEventListener('DOMContentLoaded', function() {
     loadReviewRequests();
 });
 </script>
+
+{% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed,hold' %}
+<!-- ===== Reference Library Panel (plain fixed div — no Bootstrap focus trap) ===== -->
+<div id="refLibraryPanel" style="
+    display: none;
+    position: fixed;
+    top: 60px;
+    right: 0;
+    width: 380px;
+    height: calc(100vh - 60px);
+    background: #fff;
+    border-left: 1px solid #dee2e6;
+    box-shadow: -4px 0 16px rgba(0,0,0,.18);
+    z-index: 10500;
+    display: none;
+    flex-direction: column;
+">
+  <!-- Header -->
+  <div style="background: linear-gradient(135deg, #285FBF 0%, #1E4D9E 100%); color: white; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+    <strong style="font-size: 14px;"><i class="bi bi-journals"></i> Reference Library</strong>
+    <button type="button" onclick="toggleRefLibrary()" style="background:none; border:none; color:white; font-size:20px; line-height:1; cursor:pointer;" title="Close">&times;</button>
+  </div>
+  <!-- Search -->
+  <div style="padding: 8px 10px; flex-shrink: 0; border-bottom: 1px solid #dee2e6;">
+    <input type="text" id="refLibSearch" class="form-control form-control-sm"
+           placeholder="Search clauses (e.g. VERA, TSP, FEHB…)" autocomplete="off">
+    <div id="refLibStatus" class="text-muted" style="font-size: 11px; margin-top: 4px;">Click a clause to insert it into notes.</div>
+  </div>
+  <!-- Results -->
+  <div id="refLibResults" style="flex: 1; overflow-y: auto; padding: 4px 0;">
+    <div class="text-muted small p-2">Start typing to search the reference library.</div>
+  </div>
+</div>
+
+<script>
+(function() {
+  let refSearchTimer = null;
+
+  window.toggleRefLibrary = function() {
+    const panel = document.getElementById('refLibraryPanel');
+    if (!panel) return;
+    const isOpen = panel.style.display === 'flex';
+    panel.style.display = isOpen ? 'none' : 'flex';
+    if (!isOpen) {
+      const input = document.getElementById('refLibSearch');
+      if (input) setTimeout(() => input.focus(), 80);
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('refLibSearch');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function() {
+      clearTimeout(refSearchTimer);
+      const q = this.value.trim();
+      if (q.length < 2) {
+        document.getElementById('refLibResults').innerHTML =
+          '<div class="text-muted small p-2">Start typing to search the reference library.</div>';
+        document.getElementById('refLibStatus').textContent = 'Click a clause to insert it into notes.';
+        return;
+      }
+      refSearchTimer = setTimeout(() => doRefSearch(q), 250);
+    });
+  });
+
+  function doRefSearch(q) {
+    const resultsEl = document.getElementById('refLibResults');
+    resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Searching…</div>';
+
+    fetch(`/references/api/search/?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => renderRefResults(data.results))
+      .catch(() => {
+        resultsEl.innerHTML = '<div class="text-danger small p-2">Search failed. Please try again.</div>';
+      });
+  }
+
+  function renderRefResults(results) {
+    const el = document.getElementById('refLibResults');
+    if (!results.length) {
+      el.innerHTML = '<div class="text-muted small p-2">No clauses found.</div>';
+      return;
+    }
+
+    let lastCat = null;
+    let html = '<div class="list-group list-group-flush">';
+    results.forEach(r => {
+      const cat = r.subcategory ? `${r.category} › ${r.subcategory}` : r.category;
+      if (cat !== lastCat) {
+        html += `<div class="list-group-item list-group-item-secondary py-1 fw-semibold" style="font-size:11px;">${escHtml(cat)}</div>`;
+        lastCat = cat;
+      }
+      html += `<button type="button" class="list-group-item list-group-item-action py-1 px-3"
+                 style="font-size:12px;"
+                 data-clause='${JSON.stringify(r).replace(/'/g, "&#39;")}'>
+                 ${escHtml(r.title)}
+               </button>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+
+    // Single-click = insert immediately
+    el.querySelectorAll('[data-clause]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const clause = JSON.parse(this.dataset.clause);
+        insertClause(clause, this);
+      });
+    });
+  }
+
+  function insertClause(clause, btnEl) {
+    const editor = tinymce.get('reportNotesTextarea');
+    const status = document.getElementById('refLibStatus');
+    if (!editor) {
+      status.style.color = '#dc3545';
+      status.textContent = '⚠ Notes editor not ready — please wait a moment and try again.';
+      return;
+    }
+    const html = '<p>' + clause.body.replace(/\n/g, '<br>') + '</p>';
+    editor.execCommand('mceInsertContent', false, html);
+
+    // Open the notes window so the user can see what was inserted
+    const notesWindow = document.getElementById('floatingNotesWindow');
+    if (notesWindow && notesWindow.style.display === 'none') {
+      openFloatingNotes();
+    }
+
+    // Visual feedback
+    document.querySelectorAll('#refLibResults [data-clause]').forEach(b => b.classList.remove('active'));
+    btnEl.classList.add('active');
+    status.style.color = '#198754';
+    status.textContent = `✓ Inserted: ${clause.title}`;
+    setTimeout(() => {
+      status.style.color = '';
+      status.textContent = 'Click a clause to insert it into notes.';
+    }, 3000);
+  }
+
+  function escHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+})();
+</script>
+{% endif %}
 
 {% endblock %}
