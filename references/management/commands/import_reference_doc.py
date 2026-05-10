@@ -135,7 +135,7 @@ def _parse_document(doc):
 
         elif style in ('Heading 2', 'Heading 3'):
             flush()
-            current_subcategory = text
+            current_subcategory = text[:495]  # guard against MySQL column limit
 
         elif style in ('Heading 4', 'Heading 5'):
             flush()
