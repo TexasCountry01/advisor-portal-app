@@ -67,10 +67,13 @@ def reimport_view(request):
             doc = Document(io.BytesIO(data))
             clauses = _parse_document(doc)
 
-            ReferenceClause.objects.all().delete()
-            ReferenceClause.objects.bulk_create([ReferenceClause(**c) for c in clauses])
-
-            messages.success(request, f'Imported {len(clauses)} reference clauses successfully.')
+            if not clauses:
+                messages.error(request, 'Import aborted: no clauses were found in the uploaded document. '
+                                        'The file may use unexpected heading styles. Existing clauses were NOT changed.')
+            else:
+                ReferenceClause.objects.all().delete()
+                ReferenceClause.objects.bulk_create([ReferenceClause(**c) for c in clauses])
+                messages.success(request, f'Imported {len(clauses)} reference clauses successfully.')
         except Exception as e:
             messages.error(request, f'Import failed: {e}')
 
