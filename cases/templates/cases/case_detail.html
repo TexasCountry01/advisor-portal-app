@@ -5125,11 +5125,22 @@ document.addEventListener('DOMContentLoaded', function() {
 (function() {
   let refSearchTimer = null;
 
+  const REF_PANEL_WIDTH = 390; // px — matches panel width + a little breathing room
+
+  function shiftFloatingElements(open) {
+    const notesWin = document.getElementById('floatingNotesWindow');
+    const btnBar   = document.getElementById('fixedButtonBar');
+    const offset   = open ? (REF_PANEL_WIDTH + 20) + 'px' : '20px';
+    if (notesWin) notesWin.style.right = offset;
+    if (btnBar)   btnBar.style.right   = offset;
+  }
+
   window.toggleRefLibrary = function() {
     const panel = document.getElementById('refLibraryPanel');
     if (!panel) return;
     const isOpen = panel.style.display === 'flex';
     panel.style.display = isOpen ? 'none' : 'flex';
+    shiftFloatingElements(!isOpen);
     if (!isOpen) {
       const input = document.getElementById('refLibSearch');
       if (input) setTimeout(() => input.focus(), 80);
