@@ -147,6 +147,7 @@ body {
     border-top: none;
     font-weight: 600;
     background-color: #f8f9fa;
+    text-align: left;
 }
 
 .badge {
