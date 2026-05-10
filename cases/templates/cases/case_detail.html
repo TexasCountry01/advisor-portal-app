@@ -1848,6 +1848,15 @@
                 </div>
                 {% endif %}
 
+                <!-- Decline button for technicians (Actions card may not render when case is unassigned to them) -->
+                {% if user.role == 'technician' and case.assigned_to != user and case.status in 'submitted,resubmitted,accepted,hold,needs_resubmission' %}
+                <div class="d-grid mt-2">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
+                        <i class="bi bi-x-octagon"></i> Decline This Case
+                    </button>
+                </div>
+                {% endif %}
+
                 <!-- Ad-hoc Review Requests Panel -->
                 {% if user.role == 'technician' or user.role in 'administrator,manager' %}
                 <div class="card mt-3" id="reviewRequestsCard" style="display:none;">
