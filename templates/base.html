@@ -530,8 +530,6 @@
     });
     </script>
 
-    <!-- Custom JS -->
-    <script src="{% static 'js/main.js' %}?v={{ ASSET_VERSION }}"></script>
     
     {% if user.is_authenticated and user.role == 'member' %}
     <!-- Portal Feedback Modal -->
