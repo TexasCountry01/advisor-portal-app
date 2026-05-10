@@ -1838,17 +1838,13 @@
                                 </small>
                                 {% endif %}
                             {% endif %}
+                            {% if user.role in 'administrator,manager,technician' and case.status in 'submitted,resubmitted,accepted,hold,pending_review,needs_resubmission' %}
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
+                                <i class="bi bi-x-octagon"></i> Decline This Case
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
-                </div>
-                {% endif %}
-
-                <!-- Decline Case — Admin/Manager/Technician, active cases -->
-                {% if user.role in 'administrator,manager,technician' and case.status in 'submitted,resubmitted,accepted,hold,pending_review,needs_resubmission' %}
-                <div class="d-grid mt-2">
-                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
-                        <i class="bi bi-x-octagon"></i> Decline This Case
-                    </button>
                 </div>
                 {% endif %}
 
