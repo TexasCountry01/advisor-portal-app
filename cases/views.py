@@ -3770,6 +3770,13 @@ def clear_profeds_error(request, case_id):
         case.has_profeds_error = False
         case.save()
 
+        # Also clear the flag on the paired case so the banner goes away on both sides
+        if case.original_case and case.original_case.has_profeds_error:
+            case.original_case.has_profeds_error = False
+            case.original_case.save()
+        # If this IS the original, clear any linked mod cases too
+        case.resubmitted_cases.filter(has_profeds_error=True).update(has_profeds_error=False)
+
         from core.models import AuditLog
         AuditLog.log_activity(
             user=user,
@@ -5063,6 +5070,7 @@ def request_modification(request, pk):
             date_submitted=tz.now(),
             assigned_to=case.assigned_to,  # Auto-assign to original technician
             has_profeds_error=is_profeds_error,  # Carry the error flag onto the mod case
+            resubmission_notes=reason,  # Store modification reason so Tech can see it without visiting original case
         )
         
         logger.info(f'New modification case {new_case.external_case_id} created for case {case.external_case_id} by member {user.username} (assigned to: {case.assigned_to})')
@@ -5108,6 +5116,13 @@ def request_modification(request, pk):
             case=case,
             author=user,
             message=modification_message
+        )
+        
+        # Also post the modification reason to the NEW case's chat so the Tech sees it immediately
+        CaseMessage.objects.create(
+            case=new_case,
+            author=user,
+            message=f"**MODIFICATION REQUEST REASON**\n\n{reason}{error_flag_text}"
         )
         
         # Mark message as unread for assigned technician
