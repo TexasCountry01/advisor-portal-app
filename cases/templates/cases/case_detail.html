@@ -1845,16 +1845,10 @@
 
                 <!-- Decline Case — Admin/Manager/Technician, active cases -->
                 {% if user.role in 'administrator,manager,technician' and case.status in 'submitted,resubmitted,accepted,hold,pending_review,needs_resubmission' %}
-                <div class="card mt-3 border-danger">
-                    <div class="card-header bg-danger text-white">
-                        <h5 class="mb-0"><i class="bi bi-x-octagon"></i> Decline Case</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-muted small mb-2">Use this when ProFeds cannot process the case (e.g., NAF employee, out-of-scope request). The member will be notified with your reason.</p>
-                        <button type="button" class="btn btn-danger w-100" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
-                            <i class="bi bi-x-octagon"></i> Decline This Case
-                        </button>
-                    </div>
+                <div class="d-grid mt-2">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
+                        <i class="bi bi-x-octagon"></i> Decline This Case
+                    </button>
                 </div>
                 {% endif %}
 
