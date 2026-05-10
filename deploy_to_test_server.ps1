@@ -92,7 +92,7 @@ Write-Host ""
 
 # STEP 4: Run database migrations
 Write-Host "[4/4] Running database migrations and restarting Gunicorn..." -ForegroundColor Yellow
-ssh $testServerUser@$testServerHost "cd $projectPath && source $venvPath/bin/activate && python manage.py migrate"
+ssh $testServerUser@$testServerHost "cd $projectPath && source $venvPath/bin/activate && python manage.py migrate && python manage.py collectstatic --noinput 2>&1 | tail -3"
 
 Write-Host "OK - Migrations completed" -ForegroundColor Green
 Write-Host ""

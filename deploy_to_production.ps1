@@ -83,7 +83,7 @@ Write-Host ""
 
 # STEP 3: Run database migrations
 Write-Host "[3/4] Running database migrations..." -ForegroundColor Yellow
-ssh $prodServerUser@$prodServerHost "cd $projectPath && source $venvPath/bin/activate && python manage.py migrate"
+ssh $prodServerUser@$prodServerHost "cd $projectPath && source $venvPath/bin/activate && python manage.py migrate && python manage.py collectstatic --noinput 2>&1 | tail -3"
 
 Write-Host "OK - Migrations completed" -ForegroundColor Green
 Write-Host ""
