@@ -3645,18 +3645,19 @@ document.getElementById('reassignForm').addEventListener('submit', function(e) {
     </div>
 </div>
 
-<!-- Button to Minimize Notes Window -->
-<button id="minimizeNotesButton" class="btn btn-outline-primary" onclick="minimizeFloatingNotes()" 
-    style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; display: none;">
-    <i class="bi bi-sticky"></i> Notes
-</button>
-
-<!-- Standalone Reference Library button - always visible -->
-<button id="refLibFixedBtn" class="btn btn-outline-secondary" onclick="toggleRefLibrary()"
-    title="Reference Library"
-    style="position: fixed; bottom: 20px; right: 90px; z-index: 9998;">
-    <i class="bi bi-journals"></i> Reference
-</button>
+<!-- Fixed bottom-right button bar: Reference + Notes (minimized) -->
+<div id="fixedButtonBar" style="position: fixed; bottom: 20px; right: 20px; z-index: 9998; display: flex; gap: 8px; align-items: center;">
+    <!-- Standalone Reference Library button - always visible -->
+    <button id="refLibFixedBtn" class="btn btn-secondary" onclick="toggleRefLibrary()"
+        title="Reference Library">
+        <i class="bi bi-journals"></i> Reference
+    </button>
+    <!-- Button to restore Notes Window when minimized -->
+    <button id="minimizeNotesButton" class="btn btn-outline-primary" onclick="minimizeFloatingNotes()"
+        style="display: none;">
+        <i class="bi bi-sticky"></i> Notes
+    </button>
+</div>
 {% endif %}
 
 <!-- TinyMCE Library - Development Mode (No API key required for local development) -->
