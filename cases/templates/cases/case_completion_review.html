@@ -167,6 +167,25 @@
                             <br><small class="text-muted">Member can view results immediately</small>
                         </label>
                     </div>
+                    <div class="form-check mb-3 p-3 border rounded">
+                        <input class="form-check-input" type="radio" name="releaseOption" id="delayRelease" value="delay">
+                        <label class="form-check-label" for="delayRelease">
+                            <strong><i class="bi bi-clock text-warning"></i> Short Delay</strong>
+                            <br><small class="text-muted">Release in 1–6 hours (same-day)</small>
+                        </label>
+                    </div>
+                    <div id="releaseDelayGroup" style="display: none; margin-top: -8px; margin-bottom: 12px; padding: 12px; background: #fff8e1; border-radius: 6px; border: 1px solid #ffe082;">
+                        <label class="form-label fw-semibold mb-1">Delay duration</label>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="delayHours" id="delay1h" value="1" checked><label class="form-check-label" for="delay1h">1h</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="delayHours" id="delay2h" value="2"><label class="form-check-label" for="delay2h">2h</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="delayHours" id="delay3h" value="3"><label class="form-check-label" for="delay3h">3h</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="delayHours" id="delay4h" value="4"><label class="form-check-label" for="delay4h">4h</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="delayHours" id="delay5h" value="5"><label class="form-check-label" for="delay5h">5h</label></div>
+                            <div class="form-check form-check-inline"><input class="form-check-input" type="radio" name="delayHours" id="delay6h" value="6"><label class="form-check-label" for="delay6h">6h</label></div>
+                        </div>
+                        <div id="delayWarning" class="mt-2 text-danger small" style="display:none;"></div>
+                    </div>
                     <div class="form-check p-3 border rounded">
                         <input class="form-check-input" type="radio" name="releaseOption" id="scheduleRelease" value="schedule">
                         <label class="form-check-label" for="scheduleRelease">
@@ -273,11 +292,13 @@
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
 
 <script>
-// Show/hide release date picker
+// Show/hide release option sub-panels
 document.querySelectorAll('input[name="releaseOption"]').forEach(radio => {
     radio.addEventListener('change', function() {
         document.getElementById('releaseDateTimeGroup').style.display =
             this.value === 'schedule' ? 'block' : 'none';
+        document.getElementById('releaseDelayGroup').style.display =
+            this.value === 'delay' ? 'block' : 'none';
     });
 });
 
@@ -346,11 +367,37 @@ document.getElementById('uploadReportForm').addEventListener('submit', function(
 
 function submitCompletion() {
     // Gather release options
-    const releaseNow = document.getElementById('releaseNow').checked;
+    const selectedOption = document.querySelector('input[name="releaseOption"]:checked').value;
     let releaseOption = 'now';
     let releaseDateTime = null;
+    let completionDelayHours = null;
 
-    if (!releaseNow) {
+    const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
+
+    if (selectedOption === 'delay') {
+        releaseOption = 'schedule';
+        const hours = parseInt(document.querySelector('input[name="delayHours"]:checked').value);
+        const releaseAt = new Date(Date.now() + hours * 3600 * 1000);
+
+        // Validate: delay must not push past end of due date
+        if (caseDueDate) {
+            const dueEnd = new Date(caseDueDate + 'T23:59:59');
+            if (releaseAt > dueEnd) {
+                alert('Error: A ' + hours + '-hour delay would push the release past the due date (' +
+                    new Date(caseDueDate + 'T00:00:00').toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}) +
+                    '). Choose a shorter delay or release now.');
+                return;
+            }
+        }
+
+        // Convert to CST datetime string for the backend
+        const cstOptions = { timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false };
+        const parts = new Intl.DateTimeFormat('en-CA', cstOptions).formatToParts(releaseAt);
+        const p = {};
+        parts.forEach(x => p[x.type] = x.value);
+        releaseDateTime = `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+
+    } else if (selectedOption === 'schedule') {
         releaseOption = 'schedule';
         const rd = document.getElementById('releaseDate').value;
         const rt = document.getElementById('releaseTime').value;
@@ -358,7 +405,6 @@ function submitCompletion() {
         if (!rt) { alert('Please select a release time.'); return; }
 
         // Validate release date is not after the due date
-        const caseDueDate = '{{ case.date_due|date:"Y-m-d" }}';
         if (caseDueDate && rd > caseDueDate) {
             alert('Error: Release date cannot be after the case due date (' +
                 new Date(caseDueDate + 'T00:00:00').toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'}) +
