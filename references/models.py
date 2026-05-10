@@ -7,7 +7,7 @@ class ReferenceClause(models.Model):
     Technicians search and insert these into case report notes.
     """
     category = models.CharField(max_length=255, db_index=True)
-    subcategory = models.CharField(max_length=500, blank=True, default='')
+    subcategory = models.TextField(blank=True, default='')
     title = models.CharField(max_length=500)
     body = models.TextField()
     sort_order = models.PositiveIntegerField(default=0, db_index=True)
