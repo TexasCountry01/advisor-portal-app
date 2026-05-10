@@ -1802,6 +1802,9 @@
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
+                                        <i class="bi bi-x-octagon"></i> Decline This Case
+                                    </button>
                                     <hr>
                                     <small class="text-muted" id="actionHelp">
                                         <i class="bi bi-info-circle"></i> Upload reports and add technical notes, then submit for senior tech review.
@@ -1816,6 +1819,9 @@
                                     </button>
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
+                                        <i class="bi bi-x-octagon"></i> Decline This Case
                                     </button>
                                     <hr>
                                     <small class="text-muted" id="actionHelp">
@@ -1833,12 +1839,15 @@
                                 <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                     <i class="bi bi-pause-circle"></i> Put on Hold
                                 </button>
+                                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
+                                    <i class="bi bi-x-octagon"></i> Decline This Case
+                                </button>
                                 <small class="text-muted d-block mt-2">
                                     <i class="bi bi-info-circle"></i> Admin/Manager: You can put this case on hold without taking ownership.
                                 </small>
                                 {% endif %}
                             {% endif %}
-                            {% if user.role in 'administrator,manager,technician' and case.status in 'submitted,resubmitted,accepted,hold,pending_review,needs_resubmission' %}
+                            {% if user.role in 'administrator,manager,technician' and case.status in 'hold,pending_review' %}
                             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
                                 <i class="bi bi-x-octagon"></i> Decline This Case
                             </button>
