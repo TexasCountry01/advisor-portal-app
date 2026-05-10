@@ -465,7 +465,7 @@ function initTinyMCE() {
     if (notesEditorInitialized) return Promise.resolve();
     return tinymce.init({
         selector: '#notesTextarea',
-        plugins: 'link image paste code advlist lists',
+        plugins: 'link image code advlist lists',
         toolbar: 'formatselect | bold italic underline forecolor removeformat | link image | numlist bullist | code',
         menubar: false,
         statusbar: false,

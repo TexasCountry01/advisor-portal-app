@@ -236,7 +236,7 @@ BENEFITS_SOFTWARE_API_MAX_RETRIES = config('BENEFITS_SOFTWARE_API_MAX_RETRIES', 
 TINYMCE_DEFAULT_CONFIG = {
     'height': 300,
     'width': '100%',
-    'plugins': 'link image paste code table advlist lists autolink',
+    'plugins': 'link image code table advlist lists autolink',
     'toolbar': 'formatselect | bold italic underline forecolor | link image | numlist bullist | code',
     'menubar': False,
     'statusbar': True,
