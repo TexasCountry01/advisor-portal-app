@@ -3941,6 +3941,8 @@ function setupFloatingWindowDrag() {
 
     header.addEventListener('pointerdown', function(e) {
         if (e.button !== 0) return;
+        // Don't intercept clicks on buttons — let their onclick handlers fire normally
+        if (e.target.closest('button')) return;
         const rect = notesWindow.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
@@ -5111,7 +5113,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div style="padding: 8px 10px; flex-shrink: 0; border-bottom: 1px solid #dee2e6;">
     <input type="text" id="refLibSearch" class="form-control form-control-sm"
            placeholder="Search clauses (e.g. VERA, TSP, FEHB…)" autocomplete="off">
-    <div id="refLibStatus" class="text-muted" style="font-size: 11px; margin-top: 4px;">Click a clause to insert it into notes.</div>
+    <div id="refLibStatus" class="text-muted" style="font-size: 11px; margin-top: 4px;">Click a clause to preview, then insert into notes.</div>
   </div>
   <!-- Results -->
   <div id="refLibResults" style="flex: 1; overflow-y: auto; padding: 4px 0;">
@@ -5187,13 +5189,55 @@ document.addEventListener('DOMContentLoaded', function() {
     html += '</div>';
     el.innerHTML = html;
 
-    // Single-click = insert immediately
+    // Single-click = expand drill-down preview
     el.querySelectorAll('[data-clause]').forEach(btn => {
       btn.addEventListener('click', function() {
         const clause = JSON.parse(this.dataset.clause);
-        insertClause(clause, this);
+        openClausePreview(clause, this);
       });
     });
+  }
+
+  // ── Inline drill-down preview ─────────────────────────────────────────
+  let activePreviewRow = null;
+
+  function openClausePreview(clause, triggerBtn) {
+    // Remove any existing preview
+    if (activePreviewRow) { activePreviewRow.remove(); activePreviewRow = null; }
+
+    // Deselect all buttons
+    document.querySelectorAll('#refLibResults [data-clause]').forEach(b => b.classList.remove('list-group-item-primary'));
+    triggerBtn.classList.add('list-group-item-primary');
+
+    // Build preview row
+    const row = document.createElement('div');
+    row.className = 'list-group-item px-3 py-2';
+    row.style.cssText = 'background:#f8f9fa; border-left: 3px solid #285FBF; font-size:12px;';
+    const bodyHtml = escHtml(clause.body).replace(/\n/g, '<br>');
+    row.innerHTML = `
+      <div style="color:#444; line-height:1.55; max-height:220px; overflow-y:auto; margin-bottom:8px;">${bodyHtml}</div>
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="btn btn-sm btn-primary" id="refLibInsertBtn">
+          <i class="bi bi-plus-circle"></i> Insert into Notes
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="refLibCancelBtn">Cancel</button>
+      </div>`;
+
+    row.querySelector('#refLibInsertBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      insertClause(clause, triggerBtn);
+      row.remove(); activePreviewRow = null;
+      triggerBtn.classList.remove('list-group-item-primary');
+    });
+    row.querySelector('#refLibCancelBtn').addEventListener('click', function(e) {
+      e.stopPropagation();
+      row.remove(); activePreviewRow = null;
+      triggerBtn.classList.remove('list-group-item-primary');
+    });
+
+    triggerBtn.insertAdjacentElement('afterend', row);
+    activePreviewRow = row;
+    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function insertClause(clause, btnEl) {
@@ -5220,7 +5264,7 @@ document.addEventListener('DOMContentLoaded', function() {
     status.textContent = `✓ Inserted: ${clause.title}`;
     setTimeout(() => {
       status.style.color = '';
-      status.textContent = 'Click a clause to insert it into notes.';
+      status.textContent = 'Click a clause to preview, then insert into notes.';
     }, 3000);
   }
 
