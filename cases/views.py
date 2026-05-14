@@ -169,7 +169,9 @@ def _apply_member_quick_filter(queryset, quick_filter, user):
             actual_release_date__gte=ready_since
         )
     if quick_filter == 'pending':
-        return queryset.exclude(status__in=['completed', 'cancelled', 'draft'])
+        return queryset.exclude(status__in=['cancelled', 'draft']).exclude(
+            status='completed', actual_release_date__isnull=False
+        )
     if quick_filter == 'on_hold':
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
@@ -210,7 +212,9 @@ def _build_member_quick_tiles(queryset, user):
             actual_release_date__isnull=False,
             actual_release_date__gte=ready_since
         ).count(),
-        'pending': queryset.exclude(status__in=['completed', 'cancelled', 'draft']).count(),
+        'pending': queryset.exclude(status__in=['cancelled', 'draft']).exclude(
+            status='completed', actual_release_date__isnull=False
+        ).count(),
         'on_hold': queryset.filter(status='hold').count(),
         'alerts': queryset.filter(has_unread_msg | has_unread_notif).count(),
         'drafts': queryset.filter(status='draft').count(),
