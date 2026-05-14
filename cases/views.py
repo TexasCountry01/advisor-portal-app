@@ -123,9 +123,9 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
         has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
         return queryset.filter(Q(has_member_updates=True) | has_unread)
     if quick_filter == 'due_today':
-        return queryset.filter(date_due=today).exclude(status='completed')
+        return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'draft'])
     if quick_filter == 'due_tomorrow':
-        return queryset.filter(date_due=tomorrow).exclude(status='completed')
+        return queryset.filter(date_due=tomorrow).exclude(status__in=['completed', 'cancelled', 'draft'])
 
     return queryset
 
@@ -149,8 +149,8 @@ def _build_staff_quick_tiles(queryset, user):
         'need_review': queryset.filter(status='pending_review').count(),
         'on_hold': queryset.filter(status='hold').count(),
         'alerts': queryset.filter(Q(has_member_updates=True) | has_unread).count(),
-        'due_today': queryset.filter(date_due=today).exclude(status='completed').count(),
-        'due_tomorrow': queryset.filter(date_due=tomorrow).exclude(status='completed').count(),
+        'due_today': queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'draft']).count(),
+        'due_tomorrow': queryset.filter(date_due=tomorrow).exclude(status__in=['completed', 'cancelled', 'draft']).count(),
     }
 
 
