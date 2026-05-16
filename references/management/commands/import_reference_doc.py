@@ -14,10 +14,19 @@ Document heading hierarchy used for parsing:
     Heading 4 -> clause title  (the named verbiage snippet)
     Normal    -> clause body text (accumulated until next heading 4+)
 
+Body paragraphs are converted to HTML preserving:
+  - Bold, italic, underline, text color
+  - Yellow highlights → <mark> tags (the "update me" cue)
+  - Hyperlinks → <a href="..." target="_blank"> tags
+  - List Bullet* paragraphs → <ul><li>
+  - List Number* paragraphs → <ol><li>
+
 When --replace is supplied all existing clauses are deleted before import.
 """
 
 import io
+from html import escape as html_escape
+
 from django.core.management.base import BaseCommand, CommandError
 from references.models import ReferenceClause
 
@@ -25,10 +34,165 @@ from references.models import ReferenceClause
 HEADING_STYLES = {'Heading 1', 'Heading 2', 'Heading 3', 'Heading 4', 'Heading 5', 'Title'}
 SEPARATOR_TEXTS = {'---', '-------------------', '--------------------------', '-------------------------'}
 
+LIST_BULLET_STYLES = {'List Bullet', 'List Bullet 2', 'List Bullet 3', 'List Paragraph'}
+LIST_NUMBER_STYLES = {'List Number', 'List Number 2', 'List Number 3'}
+
+# OOXML namespace URIs
+W_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
+R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+
+# Map Word highlight color names to CSS background values
+HIGHLIGHT_CSS = {
+    'yellow': '#FFFF00',
+    'cyan': '#00FFFF',
+    'green': '#00FF00',
+    'magenta': '#FF00FF',
+    'red': '#FF0000',
+    'blue': '#0000FF',
+    'darkBlue': '#00008B',
+    'darkCyan': '#008B8B',
+    'darkGray': '#A9A9A9',
+    'darkGreen': '#006400',
+    'darkMagenta': '#8B008B',
+    'darkRed': '#8B0000',
+    'darkYellow': '#808000',
+    'lightGray': '#D3D3D3',
+}
+
 
 def _is_separator(text):
     stripped = text.strip('-').strip()
     return stripped == '' and '-' in text
+
+
+def _wq(tag):
+    """Return the Clark-notation qualified name for a w: tag."""
+    return f'{{{W_NS}}}{tag}'
+
+
+def _run_elem_to_html(r_elem):
+    """Convert a <w:r> XML element to an HTML fragment."""
+    texts = r_elem.findall(_wq('t'))
+    text = ''.join(t.text or '' for t in texts)
+    if not text:
+        return ''
+
+    escaped = html_escape(text)
+
+    rpr = r_elem.find(_wq('rPr'))
+    if rpr is None:
+        return escaped
+
+    # Highlight — checked first, as it affects background (outermost wrapper)
+    highlight = rpr.find(_wq('highlight'))
+    if highlight is not None:
+        color_val = highlight.get(_wq('val'), '')
+        if color_val == 'yellow':
+            escaped = f'<mark>{escaped}</mark>'
+        elif color_val in HIGHLIGHT_CSS:
+            bg = HIGHLIGHT_CSS[color_val]
+            escaped = f'<span style="background-color:{bg};">{escaped}</span>'
+
+    # Text color (skip auto and pure black — those are defaults)
+    color_el = rpr.find(_wq('color'))
+    if color_el is not None:
+        val = color_el.get(_wq('val'), 'auto')
+        if val and val.lower() not in ('auto', '000000') and len(val) == 6:
+            escaped = f'<span style="color:#{val};">{escaped}</span>'
+
+    # Bold
+    b_el = rpr.find(_wq('b'))
+    if b_el is not None:
+        b_val = b_el.get(_wq('val'), '1')
+        if b_val not in ('0', 'false', 'off'):
+            escaped = f'<strong>{escaped}</strong>'
+
+    # Italic
+    i_el = rpr.find(_wq('i'))
+    if i_el is not None:
+        i_val = i_el.get(_wq('val'), '1')
+        if i_val not in ('0', 'false', 'off'):
+            escaped = f'<em>{escaped}</em>'
+
+    # Underline
+    u_el = rpr.find(_wq('u'))
+    if u_el is not None:
+        u_val = u_el.get(_wq('val'), '')
+        if u_val and u_val not in ('none', 'None'):
+            escaped = f'<u>{escaped}</u>'
+
+    return escaped
+
+
+def _para_to_html(para, doc):
+    """
+    Convert a body paragraph to an HTML fragment string.
+    Walks para._p children to handle hyperlinks inline with regular runs.
+    """
+    parts = []
+    for child in para._p:
+        tag_local = child.tag.split('}')[-1] if '}' in child.tag else child.tag
+
+        if tag_local == 'r':
+            parts.append(_run_elem_to_html(child))
+
+        elif tag_local == 'hyperlink':
+            # Resolve relationship target URL
+            r_id = child.get(f'{{{R_NS}}}id')
+            url = ''
+            if r_id:
+                try:
+                    url = doc.part.rels[r_id].target_ref
+                except (KeyError, AttributeError):
+                    pass
+
+            link_inner = ''.join(
+                _run_elem_to_html(r_el)
+                for r_el in child.findall(_wq('r'))
+            )
+
+            if url and link_inner:
+                parts.append(f'<a href="{html_escape(url)}" target="_blank">{link_inner}</a>')
+            else:
+                parts.append(link_inner)
+
+    return ''.join(parts)
+
+
+def _flush_body(body_parts):
+    """
+    Convert a list of (style_type, html_fragment) tuples into a final HTML string.
+    Consecutive list items of the same type are grouped into <ul> or <ol>.
+    """
+    result = []
+    i = 0
+    while i < len(body_parts):
+        ptype, phtml = body_parts[i]
+
+        if ptype == 'li_bullet':
+            items = []
+            while i < len(body_parts) and body_parts[i][0] == 'li_bullet':
+                if body_parts[i][1].strip():
+                    items.append(f'<li>{body_parts[i][1]}</li>')
+                i += 1
+            if items:
+                result.append(f'<ul>{"".join(items)}</ul>')
+
+        elif ptype == 'li_number':
+            items = []
+            while i < len(body_parts) and body_parts[i][0] == 'li_number':
+                if body_parts[i][1].strip():
+                    items.append(f'<li>{body_parts[i][1]}</li>')
+                i += 1
+            if items:
+                result.append(f'<ol>{"".join(items)}</ol>')
+
+        else:
+            if phtml.strip():
+                result.append(f'<p>{phtml}</p>')
+            i += 1
+
+    return ''.join(result)
 
 
 class Command(BaseCommand):
@@ -72,6 +236,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f'Successfully imported {len(created)} reference clauses.'
         ))
+        self.stdout.write(self.style.WARNING(
+            'Remember to re-mark featured clauses in Django admin after a --replace import.'
+        ))
 
 
 def _parse_document(doc):
@@ -81,8 +248,18 @@ def _parse_document(doc):
     State machine:
       current_category    -- updated on Title / Heading 1
       current_subcategory -- updated on Heading 2 / Heading 3
-      current_title       -- set on Heading 4 / Heading 5
-      body_lines          -- Normal paragraphs accumulated after a title
+      current_title       -- set on Heading 4 / Heading 5, and also temporarily
+                             on Heading 1/2/3 to capture any body text directly
+                             under that section heading as its own standalone clause
+      body_parts          -- list of (type, html) tuples accumulated after a heading
+                             type: 'p' | 'li_bullet' | 'li_number'
+
+    Body paragraphs are converted to HTML preserving:
+      - Bold, italic, underline, text color
+      - Yellow highlights → <mark> tags (the "update me" cue)
+      - Hyperlinks → <a href="..." target="_blank"> tags
+      - List Bullet* paragraphs → <ul><li>
+      - List Number* paragraphs → <ol><li>
     """
     clauses = []
     sort_order = 0
@@ -90,12 +267,12 @@ def _parse_document(doc):
     current_category = 'GENERAL'
     current_subcategory = ''
     current_title = None
-    body_lines = []
+    body_parts = []
 
     def flush():
-        nonlocal current_title, body_lines, sort_order
-        if current_title and body_lines:
-            body = '\n'.join(line for line in body_lines if line.strip())
+        nonlocal current_title, body_parts, sort_order
+        if current_title and body_parts:
+            body = _flush_body(body_parts)
             if body.strip():
                 clauses.append({
                     'category': current_category,
@@ -107,7 +284,7 @@ def _parse_document(doc):
                 })
                 sort_order += 1
         current_title = None
-        body_lines = []
+        body_parts = []
 
     for para in doc.paragraphs:
         style = para.style.name
@@ -119,33 +296,48 @@ def _parse_document(doc):
 
         if style == 'Title':
             flush()
-            # Only treat as a category if it's a short label (not a body paragraph mis-styled as Title)
             if len(text) <= 120 and text not in ('TITLE', 'Subtitle', '-------------------------', '--------------------------'):
                 current_category = text
                 current_subcategory = ''
+                current_title = text  # capture any body text directly under this heading
             elif current_title:
-                # Long Title-styled paragraph is actually body text
-                body_lines.append(text)
+                para_html = _para_to_html(para, doc)
+                if para_html.strip():
+                    body_parts.append(('p', para_html))
 
         elif style == 'Heading 1':
             flush()
-            # Heading 1 that looks like a sub-topic becomes the category
             current_category = text
             current_subcategory = ''
+            current_title = text  # capture any body text directly under this heading
 
         elif style in ('Heading 2', 'Heading 3'):
             flush()
             current_subcategory = text
+            current_title = text  # capture any body text directly under this heading
 
         elif style in ('Heading 4', 'Heading 5'):
             flush()
             current_title = text
 
+        elif style in LIST_BULLET_STYLES:
+            if current_title:
+                para_html = _para_to_html(para, doc)
+                body_parts.append(('li_bullet', para_html))
+
+        elif style in LIST_NUMBER_STYLES:
+            if current_title:
+                para_html = _para_to_html(para, doc)
+                body_parts.append(('li_number', para_html))
+
         elif style == 'Normal':
             if current_title:
-                body_lines.append(text)
-            # Normal text before any Heading 4 is skipped (it's preamble/instructions)
+                para_html = _para_to_html(para, doc)
+                if para_html.strip():
+                    body_parts.append(('p', para_html))
+            # Normal text before any heading is skipped (it's preamble/instructions)
 
     flush()  # catch last pending clause
 
     return clauses
+

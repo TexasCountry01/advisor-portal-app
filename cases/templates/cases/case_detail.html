@@ -3903,22 +3903,10 @@ tinymce.init({
                 }
             }
             
-            // Restore minimized state (default: HIDDEN on first visit)
-            const wasMinimized = localStorage.getItem('notesWindowMinimized');
-            // Only show if explicitly saved as 'false' (user opened it before)
-            // Default is to hide (null or 'true' means hidden)
-            if (wasMinimized === 'false') {
-                // User had notes open in previous session, restore that state
-                notesWindow.style.display = 'flex';
-                document.getElementById('minimizeNotesButton').style.display = 'none';
-                // Set to 'true' so next time it starts hidden
-                localStorage.setItem('notesWindowMinimized', 'true');
-            } else {
-                // Default: hide window, show the toggle button
-                notesWindow.style.display = 'none';
-                document.getElementById('minimizeNotesButton').style.display = 'block';
-                localStorage.setItem('notesWindowMinimized', 'true');
-            }
+            // Notes window always starts hidden — user opens it manually.
+            // Notes content is preserved server-side regardless of window state.
+            notesWindow.style.display = 'none';
+            document.getElementById('minimizeNotesButton').style.display = 'block';
         });
         
         // Auto-save on content change
@@ -3990,7 +3978,6 @@ function openFloatingNotes() {
     if (notesWindow) {
         notesWindow.style.display = 'flex';
         minimizeButton.style.display = 'none';
-        localStorage.setItem('notesWindowMinimized', 'false');
         
         // Focus editor
         const editor = tinymce.get('reportNotesTextarea');
@@ -4012,12 +3999,10 @@ function minimizeFloatingNotes() {
             // Restore window
             notesWindow.style.display = 'flex';
             minimizeButton.style.display = 'none';
-            localStorage.setItem('notesWindowMinimized', 'false');
         } else {
             // Minimize window
             notesWindow.style.display = 'none';
             minimizeButton.style.display = 'block';
-            localStorage.setItem('notesWindowMinimized', 'true');
         }
     }
 }
@@ -5109,24 +5094,86 @@ document.addEventListener('DOMContentLoaded', function() {
     <strong style="font-size: 14px;"><i class="bi bi-journals"></i> Reference Library</strong>
     <button type="button" onclick="toggleRefLibrary()" style="background:none; border:none; color:white; font-size:20px; line-height:1; cursor:pointer;" title="Close">&times;</button>
   </div>
-  <!-- Search -->
-  <div style="padding: 8px 10px; flex-shrink: 0; border-bottom: 1px solid #dee2e6;">
-    <input type="text" id="refLibSearch" class="form-control form-control-sm"
-           placeholder="Search clauses (e.g. VERA, TSP, FEHB…)" autocomplete="off">
-    <div id="refLibStatus" class="text-muted" style="font-size: 11px; margin-top: 4px;">Click a clause to preview, then insert into notes.</div>
+
+  <!-- Search pane -->
+  <div id="refPaneSearch" style="display:flex; flex-direction:column; flex:1; min-height:0;">
+    <div style="padding: 8px 10px; flex-shrink: 0; border-bottom: 1px solid #dee2e6;">
+      <div style="display:flex; gap:4px; align-items:center;">
+        <input type="text" id="refLibSearch" class="form-control form-control-sm"
+               placeholder="Search clauses (e.g. VERA, TSP, FEHB…)" autocomplete="off" style="flex:1;">
+        <button type="button" id="refSearchClearBtn" onclick="refClearSearch()"
+                style="display:none; background:none; border:none; font-size:16px; color:#999; cursor:pointer; padding:0 2px;" title="Clear search">&times;</button>
+      </div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+        <div id="refLibStatus" class="text-muted" style="font-size:11px;">Click a clause to preview, then insert into notes.</div>
+        <button type="button" id="refBrowseAllBtn" onclick="refToggleBrowse()"
+                style="background:none; border:none; color:#285FBF; font-size:11px; cursor:pointer; white-space:nowrap; padding:0 0 0 8px; flex-shrink:0;"
+                title="Scroll through the full reference document">
+          <i class="bi bi-book"></i> Browse all
+        </button>
+      </div>
+    </div>
+    <div id="refLibResults" style="flex: 1; overflow-y: auto; padding: 4px 0;">
+      <div class="text-muted small p-2">Start typing to search the reference library.</div>
+    </div>
+    <!-- Preview pane — body scrolls independently; buttons always pinned at bottom -->
+    <div id="refPreviewPane" style="display:none; flex-shrink:0; border-top:2px solid #285FBF;
+                                    background:#f8f9fa; max-height:50%;
+                                    display:flex; flex-direction:column; min-height:90px;">
+      <div id="refPreviewBody" style="flex:1; overflow-y:auto; padding:8px 12px 4px;
+                                      font-size:12px; color:#333; line-height:1.6;"></div>
+      <div style="flex-shrink:0; display:flex; gap:6px; padding:6px 12px 8px;
+                  border-top:1px solid #dee2e6; background:#f8f9fa;">
+        <button type="button" class="btn btn-sm btn-primary" id="refPreviewInsertBtn">
+          <i class="bi bi-plus-circle"></i> Insert into Notes
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="refPreviewCancelBtn">Cancel</button>
+      </div>
+    </div>
   </div>
-  <!-- Results -->
-  <div id="refLibResults" style="flex: 1; overflow-y: auto; padding: 4px 0;">
-    <div class="text-muted small p-2">Start typing to search the reference library.</div>
-  </div>
+
 </div>
 
 <script>
 (function() {
   let refSearchTimer = null;
 
-  const REF_PANEL_WIDTH = 390; // px — matches panel width + a little breathing room
+  // Clause data cache — keyed by clause id (string).
+  // Avoids storing HTML bodies inside HTML attributes (which the HTML parser corrupts).
+  const refClauseMap = {};
 
+  function storeInMap(clauses) {
+    (clauses || []).forEach(c => { refClauseMap[String(c.id)] = c; });
+  }
+
+  const REF_PANEL_WIDTH = 390;
+  const RECENT_KEY = 'refLib_recent';
+  const RECENT_MAX = 25;
+  const RECENT_SEARCHES_KEY = 'refLib_searches';
+  const RECENT_SEARCHES_MAX = 10;
+
+  // ── Single delegated click handler for all clause buttons ─────────────
+  // Attached once at init; works regardless of when/how innerHTML is updated.
+  document.addEventListener('DOMContentLoaded', function() {
+    const panel = document.getElementById('refLibraryPanel');
+    if (!panel) return;
+    panel.addEventListener('click', function(e) {
+      // Scope button on a category header
+      const scopeBtn = e.target.closest('[data-scope-category]');
+      if (scopeBtn) {
+        refScopeToCategory(scopeBtn.dataset.scopeCategory);
+        return;
+      }
+      // Clause row
+      const btn = e.target.closest('[data-clause-id]');
+      if (!btn) return;
+      const clause = refClauseMap[btn.dataset.clauseId];
+      if (!clause) return;
+      openClausePreview(clause, btn);
+    });
+  });
+
+  // ── Panel open/close ──────────────────────────────────────────────────
   function shiftFloatingElements(open) {
     const notesWin = document.getElementById('floatingNotesWindow');
     const btnBar   = document.getElementById('fixedButtonBar');
@@ -5142,11 +5189,271 @@ document.addEventListener('DOMContentLoaded', function() {
     panel.style.display = isOpen ? 'none' : 'flex';
     shiftFloatingElements(!isOpen);
     if (!isOpen) {
-      const input = document.getElementById('refLibSearch');
-      if (input) setTimeout(() => input.focus(), 80);
+      // On open, always start in recent mode
+      refBrowseMode = false;
+      const btn = document.getElementById('refBrowseAllBtn');
+      if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+      // On open, show default content in search pane
+      refShowDefaultContent();
+      setTimeout(() => document.getElementById('refLibSearch').focus(), 80);
     }
   };
 
+  // ── Default panel content (recent searches + recently inserted + common notes) ─
+  function refShowDefaultContent() {
+    const resultsEl = document.getElementById('refLibResults');
+    const recent = getRecent();
+    const recentSearches = getRecentSearches();
+    storeInMap(recent);
+
+    fetch('/references/api/featured/')
+      .then(r => r.json())
+      .then(data => {
+        let html = '<div class="list-group list-group-flush">';
+
+        // ── Recent Searches ──────────────────────────────────────────
+        html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
+                             background:#e9ecef; color:#495057; display:flex;
+                             justify-content:space-between; align-items:center;
+                             pointer-events:none;">
+                   <span><i class="bi bi-search"></i> Recent Searches</span>
+                   ${recentSearches.length > 0
+                     ? `<button type="button" onclick="clearRecentSearches()" title="Clear search history"
+                               style="background:none; border:none; font-size:10px; color:#666;
+                                      cursor:pointer; padding:0; pointer-events:all;">
+                           <i class="bi bi-trash3"></i> Clear
+                         </button>`
+                     : ''}
+                 </div>`;
+        if (recentSearches.length > 0) {
+          html += `<div style="padding:6px 10px 8px; display:flex; flex-wrap:wrap; gap:5px;">`;
+          recentSearches.forEach(q => {
+            html += `<button type="button" onclick="refRunSearch(${JSON.stringify(q)})"
+                             style="font-size:11px; padding:2px 8px; border-radius:12px;
+                                    border:1px solid #adb5bd; background:#fff; color:#285FBF;
+                                    cursor:pointer; white-space:nowrap;">${escHtml(q)}</button>`;
+          });
+          html += `</div>`;
+        } else {
+          html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
+                     <em>No searches yet — type above to search.</em>
+                   </div>`;
+        }
+
+        // ── Recently Inserted ────────────────────────────────────────
+        html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
+                             background:#e9ecef; color:#495057; display:flex;
+                             justify-content:space-between; align-items:center;
+                             pointer-events:none;">
+                   <span><i class="bi bi-clock-history"></i> Recently Inserted</span>
+                   ${recent.length > 0
+                     ? `<button type="button" onclick="clearRecent()" title="Clear insert history"
+                               style="background:none; border:none; font-size:10px; color:#666;
+                                      cursor:pointer; padding:0; pointer-events:all;">
+                           <i class="bi bi-trash3"></i> Clear
+                         </button>`
+                     : ''}
+                 </div>`;
+        if (recent.length > 0) {
+          html += buildClauseListHtml(recent);
+        } else {
+          html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
+                     <em>No inserts yet. Click a clause and press "Insert into Notes".</em>
+                   </div>`;
+        }
+
+        // ── Common Notes ─────────────────────────────────────────────
+        if (data.results && data.results.length > 0) {
+          html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
+                              background:#fff3cd; color:#664d03; pointer-events:none;">
+                     <i class="bi bi-star-fill"></i> Common Notes
+                   </div>`;
+          html += buildClauseListHtml(data.results);
+        }
+
+        html += '</div>';
+        resultsEl.innerHTML = html;
+      })
+      .catch(() => {
+        resultsEl.innerHTML = '<div class="text-muted small p-2">Start typing to search the reference library.</div>';
+      });
+  }
+
+  // ── Browse full document ──────────────────────────────────────────────
+  let refBrowseMode = false;
+  let refScopeCategory = null; // set when user clicks 🔍 on a category header
+
+  window.refToggleBrowse = function() {
+    if (refBrowseMode) {
+      refBrowseMode = false;
+      const btn = document.getElementById('refBrowseAllBtn');
+      if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+      const input = document.getElementById('refLibSearch');
+      if (input) input.value = '';
+      const clearBtn = document.getElementById('refSearchClearBtn');
+      if (clearBtn) clearBtn.style.display = 'none';
+      closePreviewPane();
+      refShowDefaultContent();
+      const status = document.getElementById('refLibStatus');
+      if (status) { status.style.color = ''; status.textContent = 'Click a clause to preview, then insert into notes.'; }
+    } else {
+      refLoadFullDoc();
+    }
+  };
+
+  window.refLoadFullDoc = function() {
+    refBrowseMode = true;
+    const btn = document.getElementById('refBrowseAllBtn');
+    if (btn) btn.innerHTML = '<i class="bi bi-clock-history"></i> Recent';
+    const input = document.getElementById('refLibSearch');
+    if (input) input.value = '';
+    const clearBtn = document.getElementById('refSearchClearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    closePreviewPane();
+
+    const resultsEl = document.getElementById('refLibResults');
+    resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Loading full document\u2026</div>';
+
+    const status = document.getElementById('refLibStatus');
+    status.style.color = '';
+    status.textContent = 'Loading\u2026';
+
+    fetch('/references/api/clauses/')
+      .then(r => r.json())
+      .then(data => renderFullDoc(data.results))
+      .catch(() => {
+        resultsEl.innerHTML = '<div class="text-danger small p-2">Could not load. Please try again.</div>';
+        status.textContent = 'Click a clause to preview, then insert into notes.';
+      });
+  };
+
+  function renderFullDoc(results) {
+    const resultsEl = document.getElementById('refLibResults');
+    const status    = document.getElementById('refLibStatus');
+
+    if (!results || !results.length) {
+      resultsEl.innerHTML = '<div class="text-muted small p-2">No clauses found.</div>';
+      return;
+    }
+
+    storeInMap(results);
+
+    // Group by category then subcategory, preserving document order
+    const catOrder = [];
+    const groups   = {};
+    results.forEach(r => {
+      if (!groups[r.category]) {
+        groups[r.category] = { order: [], subs: {} };
+        catOrder.push(r.category);
+      }
+      const sub = r.subcategory || '';
+      if (!groups[r.category].subs[sub]) {
+        groups[r.category].subs[sub] = [];
+        groups[r.category].order.push(sub);
+      }
+      groups[r.category].subs[sub].push(r);
+    });
+
+    let html = '<div class="list-group list-group-flush">';
+    catOrder.forEach(cat => {
+      html += `<div style="font-size:10px; font-weight:700; background:#dce6f8; color:#1a4a9e;
+                           border-left:3px solid #285FBF; letter-spacing:.5px;
+                           text-transform:uppercase; position:sticky; top:0; z-index:2;
+                           display:flex; justify-content:space-between; align-items:center;
+                           padding:6px 8px 6px 12px;">
+                 <span style="pointer-events:none;">${escHtml(cat)}</span>
+                 <button type="button"
+                         data-scope-category="${escAttr(cat)}"
+                         title="Search within this section only"
+                         style="background:#285FBF; border:none; color:#fff; font-size:10px;
+                                border-radius:3px; padding:1px 6px; cursor:pointer;
+                                flex-shrink:0; line-height:1.6;">
+                   <i class="bi bi-search"></i> Search here
+                 </button>
+               </div>`;
+      const g = groups[cat];
+      g.order.forEach(sub => {
+        if (sub) {
+          html += `<div class="py-1 px-3"
+                        style="font-size:10px; background:#f0f4fa; color:#555;
+                               font-weight:600; border-left:3px solid #a8bde0;
+                               pointer-events:none; cursor:default;">
+                     \u00a0\u00a0${escHtml(sub)}
+                   </div>`;
+        }
+        html += buildClauseListHtml(g.subs[sub]);
+      });
+    });
+    html += '</div>';
+    resultsEl.innerHTML = html;
+
+    status.style.color = '#285FBF';
+    status.textContent = `\u{1F4D6} ${results.length} clauses \u2014 click \u201cSearch here\u201d on any section, or type to search all`;
+  }
+
+  // ── Scoped search ─────────────────────────────────────────────────────
+  window.refScopeToCategory = function(cat) {
+    refScopeCategory = cat;
+    refBrowseMode = false;
+    const browseBtn = document.getElementById('refBrowseAllBtn');
+    if (browseBtn) browseBtn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+
+    // Show scope pill in status bar
+    const status = document.getElementById('refLibStatus');
+    status.style.color = '';
+    status.innerHTML =
+      `<span style="background:#dce6f8; color:#1a4a9e; border-radius:10px;
+                    padding:1px 8px; font-size:10px; font-weight:600;
+                    display:inline-flex; align-items:center; gap:4px;">
+         <i class="bi bi-funnel-fill"></i> ${escHtml(cat)}
+         <button type="button" onclick="refClearScope()"
+                 style="background:none; border:none; color:#1a4a9e; font-size:11px;
+                        cursor:pointer; padding:0; line-height:1;" title="Search all sections">
+           &times;
+         </button>
+       </span>`;
+
+    // Focus the search box — user types their query next
+    const input = document.getElementById('refLibSearch');
+    const q = input ? input.value.trim() : '';
+    if (input) input.focus();
+
+    // If there is already a query, re-run it scoped immediately
+    if (q.length >= 2) {
+      doRefSearch(q);
+    } else {
+      // Show all clauses in that category as a starting point
+      const resultsEl = document.getElementById('refLibResults');
+      resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Loading section\u2026</div>';
+      fetch(`/references/api/clauses/?category=${encodeURIComponent(cat)}`)
+        .then(r => r.json())
+        .then(data => {
+          storeInMap(data.results);
+          let html = '<div class="list-group list-group-flush">';
+          html += buildClauseListHtml(data.results);
+          html += '</div>';
+          resultsEl.innerHTML = html || '<div class="text-muted small p-2">No clauses in this section.</div>';
+        })
+        .catch(() => {
+          resultsEl.innerHTML = '<div class="text-danger small p-2">Could not load section.</div>';
+        });
+    }
+  };
+
+  window.refClearScope = function() {
+    refScopeCategory = null;
+    const status = document.getElementById('refLibStatus');
+    status.style.color = '';
+    status.textContent = 'Click a clause to preview, then insert into notes.';
+    const q = (document.getElementById('refLibSearch') || {}).value || '';
+    if (q.trim().length >= 2) {
+      doRefSearch(q.trim()); // re-run without scope
+    } else {
+      refShowDefaultContent();
+    }
+  };
+
+  // ── Search ────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('refLibSearch');
     if (!searchInput) return;
@@ -5154,21 +5461,60 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('input', function() {
       clearTimeout(refSearchTimer);
       const q = this.value.trim();
+      const clearBtn = document.getElementById('refSearchClearBtn');
+      if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+      // Reset any coloured status left by browse/search modes
+      const status = document.getElementById('refLibStatus');
+      if (status) status.style.color = '';
+
+      // Exit browse mode whenever user starts typing
+      if (refBrowseMode) {
+        refBrowseMode = false;
+        const btn = document.getElementById('refBrowseAllBtn');
+        if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+      }
+      // Keep refScopeCategory — typing while scoped keeps the scope
+
       if (q.length < 2) {
-        document.getElementById('refLibResults').innerHTML =
-          '<div class="text-muted small p-2">Start typing to search the reference library.</div>';
-        document.getElementById('refLibStatus').textContent = 'Click a clause to insert it into notes.';
+        refScopeCategory = null;
+        refShowDefaultContent();
+        if (status) { status.style.color = ''; status.textContent = 'Click a clause to insert it into notes.'; }
         return;
       }
       refSearchTimer = setTimeout(() => doRefSearch(q), 250);
     });
   });
 
+  window.refClearSearch = function() {
+    const input = document.getElementById('refLibSearch');
+    if (input) { input.value = ''; input.focus(); }
+    const clearBtn = document.getElementById('refSearchClearBtn');
+    if (clearBtn) clearBtn.style.display = 'none';
+    refScopeCategory = null;
+    closePreviewPane();
+    refShowDefaultContent();
+    document.getElementById('refLibStatus').textContent = 'Click a clause to insert it into notes.';
+  };
+
+  // Called by search chips to re-run a past query
+  window.refRunSearch = function(q) {
+    const input = document.getElementById('refLibSearch');
+    if (input) { input.value = q; input.focus(); }
+    const clearBtn = document.getElementById('refSearchClearBtn');
+    if (clearBtn) clearBtn.style.display = 'block';
+    doRefSearch(q);
+  };
+
   function doRefSearch(q) {
+    addRecentSearch(q);
     const resultsEl = document.getElementById('refLibResults');
     resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Searching…</div>';
 
-    fetch(`/references/api/search/?q=${encodeURIComponent(q)}`)
+    let url = `/references/api/search/?q=${encodeURIComponent(q)}`;
+    if (refScopeCategory) url += `&category=${encodeURIComponent(refScopeCategory)}`;
+
+    fetch(url)
       .then(r => r.json())
       .then(data => renderRefResults(data.results))
       .catch(() => {
@@ -5176,79 +5522,117 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  function renderRefResults(results) {
+  // ── Render results ────────────────────────────────────────────────────
+  function buildClauseListHtml(results) {
+    // Store full clause objects so click handlers can retrieve them by ID
+    // (avoids embedding HTML bodies in HTML attributes, which the HTML parser corrupts)
+    storeInMap(results);
+
+    let html = '';
+    results.forEach(r => {
+      const breadcrumb = r.subcategory
+        ? `${escHtml(r.category)} › ${escHtml(r.subcategory)}`
+        : escHtml(r.category);
+      const featuredBadge = r.is_featured
+        ? '<i class="bi bi-star-fill text-warning" style="font-size:10px; margin-right:3px;" title="Common Note"></i>'
+        : '';
+      // Use <span style="display:block"> NOT <div> — browsers strip block elements out of <button>,
+      // making the button zero-size and unclickable.
+      html += `<button type="button" class="list-group-item list-group-item-action py-2 px-3"
+                 style="font-size:12px; text-align:left; border-bottom:1px solid #f0f0f0; line-height:1.3;"
+                 data-clause-id="${r.id}">
+                 <span style="display:block;">${featuredBadge}${escHtml(r.title)}</span>
+                 <span style="display:block; font-size:10px; color:#888; margin-top:2px;">${breadcrumb}</span>
+               </button>`;
+    });
+    return html;
+  }
+
+  function renderRefResults(results, sectionLabel) {
     const el = document.getElementById('refLibResults');
-    if (!results.length) {
+    if (!results || !results.length) {
       el.innerHTML = '<div class="text-muted small p-2">No clauses found.</div>';
       return;
     }
 
-    let lastCat = null;
     let html = '<div class="list-group list-group-flush">';
-    results.forEach(r => {
-      const cat = r.subcategory ? `${r.category} › ${r.subcategory}` : r.category;
-      if (cat !== lastCat) {
-        html += `<div class="list-group-item list-group-item-secondary py-1 fw-semibold" style="font-size:11px;">${escHtml(cat)}</div>`;
-        lastCat = cat;
-      }
-      html += `<button type="button" class="list-group-item list-group-item-action py-1 px-3"
-                 style="font-size:12px;"
-                 data-clause='${JSON.stringify(r).replace(/'/g, "&#39;")}'>
-                 ${escHtml(r.title)}
-               </button>`;
-    });
+    html += buildClauseListHtml(results);
     html += '</div>';
     el.innerHTML = html;
-
-    // Single-click = expand drill-down preview
-    el.querySelectorAll('[data-clause]').forEach(btn => {
-      btn.addEventListener('click', function() {
-        const clause = JSON.parse(this.dataset.clause);
-        openClausePreview(clause, this);
-      });
-    });
+    // no attachClauseClickHandlers needed — delegation handles it
   }
 
-  // ── Inline drill-down preview ─────────────────────────────────────────
-  let activePreviewRow = null;
+  function attachClauseClickHandlers() {
+    // No-op: replaced by event delegation on the panel.
+    // Kept so any remaining call sites don't throw.
+  }
+
+  // ── Preview pane (bottom of panel) ───────────────────────────────────
+  let previewClause = null;
+  let previewTrigger = null;
 
   function openClausePreview(clause, triggerBtn) {
-    // Remove any existing preview
-    if (activePreviewRow) { activePreviewRow.remove(); activePreviewRow = null; }
-
-    // Deselect all buttons
-    document.querySelectorAll('#refLibResults [data-clause]').forEach(b => b.classList.remove('list-group-item-primary'));
+    // Highlight selected row
+    document.querySelectorAll('[data-clause-id]').forEach(b => b.classList.remove('list-group-item-primary', 'active'));
     triggerBtn.classList.add('list-group-item-primary');
+    triggerBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-    // Build preview row
-    const row = document.createElement('div');
-    row.className = 'list-group-item px-3 py-2';
-    row.style.cssText = 'background:#f8f9fa; border-left: 3px solid #285FBF; font-size:12px;';
-    const bodyHtml = escHtml(clause.body).replace(/\n/g, '<br>');
-    row.innerHTML = `
-      <div style="color:#444; line-height:1.55; max-height:220px; overflow-y:auto; margin-bottom:8px;">${bodyHtml}</div>
-      <div style="display:flex; gap:6px;">
-        <button type="button" class="btn btn-sm btn-primary" id="refLibInsertBtn">
-          <i class="bi bi-plus-circle"></i> Insert into Notes
-        </button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="refLibCancelBtn">Cancel</button>
-      </div>`;
+    // If the cached entry is missing a body (stale localStorage), fetch fresh from server
+    if (!clause.body) {
+      const pane = document.getElementById('refPreviewPane');
+      const body = document.getElementById('refPreviewBody');
+      if (pane && body) {
+        body.innerHTML = '<em class="text-muted"><i class="bi bi-hourglass-split"></i> Loading…</em>';
+        pane.style.display = 'block';
+      }
+      fetch(`/references/api/clause/${clause.id}/`)
+        .then(r => r.json())
+        .then(fresh => {
+          // Update the cache so subsequent clicks are instant
+          refClauseMap[String(fresh.id)] = fresh;
+          openClausePreview(fresh, triggerBtn);
+        })
+        .catch(() => {
+          if (body) body.innerHTML = '<em class="text-danger">Could not load clause. Please try again.</em>';
+        });
+      return;
+    }
 
-    row.querySelector('#refLibInsertBtn').addEventListener('click', function(e) {
-      e.stopPropagation();
-      insertClause(clause, triggerBtn);
-      row.remove(); activePreviewRow = null;
-      triggerBtn.classList.remove('list-group-item-primary');
+    previewClause = clause;
+    previewTrigger = triggerBtn;
+
+    // Populate and show the fixed preview pane at the bottom of the panel
+    const pane = document.getElementById('refPreviewPane');
+    const body = document.getElementById('refPreviewBody');
+    if (!pane || !body) return;
+
+    // clause.body is HTML from our own DB — render directly
+    body.innerHTML = clause.body || '<em class="text-muted">No content</em>';
+    pane.style.display = 'block';
+
+    // Wire up Insert / Cancel
+    const insertBtn = document.getElementById('refPreviewInsertBtn');
+    const cancelBtn = document.getElementById('refPreviewCancelBtn');
+
+    // Replace buttons to clear any stale listeners
+    const newInsert = insertBtn.cloneNode(true);
+    const newCancel = cancelBtn.cloneNode(true);
+    insertBtn.replaceWith(newInsert);
+    cancelBtn.replaceWith(newCancel);
+
+    newInsert.addEventListener('click', function() {
+      insertClause(previewClause, previewTrigger);
+      closePreviewPane();
     });
-    row.querySelector('#refLibCancelBtn').addEventListener('click', function(e) {
-      e.stopPropagation();
-      row.remove(); activePreviewRow = null;
-      triggerBtn.classList.remove('list-group-item-primary');
-    });
+    newCancel.addEventListener('click', closePreviewPane);
+  }
 
-    triggerBtn.insertAdjacentElement('afterend', row);
-    activePreviewRow = row;
-    row.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  function closePreviewPane() {
+    const pane = document.getElementById('refPreviewPane');
+    if (pane) pane.style.display = 'none';
+    document.querySelectorAll('[data-clause-id]').forEach(b => b.classList.remove('list-group-item-primary', 'active'));
+    previewClause = null;
+    previewTrigger = null;
   }
 
   function insertClause(clause, btnEl) {
@@ -5259,8 +5643,12 @@ document.addEventListener('DOMContentLoaded', function() {
       status.textContent = '⚠ Notes editor not ready — please wait a moment and try again.';
       return;
     }
-    const html = '<p>' + clause.body.replace(/\n/g, '<br>') + '</p>';
-    editor.execCommand('mceInsertContent', false, html);
+
+    // clause.body is now HTML — insert directly
+    editor.execCommand('mceInsertContent', false, clause.body);
+
+    // Track in recently used
+    addToRecent(clause);
 
     // Open the notes window so the user can see what was inserted
     const notesWindow = document.getElementById('floatingNotesWindow');
@@ -5268,9 +5656,7 @@ document.addEventListener('DOMContentLoaded', function() {
       openFloatingNotes();
     }
 
-    // Visual feedback
-    document.querySelectorAll('#refLibResults [data-clause]').forEach(b => b.classList.remove('active'));
-    btnEl.classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
     status.style.color = '#198754';
     status.textContent = `✓ Inserted: ${clause.title}`;
     setTimeout(() => {
@@ -5279,10 +5665,65 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 3000);
   }
 
+  // ── Recently Used (localStorage) ──────────────────────────────────────
+  window.clearRecent = function() {
+    try { localStorage.removeItem(RECENT_KEY); } catch(e) {}
+    refShowDefaultContent();
+  };
+
+  function addRecentSearch(q) {
+    if (!q || q.length < 2) return;
+    let searches = getRecentSearches();
+    searches = searches.filter(s => s.toLowerCase() !== q.toLowerCase());
+    searches.unshift(q);
+    searches = searches.slice(0, RECENT_SEARCHES_MAX);
+    try { localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches)); } catch(e) {}
+  }
+
+  function getRecentSearches() {
+    try { return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || '[]'); }
+    catch(e) { return []; }
+  }
+
+  window.clearRecentSearches = function() {
+    try { localStorage.removeItem(RECENT_SEARCHES_KEY); } catch(e) {}
+    refShowDefaultContent();
+  };
+
+  function addToRecent(clause) {
+    let recent = getRecent();
+    // Remove duplicate and stale (no body) entries — self-heals localStorage over time
+    recent = recent.filter(r => r.id !== clause.id && r.body);
+    recent.unshift({
+      id: clause.id,
+      title: clause.title,
+      category: clause.category,
+      subcategory: clause.subcategory,
+      body: clause.body,
+      is_featured: clause.is_featured || false,
+    });
+    recent = recent.slice(0, RECENT_MAX);
+    try { localStorage.setItem(RECENT_KEY, JSON.stringify(recent)); } catch(e) {}
+  }
+
+  function getRecent() {
+    try {
+      const entries = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      // Keep all valid entries — stale ones without body get lazily loaded via fallback fetch
+      return entries.filter(r => r && r.id);
+    }
+    catch(e) { return []; }
+  }
+
+  // ── Utilities ─────────────────────────────────────────────────────────
   function escHtml(str) {
     const d = document.createElement('div');
-    d.textContent = str;
+    d.textContent = str || '';
     return d.innerHTML;
+  }
+
+  function escAttr(str) {
+    return (str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 })();
 </script>
