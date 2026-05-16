@@ -5199,84 +5199,107 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  // ── Default panel content (recent searches + recently inserted + common notes) ─
+  // ── Default panel content (recent searches + recently inserted + browse + common notes) ─
   function refShowDefaultContent() {
     const resultsEl = document.getElementById('refLibResults');
     const recent = getRecent();
     const recentSearches = getRecentSearches();
     storeInMap(recent);
 
+    // ── Render static sections immediately (no fetch needed) ─────────
+    function buildStaticHtml(featuredHtml) {
+      let html = '<div class="list-group list-group-flush">';
+
+      // ── Browse All call-to-action ────────────────────────────────
+      html += `<div style="padding:8px 10px 6px; border-bottom:1px solid #e9ecef;">
+                 <button type="button" onclick="refToggleBrowse()"
+                         style="width:100%; padding:6px 10px; border:1px solid #285FBF;
+                                border-radius:4px; background:#f0f4ff; color:#285FBF;
+                                font-size:12px; cursor:pointer; text-align:left;">
+                   <i class="bi bi-book"></i> Browse all 1,400+ clauses by section
+                 </button>
+               </div>`;
+
+      // ── Recent Searches ──────────────────────────────────────────
+      html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
+                           background:#e9ecef; color:#495057; display:flex;
+                           justify-content:space-between; align-items:center;
+                           pointer-events:none;">
+                 <span><i class="bi bi-search"></i> Recent Searches</span>
+                 ${recentSearches.length > 0
+                   ? `<button type="button" onclick="clearRecentSearches()" title="Clear search history"
+                             style="background:none; border:none; font-size:10px; color:#666;
+                                    cursor:pointer; padding:0; pointer-events:all;">
+                         <i class="bi bi-trash3"></i> Clear
+                       </button>`
+                   : ''}
+               </div>`;
+      if (recentSearches.length > 0) {
+        html += `<div style="padding:6px 10px 8px; display:flex; flex-wrap:wrap; gap:5px;">`;
+        recentSearches.forEach(q => {
+          html += `<button type="button" onclick="refRunSearch(${JSON.stringify(q)})"
+                           style="font-size:11px; padding:2px 8px; border-radius:12px;
+                                  border:1px solid #adb5bd; background:#fff; color:#285FBF;
+                                  cursor:pointer; white-space:nowrap;">${escHtml(q)}</button>`;
+        });
+        html += `</div>`;
+      } else {
+        html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
+                   <em>No searches yet — type above to search.</em>
+                 </div>`;
+      }
+
+      // ── Recently Inserted ────────────────────────────────────────
+      html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
+                           background:#e9ecef; color:#495057; display:flex;
+                           justify-content:space-between; align-items:center;
+                           pointer-events:none;">
+                 <span><i class="bi bi-clock-history"></i> Recently Inserted</span>
+                 ${recent.length > 0
+                   ? `<button type="button" onclick="clearRecent()" title="Clear insert history"
+                             style="background:none; border:none; font-size:10px; color:#666;
+                                    cursor:pointer; padding:0; pointer-events:all;">
+                         <i class="bi bi-trash3"></i> Clear
+                       </button>`
+                   : ''}
+               </div>`;
+      if (recent.length > 0) {
+        html += buildClauseListHtml(recent);
+      } else {
+        html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
+                   <em>No inserts yet. Click a clause and press "Insert into Notes".</em>
+                 </div>`;
+      }
+
+      // ── Common Notes (injected async) ────────────────────────────
+      if (featuredHtml) {
+        html += featuredHtml;
+      } else {
+        html += `<div id="refCommonNotesSlot"></div>`;
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    // Render immediately with empty featured slot
+    resultsEl.innerHTML = buildStaticHtml(null);
+
+    // Then load Common Notes async and patch into the slot
     fetch('/references/api/featured/')
       .then(r => r.json())
       .then(data => {
-        let html = '<div class="list-group list-group-flush">';
-
-        // ── Recent Searches ──────────────────────────────────────────
-        html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
-                             background:#e9ecef; color:#495057; display:flex;
-                             justify-content:space-between; align-items:center;
-                             pointer-events:none;">
-                   <span><i class="bi bi-search"></i> Recent Searches</span>
-                   ${recentSearches.length > 0
-                     ? `<button type="button" onclick="clearRecentSearches()" title="Clear search history"
-                               style="background:none; border:none; font-size:10px; color:#666;
-                                      cursor:pointer; padding:0; pointer-events:all;">
-                           <i class="bi bi-trash3"></i> Clear
-                         </button>`
-                     : ''}
-                 </div>`;
-        if (recentSearches.length > 0) {
-          html += `<div style="padding:6px 10px 8px; display:flex; flex-wrap:wrap; gap:5px;">`;
-          recentSearches.forEach(q => {
-            html += `<button type="button" onclick="refRunSearch(${JSON.stringify(q)})"
-                             style="font-size:11px; padding:2px 8px; border-radius:12px;
-                                    border:1px solid #adb5bd; background:#fff; color:#285FBF;
-                                    cursor:pointer; white-space:nowrap;">${escHtml(q)}</button>`;
-          });
-          html += `</div>`;
-        } else {
-          html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
-                     <em>No searches yet — type above to search.</em>
-                   </div>`;
-        }
-
-        // ── Recently Inserted ────────────────────────────────────────
-        html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
-                             background:#e9ecef; color:#495057; display:flex;
-                             justify-content:space-between; align-items:center;
-                             pointer-events:none;">
-                   <span><i class="bi bi-clock-history"></i> Recently Inserted</span>
-                   ${recent.length > 0
-                     ? `<button type="button" onclick="clearRecent()" title="Clear insert history"
-                               style="background:none; border:none; font-size:10px; color:#666;
-                                      cursor:pointer; padding:0; pointer-events:all;">
-                           <i class="bi bi-trash3"></i> Clear
-                         </button>`
-                     : ''}
-                 </div>`;
-        if (recent.length > 0) {
-          html += buildClauseListHtml(recent);
-        } else {
-          html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
-                     <em>No inserts yet. Click a clause and press "Insert into Notes".</em>
-                   </div>`;
-        }
-
-        // ── Common Notes ─────────────────────────────────────────────
-        if (data.results && data.results.length > 0) {
-          html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
-                              background:#fff3cd; color:#664d03; pointer-events:none;">
-                     <i class="bi bi-star-fill"></i> Common Notes
-                   </div>`;
-          html += buildClauseListHtml(data.results);
-        }
-
-        html += '</div>';
-        resultsEl.innerHTML = html;
+        if (!data.results || !data.results.length) return;
+        const slot = document.getElementById('refCommonNotesSlot');
+        if (!slot) return;
+        let featuredHtml = `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
+                                        background:#fff3cd; color:#664d03; pointer-events:none;">
+                               <i class="bi bi-star-fill"></i> Common Notes
+                             </div>`;
+        featuredHtml += buildClauseListHtml(data.results);
+        slot.outerHTML = featuredHtml;
       })
-      .catch(() => {
-        resultsEl.innerHTML = '<div class="text-muted small p-2">Start typing to search the reference library.</div>';
-      });
+      .catch(() => { /* Common Notes unavailable — static content already shown */ });
   }
 
   // ── Browse full document ──────────────────────────────────────────────
