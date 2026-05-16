@@ -10,6 +10,7 @@ from django.urls import reverse
 from django.core.paginator import Paginator
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.cache import never_cache
 from accounts.models import User
 from core.models import SystemSettings
 from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage, UnreadMessage
@@ -1518,6 +1519,7 @@ def accept_case(request, pk):
     }, status=405)
 
 
+@never_cache
 @login_required
 def case_detail(request, pk):
     """Case detail view"""
