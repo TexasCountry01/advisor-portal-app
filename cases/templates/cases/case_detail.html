@@ -5113,9 +5113,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </button>
       </div>
     </div>
-    <div id="refLibResults" style="flex: 1; overflow-y: auto; padding: 4px 0;">
-      <div class="text-muted small p-2">Start typing to search the reference library.</div>
-    </div>
+    <div id="refLibResults" style="flex: 1; overflow-y: auto; padding: 4px 0;"></div>
     <!-- Preview pane — body scrolls independently; buttons always pinned at bottom -->
     <div id="refPreviewPane" style="display:none; flex-shrink:0; border-top:2px solid #285FBF;
                                     background:#f8f9fa; max-height:50%;
@@ -5227,15 +5225,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const panel = document.getElementById('refLibraryPanel');
     if (!panel) return;
     const isOpen = panel.style.display === 'flex';
-    panel.style.display = isOpen ? 'none' : 'flex';
-    shiftFloatingElements(!isOpen);
     if (!isOpen) {
-      // On open, always start in recent mode
+      // Reset state and populate content BEFORE making visible
       refBrowseMode = false;
       const btn = document.getElementById('refBrowseAllBtn');
       if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse all';
-      // On open, show default content in search pane
       refShowDefaultContent();
+    }
+    panel.style.display = isOpen ? 'none' : 'flex';
+    shiftFloatingElements(!isOpen);
+    if (!isOpen) {
       setTimeout(() => document.getElementById('refLibSearch').focus(), 80);
     }
   };
