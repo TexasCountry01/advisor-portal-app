@@ -5651,7 +5651,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const body = document.getElementById('refPreviewBody');
       if (pane && body) {
         body.innerHTML = '<em class="text-muted"><i class="bi bi-hourglass-split"></i> Loading…</em>';
-        pane.style.display = 'block';
+        pane.style.display = 'flex';
       }
       fetch(`/references/api/clause/${clause.id}/`)
         .then(r => r.json())
@@ -5676,7 +5676,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // clause.body is HTML from our own DB — render directly
     body.innerHTML = clause.body || '<em class="text-muted">No content</em>';
-    pane.style.display = 'block';
+    pane.style.display = 'flex';
 
     // Wire up Insert / Cancel
     const insertBtn = document.getElementById('refPreviewInsertBtn');
