@@ -5392,6 +5392,10 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   function renderFullDoc(results) {
+    // Guard: user may have started typing while the browse fetch was in-flight;
+    // in that case refBrowseMode was reset to false — don't overwrite search results.
+    if (!refBrowseMode) return;
+
     const resultsEl = document.getElementById('refLibResults');
     const status    = document.getElementById('refLibStatus');
 
