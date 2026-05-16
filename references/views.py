@@ -187,6 +187,41 @@ def categories_list(request):
 
 
 @login_required
+@require_GET
+def user_searches_get(request):
+    """GET /references/api/user-searches/ — return the current user's saved searches."""
+    searches = request.user.ref_saved_searches or []
+    return JsonResponse({'searches': searches[:10]})
+
+
+@login_required
+@require_POST
+def user_searches_save(request):
+    """POST /references/api/user-searches/save/ — prepend a search query and save."""
+    try:
+        data = json.loads(request.body)
+        q = (data.get('q') or '').strip()
+    except (json.JSONDecodeError, AttributeError):
+        q = ''
+    if not q or len(q) < 2:
+        return JsonResponse({'ok': False, 'error': 'query too short'})
+    searches = list(request.user.ref_saved_searches or [])
+    searches = [s for s in searches if s.lower() != q.lower()]
+    searches.insert(0, q)
+    searches = searches[:10]
+    type(request.user).objects.filter(pk=request.user.pk).update(ref_saved_searches=searches)
+    return JsonResponse({'ok': True})
+
+
+@login_required
+@require_POST
+def user_searches_clear(request):
+    """POST /references/api/user-searches/clear/ — wipe the user's saved searches."""
+    type(request.user).objects.filter(pk=request.user.pk).update(ref_saved_searches=[])
+    return JsonResponse({'ok': True})
+
+
+@login_required
 def reimport_view(request):
     """
     GET  /references/reimport/  — show upload form (admin only)

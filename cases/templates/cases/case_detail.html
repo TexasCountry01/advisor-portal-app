@@ -5149,12 +5149,47 @@ document.addEventListener('DOMContentLoaded', function() {
   const REF_PANEL_WIDTH = 390;
   const RECENT_KEY = 'refLib_recent';
   const RECENT_MAX = 25;
-  const RECENT_SEARCHES_KEY = 'refLib_searches';
-  const RECENT_SEARCHES_MAX = 10;
+
+  // ── User-specific recent searches (server-backed) ─────────────────────
+  // Preloaded from /references/api/user-searches/ at DOMContentLoaded.
+  // Falls back to [] if the fetch fails (no localStorage dependency).
+  let refCachedSearches = [];
+
+  function getRecentSearches() { return refCachedSearches; }
+
+  function addRecentSearch(q) {
+    if (!q || q.length < 2) return;
+    // Update local cache immediately so it shows on next panel open without a round-trip
+    refCachedSearches = refCachedSearches.filter(s => s.toLowerCase() !== q.toLowerCase());
+    refCachedSearches.unshift(q);
+    refCachedSearches = refCachedSearches.slice(0, 10);
+    // Persist to server (fire-and-forget)
+    fetch('/references/api/user-searches/save/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+      body: JSON.stringify({ q }),
+    }).catch(() => {});
+  }
+
+  window.clearRecentSearches = function() {
+    refCachedSearches = [];
+    fetch('/references/api/user-searches/clear/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+      body: '{}',
+    }).catch(() => {});
+    refShowDefaultContent();
+  };
 
   // ── Single delegated click handler for all clause buttons ─────────────
   // Attached once at init; works regardless of when/how innerHTML is updated.
   document.addEventListener('DOMContentLoaded', function() {
+    // Pre-load user's saved searches from server
+    fetch('/references/api/user-searches/')
+      .then(r => r.json())
+      .then(data => { refCachedSearches = data.searches || []; })
+      .catch(() => {});
+
     const panel = document.getElementById('refLibraryPanel');
     if (!panel) return;
     panel.addEventListener('click', function(e) {
@@ -5162,6 +5197,12 @@ document.addEventListener('DOMContentLoaded', function() {
       const scopeBtn = e.target.closest('[data-scope-category]');
       if (scopeBtn) {
         refScopeToCategory(scopeBtn.dataset.scopeCategory);
+        return;
+      }
+      // Recent search chip
+      const chip = e.target.closest('[data-recent-query]');
+      if (chip) {
+        refRunSearch(chip.dataset.recentQuery);
         return;
       }
       // Clause row
@@ -5237,7 +5278,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (recentSearches.length > 0) {
         html += `<div style="padding:6px 10px 8px; display:flex; flex-wrap:wrap; gap:5px;">`;
         recentSearches.forEach(q => {
-          html += `<button type="button" onclick="refRunSearch(${JSON.stringify(q)})"
+          html += `<button type="button" data-recent-query="${escAttr(q)}"
                            style="font-size:11px; padding:2px 8px; border-radius:12px;
                                   border:1px solid #adb5bd; background:#fff; color:#285FBF;
                                   cursor:pointer; white-space:nowrap;">${escHtml(q)}</button>`;
@@ -5691,25 +5732,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // ── Recently Used (localStorage) ──────────────────────────────────────
   window.clearRecent = function() {
     try { localStorage.removeItem(RECENT_KEY); } catch(e) {}
-    refShowDefaultContent();
-  };
-
-  function addRecentSearch(q) {
-    if (!q || q.length < 2) return;
-    let searches = getRecentSearches();
-    searches = searches.filter(s => s.toLowerCase() !== q.toLowerCase());
-    searches.unshift(q);
-    searches = searches.slice(0, RECENT_SEARCHES_MAX);
-    try { localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(searches)); } catch(e) {}
-  }
-
-  function getRecentSearches() {
-    try { return JSON.parse(localStorage.getItem(RECENT_SEARCHES_KEY) || '[]'); }
-    catch(e) { return []; }
-  }
-
-  window.clearRecentSearches = function() {
-    try { localStorage.removeItem(RECENT_SEARCHES_KEY); } catch(e) {}
     refShowDefaultContent();
   };
 
