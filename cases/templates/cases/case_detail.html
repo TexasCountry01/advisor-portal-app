@@ -5103,14 +5103,15 @@ document.addEventListener('DOMContentLoaded', function() {
                placeholder="Search clauses (e.g. VERA, TSP, FEHB…)" autocomplete="off" style="flex:1;">
         <button type="button" id="refSearchClearBtn" onclick="refClearSearch()"
                 style="display:none; background:none; border:none; font-size:16px; color:#999; cursor:pointer; padding:0 2px;" title="Clear search">&times;</button>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-        <div id="refLibStatus" class="text-muted" style="font-size:11px;">Click a clause to preview, then insert into notes.</div>
         <button type="button" id="refBrowseAllBtn" onclick="refToggleBrowse()"
-                style="background:none; border:none; color:#285FBF; font-size:11px; cursor:pointer; white-space:nowrap; padding:0 0 0 8px; flex-shrink:0;"
-                title="Scroll through the full reference document">
-          <i class="bi bi-book"></i> Browse all
+                style="flex-shrink:0; background:none; border:1px solid #285FBF; border-radius:4px;
+                       color:#285FBF; font-size:11px; cursor:pointer; white-space:nowrap; padding:3px 7px;"
+                title="Browse all clauses by section">
+          <i class="bi bi-book"></i> Browse
         </button>
+      </div>
+      <div style="margin-top:4px;">
+        <div id="refLibStatus" class="text-muted" style="font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Click a clause to preview, then insert into notes.</div>
       </div>
     </div>
     <div id="refLibResults" style="flex: 1; overflow-y: auto; padding: 4px 0;"></div>
@@ -5229,7 +5230,7 @@ document.addEventListener('DOMContentLoaded', function() {
       // Reset state and populate content BEFORE making visible
       refBrowseMode = false;
       const btn = document.getElementById('refBrowseAllBtn');
-      if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+      if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse';
       refShowDefaultContent();
     }
     panel.style.display = isOpen ? 'none' : 'flex';
@@ -5350,7 +5351,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (refBrowseMode) {
       refBrowseMode = false;
       const btn = document.getElementById('refBrowseAllBtn');
-      if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+      if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse';
       const input = document.getElementById('refLibSearch');
       if (input) input.value = '';
       const clearBtn = document.getElementById('refSearchClearBtn');
@@ -5459,7 +5460,7 @@ document.addEventListener('DOMContentLoaded', function() {
     refScopeCategory = cat;
     refBrowseMode = false;
     const browseBtn = document.getElementById('refBrowseAllBtn');
-    if (browseBtn) browseBtn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+    if (browseBtn) browseBtn.innerHTML = '<i class="bi bi-book"></i> Browse';
 
     // Show scope pill in status bar
     const status = document.getElementById('refLibStatus');
@@ -5535,7 +5536,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (refBrowseMode) {
         refBrowseMode = false;
         const btn = document.getElementById('refBrowseAllBtn');
-        if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse all';
+        if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse';
       }
       // Keep refScopeCategory — typing while scoped keeps the scope
 
