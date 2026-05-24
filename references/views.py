@@ -1,6 +1,7 @@
 import io
 import json
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 from django.http import JsonResponse
@@ -209,7 +210,7 @@ def user_searches_save(request):
     searches = [s for s in searches if s.lower() != q.lower()]
     searches.insert(0, q)
     searches = searches[:10]
-    type(request.user).objects.filter(pk=request.user.pk).update(ref_saved_searches=searches)
+    get_user_model().objects.filter(pk=request.user.pk).update(ref_saved_searches=searches)
     return JsonResponse({'ok': True})
 
 
@@ -217,7 +218,7 @@ def user_searches_save(request):
 @require_POST
 def user_searches_clear(request):
     """POST /references/api/user-searches/clear/ — wipe the user's saved searches."""
-    type(request.user).objects.filter(pk=request.user.pk).update(ref_saved_searches=[])
+    get_user_model().objects.filter(pk=request.user.pk).update(ref_saved_searches=[])
     return JsonResponse({'ok': True})
 
 
