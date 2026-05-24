@@ -9,8 +9,8 @@ Usage:
 Document heading hierarchy used for parsing:
     Title     -> top-level category label (e.g. "VERA", "OPERATIONAL ITEMS")
     Heading 1 -> major section (falls under current category)
-    Heading 2 -> sub-section  (falls under current category + section)
-    Heading 3 -> sub-sub-section (treated same as Heading 2 for sub-category)
+    Heading 2 -> sub-section  (falls under current category; tracked separately)
+    Heading 3 -> sub-sub-section (subcategory becomes "H2 > H3" when both present)
     Heading 4 -> clause title  (the named verbiage snippet)
     Normal    -> clause body text (accumulated until next heading 4+)
 
@@ -266,6 +266,7 @@ def _parse_document(doc):
 
     current_category = 'GENERAL'
     current_subcategory = ''
+    current_h2 = ''          # tracks last Heading 2 so Heading 3 can include it
     current_title = None
     body_parts = []
 
@@ -299,6 +300,7 @@ def _parse_document(doc):
             if len(text) <= 120 and text not in ('TITLE', 'Subtitle', '-------------------------', '--------------------------'):
                 current_category = text
                 current_subcategory = ''
+                current_h2 = ''
                 current_title = text  # capture any body text directly under this heading
             elif current_title:
                 para_html = _para_to_html(para, doc)
@@ -309,11 +311,18 @@ def _parse_document(doc):
             flush()
             current_category = text
             current_subcategory = ''
+            current_h2 = ''
             current_title = text  # capture any body text directly under this heading
 
-        elif style in ('Heading 2', 'Heading 3'):
+        elif style == 'Heading 2':
             flush()
+            current_h2 = text
             current_subcategory = text
+            current_title = text  # capture any body text directly under this heading
+
+        elif style == 'Heading 3':
+            flush()
+            current_subcategory = f'{current_h2} > {text}' if current_h2 else text
             current_title = text  # capture any body text directly under this heading
 
         elif style in ('Heading 4', 'Heading 5'):
