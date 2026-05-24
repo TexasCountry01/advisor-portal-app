@@ -247,8 +247,10 @@ def reimport_view(request):
             clauses = _parse_document(doc)
 
             if not clauses:
+                found_styles = sorted({p.style.name for p in doc.paragraphs if p.text.strip()})
                 messages.error(request, 'Import aborted: no clauses were found in the uploaded document. '
-                                        'The file may use unexpected heading styles. Existing clauses were NOT changed.')
+                                        'The file may use unexpected heading styles. Existing clauses were NOT changed. '
+                                        f'Styles found in document: {", ".join(found_styles) or "(none)"}')
             else:
                 # Preserve featured flags by title before wiping
                 featured_titles = set(
