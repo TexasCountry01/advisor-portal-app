@@ -275,9 +275,9 @@ def _parse_document(doc):
             body = _flush_body(body_parts)
             if body.strip():
                 clauses.append({
-                    'category': current_category,
-                    'subcategory': current_subcategory,
-                    'title': current_title,
+                    'category': current_category[:255],
+                    'subcategory': current_subcategory[:255],
+                    'title': current_title[:500],
                     'body': body,
                     'sort_order': sort_order,
                     'is_active': True,
