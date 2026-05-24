@@ -5116,20 +5116,6 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     </div>
     <div id="refLibResults" style="flex: 1; min-height: 0; overflow-y: auto; padding: 4px 0;"></div>
-    <!-- Preview pane — body scrolls independently; buttons always pinned at bottom -->
-    <div id="refPreviewPane" style="display:none; flex-shrink:0; border-top:2px solid #285FBF;
-                                    background:#f8f9fa; max-height:65%;
-                                    flex-direction:column; min-height:90px;">
-      <div id="refPreviewBody" style="flex:1; overflow-y:auto; padding:8px 12px 4px;
-                                      font-size:12px; color:#333; line-height:1.6;"></div>
-      <div style="flex-shrink:0; display:flex; gap:6px; padding:6px 12px 8px;
-                  border-top:1px solid #dee2e6; background:#f8f9fa;">
-        <button type="button" class="btn btn-sm btn-primary" id="refPreviewInsertBtn">
-          <i class="bi bi-plus-circle"></i> Insert into Notes
-        </button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="refPreviewCancelBtn" onclick="closePreviewPane()">Cancel</button>
-      </div>
-    </div>
   </div>
 
 </div>
@@ -5641,28 +5627,32 @@ document.addEventListener('DOMContentLoaded', function() {
   let previewTrigger = null;
 
   function openClausePreview(clause, triggerBtn) {
+    // Close any existing inline preview before opening a new one
+    closePreviewPane();
+
     // Highlight selected row
     document.querySelectorAll('[data-clause-id]').forEach(b => b.classList.remove('list-group-item-primary', 'active'));
     triggerBtn.classList.add('list-group-item-primary');
-    triggerBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
     // If the cached entry is missing a body (stale localStorage), fetch fresh from server
     if (!clause.body) {
-      const pane = document.getElementById('refPreviewPane');
-      const body = document.getElementById('refPreviewBody');
-      if (pane && body) {
-        body.innerHTML = '<em class="text-muted"><i class="bi bi-hourglass-split"></i> Loading…</em>';
-        pane.style.display = 'flex';
-      }
+      const loadingDiv = document.createElement('div');
+      loadingDiv.id = 'refInlinePreview';
+      loadingDiv.style.cssText = 'padding:8px 12px; font-size:12px; color:#666; background:#f8f9fa; border-top:2px solid #285FBF;';
+      loadingDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading…';
+      triggerBtn.insertAdjacentElement('afterend', loadingDiv);
+      triggerBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       fetch(`/references/api/clause/${clause.id}/`)
         .then(r => r.json())
         .then(fresh => {
-          // Update the cache so subsequent clicks are instant
           refClauseMap[String(fresh.id)] = fresh;
+          const existing = document.getElementById('refInlinePreview');
+          if (existing) existing.remove();
           openClausePreview(fresh, triggerBtn);
         })
         .catch(() => {
-          if (body) body.innerHTML = '<em class="text-danger">Could not load clause. Please try again.</em>';
+          const existing = document.getElementById('refInlinePreview');
+          if (existing) existing.innerHTML = '<em class="text-danger">Could not load clause. Please try again.</em>';
         });
       return;
     }
@@ -5670,35 +5660,51 @@ document.addEventListener('DOMContentLoaded', function() {
     previewClause = clause;
     previewTrigger = triggerBtn;
 
-    // Populate and show the fixed preview pane at the bottom of the panel
-    const pane = document.getElementById('refPreviewPane');
-    const body = document.getElementById('refPreviewBody');
-    if (!pane || !body) return;
+    // Build the inline preview element — inserted directly after the clicked row
+    const preview = document.createElement('div');
+    preview.id = 'refInlinePreview';
+    preview.style.cssText = 'border-top:2px solid #285FBF; border-bottom:1px solid #dee2e6; background:#f8f9fa;';
 
-    // clause.body is HTML from our own DB — render directly
-    body.innerHTML = clause.body || '<em class="text-muted">No content</em>';
-    pane.style.display = 'flex';
+    const bodyDiv = document.createElement('div');
+    bodyDiv.style.cssText = 'padding:8px 12px 4px; font-size:12px; color:#333; line-height:1.6;';
+    bodyDiv.innerHTML = clause.body || '<em class="text-muted">No content</em>';
 
-    // Wire up Insert / Cancel
-    const insertBtn = document.getElementById('refPreviewInsertBtn');
-    const cancelBtn = document.getElementById('refPreviewCancelBtn');
+    // Action buttons — sticky so Insert is always reachable even for very long clauses
+    const actionsDiv = document.createElement('div');
+    actionsDiv.style.cssText = 'display:flex; gap:6px; padding:6px 12px 8px; border-top:1px solid #dee2e6; background:#f8f9fa; position:sticky; bottom:0; z-index:1;';
 
-    // Replace buttons to clear any stale listeners
-    const newInsert = insertBtn.cloneNode(true);
-    const newCancel = cancelBtn.cloneNode(true);
-    insertBtn.replaceWith(newInsert);
-    cancelBtn.replaceWith(newCancel);
-
-    newInsert.addEventListener('click', function() {
+    const insertBtn = document.createElement('button');
+    insertBtn.type = 'button';
+    insertBtn.className = 'btn btn-sm btn-primary';
+    insertBtn.id = 'refPreviewInsertBtn';
+    insertBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Insert into Notes';
+    insertBtn.addEventListener('click', function() {
       insertClause(previewClause, previewTrigger);
       closePreviewPane();
     });
-    newCancel.addEventListener('click', closePreviewPane);
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn btn-sm btn-outline-secondary';
+    cancelBtn.id = 'refPreviewCancelBtn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', closePreviewPane);
+
+    actionsDiv.appendChild(insertBtn);
+    actionsDiv.appendChild(cancelBtn);
+    preview.appendChild(bodyDiv);
+    preview.appendChild(actionsDiv);
+
+    // Insert directly after the clicked clause row
+    triggerBtn.insertAdjacentElement('afterend', preview);
+
+    // Scroll so the Insert button is visible without excessive movement
+    actionsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   window.closePreviewPane = function closePreviewPane() {
-    const pane = document.getElementById('refPreviewPane');
-    if (pane) pane.style.display = 'none';
+    const existing = document.getElementById('refInlinePreview');
+    if (existing) existing.remove();
     document.querySelectorAll('[data-clause-id]').forEach(b => b.classList.remove('list-group-item-primary', 'active'));
     previewClause = null;
     previewTrigger = null;

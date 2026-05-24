@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Layout — Option B (Thin Single Row)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+  body { background: #e8eaf0; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+
+  .laptop-frame {
+    width: 1366px;
+    background: #f4f6f9;
+    border: 3px solid #555;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  .laptop-label { background:#555; color:white; font-size:11px; padding:4px 10px; font-family:monospace; }
+  .sim-navbar { background:#1a2a4a; color:white; height:44px; display:flex; align-items:center; padding:0 16px; font-size:14px; font-weight:600; }
+
+  .dashboard-card { background:white; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.1); margin:12px; }
+  .dashboard-card-header { padding:8px 16px; border-bottom:1px solid #e9ecef; font-size:13px; font-weight:600; color:#555; display:flex; justify-content:space-between; }
+
+  /* ===== OPTION B: thin tiles, two-line labels ===== */
+  /* Tech filter and tiles are SEPARATE rows but both thin */
+  .tech-row { padding: 7px 16px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f0f0f0; }
+  .tile-row-single { padding:7px 16px 9px; display:flex; gap:6px; align-items:stretch; justify-content:flex-end; flex-wrap:nowrap; }
+
+  /* Thin tile: fixed narrow width, two-line label */
+  .stat-tile-thin {
+    flex: 0 0 88px; width: 88px;
+    padding: 5px 4px 6px;
+    border-radius: 6px;
+    color: white;
+    text-align: center;
+    cursor: pointer;
+    transition: opacity .15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .stat-tile-thin:hover { opacity: .85; }
+  .stat-tile-thin-val { font-size: 1.45rem; font-weight: 700; line-height: 1.15; }
+  /* Two-line label: each word on its own line */
+  .stat-tile-thin-lbl {
+    font-size: 0.62rem;
+    opacity: .93;
+    line-height: 1.25;
+    margin-top: 2px;
+    /* Allow natural wrapping at space */
+    white-space: normal;
+    max-width: 80px;
+  }
+  .stat-tile-thin.active { box-shadow: 0 0 0 3px white, 0 0 0 5px #0d6efd; }
+
+  /* Urgency separator */
+  .tile-divider { width:1px; background:#dee2e6; align-self:stretch; margin: 0 2px; }
+
+  /* ---- Queue ---- */
+  .queue-section { padding:0 16px 12px; }
+  .queue-header { display:flex; justify-content:space-between; align-items:center; padding:8px 0 6px; }
+  .queue-header h6 { margin:0; font-size:13px; }
+</style>
+</head>
+<body>
+
+<h5 class="mb-1" style="color:#333;">Option B — Thin Single Row (Two-Line Labels)</h5>
+<p class="text-muted mb-3" style="font-size:13px;">
+  All 10 tiles in one row. Tiles are <strong>88px wide</strong> with two-line labels. Tech filter stays as its own thin row above.
+  Total = 2 thin rows before the queue. Frame = 1366px wide (15" laptop).
+</p>
+
+<div class="laptop-frame">
+  <div class="laptop-label">1366 × 768 viewport — 15" laptop @ 100% zoom</div>
+  <div class="sim-navbar">ProFeds Advisor Portal &nbsp;&nbsp;|&nbsp;&nbsp; Benefits Technician Dashboard</div>
+
+  <div class="dashboard-card">
+    <div class="dashboard-card-header">
+      Filters &amp; Quick Stats
+      <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:11px;">▲ Hide</button>
+    </div>
+
+    <!-- ROW 1: View toggle + Tech filter (thin) -->
+    <div class="tech-row">
+      <small class="text-muted">View:</small>
+      <div class="btn-group btn-group-sm me-3">
+        <a href="#" class="btn btn-primary">All Cases</a>
+        <a href="#" class="btn btn-outline-primary">My Cases</a>
+      </div>
+      <small class="text-muted">Pending:</small>
+      <div class="btn-group btn-group-sm">
+        <a href="#" class="btn btn-primary">All Techs</a>
+        <a href="#" class="btn btn-outline-primary">Ileana</a>
+        <a href="#" class="btn btn-outline-primary">Tiffany</a>
+        <a href="#" class="btn btn-outline-primary">Chris</a>
+      </div>
+    </div>
+
+    <!-- ROW 2: All 10 thin tiles in ONE LINE -->
+    <div class="tile-row-single">
+
+      <!-- Workload group -->
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#6c757d,#545b62);">
+          <div class="stat-tile-thin-val">8</div>
+          <div class="stat-tile-thin-lbl">Need to Accept</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);">
+          <div class="stat-tile-thin-val">10</div>
+          <div class="stat-tile-thin-lbl">Pending Completion</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#e6a400,#c48a14);">
+          <div class="stat-tile-thin-val">3</div>
+          <div class="stat-tile-thin-lbl">On Hold</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#51216b,#3f1853);">
+          <div class="stat-tile-thin-val">4</div>
+          <div class="stat-tile-thin-lbl">Need Review</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin active" style="background:linear-gradient(135deg,#198754,#146c43);">
+          <div class="stat-tile-thin-val">5</div>
+          <div class="stat-tile-thin-lbl">Scheduled Release</div>
+        </div>
+      </a>
+
+      <!-- Visual divider between workload / urgency -->
+      <div class="tile-divider"></div>
+
+      <!-- Urgency group -->
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#cc0000,#a00000);">
+          <div class="stat-tile-thin-val">3</div>
+          <div class="stat-tile-thin-lbl">Due Next 7d</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#cc0000,#a00000);">
+          <div class="stat-tile-thin-val">1</div>
+          <div class="stat-tile-thin-lbl">Due Today</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#b30000,#850000);">
+          <div class="stat-tile-thin-val">2</div>
+          <div class="stat-tile-thin-lbl">Due Tomorrow</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#8B0000,#660000);">
+          <div class="stat-tile-thin-val">0</div>
+          <div class="stat-tile-thin-lbl">Past Due</div>
+        </div>
+      </a>
+      <a href="#" style="text-decoration:none;">
+        <div class="stat-tile-thin" style="background:linear-gradient(135deg,#c00000,#9a0000);">
+          <div class="stat-tile-thin-val">3</div>
+          <div class="stat-tile-thin-lbl">Active Alerts</div>
+        </div>
+      </a>
+
+    </div><!-- /tile-row-single -->
+
+  </div><!-- /dashboard-card -->
+
+  <!-- Queue table -->
+  <div class="dashboard-card">
+    <div class="queue-section">
+      <div class="queue-header">
+        <h6>Cases — Scheduled Release <span class="badge bg-success ms-1">5</span></h6>
+        <div style="font-size:12px; color:#888;">Filters &nbsp;|&nbsp; Search</div>
+      </div>
+      <table class="table table-sm table-hover mb-0" style="font-size:12px;">
+        <thead class="table-light">
+          <tr><th>Case #</th><th>Member Name</th><th>Technician</th><th>Status</th><th>Due Date</th><th>Tier</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2451</td><td>Jane Smith</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19, 2026</td><td>Tier 2</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:1px 6px;">View</a></td></tr>
+          <tr><td>2449</td><td>Robert Jones</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19, 2026</td><td>Tier 1</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:1px 6px;">View</a></td></tr>
+          <tr><td>2445</td><td>Maria Garcia</td><td>Chris</td><td><span class="badge bg-success">Scheduled</span></td><td>May 20, 2026</td><td>Tier 2</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:1px 6px;">View</a></td></tr>
+          <tr><td>2440</td><td>David Lee</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 21, 2026</td><td>Tier 3</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:1px 6px;">View</a></td></tr>
+          <tr><td>2438</td><td>Susan Brown</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 22, 2026</td><td>Tier 1</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:1px 6px;">View</a></td></tr>
+          <tr><td>2435</td><td>Michael Davis</td><td>Chris</td><td><span class="badge bg-success">Scheduled</span></td><td>May 23, 2026</td><td>Tier 2</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px;padding:1px 6px;">View</a></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px; color:#aaa; margin-top:6px; margin-bottom:0;">↑ ~5 rows visible before fold on 768px screen height (one more than Option A)</p>
+    </div>
+  </div>
+
+</div><!-- /laptop-frame -->
+
+<!-- ========== Width stress test at 1280px ========== -->
+<h5 class="mt-4 mb-1" style="color:#333;">Option B — Stress test at 1280px (smaller 15" or 100% zoom)</h5>
+<p class="text-muted mb-2" style="font-size:13px;">
+  10 tiles × 88px + gaps + padding ≈ <strong>970px</strong>. At 1280px this fits comfortably. At 1024px it wraps.
+</p>
+
+<div class="laptop-frame" style="width:1280px;">
+  <div class="laptop-label">1280px viewport — slightly smaller / lower resolution 15"</div>
+  <div class="sim-navbar">ProFeds Advisor Portal &nbsp;&nbsp;|&nbsp;&nbsp; Benefits Technician Dashboard</div>
+  <div class="dashboard-card">
+    <div class="tech-row">
+      <small class="text-muted">View:</small>
+      <div class="btn-group btn-group-sm me-3">
+        <a href="#" class="btn btn-primary">All Cases</a>
+        <a href="#" class="btn btn-outline-primary">My Cases</a>
+      </div>
+      <small class="text-muted">Pending:</small>
+      <div class="btn-group btn-group-sm">
+        <a href="#" class="btn btn-primary">All Techs</a>
+        <a href="#" class="btn btn-outline-primary">Ileana</a>
+        <a href="#" class="btn btn-outline-primary">Tiffany</a>
+        <a href="#" class="btn btn-outline-primary">Chris</a>
+      </div>
+    </div>
+    <div class="tile-row-single">
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#6c757d,#545b62);"><div class="stat-tile-thin-val">8</div><div class="stat-tile-thin-lbl">Need to Accept</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);"><div class="stat-tile-thin-val">10</div><div class="stat-tile-thin-lbl">Pending Completion</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#e6a400,#c48a14);"><div class="stat-tile-thin-val">3</div><div class="stat-tile-thin-lbl">On Hold</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#51216b,#3f1853);"><div class="stat-tile-thin-val">4</div><div class="stat-tile-thin-lbl">Need Review</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin active" style="background:linear-gradient(135deg,#198754,#146c43);"><div class="stat-tile-thin-val">5</div><div class="stat-tile-thin-lbl">Scheduled Release</div></div></a>
+      <div class="tile-divider"></div>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-tile-thin-val">3</div><div class="stat-tile-thin-lbl">Due Next 7d</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-tile-thin-val">1</div><div class="stat-tile-thin-lbl">Due Today</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#b30000,#850000);"><div class="stat-tile-thin-val">2</div><div class="stat-tile-thin-lbl">Due Tomorrow</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#8B0000,#660000);"><div class="stat-tile-thin-val">0</div><div class="stat-tile-thin-lbl">Past Due</div></div></a>
+      <a href="#" style="text-decoration:none;"><div class="stat-tile-thin" style="background:linear-gradient(135deg,#c00000,#9a0000);"><div class="stat-tile-thin-val">3</div><div class="stat-tile-thin-lbl">Active Alerts</div></div></a>
+    </div>
+  </div>
+</div>
+
+<div class="mt-3 p-3 rounded" style="max-width:1366px; background:#d1ecf1; border:1px solid #0dcaf0; font-size:13px;">
+  <strong>Option B summary:</strong>
+  2 thin rows before queue (tech filter + tiles). Header section = <strong>~135px</strong> — nearly the same as the original 2-row layout that had 8 tiles.
+  <br><br>
+  ✅ One more visible queue row than Option A.<br>
+  ✅ Tiles still fit at 1280px — no wrapping.<br>
+  ✅ Vertical divider naturally groups workload vs urgency without a second row.<br>
+  ⚠️ Labels are smaller (0.62rem) — confirm these are readable on a physical 15" screen before committing.<br>
+  ⚠️ If a 5th or 6th tech name is added to the filter later, the tech row could get tight.
+</div>
+
+</body>
+</html>
