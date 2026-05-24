@@ -91,6 +91,11 @@ class User(AbstractUser):
         default=False,
         help_text='Can access the Delegate Management page. Granted to L3 techs at admin discretion.'
     )
+    ref_saved_searches = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='User-specific reference library recent searches (last 10). Shared across all cases and devices.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

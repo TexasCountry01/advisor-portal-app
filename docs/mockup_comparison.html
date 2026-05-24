@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Layout — All Options Compared</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+  body { background: #e8eaf0; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+  h2 { color: #1a2a4a; }
+  .option-block { margin-bottom: 40px; }
+  .option-header {
+    display: flex; align-items: baseline; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .option-badge {
+    font-size: 13px; font-weight: 700; padding: 4px 10px;
+    border-radius: 20px; color: white;
+  }
+  .verdict { font-size: 13px; margin-top: 8px; padding: 10px 14px; border-radius: 6px; }
+
+  /* Shared chrome */
+  .laptop-frame { width: 1366px; background: #f4f6f9; border: 3px solid #555; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
+  .laptop-label { background:#555; color:white; font-size:11px; padding:3px 10px; font-family:monospace; }
+  .sim-navbar { background:#1a2a4a; color:white; height:40px; display:flex; align-items:center; padding:0 16px; font-size:13px; font-weight:600; }
+  .dashboard-card { background:white; border-radius:6px; box-shadow:0 1px 4px rgba(0,0,0,0.1); margin:10px; }
+  .dashboard-card-header { padding:7px 14px; border-bottom:1px solid #e9ecef; font-size:12px; font-weight:600; color:#555; display:flex; justify-content:space-between; }
+  .tech-row { padding:6px 14px; display:flex; align-items:center; gap:8px; border-bottom:1px solid #f0f0f0; }
+
+  /* Height ruler labels */
+  .ruler-tag {
+    display: inline-block;
+    background: #dc3545; color: white;
+    font-size: 10px; font-weight: 700;
+    padding: 2px 7px; border-radius: 3px;
+    margin-left: 8px;
+  }
+  .ruler-tag.green { background: #198754; }
+
+  /* ===== OPTION A tiles ===== */
+  .tile-row { display:flex; gap:7px; padding:0; }
+  .tile-section { padding:6px 14px 8px; }
+  .tile-row-label { font-size:10px; font-weight:700; color:#aaa; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; }
+  .stat-a { flex:0 0 96px; width:96px; padding:6px 4px; border-radius:6px; color:white; text-align:center; }
+  .stat-a-val { font-size:1.45rem; font-weight:700; line-height:1.1; }
+  .stat-a-lbl { font-size:0.68rem; opacity:.92; }
+
+  /* ===== OPTION B tiles ===== */
+  .tile-row-b { padding:6px 14px 8px; display:flex; gap:6px; align-items:stretch; justify-content:flex-end; flex-wrap:nowrap; }
+  .stat-b { flex:0 0 88px; width:88px; padding:5px 4px 6px; border-radius:6px; color:white; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .stat-b-val { font-size:1.4rem; font-weight:700; line-height:1.15; }
+  .stat-b-lbl { font-size:0.61rem; opacity:.93; line-height:1.25; margin-top:2px; white-space:normal; max-width:80px; }
+  .tile-divider-b { width:1px; background:#dee2e6; align-self:stretch; margin:0 2px; }
+
+  /* ===== OPTION C tiles ===== */
+  .combined-row { padding:6px 14px 8px; display:flex; gap:7px; align-items:center; flex-wrap:nowrap; }
+  .stat-c { flex:0 0 88px; width:88px; padding:5px 4px 6px; border-radius:6px; color:white; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .stat-c-val { font-size:1.4rem; font-weight:700; line-height:1.15; }
+  .stat-c-lbl { font-size:0.61rem; opacity:.93; line-height:1.25; margin-top:2px; white-space:normal; max-width:80px; }
+  .vert-divider { width:1px; height:40px; background:#dee2e6; margin:0 4px; }
+
+  /* Queue stub */
+  .queue-stub { margin:0 10px 10px; background:#fff; border-radius:6px; border:1px solid #e9ecef; padding:10px 14px; }
+  .queue-stub table { font-size:11px; margin:0; }
+  .queue-stub th { font-size:11px; }
+  .queue-stub .visible-note { font-size:10px; color:#bbb; margin-top:4px; }
+</style>
+</head>
+<body>
+
+<h2 class="mb-1">Dashboard Layout — All Options Compared</h2>
+<p class="text-muted mb-4" style="font-size:13px;">
+  All frames simulate <strong>1366px wide</strong> (15" laptop at 100% zoom).
+  The red/green ruler tags show header height — smaller = more queue rows visible.
+</p>
+
+<!-- ============================================================
+     OPTION A — STACKED 2-ROW
+============================================================ -->
+<div class="option-block">
+  <div class="option-header">
+    <span class="option-badge" style="background:#dc3545;">Option A</span>
+    <strong>Stacked 2-Row Tiles</strong>
+    <span class="ruler-tag">Header ≈ 195px</span>
+    <span style="font-size:12px; color:#888;">— separate tech row, workload row, urgency row</span>
+  </div>
+
+  <div class="laptop-frame">
+    <div class="laptop-label">1366px — Option A</div>
+    <div class="sim-navbar">ProFeds Advisor Portal — Benefits Technician Dashboard</div>
+    <div class="dashboard-card">
+      <div class="dashboard-card-header">Filters &amp; Quick Stats <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:10px;">▲ Hide</button></div>
+      <!-- Tech row -->
+      <div class="tech-row">
+        <small class="text-muted">View:</small>
+        <div class="btn-group btn-group-sm me-2"><a href="#" class="btn btn-primary btn-sm">All Cases</a><a href="#" class="btn btn-outline-primary btn-sm">My Cases</a></div>
+        <small class="text-muted">Pending:</small>
+        <div class="btn-group btn-group-sm"><a href="#" class="btn btn-primary btn-sm">All Techs</a><a href="#" class="btn btn-outline-primary btn-sm">Ileana</a><a href="#" class="btn btn-outline-primary btn-sm">Tiffany</a><a href="#" class="btn btn-outline-primary btn-sm">Chris</a></div>
+      </div>
+      <!-- Workload tiles -->
+      <div class="tile-section">
+        <div class="tile-row-label">Workload</div>
+        <div class="tile-row mb-2">
+          <div class="stat-a" style="background:linear-gradient(135deg,#6c757d,#545b62);"><div class="stat-a-val">8</div><div class="stat-a-lbl">Need to Accept</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);"><div class="stat-a-val">10</div><div class="stat-a-lbl">Pending</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#e6a400,#c48a14);"><div class="stat-a-val">3</div><div class="stat-a-lbl">On Hold</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#51216b,#3f1853);"><div class="stat-a-val">4</div><div class="stat-a-lbl">Need Review</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#198754,#146c43); box-shadow:0 0 0 3px white,0 0 0 5px #0d6efd;"><div class="stat-a-val">5</div><div class="stat-a-lbl">Scheduled</div></div>
+        </div>
+        <div class="tile-row-label">Urgency</div>
+        <div class="tile-row">
+          <div class="stat-a" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-a-val">3</div><div class="stat-a-lbl">Due Next 7d</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-a-val">1</div><div class="stat-a-lbl">Due Today</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#b30000,#850000);"><div class="stat-a-val">2</div><div class="stat-a-lbl">Due Tomorrow</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#8B0000,#660000);"><div class="stat-a-val">0</div><div class="stat-a-lbl">Past Due</div></div>
+          <div class="stat-a" style="background:linear-gradient(135deg,#c00000,#9a0000);"><div class="stat-a-val">3</div><div class="stat-a-lbl">Active Alerts</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="queue-stub">
+      <table class="table table-sm table-hover"><thead class="table-light"><tr><th>Case #</th><th>Member</th><th>Technician</th><th>Status</th><th>Due</th><th>Tier</th></tr></thead>
+      <tbody><tr><td>2451</td><td>Jane Smith</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19</td><td>Tier 2</td></tr>
+      <tr><td>2449</td><td>Robert Jones</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19</td><td>Tier 1</td></tr>
+      <tr><td>2445</td><td>Maria Garcia</td><td>Chris</td><td><span class="badge bg-success">Scheduled</span></td><td>May 20</td><td>Tier 2</td></tr>
+      <tr><td>2440</td><td>David Lee</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 21</td><td>Tier 3</td></tr></tbody></table>
+      <p class="visible-note">↑ approx 4 rows visible before scroll on 768px screen</p>
+    </div>
+  </div>
+
+  <div class="verdict" style="background:#fde8ea; border:1px solid #dc3545;">
+    ✅ Clearest grouping — techs know at a glance what's "workload" vs "urgent"<br>
+    ✅ Tiles can have longer labels (96px wide, single line)<br>
+    ⚠️ <strong>Worst for vertical space.</strong> ~195px header = ~1 fewer queue row visible vs Options B/C.
+  </div>
+</div>
+
+<!-- ============================================================
+     OPTION B — THIN SINGLE ROW
+============================================================ -->
+<div class="option-block">
+  <div class="option-header">
+    <span class="option-badge" style="background:#0dcaf0; color:#000;">Option B</span>
+    <strong>Thin Single Row of Tiles</strong>
+    <span class="ruler-tag green">Header ≈ 135px</span>
+    <span style="font-size:12px; color:#888;">— separate tech row + one thin tile row, two-line labels</span>
+  </div>
+
+  <div class="laptop-frame">
+    <div class="laptop-label">1366px — Option B</div>
+    <div class="sim-navbar">ProFeds Advisor Portal — Benefits Technician Dashboard</div>
+    <div class="dashboard-card">
+      <div class="dashboard-card-header">Filters &amp; Quick Stats <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:10px;">▲ Hide</button></div>
+      <div class="tech-row">
+        <small class="text-muted">View:</small>
+        <div class="btn-group btn-group-sm me-2"><a href="#" class="btn btn-primary btn-sm">All Cases</a><a href="#" class="btn btn-outline-primary btn-sm">My Cases</a></div>
+        <small class="text-muted">Pending:</small>
+        <div class="btn-group btn-group-sm"><a href="#" class="btn btn-primary btn-sm">All Techs</a><a href="#" class="btn btn-outline-primary btn-sm">Ileana</a><a href="#" class="btn btn-outline-primary btn-sm">Tiffany</a><a href="#" class="btn btn-outline-primary btn-sm">Chris</a></div>
+      </div>
+      <div class="tile-row-b">
+        <div class="stat-b" style="background:linear-gradient(135deg,#6c757d,#545b62);"><div class="stat-b-val">8</div><div class="stat-b-lbl">Need to Accept</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);"><div class="stat-b-val">10</div><div class="stat-b-lbl">Pending Completion</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#e6a400,#c48a14);"><div class="stat-b-val">3</div><div class="stat-b-lbl">On Hold</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#51216b,#3f1853);"><div class="stat-b-val">4</div><div class="stat-b-lbl">Need Review</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#198754,#146c43); box-shadow:0 0 0 3px white,0 0 0 5px #0d6efd;"><div class="stat-b-val">5</div><div class="stat-b-lbl">Scheduled Release</div></div>
+        <div class="tile-divider-b"></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-b-val">3</div><div class="stat-b-lbl">Due Next 7d</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-b-val">1</div><div class="stat-b-lbl">Due Today</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#b30000,#850000);"><div class="stat-b-val">2</div><div class="stat-b-lbl">Due Tomorrow</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#8B0000,#660000);"><div class="stat-b-val">0</div><div class="stat-b-lbl">Past Due</div></div>
+        <div class="stat-b" style="background:linear-gradient(135deg,#c00000,#9a0000);"><div class="stat-b-val">3</div><div class="stat-b-lbl">Active Alerts</div></div>
+      </div>
+    </div>
+    <div class="queue-stub">
+      <table class="table table-sm table-hover"><thead class="table-light"><tr><th>Case #</th><th>Member</th><th>Technician</th><th>Status</th><th>Due</th><th>Tier</th></tr></thead>
+      <tbody>
+      <tr><td>2451</td><td>Jane Smith</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19</td><td>Tier 2</td></tr>
+      <tr><td>2449</td><td>Robert Jones</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19</td><td>Tier 1</td></tr>
+      <tr><td>2445</td><td>Maria Garcia</td><td>Chris</td><td><span class="badge bg-success">Scheduled</span></td><td>May 20</td><td>Tier 2</td></tr>
+      <tr><td>2440</td><td>David Lee</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 21</td><td>Tier 3</td></tr>
+      <tr><td>2438</td><td>Susan Brown</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 22</td><td>Tier 1</td></tr>
+      </tbody></table>
+      <p class="visible-note">↑ approx 5 rows visible before scroll on 768px screen</p>
+    </div>
+  </div>
+
+  <div class="verdict" style="background:#d1ecf1; border:1px solid #0dcaf0;">
+    ✅ <strong>Same vertical space as today's 8-tile layout</strong> — no regression, one extra row of queue vs Option A<br>
+    ✅ All 10 tiles fit in one line at 1280px+; vertical divider visually groups urgency tiles without a second row<br>
+    ✅ Two-line labels allow clearer tile names ("Need to Accept", "Scheduled Release", "Past Due")<br>
+    ⚠️ Labels are smaller (0.61rem) — check legibility on a physical 15" screen<br>
+    ⚠️ At 1024px or heavy browser zoom the row wraps (acceptable — won't affect typical workflow)
+  </div>
+</div>
+
+<!-- ============================================================
+     OPTION C — MERGED ROW (existing mockup summary)
+============================================================ -->
+<div class="option-block">
+  <div class="option-header">
+    <span class="option-badge" style="background:#198754;">Option C</span>
+    <strong>Merged Tech Filter + Tiles (One Row)</strong>
+    <span class="ruler-tag green">Header ≈ 105px</span>
+    <span style="font-size:12px; color:#888;">— tech filter buttons + tiles share a single row</span>
+  </div>
+
+  <div class="laptop-frame">
+    <div class="laptop-label">1366px — Option C (see also mockup_option_c.html for full interactive version)</div>
+    <div class="sim-navbar">ProFeds Advisor Portal — Benefits Technician Dashboard</div>
+    <div class="dashboard-card">
+      <div class="dashboard-card-header">Filters &amp; Quick Stats <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:10px;">▲ Hide</button></div>
+      <!-- View toggle + tech filter + tiles ALL IN ONE ROW -->
+      <div class="combined-row">
+        <!-- View toggle -->
+        <div class="btn-group btn-group-sm me-1"><a href="#" class="btn btn-primary btn-sm">All</a><a href="#" class="btn btn-outline-primary btn-sm">Mine</a></div>
+        <!-- Tech filter -->
+        <small class="text-muted">Pending:</small>
+        <div class="btn-group btn-group-sm me-1"><a href="#" class="btn btn-primary btn-sm">All</a><a href="#" class="btn btn-outline-primary btn-sm">Ileana</a><a href="#" class="btn btn-outline-primary btn-sm">Tiffany</a><a href="#" class="btn btn-outline-primary btn-sm">Chris</a></div>
+        <!-- Divider -->
+        <div class="vert-divider"></div>
+        <!-- Tiles -->
+        <div class="stat-c" style="background:linear-gradient(135deg,#6c757d,#545b62);"><div class="stat-c-val">8</div><div class="stat-c-lbl">Need to Accept</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);"><div class="stat-c-val">10</div><div class="stat-c-lbl">Pending</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#e6a400,#c48a14);"><div class="stat-c-val">3</div><div class="stat-c-lbl">On Hold</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#51216b,#3f1853);"><div class="stat-c-val">4</div><div class="stat-c-lbl">Need Review</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#198754,#146c43); box-shadow:0 0 0 3px white,0 0 0 5px #0d6efd;"><div class="stat-c-val">5</div><div class="stat-c-lbl">Scheduled</div></div>
+        <div style="width:1px; height:40px; background:#dee2e6; margin:0 2px;"></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-c-val">3</div><div class="stat-c-lbl">Due Next 7d</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#cc0000,#a00000);"><div class="stat-c-val">1</div><div class="stat-c-lbl">Due Today</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#b30000,#850000);"><div class="stat-c-val">2</div><div class="stat-c-lbl">Due Tomm</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#8B0000,#660000);"><div class="stat-c-val">0</div><div class="stat-c-lbl">Past Due</div></div>
+        <div class="stat-c" style="background:linear-gradient(135deg,#c00000,#9a0000);"><div class="stat-c-val">3</div><div class="stat-c-lbl">Alerts</div></div>
+      </div>
+    </div>
+    <div class="queue-stub">
+      <table class="table table-sm table-hover"><thead class="table-light"><tr><th>Case #</th><th>Member</th><th>Technician</th><th>Status</th><th>Due</th><th>Tier</th></tr></thead>
+      <tbody>
+      <tr><td>2451</td><td>Jane Smith</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19</td><td>Tier 2</td></tr>
+      <tr><td>2449</td><td>Robert Jones</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19</td><td>Tier 1</td></tr>
+      <tr><td>2445</td><td>Maria Garcia</td><td>Chris</td><td><span class="badge bg-success">Scheduled</span></td><td>May 20</td><td>Tier 2</td></tr>
+      <tr><td>2440</td><td>David Lee</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 21</td><td>Tier 3</td></tr>
+      <tr><td>2438</td><td>Susan Brown</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 22</td><td>Tier 1</td></tr>
+      <tr><td>2435</td><td>Michael Davis</td><td>Chris</td><td><span class="badge bg-success">Scheduled</span></td><td>May 23</td><td>Tier 2</td></tr>
+      </tbody></table>
+      <p class="visible-note">↑ approx 6 rows visible before scroll on 768px screen (best of all options)</p>
+    </div>
+  </div>
+
+  <div class="verdict" style="background:#d4edda; border:1px solid #198754;">
+    ✅ <strong>Most compact</strong> — saves ~90px vs Option A, one full extra queue row vs today<br>
+    ✅ Single row = fastest scan (eyes don't travel vertically)<br>
+    ✅ Tech filter + tiles are visually connected (they filter the same dataset)<br>
+    ⚠️ Row is densest — View toggle + tech names + 10 tiles in one line; at 1366px this is tight but fits<br>
+    ⚠️ Tile labels must be short (single-line) to not overflow at 88px width — "Due Tomm" instead of "Due Tomorrow"
+  </div>
+</div>
+
+<!-- ============================================================
+     DECISION GUIDE
+============================================================ -->
+<div class="p-3 rounded mt-2" style="max-width:1370px; background:#fff; border:2px solid #1a2a4a;">
+  <h6 style="color:#1a2a4a;">Decision Guide</h6>
+  <table class="table table-sm table-bordered mb-0" style="font-size:12px;">
+    <thead class="table-dark">
+      <tr><th></th><th>Option A (Stacked)</th><th>Option B (Thin Row)</th><th>Option C (Merged)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Header height</strong></td><td>~195px</td><td>~135px</td><td>~105px</td></tr>
+      <tr><td><strong>Queue rows visible (768px screen)</strong></td><td>~4</td><td>~5</td><td>~6</td></tr>
+      <tr><td><strong>Tile label clarity</strong></td><td>⭐⭐⭐ Best — full labels, larger text</td><td>⭐⭐ Good — two-line labels, small text</td><td>⭐ Short labels only</td></tr>
+      <tr><td><strong>Workload vs urgency grouping</strong></td><td>⭐⭐⭐ Explicit row labels</td><td>⭐⭐ Visual divider</td><td>⭐ Visual divider only</td></tr>
+      <tr><td><strong>Risk if tech names added later</strong></td><td>Low — separate rows</td><td>Low — tech row separate</td><td>Medium — single row gets crowded</td></tr>
+      <tr><td><strong>Dev effort to implement</strong></td><td>Low</td><td>Low</td><td>Low (mockup already exists)</td></tr>
+      <tr><td><strong>Recommended if…</strong></td><td>Label clarity matters most; queue scroll is acceptable</td><td><strong>Balanced choice</strong> — label clarity + minimal height</td><td>Vertical space is the #1 priority</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

@@ -26,6 +26,7 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('messages/', include('messaging.urls', namespace='messaging')),
     path('tinymce/', include('tinymce.urls')),
+    path('references/', include('references.urls', namespace='references')),
 ]
 
 # Serve media files in development

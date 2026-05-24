@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Notes Library — Re-import{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 600px;">
+  <h2>Notes Library</h2>
+  <p class="text-muted">Currently <strong>{{ clause_count }}</strong> active clauses loaded.</p>
+
+  {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %}">
+      {{ message }}
+    </div>
+  {% endfor %}
+
+  <div class="card">
+    <div class="card-header">Re-import from .docx</div>
+    <div class="card-body">
+      <p>Upload the new <em>Report Notes Template</em> Word document. All existing clauses will be replaced.</p>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Select .docx file</label>
+          <input type="file" name="docx_file" accept=".docx" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Upload &amp; Re-import</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

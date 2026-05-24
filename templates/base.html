@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{% block title %}ProFeds Report Portal{% endblock %}{% if request.get_host == '127.0.0.1:8000' or request.get_host == 'localhost:8000' %} - LOCAL{% endif %}</title>
     
     <!-- Bootstrap 5 CSS -->
@@ -124,6 +127,11 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'cases:review_settings' %}">
                                     <i class="bi bi-clipboard-check"></i> Review Settings
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'references:reimport' %}">
+                                    <i class="bi bi-journals"></i> Notes Library
                                 </a>
                             </li>
                             <li class="nav-item">

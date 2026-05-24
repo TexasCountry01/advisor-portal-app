@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Layout — Option A (Stacked 2-Row)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<style>
+  body { background: #e8eaf0; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+
+  /* ---- Laptop viewport frame ---- */
+  .laptop-frame {
+    width: 1366px;
+    background: #f4f6f9;
+    border: 3px solid #555;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    position: relative;
+  }
+  .laptop-label {
+    background: #555; color: white; font-size: 11px; padding: 4px 10px;
+    font-family: monospace;
+  }
+  /* Simulated nav bar */
+  .sim-navbar {
+    background: #1a2a4a; color: white; height: 44px; display: flex;
+    align-items: center; padding: 0 16px; font-size: 14px; font-weight: 600;
+  }
+
+  /* ---- Card/section chrome ---- */
+  .dashboard-card { background: white; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); margin: 12px; }
+  .dashboard-card-header { padding: 8px 16px; border-bottom: 1px solid #e9ecef; font-size: 13px; font-weight: 600; color: #555; display: flex; justify-content: space-between; }
+
+  /* ---- Tech filter row ---- */
+  .tech-row { padding: 8px 16px; display: flex; align-items: center; gap: 8px; }
+
+  /* ---- Option A: tiles in two logical rows ---- */
+  .tile-section { padding: 6px 16px 10px; }
+  .tile-row-label { font-size: 10px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+  .tile-row { display: flex; gap: 8px; margin-bottom: 6px; }
+
+  .stat-tile {
+    flex: 0 0 100px; width: 100px;
+    padding: 7px 6px;
+    border-radius: 7px;
+    color: white;
+    text-align: center;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  .stat-tile:hover { opacity: .85; }
+  .stat-tile-val { font-size: 1.55rem; font-weight: 700; line-height: 1.1; }
+  .stat-tile-lbl { font-size: 0.7rem; opacity: .93; white-space: nowrap; margin-top: 1px; }
+
+  /* active ring */
+  .stat-tile.active { box-shadow: 0 0 0 3px white, 0 0 0 5px #0d6efd; }
+
+  /* ---- Queue table ---- */
+  .queue-section { padding: 0 16px 12px; }
+  .queue-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 6px; }
+  .queue-header h6 { margin: 0; font-size: 13px; }
+
+  /* ---- Height ruler ---- */
+  .height-ruler {
+    position: absolute; right: 0; top: 44px; /* below navbar */
+    width: 28px; height: 100%; display: flex; flex-direction: column;
+    pointer-events: none;
+  }
+  .ruler-header { background: rgba(220,53,69,0.15); border-left: 3px solid #dc3545; }
+  .ruler-queue  { background: rgba(25,135,84,0.08); border-left: 3px dashed #198754; }
+  .ruler-label {
+    writing-mode: vertical-rl; font-size: 10px; font-weight: 700;
+    padding: 6px 2px; white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<h5 class="mb-1" style="color:#333;">Option A — Stacked 2-Row Tiles</h5>
+<p class="text-muted mb-3" style="font-size:13px;">
+  Two logical groups: <strong>Workload</strong> (top) and <strong>Urgency</strong> (bottom). Tech filter remains its own row.
+  Frame = 1366px wide (typical 15" laptop). Red bracket = header height before queue starts.
+</p>
+
+<!-- 1366px viewport simulation -->
+<div class="laptop-frame">
+  <div class="laptop-label">1366 × 768 viewport — 15" laptop @ 100% zoom</div>
+  <div class="sim-navbar">ProFeds Advisor Portal &nbsp;&nbsp;|&nbsp;&nbsp; Benefits Technician Dashboard</div>
+
+  <div class="dashboard-card" style="position:relative;">
+    <div class="dashboard-card-header">
+      Filters &amp; Quick Stats
+      <button class="btn btn-sm btn-outline-secondary py-0" style="font-size:11px;">▲ Hide</button>
+    </div>
+
+    <!-- ROW 1: View toggle + Tech filter -->
+    <div class="tech-row">
+      <small class="text-muted">View:</small>
+      <div class="btn-group btn-group-sm me-3">
+        <a href="#" class="btn btn-primary">All Cases</a>
+        <a href="#" class="btn btn-outline-primary">My Cases</a>
+      </div>
+      <small class="text-muted">Pending:</small>
+      <div class="btn-group btn-group-sm">
+        <a href="#" class="btn btn-primary">All Techs</a>
+        <a href="#" class="btn btn-outline-primary">Ileana</a>
+        <a href="#" class="btn btn-outline-primary">Tiffany</a>
+        <a href="#" class="btn btn-outline-primary">Chris</a>
+      </div>
+    </div>
+
+    <!-- ROW 2: Workload tiles -->
+    <div class="tile-section">
+      <div class="tile-row-label">Workload</div>
+      <div class="tile-row">
+        <div class="stat-tile" style="background:linear-gradient(135deg,#6c757d,#545b62);">
+          <div class="stat-tile-val">8</div><div class="stat-tile-lbl">Submitted</div>
+        </div>
+        <div class="stat-tile" style="background:linear-gradient(135deg,#0d6efd,#0a58ca);">
+          <div class="stat-tile-val">10</div><div class="stat-tile-lbl">Pending</div>
+        </div>
+        <div class="stat-tile" style="background:linear-gradient(135deg,#e6a400,#c48a14);">
+          <div class="stat-tile-val">3</div><div class="stat-tile-lbl">On Hold</div>
+        </div>
+        <div class="stat-tile" style="background:linear-gradient(135deg,#51216b,#3f1853);">
+          <div class="stat-tile-val">4</div><div class="stat-tile-lbl">Need Review</div>
+        </div>
+        <div class="stat-tile active" style="background:linear-gradient(135deg,#198754,#146c43);">
+          <div class="stat-tile-val">5</div><div class="stat-tile-lbl">Scheduled</div>
+        </div>
+      </div>
+
+      <!-- ROW 3: Urgency tiles -->
+      <div class="tile-row-label">Urgency</div>
+      <div class="tile-row">
+        <div class="stat-tile" style="background:linear-gradient(135deg,#c00000,#9a0000);">
+          <div class="stat-tile-val">3</div><div class="stat-tile-lbl">Active Alerts</div>
+        </div>
+        <div class="stat-tile" style="background:linear-gradient(135deg,#cc0000,#a00000);">
+          <div class="stat-tile-val">1</div><div class="stat-tile-lbl">Due Today</div>
+        </div>
+        <div class="stat-tile" style="background:linear-gradient(135deg,#b30000,#850000);">
+          <div class="stat-tile-val">2</div><div class="stat-tile-lbl">Due Tomorrow</div>
+        </div>
+        <div class="stat-tile" style="background:linear-gradient(135deg,#8B0000,#660000);">
+          <div class="stat-tile-val">3</div><div class="stat-tile-lbl">Due Next 7d</div>
+        </div>
+        <div class="stat-tile" style="background:linear-gradient(135deg,#5c0000,#400000);">
+          <div class="stat-tile-val">0</div><div class="stat-tile-lbl">Past Due</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Height ruler annotation -->
+    <div style="position:absolute; left:-90px; top:0; width:80px; display:flex; flex-direction:column; height:100%;">
+      <div style="background:rgba(220,53,69,0.1); border-right:2px solid #dc3545; flex:1; display:flex; align-items:center; justify-content:center;">
+        <span style="writing-mode:vertical-rl; font-size:10px; font-weight:700; color:#dc3545; white-space:nowrap;">▲ Header ≈ 195px</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Queue table -->
+  <div class="dashboard-card">
+    <div class="queue-section">
+      <div class="queue-header">
+        <h6>Cases — Scheduled Release <span class="badge bg-success ms-1">5</span></h6>
+        <div style="font-size:12px; color:#888;">Filters &nbsp;|&nbsp; Search</div>
+      </div>
+      <table class="table table-sm table-hover mb-0" style="font-size:12px;">
+        <thead class="table-light">
+          <tr><th>Case #</th><th>Member Name</th><th>Technician</th><th>Status</th><th>Due Date</th><th>Tier</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2451</td><td>Jane Smith</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19, 2026</td><td>Tier 2</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px; padding:1px 6px;">View</a></td></tr>
+          <tr><td>2449</td><td>Robert Jones</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 19, 2026</td><td>Tier 1</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px; padding:1px 6px;">View</a></td></tr>
+          <tr><td>2445</td><td>Maria Garcia</td><td>Chris</td><td><span class="badge bg-success">Scheduled</span></td><td>May 20, 2026</td><td>Tier 2</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px; padding:1px 6px;">View</a></td></tr>
+          <tr><td>2440</td><td>David Lee</td><td>Ileana</td><td><span class="badge bg-success">Scheduled</span></td><td>May 21, 2026</td><td>Tier 3</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px; padding:1px 6px;">View</a></td></tr>
+          <tr><td>2438</td><td>Susan Brown</td><td>Tiffany</td><td><span class="badge bg-success">Scheduled</span></td><td>May 22, 2026</td><td>Tier 1</td><td><a href="#" class="btn btn-xs btn-outline-primary" style="font-size:11px; padding:1px 6px;">View</a></td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11px; color:#aaa; margin-top:6px; margin-bottom:0;">↑ ~4 rows visible before fold on 768px screen height</p>
+    </div>
+  </div>
+
+</div><!-- /laptop-frame -->
+
+<div class="mt-3 p-3 rounded" style="max-width:1366px; background:#fff3cd; border:1px solid #ffc107; font-size:13px;">
+  <strong>Option A summary:</strong>
+  3 rows before the queue (View/Tech filter + Workload tiles + Urgency tiles).
+  Header section = <strong>~195px</strong>.
+  Compared to today's 2-row layout that has ~130px header, this adds <strong>~65px</strong> — roughly one less visible queue row.
+  <br><br>
+  ✅ Clean grouping — techs immediately understand "urgency" vs "workload" without reading labels.<br>
+  ✅ Labels can be descriptive (longer text fits since tiles don't need to shrink).<br>
+  ⚠️ Loses approximately 1 case row from the visible queue on a 15" screen.
+</div>
+
+</body>
+</html>
