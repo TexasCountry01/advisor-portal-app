@@ -330,7 +330,7 @@ def _parse_document(doc):
                 para_html = _para_to_html(para, doc)
                 body_parts.append(('li_number', para_html))
 
-        elif style == 'Normal':
+        elif style.lower() == 'normal':
             if current_title:
                 para_html = _para_to_html(para, doc)
                 if para_html.strip():
