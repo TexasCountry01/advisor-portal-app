@@ -102,7 +102,7 @@ Start-Sleep -Seconds 2
 
 $timeout = 5
 $startGunicornScript = {
-    ssh dev@157.245.141.42 "cd /home/dev/advisor-portal-app && source /home/dev/advisor-portal-app/venv/bin/activate && nohup /home/dev/advisor-portal-app/venv/bin/gunicorn --workers 3 --bind unix:/home/dev/advisor-portal-app/gunicorn.sock --umask 0000 config.wsgi:application > /tmp/gunicorn.log 2>&1 &" 
+    ssh dev@157.245.141.42 "cd /home/dev/advisor-portal-app && rm -f gunicorn.sock && venv/bin/gunicorn --workers 3 --bind unix:/home/dev/advisor-portal-app/gunicorn.sock --umask 0000 --daemon --pid /tmp/gunicorn.pid config.wsgi:application"
 }
 
 $job = Start-Job -ScriptBlock $startGunicornScript
