@@ -80,7 +80,7 @@
                 <div class="col d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
                     <small class="text-muted">Pending:</small>
                     <div class="btn-group" role="group">
-                        <a href="{% url 'cases:manager_dashboard' %}?quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Cases</a>
+                        <a href="{% url 'cases:manager_dashboard' %}?quick_tech=all" class="btn btn-sm btn-outline-primary {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Cases</a>
                         {% for tech in quick_technicians %}
                         <a href="{% url 'cases:manager_dashboard' %}?quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == tech.username %}active{% endif %}">{{ tech.first_name }}</a>
                         {% endfor %}
