@@ -89,6 +89,21 @@
                     border-color: #1a2a4a;
                     color: white;
                 }
+                #view-stats-container .quick-tech-outline-btn {
+                    background-color: white;
+                    border-color: #285fbf;
+                    color: #285fbf;
+                }
+                #view-stats-container .quick-tech-outline-btn:hover {
+                    background-color: #285fbf;
+                    border-color: #285fbf;
+                    color: white;
+                }
+                #view-stats-container .quick-tech-outline-btn.active {
+                    background-color: #285fbf;
+                    border-color: #285fbf;
+                    color: white;
+                }
             </style>
             <!-- Quick Tech Row -->
             <div class="row mb-2">
@@ -96,7 +111,7 @@
                     <div class="btn-group" role="group">
                         <a href="{% url 'cases:manager_dashboard' %}?quick_tech=all" class="btn btn-sm btn-outline-primary quick-tech-btn {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Techs</a>
                         {% for tech in quick_technicians %}
-                        <a href="{% url 'cases:manager_dashboard' %}?quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary quick-tech-btn {% if quick_tech == tech.username %}active{% endif %}">{{ tech.first_name }}</a>
+                        <a href="{% url 'cases:manager_dashboard' %}?quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == tech.username %}active{% endif %}">{{ tech.first_name }}</a>
                         {% endfor %}
                     </div>
                 </div>
