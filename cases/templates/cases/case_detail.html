@@ -3951,8 +3951,8 @@ tinymce.init({
             document.getElementById('minimizeNotesButton').style.display = 'block';
         });
         
-        // Auto-save on content change
-        editor.on('change keyup', function() {
+        // Auto-save on content change (including paste and toolbar edits)
+        editor.on('change keyup paste input undo redo SetContent', function() {
             clearTimeout(notesAutoSaveTimeout);
             notesAutoSaveTimeout = setTimeout(function() {
                 saveReportNotes(editor);
@@ -4035,59 +4035,95 @@ function closeFloatingNotes() {
 function minimizeFloatingNotes() {
     const notesWindow = document.getElementById('floatingNotesWindow');
     const minimizeButton = document.getElementById('minimizeNotesButton');
+    const editor = tinymce.get('reportNotesTextarea');
+
+    // Save immediately when toggling visibility so edits are not lost.
+    if (editor) {
+        saveReportNotes(editor, false);
+    }
+
     if (notesWindow) {
         // Toggle visibility
         if (notesWindow.style.display === 'none') {
             // Restore window
             notesWindow.style.display = 'flex';
             minimizeButton.style.display = 'none';
+            localStorage.setItem('notesWindowMinimized', 'false');
         } else {
             // Minimize window
             notesWindow.style.display = 'none';
             minimizeButton.style.display = 'block';
+            localStorage.setItem('notesWindowMinimized', 'true');
         }
     }
 }
 
-function saveReportNotes(editor) {
+function updateTechNotesPreview(notesContent) {
+    const previewContent = document.getElementById('techNotesPreviewContent');
+    const previewCard = document.getElementById('techNotesPreviewCard');
+    if (previewContent) {
+        previewContent.innerHTML = notesContent;
+        if (previewCard && notesContent.replace(/<[^>]*>/g, '').trim()) {
+            previewCard.style.display = '';
+        }
+    }
+}
+
+function saveReportNotes(editor, silent = true) {
     const notesContent = editor.getContent();
-    
+
+    // Keep preview in sync immediately, even before server response.
+    updateTechNotesPreview(notesContent);
+
     const formData = new FormData();
     formData.append('csrfmiddlewaretoken', document.querySelector('[name="csrfmiddlewaretoken"]')?.value || '');
     formData.append('report_notes_to_member', notesContent);
-    
+
     // Show saving indicator
     const editorContainer = document.querySelector('.tox-tinymce');
     if (editorContainer) editorContainer.classList.add('floating-notes-saving');
-    
+
     fetch(`/cases/{{ case.id }}/save-report-notes/`, {
         method: 'POST',
         body: formData,
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (editorContainer) {
-                editorContainer.classList.remove('floating-notes-saving');
-                editorContainer.classList.add('floating-notes-saved');
-                setTimeout(() => {
-                    editorContainer.classList.remove('floating-notes-saved');
-                }, 2000);
-            }
-            // Update the read-only preview card with latest content
-            const previewContent = document.getElementById('techNotesPreviewContent');
-            const previewCard = document.getElementById('techNotesPreviewCard');
-            if (previewContent) {
-                previewContent.innerHTML = notesContent;
-                if (previewCard && notesContent.replace(/<[^>]*>/g, '').trim()) {
-                    previewCard.style.display = '';
-                }
-            }
+    .then(async response => {
+        const contentType = response.headers.get('content-type') || '';
+        let data = null;
+
+        if (contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            const responseText = await response.text();
+            throw new Error(`Save failed (HTTP ${response.status}). ${responseText.slice(0, 120)}`);
         }
+
+        if (!response.ok || !data.success) {
+            throw new Error(data?.error || `Save failed (HTTP ${response.status})`);
+        }
+
+        return data;
+    })
+    .then(data => {
+        if (editorContainer) {
+            editorContainer.classList.remove('floating-notes-saving');
+            editorContainer.classList.add('floating-notes-saved');
+            setTimeout(() => {
+                editorContainer.classList.remove('floating-notes-saved');
+            }, 2000);
+        }
+        // Clear one-time save error flag after a successful save.
+        window.notesSaveErrorShown = false;
     })
     .catch(error => {
         console.error('Error saving notes:', error);
         if (editorContainer) editorContainer.classList.remove('floating-notes-saving');
+
+        // Avoid spamming alerts during autosave loops.
+        if (!silent && !window.notesSaveErrorShown) {
+            window.notesSaveErrorShown = true;
+            alert('Unable to save technical notes right now. Your on-screen preview updated, but refresh is not recommended until save succeeds.');
+        }
     });
 }
 
