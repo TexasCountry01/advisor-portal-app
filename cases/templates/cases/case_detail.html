@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 {% load file_filters %}
 
 {% block title %}Case {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
@@ -5871,6 +5871,25 @@ document.addEventListener('DOMContentLoaded', function() {
   function escAttr(str) {
     return (str || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+})();
+</script>
+{% endif %}
+
+{% if user.role in 'technician,administrator,manager' and case.assigned_to %}
+<script>
+(function() {
+    var STATUS_COLORS = { active: '#28a745', away: '#ffc107', offline: '#adb5bd' };
+    var dot = document.getElementById('assignedTechStatusDot');
+    if (!dot) return;
+    fetch('/cases/api/technician-status/', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var tech = (data.techs || []).filter(function(t) { return t.username === '{{ case.assigned_to.username|escapejs }}'; })[0];
+            if (!tech) return;
+            dot.style.backgroundColor = STATUS_COLORS[tech.status] || STATUS_COLORS.offline;
+            dot.title = tech.label;
+        })
+        .catch(function() {});
 })();
 </script>
 {% endif %}

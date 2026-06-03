@@ -96,6 +96,11 @@ class User(AbstractUser):
         blank=True,
         help_text='User-specific reference library recent searches (last 10). Shared across all cases and devices.'
     )
+    last_active = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Last time this user made an authenticated request. Updated by LastActiveMiddleware (throttled 60s).'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

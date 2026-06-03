@@ -99,6 +99,7 @@ urlpatterns = [
     path('<int:case_id>/review-requests/', views.get_review_requests, name='get_review_requests'),
     path('review-request/<int:review_request_id>/respond/', views.respond_to_review_request, name='respond_to_review_request'),
     path('api/eligible-reviewers/', views.get_eligible_reviewers, name='get_eligible_reviewers'),
+    path('api/technician-status/', views.api_technician_status, name='api_technician_status'),
     
     # Review Settings Management
     path('review-settings/', views.review_settings_page, name='review_settings'),

@@ -53,19 +53,45 @@ def _get_active_technicians():
     """
     Fetch active technician/administrator users for the quick tech filter.
     Managers are excluded (view-only role, not case workers).
-    Returns list of dicts sorted by preferred display order.
+    Returns list of dicts sorted by preferred display order, including online status.
     """
+    from django.utils import timezone
+    now = timezone.now()
+
     technicians = _exclude_super_dev_users(User.objects.filter(
         role__in=['technician', 'administrator'],
         is_active=True
-    )).values('username', 'first_name')
+    )).values('username', 'first_name', 'last_active')
+
+    def _compute_status(last_active):
+        if last_active is None:
+            return 'offline', 'Never active'
+        diff = (now - last_active).total_seconds()
+        if diff < 300:
+            return 'active', 'Active now'
+        elif diff < 1800:
+            return 'away', f'Away {int(diff // 60)} min ago'
+        else:
+            hours = int(diff // 3600)
+            days = int(diff // 86400)
+            if days >= 1:
+                return 'offline', f'Offline {days}d ago'
+            elif hours >= 1:
+                return 'offline', f'Offline {hours}h ago'
+            return 'offline', f'Offline {int(diff // 60)}m ago'
 
     # Preferred display order by first name (case-insensitive); unknowns go to end alphabetically
     _order = {'ileana': 0, 'tiffany': 1, 'chris': 2}
-    return sorted(
-        [{'username': t['username'], 'first_name': t['first_name']} for t in technicians],
-        key=lambda t: (_order.get(t['first_name'].lower(), 99), t['first_name'].lower())
-    )
+    result = []
+    for t in technicians:
+        status, label = _compute_status(t['last_active'])
+        result.append({
+            'username': t['username'],
+            'first_name': t['first_name'],
+            'status': status,
+            'label': label,
+        })
+    return sorted(result, key=lambda t: (_order.get(t['first_name'].lower(), 99), t['first_name'].lower()))
 
 
 def _get_super_dev_email():
@@ -7446,6 +7472,62 @@ def mark_all_notifications_read(request):
             'success': False,
             'error': f'An error occurred: {str(e)}'
         }, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def api_technician_status(request):
+    """
+    Return online-status for all active technicians/administrators.
+    Accessible to: technician, administrator, manager roles only.
+    Status thresholds:
+        active  — last_active within 5 minutes
+        away    — last_active 5-30 minutes ago
+        offline — last_active > 30 minutes ago or never
+    """
+    if request.user.role not in ('technician', 'administrator', 'manager'):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    from django.utils import timezone
+    now = timezone.now()
+
+    techs = _exclude_super_dev_users(
+        User.objects.filter(role__in=['technician', 'administrator'], is_active=True)
+    ).values('username', 'first_name', 'last_active')
+
+    result = []
+    for tech in techs:
+        last_active = tech['last_active']
+        if last_active is None:
+            status = 'offline'
+            label = 'Never active'
+        else:
+            diff = (now - last_active).total_seconds()
+            if diff < 300:
+                status = 'active'
+                label = 'Active now'
+            elif diff < 1800:
+                minutes = int(diff // 60)
+                status = 'away'
+                label = f'Away {minutes} min ago'
+            else:
+                hours = int(diff // 3600)
+                days = int(diff // 86400)
+                status = 'offline'
+                if days >= 1:
+                    label = f'Offline {days}d ago'
+                elif hours >= 1:
+                    label = f'Offline {hours}h ago'
+                else:
+                    label = f'Offline {int(diff // 60)}m ago'
+        result.append({
+            'username': tech['username'],
+            'first_name': tech['first_name'],
+            'status': status,
+            'label': label,
+        })
+
+    return JsonResponse({'techs': result})
 
 
 @login_required
