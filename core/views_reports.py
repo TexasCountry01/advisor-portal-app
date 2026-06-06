@@ -1173,3 +1173,201 @@ def due_date_compliance_pdf(request):
     filename = f"due_date_compliance_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ---------------------------------------------------------------------------
+# R3 — Quality Review Analytics Report
+# ---------------------------------------------------------------------------
+
+def get_quality_review_data(date_from=None, date_to=None):
+    """Compile quality review outcome metrics from CaseReviewHistory."""
+    from django.db.models.functions import TruncWeek
+    from cases.models import CaseReviewHistory
+
+    OUTCOME_ACTIONS = ('approved', 'revisions_requested', 'corrections_needed')
+
+    qs = CaseReviewHistory.objects.filter(
+        review_action__in=OUTCOME_ACTIONS,
+    ).select_related('case', 'reviewed_by', 'original_technician')
+
+    if date_from:
+        qs = qs.filter(reviewed_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(reviewed_at__date__lte=date_to)
+
+    total = qs.count()
+    approved = qs.filter(review_action='approved').count()
+    revisions = qs.filter(review_action='revisions_requested').count()
+    corrections = qs.filter(review_action='corrections_needed').count()
+    approval_rate = round(approved / total * 100, 1) if total else 0
+
+    # by reviewer (who reviewed)
+    reviewer_stats = {}
+    for r in qs:
+        name = r.reviewed_by.get_full_name() if r.reviewed_by else 'Unknown'
+        if name not in reviewer_stats:
+            reviewer_stats[name] = {'total': 0, 'approved': 0, 'revisions': 0, 'corrections': 0}
+        reviewer_stats[name]['total'] += 1
+        if r.review_action == 'approved':
+            reviewer_stats[name]['approved'] += 1
+        elif r.review_action == 'revisions_requested':
+            reviewer_stats[name]['revisions'] += 1
+        else:
+            reviewer_stats[name]['corrections'] += 1
+    for v in reviewer_stats.values():
+        v['rate'] = round(v['approved'] / v['total'] * 100, 1) if v['total'] else 0
+    by_reviewer = sorted(reviewer_stats.items(), key=lambda x: x[1]['total'], reverse=True)
+
+    # by original technician (whose work was reviewed)
+    tech_stats = {}
+    for r in qs:
+        name = r.original_technician.get_full_name() if r.original_technician else 'Unknown'
+        if name not in tech_stats:
+            tech_stats[name] = {'total': 0, 'approved': 0, 'revisions': 0, 'corrections': 0}
+        tech_stats[name]['total'] += 1
+        if r.review_action == 'approved':
+            tech_stats[name]['approved'] += 1
+        elif r.review_action == 'revisions_requested':
+            tech_stats[name]['revisions'] += 1
+        else:
+            tech_stats[name]['corrections'] += 1
+    for v in tech_stats.values():
+        v['rate'] = round(v['approved'] / v['total'] * 100, 1) if v['total'] else 0
+    by_tech = sorted(tech_stats.items(), key=lambda x: x[1]['total'], reverse=True)
+
+    # weekly trend
+    weekly_qs = (
+        CaseReviewHistory.objects.filter(review_action__in=OUTCOME_ACTIONS)
+        .filter(**({'reviewed_at__date__gte': date_from} if date_from else {}))
+        .filter(**({'reviewed_at__date__lte': date_to} if date_to else {}))
+        .annotate(week=TruncWeek('reviewed_at'))
+        .values('week')
+        .annotate(
+            total=Count('id'),
+            approved=Count('id', filter=Q(review_action='approved')),
+        )
+        .order_by('week')
+    )
+    weekly_trend = []
+    for row in weekly_qs:
+        rate = round(row['approved'] / row['total'] * 100, 1) if row['total'] else 0
+        weekly_trend.append({'week': row['week'], 'total': row['total'],
+                              'approved': row['approved'], 'rate': rate})
+
+    # recent reviews detail
+    recent_reviews = qs.order_by('-reviewed_at')[:100]
+
+    return {
+        'total': total,
+        'approved': approved,
+        'revisions': revisions,
+        'corrections': corrections,
+        'approval_rate': approval_rate,
+        'by_reviewer': by_reviewer,
+        'by_tech': by_tech,
+        'weekly_trend': weekly_trend,
+        'recent_reviews': recent_reviews,
+    }
+
+
+@login_required
+def quality_review_analytics_report(request):
+    """Quality Review Analytics — admin/manager only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime
+    from cases.models import CaseReviewHistory
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+    outcome_filter = request.GET.get('outcome', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_quality_review_data(date_from=date_from, date_to=date_to)
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        OUTCOME_ACTIONS = ('approved', 'revisions_requested', 'corrections_needed')
+        reviews = CaseReviewHistory.objects.filter(
+            review_action__in=OUTCOME_ACTIONS,
+        ).select_related('case', 'reviewed_by', 'original_technician').order_by('-reviewed_at')
+        if date_from:
+            reviews = reviews.filter(reviewed_at__date__gte=date_from)
+        if date_to:
+            reviews = reviews.filter(reviewed_at__date__lte=date_to)
+        if outcome_filter:
+            reviews = reviews.filter(review_action=outcome_filter)
+        response = HttpResponse(content_type='text/csv')
+        filename = f"quality_review_analytics_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(['Reviewed At', 'Case ID', 'Outcome', 'Reviewed By',
+                         'Original Technician', 'Notes'])
+        for r in reviews:
+            writer.writerow([
+                r.reviewed_at.strftime('%Y-%m-%d %H:%M') if r.reviewed_at else '',
+                r.case.external_case_id if r.case else '',
+                r.get_review_action_display(),
+                r.reviewed_by.get_full_name() if r.reviewed_by else '',
+                r.original_technician.get_full_name() if r.original_technician else '',
+                r.review_notes or '',
+            ])
+        return response
+
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'outcome_filter': outcome_filter,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+    }
+    return render(request, 'core/quality_review_analytics_report.html', context)
+
+
+@login_required
+def quality_review_analytics_pdf(request):
+    """PDF export for Quality Review Analytics."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_quality_review_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/quality_review_analytics_report_pdf.html', {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    filename = f"quality_review_analytics_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Quality Review Analytics - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-check2-circle text-info"></i> Quality Review Analytics</h1>
+            <p class="text-muted">First-pass approval rate and reviewer / technician performance</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}{% if outcome_filter %}&outcome={{ outcome_filter }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'quality_review_analytics_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label fw-semibold">Reviewed From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label fw-semibold">Reviewed To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="outcome" class="form-label fw-semibold">Outcome Filter</label>
+                    <select class="form-select" id="outcome" name="outcome">
+                        <option value="">All Outcomes</option>
+                        <option value="approved" {% if outcome_filter == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="revisions_requested" {% if outcome_filter == 'revisions_requested' %}selected{% endif %}>Revisions Requested</option>
+                        <option value="corrections_needed" {% if outcome_filter == 'corrections_needed' %}selected{% endif %}>Corrections Needed</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply</button>
+                    <a href="{% url 'quality_review_analytics_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if approval_rate >= 95 %}text-success{% elif approval_rate >= 85 %}text-primary{% else %}text-warning{% endif %}">
+                        {{ approval_rate }}%
+                    </div>
+                    <div class="small text-muted">First-Pass Approval</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total }}</div>
+                    <div class="small text-muted">Total Reviews</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100 {% if revisions > 0 %}border-start border-4 border-warning{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if revisions > 0 %}text-warning{% else %}text-success{% endif %}">{{ revisions }}</div>
+                    <div class="small text-muted">Revisions Requested</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100 {% if corrections > 0 %}border-start border-4 border-danger{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if corrections > 0 %}text-danger{% else %}text-success{% endif %}">{{ corrections }}</div>
+                    <div class="small text-muted">Corrections Needed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left column -->
+        <div class="col-md-8">
+
+            {% if weekly_trend %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-graph-up"></i> Weekly First-Pass Approval Rate</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Week of</th>
+                                <th class="text-center">Total Reviews</th>
+                                <th class="text-center">Approved</th>
+                                <th class="text-center">Not Approved</th>
+                                <th class="text-center">Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in weekly_trend %}
+                        <tr>
+                            <td>{{ row.week|date:"m/d/Y" }}</td>
+                            <td class="text-center">{{ row.total }}</td>
+                            <td class="text-center text-success">{{ row.approved }}</td>
+                            <td class="text-center text-danger">{{ row.total|add:"-0" }}</td>
+                            <td class="text-center fw-semibold {% if row.rate >= 95 %}text-success{% elif row.rate >= 85 %}text-primary{% else %}text-warning{% endif %}">{{ row.rate }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if recent_reviews %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-list-ul"></i> Review Detail</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Case ID</th>
+                                <th>Outcome</th>
+                                <th>Reviewed By</th>
+                                <th>Technician</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in recent_reviews %}
+                        <tr>
+                            <td>{{ r.reviewed_at|date:"m/d/Y" }}</td>
+                            <td><a href="{% url 'cases:case_detail' r.case.id %}">{{ r.case.external_case_id }}</a></td>
+                            <td>
+                                {% if r.review_action == 'approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                {% elif r.review_action == 'revisions_requested' %}
+                                    <span class="badge bg-warning text-dark">Revisions</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Corrections</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ r.reviewed_by.get_full_name|default:"—" }}</td>
+                            <td>{{ r.original_technician.get_full_name|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Right column -->
+        <div class="col-md-4">
+
+            {% if by_reviewer %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-person-check"></i> By Reviewer</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Name</th><th class="text-center">Total</th><th class="text-center">✓</th><th class="text-center">↩</th><th class="text-center">Rate</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for name, s in by_reviewer %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td class="text-center">{{ s.total }}</td>
+                            <td class="text-center text-success">{{ s.approved }}</td>
+                            <td class="text-center text-warning">{{ s.revisions }}</td>
+                            <td class="text-center fw-semibold {% if s.rate >= 95 %}text-success{% elif s.rate >= 85 %}text-primary{% else %}text-warning{% endif %}">{{ s.rate }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if by_tech %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-person"></i> By Technician</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Name</th><th class="text-center">Total</th><th class="text-center">✓</th><th class="text-center">↩</th><th class="text-center">Rate</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for name, s in by_tech %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td class="text-center">{{ s.total }}</td>
+                            <td class="text-center text-success">{{ s.approved }}</td>
+                            <td class="text-center text-warning">{{ s.revisions }}</td>
+                            <td class="text-center fw-semibold {% if s.rate >= 95 %}text-success{% elif s.rate >= 85 %}text-primary{% else %}text-warning{% endif %}">{{ s.rate }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    {% if not total %}
+    <div class="alert alert-info mt-3">No review records found for the selected filters.</div>
+    {% endif %}
+
+</div>
+{% endblock %}
