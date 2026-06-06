@@ -448,3 +448,253 @@ def beta_feedback_report(request):
         'total_count': feedback_list.count(),
     }
     return render(request, 'core/beta_feedback_report.html', context)
+
+
+# ---------------------------------------------------------------------------
+# Technician Productivity Report
+# ---------------------------------------------------------------------------
+
+def get_technician_productivity_data(tech_id=None, date_from=None, date_to=None):
+    """
+    Compile productivity metrics for one technician or all technicians.
+    Date range is applied on date_accepted (when the tech took the case).
+    Returns a list of per-technician dicts.
+    """
+    from django.db.models.functions import TruncWeek
+    from django.db.models import DurationField
+
+    if tech_id and str(tech_id) != 'all':
+        try:
+            techs = User.objects.filter(id=int(tech_id), role='technician')
+        except (ValueError, TypeError):
+            techs = User.objects.none()
+    else:
+        techs = _exclude_super_dev_users(
+            User.objects.filter(role='technician')
+        ).order_by('first_name', 'last_name')
+
+    results = []
+    for tech in techs:
+        qs = Case.objects.filter(assigned_to=tech)
+
+        if date_from:
+            qs = qs.filter(date_accepted__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(date_accepted__date__lte=date_to)
+
+        # ── Core counts ──────────────────────────────────────────────────────
+        total_accepted = qs.count()
+        completed_qs = qs.filter(status='completed')
+        completed_count = completed_qs.count()
+        in_progress_count = qs.filter(status='accepted').count()
+        on_hold_count = qs.filter(status='hold').count()
+        pending_review_count = qs.filter(status='pending_review').count()
+        rush_count = qs.filter(urgency='rush').count()
+        error_count = qs.filter(has_profeds_error=True).count()
+        completion_rate = round((completed_count / total_accepted * 100), 1) if total_accepted else 0
+
+        # ── Completion time ──────────────────────────────────────────────────
+        timed_qs = completed_qs.filter(
+            date_accepted__isnull=False,
+            date_completed__isnull=False,
+        ).annotate(duration=F('date_completed') - F('date_accepted'))
+
+        avg_agg = timed_qs.aggregate(avg=Avg('duration'))
+        avg_days = avg_agg['avg'].days if avg_agg['avg'] else None
+
+        durations = [r.duration.days for r in timed_qs if r.duration is not None and r.duration.days >= 0]
+        fastest_days = min(durations) if durations else None
+        slowest_days = max(durations) if durations else None
+
+        # ── Tier breakdown ───────────────────────────────────────────────────
+        tier_counts = {}
+        for tier_val, tier_label in [('tier_1', 'Tier 1'), ('tier_2', 'Tier 2'), ('tier_3', 'Tier 3')]:
+            tier_counts[tier_label] = qs.filter(
+                tier__in=[tier_val, tier_val.replace('tier_', '')]
+            ).count()
+
+        # ── Credits ─────────────────────────────────────────────────────────
+        credit_agg = completed_qs.exclude(credit_value__isnull=True).aggregate(
+            total=Sum(F('credit_value'), output_field=FloatField()),
+            avg=Avg(F('credit_value'), output_field=FloatField()),
+        )
+        total_credits = round(float(credit_agg['total'] or 0), 2)
+        avg_credits = round(float(credit_agg['avg'] or 0), 2)
+
+        # ── Weekly velocity (completed cases per week) ───────────────────────
+        weekly_velocity = list(
+            completed_qs.filter(date_completed__isnull=False)
+            .annotate(week=TruncWeek('date_completed'))
+            .values('week')
+            .annotate(count=Count('id'))
+            .order_by('week')
+        )
+
+        # ── Review activity from AuditLog ────────────────────────────────────
+        from core.models import AuditLog
+        review_sent = AuditLog.objects.filter(
+            user=tech,
+            action_type='case_submitted_for_review',
+        )
+        review_approved = AuditLog.objects.filter(
+            user=tech,
+            action_type='case_review_approved',
+        )
+        if date_from:
+            review_sent = review_sent.filter(timestamp__date__gte=date_from)
+            review_approved = review_approved.filter(timestamp__date__gte=date_from)
+        if date_to:
+            review_sent = review_sent.filter(timestamp__date__lte=date_to)
+            review_approved = review_approved.filter(timestamp__date__lte=date_to)
+
+        results.append({
+            'tech': tech,
+            'total_accepted': total_accepted,
+            'completed_count': completed_count,
+            'completion_rate': completion_rate,
+            'in_progress_count': in_progress_count,
+            'on_hold_count': on_hold_count,
+            'pending_review_count': pending_review_count,
+            'rush_count': rush_count,
+            'error_count': error_count,
+            'avg_days': avg_days,
+            'fastest_days': fastest_days,
+            'slowest_days': slowest_days,
+            'tier_counts': tier_counts,
+            'total_credits': total_credits,
+            'avg_credits': avg_credits,
+            'weekly_velocity': weekly_velocity,
+            'reviews_sent': review_sent.count(),
+            'reviews_approved': review_approved.count(),
+        })
+
+    return results
+
+
+@login_required
+def technician_productivity_report(request):
+    """Technician productivity report - Admin and Manager only"""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    all_techs = _exclude_super_dev_users(
+        User.objects.filter(role='technician')
+    ).order_by('first_name', 'last_name')
+
+    tech_id = request.GET.get('tech_id', '').strip()
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    report_data = None
+    selected_tech = None
+    error_msg = None
+
+    # Only run if the form was actually submitted (at least one param present)
+    form_submitted = bool(tech_id or date_from_str or date_to_str)
+
+    if form_submitted:
+        from datetime import datetime
+        try:
+            date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+            date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+        except ValueError:
+            date_from = date_to = None
+            error_msg = 'Invalid date format. Please use YYYY-MM-DD.'
+
+        if not error_msg:
+            report_data = get_technician_productivity_data(
+                tech_id=tech_id or 'all',
+                date_from=date_from,
+                date_to=date_to,
+            )
+            if tech_id and tech_id != 'all':
+                try:
+                    selected_tech = User.objects.get(id=int(tech_id), role='technician')
+                except (User.DoesNotExist, ValueError):
+                    pass
+
+    context = {
+        'all_techs': all_techs,
+        'tech_id': tech_id,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'report_data': report_data,
+        'selected_tech': selected_tech,
+        'is_all_techs': not tech_id or tech_id == 'all',
+        'form_submitted': form_submitted,
+        'error_msg': error_msg,
+        'generated_at': timezone.now(),
+    }
+    return render(request, 'core/technician_productivity_report.html', context)
+
+
+@login_required
+def technician_productivity_pdf(request):
+    """Generate and download a technician productivity report as PDF."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    tech_id = request.GET.get('tech_id', '').strip()
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        return HttpResponse('Invalid date format.', status=400)
+
+    report_data = get_technician_productivity_data(
+        tech_id=tech_id or 'all',
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    selected_tech = None
+    if tech_id and tech_id != 'all':
+        try:
+            selected_tech = User.objects.get(id=int(tech_id), role='technician')
+        except (User.DoesNotExist, ValueError):
+            pass
+
+    period_label = ''
+    if date_from and date_to:
+        period_label = f"{date_from.strftime('%B %d, %Y')} – {date_to.strftime('%B %d, %Y')}"
+    elif date_from:
+        period_label = f"From {date_from.strftime('%B %d, %Y')}"
+    elif date_to:
+        period_label = f"Through {date_to.strftime('%B %d, %Y')}"
+    else:
+        period_label = 'All Time'
+
+    context = {
+        'report_data': report_data,
+        'selected_tech': selected_tech,
+        'is_all_techs': not tech_id or tech_id == 'all',
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+        'pdf_mode': True,
+    }
+
+    html_string = render_to_string('core/technician_productivity_report_pdf.html', context)
+
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+
+    tech_slug = selected_tech.get_full_name().replace(' ', '_') if selected_tech else 'All_Technicians'
+    date_slug = timezone.now().strftime('%Y%m%d')
+    filename = f'Productivity_Report_{tech_slug}_{date_slug}.pdf'
+
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response

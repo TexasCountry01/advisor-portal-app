@@ -20,6 +20,8 @@ urlpatterns = [
     path('reports/export-csv/', views_reports.export_reports_csv, name='export_reports_csv'),
     path('reports/profeds-errors/', views_reports.profeds_error_tracking_report, name='profeds_error_tracking_report'),
     path('reports/beta-feedback/', views_reports.beta_feedback_report, name='beta_feedback_report'),
+    path('reports/technician-productivity/', views_reports.technician_productivity_report, name='technician_productivity_report'),
+    path('reports/technician-productivity/pdf/', views_reports.technician_productivity_pdf, name='technician_productivity_pdf'),
     # Audit Log URLs
     path('audit-log/', views_audit.view_audit_log, name='view_audit_log'),
     path('audit-log/<int:log_id>/', views_audit.audit_log_detail, name='audit_log_detail'),

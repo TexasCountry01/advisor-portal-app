@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Technician Productivity Report - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Page Header -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1>Technician Productivity Report</h1>
+            <p class="text-muted">Select a technician and date range to generate a productivity summary.</p>
+        </div>
+        <div class="col-md-4 text-end d-flex align-items-center justify-content-end gap-2">
+            {% if form_submitted and report_data %}
+            <a href="{% url 'technician_productivity_pdf' %}?tech_id={{ tech_id }}&date_from={{ date_from }}&date_to={{ date_to }}"
+               class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-earmark-pdf"></i> Download PDF
+            </a>
+            {% endif %}
+            <a href="{% url 'view_reports' %}" class="btn btn-outline-secondary">← Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="tech_id" class="form-label fw-semibold">Technician</label>
+                    <select name="tech_id" id="tech_id" class="form-select">
+                        <option value="all" {% if not tech_id or tech_id == 'all' %}selected{% endif %}>All Technicians</option>
+                        {% for tech in all_techs %}
+                        <option value="{{ tech.id }}" {% if tech_id == tech.id|stringformat:"s" %}selected{% endif %}>
+                            {{ tech.get_full_name|default:tech.username }}
+                            {% if tech.user_level %} — {{ tech.get_user_level_display }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label fw-semibold">From Date</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label fw-semibold">To Date</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-bar-chart-line"></i> Generate
+                    </button>
+                    <a href="{% url 'technician_productivity_report' %}" class="btn btn-outline-secondary" title="Reset">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if error_msg %}
+    <div class="alert alert-danger">{{ error_msg }}</div>
+    {% endif %}
+
+    {% if form_submitted and not report_data %}
+    <div class="alert alert-warning">No data found for the selected filters.</div>
+    {% endif %}
+
+    {% if report_data %}
+
+    <!-- Report Header Block -->
+    <div class="card mb-4 border-0 bg-light">
+        <div class="card-body py-3 px-4">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="mb-1 fw-bold">
+                        {% if is_all_techs %}All Technicians{% else %}{{ selected_tech.get_full_name|default:selected_tech.username }}{% endif %}
+                    </h5>
+                    <small class="text-muted">
+                        Period:
+                        {% if date_from and date_to %}{{ date_from }} – {{ date_to }}
+                        {% elif date_from %}From {{ date_from }}
+                        {% elif date_to %}Through {{ date_to }}
+                        {% else %}All Time{% endif %}
+                    </small>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">Generated {{ generated_at|date:"m/d/Y g:i A" }} by {{ request.user.get_full_name|default:request.user.username }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if is_all_techs and report_data|length > 1 %}
+    <!-- ═══════════════════════════════════════════════════════
+         ALL-TECHNICIANS SUMMARY TABLE
+    ═══════════════════════════════════════════════════════ -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white fw-semibold">
+            <i class="bi bi-people-fill text-primary me-2"></i>All Technicians — Summary Comparison
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Technician</th>
+                            <th class="text-center">Accepted</th>
+                            <th class="text-center">Completed</th>
+                            <th class="text-center">Completion %</th>
+                            <th class="text-center">In Progress</th>
+                            <th class="text-center">On Hold</th>
+                            <th class="text-center">Rush</th>
+                            <th class="text-center">Errors</th>
+                            <th class="text-center">Avg Days</th>
+                            <th class="text-center">Credits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report_data %}
+                        <tr>
+                            <td class="fw-semibold">{{ row.tech.get_full_name|default:row.tech.username }}</td>
+                            <td class="text-center">{{ row.total_accepted }}</td>
+                            <td class="text-center">{{ row.completed_count }}</td>
+                            <td class="text-center">
+                                <span class="badge {% if row.completion_rate >= 80 %}bg-success{% elif row.completion_rate >= 50 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ row.completion_rate }}%
+                                </span>
+                            </td>
+                            <td class="text-center">{{ row.in_progress_count }}</td>
+                            <td class="text-center">{{ row.on_hold_count }}</td>
+                            <td class="text-center">{% if row.rush_count %}<span class="text-danger fw-semibold">{{ row.rush_count }}</span>{% else %}0{% endif %}</td>
+                            <td class="text-center">{% if row.error_count %}<span class="text-danger fw-semibold">{{ row.error_count }}</span>{% else %}0{% endif %}</td>
+                            <td class="text-center">{% if row.avg_days is not None %}{{ row.avg_days }}{% else %}—{% endif %}</td>
+                            <td class="text-center">{{ row.total_credits }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════════
+         PER-TECHNICIAN DETAIL SECTIONS
+    ═══════════════════════════════════════════════════════ -->
+    {% for row in report_data %}
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <span class="fw-bold fs-6">
+                <i class="bi bi-person-badge text-primary me-2"></i>
+                {{ row.tech.get_full_name|default:row.tech.username }}
+                {% if row.tech.user_level %}
+                <span class="badge bg-secondary ms-2 fw-normal" style="font-size: 0.75em;">{{ row.tech.get_user_level_display }}</span>
+                {% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+
+            <!-- Section 1: Scorecard Tiles -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="text-center p-3 rounded border">
+                        <div class="fs-3 fw-bold text-primary">{{ row.total_accepted }}</div>
+                        <div class="small text-muted">Cases Accepted</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="text-center p-3 rounded border">
+                        <div class="fs-3 fw-bold text-success">{{ row.completed_count }}</div>
+                        <div class="small text-muted">Completed</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="text-center p-3 rounded border">
+                        <div class="fs-3 fw-bold {% if row.completion_rate >= 80 %}text-success{% elif row.completion_rate >= 50 %}text-warning{% else %}text-secondary{% endif %}">
+                            {{ row.completion_rate }}%
+                        </div>
+                        <div class="small text-muted">Completion Rate</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="text-center p-3 rounded border">
+                        <div class="fs-3 fw-bold text-secondary">{% if row.avg_days is not None %}{{ row.avg_days }}{% else %}—{% endif %}</div>
+                        <div class="small text-muted">Avg Days</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="text-center p-3 rounded border">
+                        <div class="fs-3 fw-bold {% if row.rush_count %}text-danger{% else %}text-secondary{% endif %}">{{ row.rush_count }}</div>
+                        <div class="small text-muted">Rush Cases</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3 col-lg-2">
+                    <div class="text-center p-3 rounded border">
+                        <div class="fs-3 fw-bold {% if row.error_count %}text-danger{% else %}text-success{% endif %}">{{ row.error_count }}</div>
+                        <div class="small text-muted">Errors Flagged</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- Section 2: Case Status Breakdown -->
+                <div class="col-md-4">
+                    <h6 class="fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.05em;">Case Status Breakdown</h6>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr><td>Completed</td><td class="text-end fw-semibold text-success">{{ row.completed_count }}</td></tr>
+                            <tr><td>In Progress</td><td class="text-end">{{ row.in_progress_count }}</td></tr>
+                            <tr><td>On Hold</td><td class="text-end">{{ row.on_hold_count }}</td></tr>
+                            <tr><td>Pending Review</td><td class="text-end">{{ row.pending_review_count }}</td></tr>
+                            <tr class="fw-semibold border-top"><td>Total Accepted</td><td class="text-end">{{ row.total_accepted }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section 3: Completion Performance -->
+                <div class="col-md-4">
+                    <h6 class="fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.05em;">Completion Performance</h6>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr><td>Average Turnaround</td><td class="text-end">{% if row.avg_days is not None %}{{ row.avg_days }} day{{ row.avg_days|pluralize }}{% else %}—{% endif %}</td></tr>
+                            <tr><td>Fastest Case</td><td class="text-end">{% if row.fastest_days is not None %}{{ row.fastest_days }} day{{ row.fastest_days|pluralize }}{% else %}—{% endif %}</td></tr>
+                            <tr><td>Slowest Case</td><td class="text-end">{% if row.slowest_days is not None %}{{ row.slowest_days }} day{{ row.slowest_days|pluralize }}{% else %}—{% endif %}</td></tr>
+                            <tr><td>Rush Cases</td><td class="text-end">{{ row.rush_count }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section 4: Tier & Credits -->
+                <div class="col-md-4">
+                    <h6 class="fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.05em;">Tier Breakdown & Credits</h6>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            {% for tier_label, tier_count in row.tier_counts.items %}
+                            <tr><td>{{ tier_label }}</td><td class="text-end">{{ tier_count }}</td></tr>
+                            {% endfor %}
+                            <tr class="border-top"><td>Total Credits</td><td class="text-end fw-semibold">{{ row.total_credits }}</td></tr>
+                            <tr><td>Avg Credits / Case</td><td class="text-end">{{ row.avg_credits }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Section 5: Review Activity -->
+                {% if row.reviews_sent or row.reviews_approved %}
+                <div class="col-md-4">
+                    <h6 class="fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.05em;">Review Activity</h6>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            <tr><td>Cases Sent for Review</td><td class="text-end">{{ row.reviews_sent }}</td></tr>
+                            <tr><td>Cases Review Approved</td><td class="text-end">{{ row.reviews_approved }}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+
+                <!-- Section 6: Weekly Velocity -->
+                {% if row.weekly_velocity %}
+                <div class="col-md-8">
+                    <h6 class="fw-semibold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.05em;">Weekly Completed Cases</h6>
+                    <div class="table-responsive" style="max-height: 180px; overflow-y: auto;">
+                        <table class="table table-sm mb-0">
+                            <thead class="table-light sticky-top">
+                                <tr><th>Week of</th><th class="text-end">Cases Completed</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for week in row.weekly_velocity %}
+                                <tr>
+                                    <td>{{ week.week|date:"m/d/Y" }}</td>
+                                    <td class="text-end">{{ week.count }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+
+            </div><!-- /row -->
+        </div><!-- /card-body -->
+    </div><!-- /card -->
+    {% endfor %}
+
+    <!-- Download PDF button (bottom) -->
+    {% if report_data %}
+    <div class="text-end mb-5">
+        <a href="{% url 'technician_productivity_pdf' %}?tech_id={{ tech_id }}&date_from={{ date_from }}&date_to={{ date_to }}"
+           class="btn btn-danger" target="_blank">
+            <i class="bi bi-file-earmark-pdf"></i> Download PDF Report
+        </a>
+    </div>
+    {% endif %}
+
+    {% endif %}{# end report_data #}
+
+</div>
+{% endblock %}

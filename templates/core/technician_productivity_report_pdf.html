@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page {
+        size: letter;
+        margin: 0.6in 0.75in 0.9in 0.75in;
+        @bottom-center {
+            content: "Page " counter(page) " of " counter(pages);
+            font-size: 8pt;
+            color: #999;
+        }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        font-size: 10pt;
+        color: #222;
+        line-height: 1.45;
+    }
+
+    /* ── Document Header ─────────────────────────────── */
+    .doc-header {
+        border-bottom: 2px solid #1a2a4a;
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+    }
+    .doc-header h1 {
+        font-size: 16pt;
+        font-weight: 700;
+        color: #1a2a4a;
+        margin-bottom: 2px;
+    }
+    .doc-header .meta {
+        font-size: 8.5pt;
+        color: #666;
+    }
+    .doc-header .meta span { margin-right: 24px; }
+
+    /* ── Tech Section Header ─────────────────────────── */
+    .tech-header {
+        background-color: #1a2a4a;
+        color: white;
+        padding: 6px 12px;
+        margin-top: 18px;
+        margin-bottom: 10px;
+        font-size: 11pt;
+        font-weight: 700;
+        page-break-after: avoid;
+    }
+    .tech-header .level-badge {
+        font-size: 8pt;
+        font-weight: 400;
+        background: rgba(255,255,255,0.2);
+        padding: 2px 8px;
+        border-radius: 10px;
+        margin-left: 8px;
+    }
+
+    /* ── Scorecard Tiles ─────────────────────────────── */
+    .scorecard {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+    }
+    .tile {
+        flex: 1;
+        min-width: 80px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 8px 6px;
+        text-align: center;
+    }
+    .tile .val {
+        font-size: 18pt;
+        font-weight: 700;
+        line-height: 1.1;
+        color: #1a2a4a;
+    }
+    .tile .val.green { color: #198754; }
+    .tile .val.red   { color: #c00000; }
+    .tile .lbl {
+        font-size: 7pt;
+        color: #777;
+        line-height: 1.3;
+        margin-top: 2px;
+    }
+
+    /* ── Detail Section Grid ─────────────────────────── */
+    .detail-grid {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 14px;
+    }
+    .detail-col { flex: 1; }
+    .section-label {
+        font-size: 7pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #888;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 3px;
+        margin-bottom: 6px;
+    }
+
+    /* ── Tables ──────────────────────────────────────── */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9pt;
+    }
+    table td {
+        padding: 3px 4px;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    table td:last-child { text-align: right; font-weight: 600; }
+    table.summary thead th {
+        background: #f0f3f8;
+        font-weight: 700;
+        font-size: 8pt;
+        padding: 5px 6px;
+        border-bottom: 1px solid #ccc;
+        text-align: center;
+    }
+    table.summary thead th:first-child { text-align: left; }
+    table.summary tbody td {
+        padding: 4px 6px;
+        border-bottom: 1px solid #f0f0f0;
+        text-align: center;
+    }
+    table.summary tbody td:first-child { text-align: left; font-weight: 600; }
+    table.weekly td:first-child { text-align: left; }
+
+    /* ── Summary Comparison Section ─────────────────── */
+    .section-block {
+        margin-bottom: 6px;
+    }
+    .section-block-title {
+        font-size: 9pt;
+        font-weight: 700;
+        color: #1a2a4a;
+        border-bottom: 1px solid #ccc;
+        padding-bottom: 3px;
+        margin-bottom: 6px;
+    }
+
+    /* ── Footer ──────────────────────────────────────── */
+    .doc-footer {
+        margin-top: 24px;
+        padding-top: 8px;
+        border-top: 1px solid #ddd;
+        font-size: 7.5pt;
+        color: #aaa;
+        text-align: center;
+    }
+    .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- Document Header -->
+<div class="doc-header">
+    <h1>Technician Productivity Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+{% if is_all_techs and report_data|length > 1 %}
+<!-- All-Technicians Summary Table -->
+<div class="section-block">
+    <div class="section-block-title">All Technicians — Summary Comparison</div>
+    <table class="summary">
+        <thead>
+            <tr>
+                <th style="text-align:left;">Technician</th>
+                <th>Accepted</th>
+                <th>Completed</th>
+                <th>Rate %</th>
+                <th>In Prog</th>
+                <th>Rush</th>
+                <th>Errors</th>
+                <th>Avg Days</th>
+                <th>Credits</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in report_data %}
+            <tr>
+                <td style="text-align:left; font-weight:600;">{{ row.tech.get_full_name|default:row.tech.username }}</td>
+                <td>{{ row.total_accepted }}</td>
+                <td>{{ row.completed_count }}</td>
+                <td>{{ row.completion_rate }}%</td>
+                <td>{{ row.in_progress_count }}</td>
+                <td>{{ row.rush_count }}</td>
+                <td>{{ row.error_count }}</td>
+                <td>{% if row.avg_days is not None %}{{ row.avg_days }}{% else %}—{% endif %}</td>
+                <td>{{ row.total_credits }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% for row in report_data %}
+{% if not forloop.first %}<div class="page-break"></div>{% endif %}
+
+<!-- Technician Section Header -->
+<div class="tech-header">
+    {{ row.tech.get_full_name|default:row.tech.username }}
+    {% if row.tech.user_level %}
+    <span class="level-badge">{{ row.tech.get_user_level_display }}</span>
+    {% endif %}
+</div>
+
+<!-- Scorecard Tiles -->
+<div class="scorecard">
+    <div class="tile">
+        <div class="val">{{ row.total_accepted }}</div>
+        <div class="lbl">Cases<br>Accepted</div>
+    </div>
+    <div class="tile">
+        <div class="val green">{{ row.completed_count }}</div>
+        <div class="lbl">Completed</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ row.completion_rate }}%</div>
+        <div class="lbl">Completion<br>Rate</div>
+    </div>
+    <div class="tile">
+        <div class="val">{% if row.avg_days is not None %}{{ row.avg_days }}{% else %}—{% endif %}</div>
+        <div class="lbl">Avg Days<br>to Complete</div>
+    </div>
+    <div class="tile">
+        <div class="val {% if row.rush_count %}red{% endif %}">{{ row.rush_count }}</div>
+        <div class="lbl">Rush<br>Cases</div>
+    </div>
+    <div class="tile">
+        <div class="val {% if row.error_count %}red{% endif %}">{{ row.error_count }}</div>
+        <div class="lbl">Errors<br>Flagged</div>
+    </div>
+</div>
+
+<!-- Detail Grid -->
+<div class="detail-grid">
+
+    <!-- Case Status -->
+    <div class="detail-col">
+        <div class="section-label">Case Status</div>
+        <table>
+            <tr><td>Completed</td><td>{{ row.completed_count }}</td></tr>
+            <tr><td>In Progress</td><td>{{ row.in_progress_count }}</td></tr>
+            <tr><td>On Hold</td><td>{{ row.on_hold_count }}</td></tr>
+            <tr><td>Pending Review</td><td>{{ row.pending_review_count }}</td></tr>
+            <tr style="border-top: 1px solid #ccc;"><td><strong>Total Accepted</strong></td><td>{{ row.total_accepted }}</td></tr>
+        </table>
+    </div>
+
+    <!-- Completion Performance -->
+    <div class="detail-col">
+        <div class="section-label">Completion Performance</div>
+        <table>
+            <tr><td>Avg Turnaround</td><td>{% if row.avg_days is not None %}{{ row.avg_days }} day{{ row.avg_days|pluralize }}{% else %}—{% endif %}</td></tr>
+            <tr><td>Fastest Case</td><td>{% if row.fastest_days is not None %}{{ row.fastest_days }} day{{ row.fastest_days|pluralize }}{% else %}—{% endif %}</td></tr>
+            <tr><td>Slowest Case</td><td>{% if row.slowest_days is not None %}{{ row.slowest_days }} day{{ row.slowest_days|pluralize }}{% else %}—{% endif %}</td></tr>
+            <tr><td>Rush Cases</td><td>{{ row.rush_count }}</td></tr>
+        </table>
+    </div>
+
+    <!-- Tier & Credits -->
+    <div class="detail-col">
+        <div class="section-label">Tier Breakdown &amp; Credits</div>
+        <table>
+            {% for tier_label, tier_count in row.tier_counts.items %}
+            <tr><td>{{ tier_label }}</td><td>{{ tier_count }}</td></tr>
+            {% endfor %}
+            <tr style="border-top: 1px solid #ccc;"><td>Total Credits</td><td>{{ row.total_credits }}</td></tr>
+            <tr><td>Avg Credits / Case</td><td>{{ row.avg_credits }}</td></tr>
+        </table>
+    </div>
+
+</div>
+
+{% if row.reviews_sent or row.reviews_approved %}
+<div style="margin-bottom: 12px;">
+    <div class="section-label">Review Activity</div>
+    <table style="max-width: 280px;">
+        <tr><td>Cases Sent for Review</td><td>{{ row.reviews_sent }}</td></tr>
+        <tr><td>Cases Review Approved</td><td>{{ row.reviews_approved }}</td></tr>
+    </table>
+</div>
+{% endif %}
+
+{% if row.weekly_velocity %}
+<div>
+    <div class="section-label">Weekly Completed Cases</div>
+    <table class="weekly" style="max-width: 320px;">
+        <thead>
+            <tr>
+                <th style="text-align:left; font-size:8pt; font-weight:700; padding: 3px 4px; border-bottom: 1px solid #ccc;">Week of</th>
+                <th style="text-align:right; font-size:8pt; font-weight:700; padding: 3px 4px; border-bottom: 1px solid #ccc;">Cases Completed</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for week in row.weekly_velocity %}
+            <tr>
+                <td>{{ week.week|date:"m/d/Y" }}</td>
+                <td>{{ week.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% endfor %}
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | Technician Productivity Report | {{ generated_at|date:"m/d/Y" }}
+</div>
+
+</body>
+</html>
