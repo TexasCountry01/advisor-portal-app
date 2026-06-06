@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hold Analysis Report - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-pause-circle text-warning"></i> Hold Analysis Report</h1>
+            <p class="text-muted">Cases placed on hold, hold reasons, duration analysis, and currently-active holds</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'hold_analysis_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Hold Start From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Hold Start To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'hold_analysis_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_holds }}</div>
+                    <div class="small text-muted">Total Holds</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100 {% if currently_on_hold > 0 %}border-start border-4 border-warning{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ currently_on_hold }}</div>
+                    <div class="small text-muted">Currently on Hold</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ resolved_holds }}</div>
+                    <div class="small text-muted">Resolved</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">{{ avg_duration }}</div>
+                    <div class="small text-muted">Avg Duration (days)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-danger">{{ max_duration }}</div>
+                    <div class="small text-muted">Max Duration (days)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-secondary">{{ audit_held_count }}</div>
+                    <div class="small text-muted">Audit Events</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Left column -->
+        <div class="col-md-5">
+
+            <!-- Reason distribution -->
+            {% if reason_list %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-list-ul"></i> Hold Reasons</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr><th>Reason</th><th class="text-center">Cases</th><th class="text-center">%</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for r in reason_list %}
+                        <tr>
+                            <td>{{ r.hold_reason }}</td>
+                            <td class="text-center fw-semibold">{{ r.count }}</td>
+                            <td class="text-center text-muted">{{ r.pct }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Duration buckets -->
+            {% if buckets %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-clock-history"></i> Duration Distribution</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Duration Range</th><th class="text-center">Cases</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for bucket, count in buckets.items %}
+                        <tr>
+                            <td>{{ bucket }}</td>
+                            <td class="text-center fw-semibold {% if bucket == '30+ days' and count > 0 %}text-danger{% endif %}">{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Status before hold -->
+            {% if status_list %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-arrow-left-right"></i> Status Before Hold</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Prior Status</th><th class="text-center">Cases</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for r in status_list %}
+                        <tr>
+                            <td>{{ r.status_before_hold }}</td>
+                            <td class="text-center fw-semibold">{{ r.count }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Right column: case list -->
+        <div class="col-md-7">
+            {% if longest_holds %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-sort-down"></i> Longest Holds</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case ID</th>
+                                <th class="text-center">Days</th>
+                                <th>Status</th>
+                                <th>Hold Start</th>
+                                <th>Hold End</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in longest_holds %}
+                        <tr class="{% if r.status == 'hold' %}table-warning{% endif %}">
+                            <td class="font-monospace small">{{ r.external_case_id }}</td>
+                            <td class="text-center fw-bold {% if r.hold_duration_days >= 30 %}text-danger{% elif r.hold_duration_days >= 14 %}text-warning{% endif %}">
+                                {{ r.hold_duration_days }}
+                            </td>
+                            <td>
+                                <span class="badge {% if r.status == 'hold' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                    {{ r.status }}
+                                </span>
+                            </td>
+                            <td class="small">{{ r.hold_start_date|date:"m/d/Y"|default:"—" }}</td>
+                            <td class="small">
+                                {% if r.hold_end_date %}
+                                    {{ r.hold_end_date|date:"m/d/Y" }}
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Active</span>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted" style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ r.hold_reason }}">
+                                {{ r.hold_reason|truncatechars:50 }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info">No cases with hold data found for this period.</div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

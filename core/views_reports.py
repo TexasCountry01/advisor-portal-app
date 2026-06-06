@@ -1740,3 +1740,213 @@ def credit_distribution_pdf(request):
     fname = f"credit_distribution_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
+
+
+# ─── R6: Hold Analysis ──────────────────────────────────────────────────────
+
+def get_hold_analysis_data(date_from=None, date_to=None):
+    """Aggregate hold statistics across cases."""
+    from core.models import AuditLog
+
+    # Cases ever placed on hold (have a hold_start_date)
+    qs = Case.objects.filter(hold_start_date__isnull=False)
+    if date_from:
+        qs = qs.filter(hold_start_date__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(hold_start_date__date__lte=date_to)
+
+    total_holds = qs.count()
+    currently_on_hold = qs.filter(status='hold').count()
+    resolved_holds = qs.filter(hold_end_date__isnull=False).count()
+
+    # Duration stats (hold_duration_days is Decimal; cast to float for aggregation)
+    dur_agg = qs.exclude(hold_duration_days__isnull=True).aggregate(
+        avg_dur=Avg('hold_duration_days'),
+        max_dur=Max('hold_duration_days'),
+        total_dur=Sum('hold_duration_days'),
+    )
+    avg_duration = round(float(dur_agg['avg_dur'] or 0), 1)
+    max_duration = round(float(dur_agg['max_dur'] or 0), 1)
+
+    # Distribution by hold_reason (top reasons)
+    reason_dist = (
+        qs.exclude(hold_reason='')
+        .exclude(hold_reason__isnull=True)
+        .values('hold_reason')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:15]
+    )
+    reason_list = list(reason_dist)
+    reason_total = sum(r['count'] for r in reason_list)
+    for r in reason_list:
+        r['pct'] = round(r['count'] / reason_total * 100, 1) if reason_total else 0
+
+    # Distribution by status_before_hold
+    status_dist = (
+        qs.exclude(status_before_hold='')
+        .values('status_before_hold')
+        .annotate(count=Count('id'))
+        .order_by('-count')
+    )
+    status_list = list(status_dist)
+
+    # Duration buckets
+    buckets = {
+        '< 1 day': qs.filter(hold_duration_days__lt=1).count(),
+        '1–3 days': qs.filter(hold_duration_days__gte=1, hold_duration_days__lt=3).count(),
+        '3–7 days': qs.filter(hold_duration_days__gte=3, hold_duration_days__lt=7).count(),
+        '7–14 days': qs.filter(hold_duration_days__gte=7, hold_duration_days__lt=14).count(),
+        '14–30 days': qs.filter(hold_duration_days__gte=14, hold_duration_days__lt=30).count(),
+        '30+ days': qs.filter(hold_duration_days__gte=30).count(),
+    }
+
+    # Longest active/recent holds
+    longest_holds_qs = (
+        qs.select_related('assigned_to', 'member')
+        .values(
+            'external_case_id', 'status', 'hold_reason', 'hold_duration_days',
+            'hold_start_date', 'hold_end_date', 'status_before_hold',
+            'assigned_to__first_name', 'assigned_to__last_name',
+            'member__first_name', 'member__last_name',
+        )
+        .order_by(F('hold_duration_days').desc(nulls_last=True))[:30]
+    )
+    longest_holds = []
+    for r in longest_holds_qs:
+        r['hold_duration_days'] = float(r['hold_duration_days'] or 0)
+        longest_holds.append(r)
+
+    # AuditLog events
+    audit_held = AuditLog.objects.filter(action_type='case_held')
+    audit_resumed = AuditLog.objects.filter(action_type='case_resumed')
+    if date_from:
+        audit_held = audit_held.filter(timestamp__date__gte=date_from)
+        audit_resumed = audit_resumed.filter(timestamp__date__gte=date_from)
+    if date_to:
+        audit_held = audit_held.filter(timestamp__date__lte=date_to)
+        audit_resumed = audit_resumed.filter(timestamp__date__lte=date_to)
+    audit_held_count = audit_held.count()
+    audit_resumed_count = audit_resumed.count()
+
+    return {
+        'total_holds': total_holds,
+        'currently_on_hold': currently_on_hold,
+        'resolved_holds': resolved_holds,
+        'avg_duration': avg_duration,
+        'max_duration': max_duration,
+        'reason_list': reason_list,
+        'status_list': status_list,
+        'buckets': buckets,
+        'longest_holds': longest_holds,
+        'audit_held_count': audit_held_count,
+        'audit_resumed_count': audit_resumed_count,
+    }
+
+
+@login_required
+def hold_analysis_report(request):
+    """R6: Hold Analysis — HTML + inline CSV."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_hold_analysis_data(date_from=date_from, date_to=date_to)
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        fname = f"hold_analysis_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{fname}"'
+        writer = csv.writer(response)
+
+        writer.writerow(['Hold Analysis Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} – {date_to_str or 'present'}"])
+        writer.writerow([])
+
+        writer.writerow(['Summary'])
+        writer.writerow(['Total Cases Held', data['total_holds']])
+        writer.writerow(['Currently On Hold', data['currently_on_hold']])
+        writer.writerow(['Resolved Holds', data['resolved_holds']])
+        writer.writerow(['Average Duration (days)', data['avg_duration']])
+        writer.writerow(['Max Duration (days)', data['max_duration']])
+        writer.writerow(['Audit: case_held events', data['audit_held_count']])
+        writer.writerow(['Audit: case_resumed events', data['audit_resumed_count']])
+        writer.writerow([])
+
+        writer.writerow(['Hold Reason', 'Cases', '%'])
+        for r in data['reason_list']:
+            writer.writerow([r['hold_reason'], r['count'], f"{r['pct']}%"])
+        writer.writerow([])
+
+        writer.writerow(['Duration Bucket', 'Cases'])
+        for bucket, count in data['buckets'].items():
+            writer.writerow([bucket, count])
+        writer.writerow([])
+
+        writer.writerow(['Longest Holds'])
+        writer.writerow(['Case ID', 'Status', 'Duration (days)', 'Hold Start', 'Hold End', 'Reason', 'Technician'])
+        for r in data['longest_holds']:
+            writer.writerow([
+                r['external_case_id'],
+                r['status'],
+                r['hold_duration_days'],
+                r['hold_start_date'].strftime('%m/%d/%Y') if r['hold_start_date'] else '',
+                r['hold_end_date'].strftime('%m/%d/%Y') if r['hold_end_date'] else 'Active',
+                (r['hold_reason'] or '')[:80],
+                f"{r.get('assigned_to__first_name') or ''} {r.get('assigned_to__last_name') or ''}".strip(),
+            ])
+        return response
+
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/hold_analysis_report.html', context)
+
+
+@login_required
+def hold_analysis_pdf(request):
+    """PDF export for Hold Analysis Report."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_hold_analysis_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/hold_analysis_report_pdf.html', {
+        **data,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    fname = f"hold_analysis_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return response

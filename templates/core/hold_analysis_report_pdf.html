@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #ffc107; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #b38600; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 10px; margin-bottom: 14px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 8px; text-align: center; }
+    .tile .val { font-size: 15pt; font-weight: 700; color: #0d6efd; }
+    .tile.warn .val { color: #b38600; }
+    .tile.danger .val { color: #dc3545; }
+    .tile.success .val { color: #198754; }
+    .tile.info .val { color: #0dcaf0; }
+    .tile .lbl { font-size: 7pt; color: #777; margin-top: 2px; }
+    .cols { display: flex; gap: 18px; }
+    .col-left { flex: 1; }
+    .col-right { flex: 1.6; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid #ccc; text-align: left; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #f0f0f0; }
+    .badge-hold { background: #ffc107; color: #333; border-radius: 3px; padding: 1px 5px; font-size: 7.5pt; font-weight: 600; }
+    .badge-done { background: #e0e0e0; color: #555; border-radius: 3px; padding: 1px 5px; font-size: 7.5pt; }
+    .text-danger { color: #dc3545; }
+    .text-warn { color: #b38600; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#9208; Hold Analysis Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    <div class="tile">
+        <div class="val">{{ total_holds }}</div>
+        <div class="lbl">Total Holds</div>
+    </div>
+    <div class="tile warn">
+        <div class="val">{{ currently_on_hold }}</div>
+        <div class="lbl">Currently on Hold</div>
+    </div>
+    <div class="tile success">
+        <div class="val">{{ resolved_holds }}</div>
+        <div class="lbl">Resolved</div>
+    </div>
+    <div class="tile info">
+        <div class="val">{{ avg_duration }}</div>
+        <div class="lbl">Avg Days</div>
+    </div>
+    <div class="tile danger">
+        <div class="val">{{ max_duration }}</div>
+        <div class="lbl">Max Days</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ audit_held_count }}</div>
+        <div class="lbl">Audit Events</div>
+    </div>
+</div>
+
+<div class="cols">
+    <div class="col-left">
+        {% if reason_list %}
+        <div class="section-title">Hold Reasons</div>
+        <table>
+            <thead><tr><th>Reason</th><th style="text-align:right;">Cases</th><th style="text-align:right;">%</th></tr></thead>
+            <tbody>
+            {% for r in reason_list %}
+            <tr>
+                <td>{{ r.hold_reason }}</td>
+                <td style="text-align:right; font-weight:600;">{{ r.count }}</td>
+                <td style="text-align:right; color:#999;">{{ r.pct }}%</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if buckets %}
+        <div class="section-title">Duration Distribution</div>
+        <table>
+            <thead><tr><th>Range</th><th style="text-align:right;">Cases</th></tr></thead>
+            <tbody>
+            {% for bucket, count in buckets.items %}
+            <tr>
+                <td>{{ bucket }}</td>
+                <td style="text-align:right; font-weight:600;" {% if bucket == '30+ days' and count > 0 %}class="text-danger"{% endif %}>{{ count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if status_list %}
+        <div class="section-title">Status Before Hold</div>
+        <table>
+            <thead><tr><th>Prior Status</th><th style="text-align:right;">Cases</th></tr></thead>
+            <tbody>
+            {% for r in status_list %}
+            <tr>
+                <td>{{ r.status_before_hold }}</td>
+                <td style="text-align:right; font-weight:600;">{{ r.count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <div class="col-right">
+        {% if longest_holds %}
+        <div class="section-title">Longest Holds</div>
+        <table>
+            <thead><tr>
+                <th>Case ID</th>
+                <th style="text-align:right;">Days</th>
+                <th>Status</th>
+                <th>Hold Start</th>
+                <th>Hold End</th>
+                <th>Reason</th>
+            </tr></thead>
+            <tbody>
+            {% for r in longest_holds %}
+            <tr>
+                <td style="font-size:8pt; font-family:monospace;">{{ r.external_case_id }}</td>
+                <td style="text-align:right; font-weight:700; {% if r.hold_duration_days >= 30 %}color:#dc3545;{% elif r.hold_duration_days >= 14 %}color:#b38600;{% endif %}">
+                    {{ r.hold_duration_days }}
+                </td>
+                <td>
+                    {% if r.status == 'hold' %}
+                    <span class="badge-hold">hold</span>
+                    {% else %}
+                    <span class="badge-done">{{ r.status }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-size:8pt;">{{ r.hold_start_date|date:"m/d/Y"|default:"—" }}</td>
+                <td style="font-size:8pt;">
+                    {% if r.hold_end_date %}{{ r.hold_end_date|date:"m/d/Y" }}{% else %}<span class="badge-hold">Active</span>{% endif %}
+                </td>
+                <td style="font-size:7.5pt; color:#666; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                    {{ r.hold_reason|truncatechars:45 }}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | Hold Analysis Report | {{ generated_at|date:"m/d/Y" }}
+</div>
+</body>
+</html>
