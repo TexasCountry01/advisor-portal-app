@@ -1386,9 +1386,10 @@ def get_member_activity_data(date_from=None, date_to=None):
     total_members = all_members.count()
 
     # Case queryset scoped to date range
-    case_qs = _exclude_super_dev_users(
-        Case.objects.filter(member__isnull=False).select_related('member')
-    )
+    super_dev_email = _get_super_dev_email()
+    case_qs = Case.objects.filter(member__isnull=False).select_related('member')
+    if super_dev_email:
+        case_qs = case_qs.exclude(member__email__iexact=super_dev_email)
     if date_from:
         case_qs = case_qs.filter(date_submitted__date__gte=date_from)
     if date_to:
@@ -2190,5 +2191,240 @@ def advisor_engagement_pdf(request):
     pdf_buffer.seek(0)
     response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
     fname = f"advisor_engagement_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return response
+
+
+# ─── R8: System Health & Ops ────────────────────────────────────────────────
+
+def get_system_health_data(date_from=None, date_to=None):
+    """Aggregate system health metrics from AuditLog and Case fields."""
+    from core.models import AuditLog
+    from cases.models import CaseDocument
+
+    def _audit_count(action_type):
+        qs = AuditLog.objects.filter(action_type=action_type)
+        if date_from:
+            qs = qs.filter(timestamp__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(timestamp__date__lte=date_to)
+        return qs.count()
+
+    # SSO metrics
+    sso_failures = _audit_count('sso_login_failed')
+    sso_provisions = _audit_count('sso_auto_provision')
+    sso_syncs = _audit_count('sso_sync')
+
+    # Email metrics
+    email_sent = _audit_count('email_notification_sent')
+    email_failed = _audit_count('email_notification_failed')
+    email_total = email_sent + email_failed
+    email_failure_rate = round(email_failed / email_total * 100, 1) if email_total else 0
+
+    # Cron jobs
+    cron_executions = _audit_count('cron_job_executed')
+
+    # Logins
+    total_logins = _audit_count('login')
+
+    # API sync status (all-time, not filtered by date)
+    api_pending = Case.objects.filter(api_sync_status='pending').count()
+    api_synced = Case.objects.filter(api_sync_status='synced').count()
+    api_failed = Case.objects.filter(api_sync_status='failed').count()
+    api_total = api_pending + api_synced + api_failed
+
+    # PDF generation status
+    pdf_pending = Case.objects.filter(fact_finder_pdf_status='pending').count()
+    pdf_completed = Case.objects.filter(fact_finder_pdf_status='completed').count()
+    pdf_failed = Case.objects.filter(fact_finder_pdf_status='failed').count()
+
+    # Zero-document cases (non-cancelled, non-draft)
+    zero_doc_cases = (
+        Case.objects.exclude(status__in=['cancelled', 'draft'])
+        .annotate(doc_count=Count('documents'))
+        .filter(doc_count=0)
+        .count()
+    )
+
+    # ProFeds error-flagged cases
+    profeds_errors = Case.objects.filter(has_profeds_error=True).count()
+
+    # Recent SSO failures (last 20)
+    sso_failure_log = (
+        AuditLog.objects.filter(action_type='sso_login_failed')
+        .order_by('-timestamp')
+        .values('timestamp', 'description', 'user__email')[:20]
+    )
+    if date_from:
+        sso_failure_log = (
+            AuditLog.objects.filter(action_type='sso_login_failed', timestamp__date__gte=date_from)
+            .order_by('-timestamp')
+            .values('timestamp', 'description', 'user__email')[:20]
+        )
+
+    # Recent email failures (last 20)
+    email_failure_log = (
+        AuditLog.objects.filter(action_type='email_notification_failed')
+        .order_by('-timestamp')
+        .values('timestamp', 'description', 'user__email')[:20]
+    )
+    if date_from:
+        email_failure_log = (
+            AuditLog.objects.filter(action_type='email_notification_failed', timestamp__date__gte=date_from)
+            .order_by('-timestamp')
+            .values('timestamp', 'description', 'user__email')[:20]
+        )
+
+    # Recent cron executions (last 10)
+    cron_log = (
+        AuditLog.objects.filter(action_type='cron_job_executed')
+        .order_by('-timestamp')
+        .values('timestamp', 'description')[:10]
+    )
+
+    return {
+        'sso_failures': sso_failures,
+        'sso_provisions': sso_provisions,
+        'sso_syncs': sso_syncs,
+        'email_sent': email_sent,
+        'email_failed': email_failed,
+        'email_failure_rate': email_failure_rate,
+        'cron_executions': cron_executions,
+        'total_logins': total_logins,
+        'api_pending': api_pending,
+        'api_synced': api_synced,
+        'api_failed': api_failed,
+        'api_total': api_total,
+        'pdf_pending': pdf_pending,
+        'pdf_completed': pdf_completed,
+        'pdf_failed': pdf_failed,
+        'zero_doc_cases': zero_doc_cases,
+        'profeds_errors': profeds_errors,
+        'sso_failure_log': list(sso_failure_log),
+        'email_failure_log': list(email_failure_log),
+        'cron_log': list(cron_log),
+    }
+
+
+@login_required
+def system_health_report(request):
+    """R8: System Health & Ops — HTML + inline CSV."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_system_health_data(date_from=date_from, date_to=date_to)
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        fname = f"system_health_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{fname}"'
+        writer = csv.writer(response)
+
+        writer.writerow(['System Health & Ops Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} – {date_to_str or 'present'}"])
+        writer.writerow([])
+
+        writer.writerow(['SSO'])
+        writer.writerow(['SSO Login Failures', data['sso_failures']])
+        writer.writerow(['SSO Auto-Provisions', data['sso_provisions']])
+        writer.writerow(['SSO Profile Syncs', data['sso_syncs']])
+        writer.writerow([])
+
+        writer.writerow(['Email'])
+        writer.writerow(['Emails Sent', data['email_sent']])
+        writer.writerow(['Email Failures', data['email_failed']])
+        writer.writerow(['Failure Rate', f"{data['email_failure_rate']}%"])
+        writer.writerow([])
+
+        writer.writerow(['Cases'])
+        writer.writerow(['Zero-Document Cases', data['zero_doc_cases']])
+        writer.writerow(['ProFeds Error-Flagged', data['profeds_errors']])
+        writer.writerow([])
+
+        writer.writerow(['API Sync Status'])
+        writer.writerow(['Pending', data['api_pending']])
+        writer.writerow(['Synced', data['api_synced']])
+        writer.writerow(['Failed', data['api_failed']])
+        writer.writerow([])
+
+        writer.writerow(['PDF Generation Status'])
+        writer.writerow(['Pending', data['pdf_pending']])
+        writer.writerow(['Completed', data['pdf_completed']])
+        writer.writerow(['Failed', data['pdf_failed']])
+        writer.writerow([])
+
+        writer.writerow(['Recent SSO Failures'])
+        writer.writerow(['Timestamp', 'User', 'Description'])
+        for r in data['sso_failure_log']:
+            writer.writerow([
+                r['timestamp'].strftime('%m/%d/%Y %H:%M') if r['timestamp'] else '',
+                r.get('user__email') or '',
+                r.get('description') or '',
+            ])
+        writer.writerow([])
+
+        writer.writerow(['Recent Email Failures'])
+        writer.writerow(['Timestamp', 'User', 'Description'])
+        for r in data['email_failure_log']:
+            writer.writerow([
+                r['timestamp'].strftime('%m/%d/%Y %H:%M') if r['timestamp'] else '',
+                r.get('user__email') or '',
+                r.get('description') or '',
+            ])
+        return response
+
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/system_health_report.html', context)
+
+
+@login_required
+def system_health_pdf(request):
+    """PDF export for System Health & Ops Report."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_system_health_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/system_health_report_pdf.html', {
+        **data,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    fname = f"system_health_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response

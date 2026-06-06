@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}System Health & Ops - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-heart-pulse text-danger"></i> System Health &amp; Ops</h1>
+            <p class="text-muted">SSO failures, email failures, zero-doc cases, API sync status, and PDF generation health</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'system_health_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Events From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Events To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'system_health_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+            <div class="mt-2 text-muted small"><i class="bi bi-info-circle"></i> Date filter applies to audit log events. API sync and PDF status counts are all-time totals.</div>
+        </div>
+    </div>
+
+    <!-- Metric Groups -->
+    <div class="row g-4 mb-4">
+
+        <!-- SSO -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-shield-lock"></i> SSO / Authentication</div>
+                <div class="card-body">
+                    <div class="row g-2 text-center">
+                        <div class="col-4">
+                            <div class="fs-3 fw-bold {% if sso_failures > 0 %}text-danger{% else %}text-success{% endif %}">{{ sso_failures }}</div>
+                            <div class="small text-muted">Login Failures</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-3 fw-bold text-info">{{ sso_provisions }}</div>
+                            <div class="small text-muted">Auto-Provisions</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-3 fw-bold text-secondary">{{ sso_syncs }}</div>
+                            <div class="small text-muted">Profile Syncs</div>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="text-center text-muted small">
+                        <i class="bi bi-box-arrow-in-right"></i> {{ total_logins }} login event{{ total_logins|pluralize }} in period
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-envelope"></i> Email Notifications</div>
+                <div class="card-body">
+                    <div class="row g-2 text-center">
+                        <div class="col-4">
+                            <div class="fs-3 fw-bold text-success">{{ email_sent }}</div>
+                            <div class="small text-muted">Sent</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-3 fw-bold {% if email_failed > 0 %}text-danger{% else %}text-success{% endif %}">{{ email_failed }}</div>
+                            <div class="small text-muted">Failed</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="fs-3 fw-bold {% if email_failure_rate > 10 %}text-danger{% elif email_failure_rate > 0 %}text-warning{% else %}text-success{% endif %}">{{ email_failure_rate }}%</div>
+                            <div class="small text-muted">Failure Rate</div>
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="text-center text-muted small">
+                        <i class="bi bi-gear"></i> {{ cron_executions }} cron job{{ cron_executions|pluralize }} executed
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cases -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-folder2-open"></i> Case Integrity (all-time)</div>
+                <div class="card-body">
+                    <div class="row g-2 text-center">
+                        <div class="col-6">
+                            <div class="fs-3 fw-bold {% if zero_doc_cases > 0 %}text-warning{% else %}text-success{% endif %}">{{ zero_doc_cases }}</div>
+                            <div class="small text-muted">Zero-Doc Cases</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="fs-3 fw-bold {% if profeds_errors > 0 %}text-danger{% else %}text-success{% endif %}">{{ profeds_errors }}</div>
+                            <div class="small text-muted">ProFeds Errors</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- API sync + PDF status -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-arrow-repeat"></i> API Sync Status (all cases)</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Status</th><th class="text-center">Cases</th><th class="text-center">%</th></tr></thead>
+                        <tbody>
+                        {% if api_total > 0 %}
+                        <tr>
+                            <td><span class="badge bg-warning text-dark">Pending</span></td>
+                            <td class="text-center fw-semibold">{{ api_pending }}</td>
+                            <td class="text-center text-muted">{% widthratio api_pending api_total 100 %}%</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-success">Synced</span></td>
+                            <td class="text-center fw-semibold">{{ api_synced }}</td>
+                            <td class="text-center text-muted">{% widthratio api_synced api_total 100 %}%</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">Failed</span></td>
+                            <td class="text-center fw-semibold">{{ api_failed }}</td>
+                            <td class="text-center text-muted">{% widthratio api_failed api_total 100 %}%</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-muted text-center py-3">No case data</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-file-earmark-pdf"></i> PDF Generation Status (all cases)</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Status</th><th class="text-center">Cases</th></tr></thead>
+                        <tbody>
+                        <tr>
+                            <td><span class="badge bg-warning text-dark">Pending</span></td>
+                            <td class="text-center fw-semibold">{{ pdf_pending }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-success">Completed</span></td>
+                            <td class="text-center fw-semibold">{{ pdf_completed }}</td>
+                        </tr>
+                        <tr>
+                            <td><span class="badge bg-danger">Failed</span></td>
+                            <td class="text-center fw-semibold {% if pdf_failed > 0 %}text-danger{% endif %}">{{ pdf_failed }}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent failure logs -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            {% if sso_failure_log %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold text-danger"><i class="bi bi-shield-x"></i> Recent SSO Failures</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Time</th><th>User</th><th>Description</th></tr></thead>
+                        <tbody>
+                        {% for r in sso_failure_log %}
+                        <tr>
+                            <td class="small text-nowrap">{{ r.timestamp|date:"m/d/Y H:i" }}</td>
+                            <td class="small">{{ r.user__email|default:"—" }}</td>
+                            <td class="small text-muted">{{ r.description|truncatechars:60 }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-success"><i class="bi bi-check-circle"></i> No SSO failures in this period.</div>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            {% if email_failure_log %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold text-danger"><i class="bi bi-envelope-x"></i> Recent Email Failures</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Time</th><th>User</th><th>Description</th></tr></thead>
+                        <tbody>
+                        {% for r in email_failure_log %}
+                        <tr>
+                            <td class="small text-nowrap">{{ r.timestamp|date:"m/d/Y H:i" }}</td>
+                            <td class="small">{{ r.user__email|default:"—" }}</td>
+                            <td class="small text-muted">{{ r.description|truncatechars:60 }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-success"><i class="bi bi-check-circle"></i> No email failures in this period.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

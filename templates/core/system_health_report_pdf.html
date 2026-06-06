@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #dc3545; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #dc3545; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .metric-group { border: 1px solid #e0e0e0; border-radius: 4px; padding: 10px; margin-bottom: 12px; }
+    .metric-group h3 { font-size: 9pt; font-weight: 700; color: #444; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; }
+    .metrics-row { display: flex; gap: 12px; }
+    .metric { flex: 1; text-align: center; }
+    .metric .val { font-size: 16pt; font-weight: 700; color: #0d6efd; }
+    .metric .val.danger { color: #dc3545; }
+    .metric .val.success { color: #198754; }
+    .metric .val.warning { color: #b38600; }
+    .metric .val.info { color: #0dcaf0; }
+    .metric .lbl { font-size: 7.5pt; color: #777; }
+    .cols { display: flex; gap: 18px; }
+    .col { flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid #ccc; text-align: left; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #f0f0f0; }
+    .badge-warn { background: #ffc107; color: #333; border-radius: 3px; padding: 1px 5px; font-size: 7.5pt; }
+    .badge-ok { background: #198754; color: #fff; border-radius: 3px; padding: 1px 5px; font-size: 7.5pt; }
+    .badge-err { background: #dc3545; color: #fff; border-radius: 3px; padding: 1px 5px; font-size: 7.5pt; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#128147; System Health &amp; Ops Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="cols">
+    <div class="col">
+        <div class="metric-group">
+            <h3>&#128274; SSO / Authentication</h3>
+            <div class="metrics-row">
+                <div class="metric">
+                    <div class="val {% if sso_failures > 0 %}danger{% else %}success{% endif %}">{{ sso_failures }}</div>
+                    <div class="lbl">Login Failures</div>
+                </div>
+                <div class="metric">
+                    <div class="val info">{{ sso_provisions }}</div>
+                    <div class="lbl">Auto-Provisions</div>
+                </div>
+                <div class="metric">
+                    <div class="val" style="color:#555;">{{ total_logins }}</div>
+                    <div class="lbl">Logins</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-group">
+            <h3>&#128140; Email Notifications</h3>
+            <div class="metrics-row">
+                <div class="metric">
+                    <div class="val success">{{ email_sent }}</div>
+                    <div class="lbl">Sent</div>
+                </div>
+                <div class="metric">
+                    <div class="val {% if email_failed > 0 %}danger{% else %}success{% endif %}">{{ email_failed }}</div>
+                    <div class="lbl">Failed</div>
+                </div>
+                <div class="metric">
+                    <div class="val {% if email_failure_rate > 10 %}danger{% elif email_failure_rate > 0 %}warning{% else %}success{% endif %}">{{ email_failure_rate }}%</div>
+                    <div class="lbl">Failure Rate</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="metric-group">
+            <h3>&#128194; Case Integrity (all-time)</h3>
+            <div class="metrics-row">
+                <div class="metric">
+                    <div class="val {% if zero_doc_cases > 0 %}warning{% else %}success{% endif %}">{{ zero_doc_cases }}</div>
+                    <div class="lbl">Zero-Doc Cases</div>
+                </div>
+                <div class="metric">
+                    <div class="val {% if profeds_errors > 0 %}danger{% else %}success{% endif %}">{{ profeds_errors }}</div>
+                    <div class="lbl">ProFeds Errors</div>
+                </div>
+                <div class="metric">
+                    <div class="val" style="color:#555;">{{ cron_executions }}</div>
+                    <div class="lbl">Cron Executions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col">
+        <div class="section-title">API Sync Status (all cases)</div>
+        <table>
+            <thead><tr><th>Status</th><th style="text-align:right;">Cases</th><th style="text-align:right;">%</th></tr></thead>
+            <tbody>
+            {% if api_total > 0 %}
+            <tr>
+                <td><span class="badge-warn">Pending</span></td>
+                <td style="text-align:right; font-weight:600;">{{ api_pending }}</td>
+                <td style="text-align:right; color:#999;">{% widthratio api_pending api_total 100 %}%</td>
+            </tr>
+            <tr>
+                <td><span class="badge-ok">Synced</span></td>
+                <td style="text-align:right; font-weight:600;">{{ api_synced }}</td>
+                <td style="text-align:right; color:#999;">{% widthratio api_synced api_total 100 %}%</td>
+            </tr>
+            <tr>
+                <td><span class="badge-err">Failed</span></td>
+                <td style="text-align:right; font-weight:600;">{{ api_failed }}</td>
+                <td style="text-align:right; color:#999;">{% widthratio api_failed api_total 100 %}%</td>
+            </tr>
+            {% endif %}
+            </tbody>
+        </table>
+
+        <div class="section-title">PDF Generation Status</div>
+        <table>
+            <thead><tr><th>Status</th><th style="text-align:right;">Cases</th></tr></thead>
+            <tbody>
+            <tr><td><span class="badge-warn">Pending</span></td><td style="text-align:right; font-weight:600;">{{ pdf_pending }}</td></tr>
+            <tr><td><span class="badge-ok">Completed</span></td><td style="text-align:right; font-weight:600;">{{ pdf_completed }}</td></tr>
+            <tr><td><span class="badge-err">Failed</span></td><td style="text-align:right; font-weight:600; {% if pdf_failed > 0 %}color:#dc3545;{% endif %}">{{ pdf_failed }}</td></tr>
+            </tbody>
+        </table>
+
+        {% if sso_failure_log %}
+        <div class="section-title">Recent SSO Failures</div>
+        <table>
+            <thead><tr><th>Time</th><th>User</th><th>Description</th></tr></thead>
+            <tbody>
+            {% for r in sso_failure_log %}
+            <tr>
+                <td style="font-size:8pt;">{{ r.timestamp|date:"m/d H:i" }}</td>
+                <td style="font-size:8pt;">{{ r.user__email|default:"—"|truncatechars:25 }}</td>
+                <td style="font-size:7.5pt; color:#666;">{{ r.description|truncatechars:50 }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if email_failure_log %}
+        <div class="section-title">Recent Email Failures</div>
+        <table>
+            <thead><tr><th>Time</th><th>User</th><th>Description</th></tr></thead>
+            <tbody>
+            {% for r in email_failure_log %}
+            <tr>
+                <td style="font-size:8pt;">{{ r.timestamp|date:"m/d H:i" }}</td>
+                <td style="font-size:8pt;">{{ r.user__email|default:"—"|truncatechars:25 }}</td>
+                <td style="font-size:7.5pt; color:#666;">{{ r.description|truncatechars:50 }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | System Health &amp; Ops Report | {{ generated_at|date:"m/d/Y" }}
+</div>
+</body>
+</html>
