@@ -512,3 +512,39 @@ class BetaFeedback(models.Model):
     def __str__(self):
         name = self.user.get_full_name() if self.user else 'Unknown'
         return f"Feedback from {name} on {self.created_at.strftime('%m/%d/%Y %I:%M %p')}"
+
+
+class Holiday(models.Model):
+    """
+    Tracks holidays that should be excluded when calculating case due dates.
+    Federal holidays are auto-synced from python-holidays each year.
+    Admins can disable any federal holiday or add custom ones.
+    """
+
+    date = models.DateField(
+        unique=True,
+        help_text='Date of the holiday'
+    )
+    name = models.CharField(
+        max_length=100,
+        help_text='Name of the holiday'
+    )
+    is_custom = models.BooleanField(
+        default=False,
+        help_text='False = synced from US federal calendar; True = added by admin'
+    )
+    active = models.BooleanField(
+        default=True,
+        help_text='Inactive holidays are ignored when calculating due dates'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['date']
+        verbose_name = 'Holiday'
+        verbose_name_plural = 'Holidays'
+
+    def __str__(self):
+        source = 'Custom' if self.is_custom else 'Federal'
+        status = '' if self.active else ' (inactive)'
+        return f"{self.date.strftime('%m/%d/%Y')} — {self.name} [{source}]{status}"

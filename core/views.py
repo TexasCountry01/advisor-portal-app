@@ -134,19 +134,71 @@ def system_settings(request):
     if not is_admin(request.user):
         messages.error(request, 'Access denied. Administrators only.')
         return redirect('home')
-    
+
+    from core.models import Holiday
+    from cases.utils_holidays import sync_federal_holidays
+    from datetime import date as dt_date
+
+    # Auto-sync federal holidays for current + next year on every page load
+    # (get_or_create means it only writes rows that don't already exist)
+    sync_federal_holidays()
+
     settings = SystemSettings.get_settings()
-    
+
     if request.method == 'POST':
-        # Handle form submission
+        action = request.POST.get('holiday_action', '')
+
+        # --- Holiday CRUD actions ---
+        if action == 'toggle_holiday':
+            try:
+                h = Holiday.objects.get(pk=int(request.POST.get('holiday_id')))
+                h.active = not h.active
+                h.save()
+                messages.success(request, f'Holiday "{h.name}" {"enabled" if h.active else "disabled"}.')
+            except (Holiday.DoesNotExist, ValueError):
+                messages.error(request, 'Holiday not found.')
+            active_tab = request.POST.get('active_tab', 'case-settings')
+            return redirect(reverse('system_settings') + f'?tab={active_tab}')
+
+        if action == 'add_holiday':
+            try:
+                new_date_str = request.POST.get('new_holiday_date', '').strip()
+                new_name = request.POST.get('new_holiday_name', '').strip()
+                if not new_date_str or not new_name:
+                    raise ValueError('Date and name are required.')
+                new_date = dt_date.fromisoformat(new_date_str)
+                _, created = Holiday.objects.get_or_create(
+                    date=new_date,
+                    defaults={'name': new_name, 'is_custom': True, 'active': True},
+                )
+                if created:
+                    messages.success(request, f'Custom holiday "{new_name}" added.')
+                else:
+                    messages.warning(request, f'A holiday already exists for {new_date_str}.')
+            except ValueError as e:
+                messages.error(request, f'Error adding holiday: {e}')
+            active_tab = request.POST.get('active_tab', 'case-settings')
+            return redirect(reverse('system_settings') + f'?tab={active_tab}')
+
+        if action == 'delete_holiday':
+            try:
+                h = Holiday.objects.get(pk=int(request.POST.get('holiday_id')), is_custom=True)
+                h.delete()
+                messages.success(request, 'Custom holiday removed.')
+            except (Holiday.DoesNotExist, ValueError):
+                messages.error(request, 'Custom holiday not found.')
+            active_tab = request.POST.get('active_tab', 'case-settings')
+            return redirect(reverse('system_settings') + f'?tab={active_tab}')
+
+        # --- Standard settings save ---
         try:
             # Credits
             settings.available_credits = request.POST.get('available_credits', '0.0,0.5,1.0,1.5,2.0,2.5,3.0')
-            
+
             # Default Case Settings
             settings.default_case_due_days = int(request.POST.get('default_case_due_days', 7))
             settings.rush_case_threshold_days = int(request.POST.get('rush_case_threshold_days', 7))
-            
+
             # Release Settings
             settings.enable_scheduled_releases = request.POST.get('enable_scheduled_releases') == 'on'
             settings.default_completion_delay_hours = int(request.POST.get('default_completion_delay_hours', 0))
@@ -156,22 +208,22 @@ def system_settings(request):
                 parts = batch_time_str.split(':')
                 settings.batch_release_time = dt_time(int(parts[0]), int(parts[1]))
             settings.batch_release_enabled = request.POST.get('batch_release_enabled') == 'on'
-            
+
             # Email Settings
             settings.email_notifications_enabled = request.POST.get('email_notifications_enabled') == 'on'
             settings.enable_delayed_email_notifications = request.POST.get('enable_delayed_email_notifications') == 'on'
             settings.default_email_delay_hours = int(request.POST.get('default_email_delay_hours', 0))
             settings.batch_email_enabled = request.POST.get('batch_email_enabled') == 'on'
             settings.reply_email_address = request.POST.get('reply_email_address', 'reports@profeds.com')
-            
+
             # API Configuration
             settings.benefits_software_api_url = request.POST.get('benefits_software_api_url', '')
             settings.benefits_software_api_key = request.POST.get('benefits_software_api_key', '')
             settings.benefits_software_api_enabled = request.POST.get('benefits_software_api_enabled') == 'on'
-            
+
             # Technical Notes Template
             settings.technical_notes_template = request.POST.get('technical_notes_template', '')
-            
+
             # Feedback Notification Emails
             settings.feedback_email_1 = request.POST.get('feedback_email_1', '').strip()
             settings.feedback_email_1_enabled = request.POST.get('feedback_email_1_enabled') == 'on'
@@ -180,21 +232,27 @@ def system_settings(request):
 
             # Super-dev account policy
             settings.super_dev_email = request.POST.get('super_dev_email', '').strip().lower()
-            
+
             settings.updated_by = request.user
             settings.save()
-            
+
             messages.success(request, 'System settings updated successfully!')
-            # Preserve the active tab after save
             active_tab = request.POST.get('active_tab', 'credits')
             return redirect(reverse('system_settings') + f'?tab={active_tab}')
         except (ValueError, Exception) as e:
             messages.error(request, f'Error updating settings: {str(e)}')
-    
+
+    # Gather holidays for current + next year to display in admin UI
+    today_year = dt_date.today().year
+    holidays_display = Holiday.objects.filter(
+        date__year__in=[today_year, today_year + 1]
+    ).order_by('date')
+
     context = {
         'settings': settings,
+        'holidays': holidays_display,
     }
-    
+
     return render(request, 'core/system_settings.html', context)
 
 

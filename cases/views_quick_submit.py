@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from cases.models import Case
 from cases.services.case_id_generator import generate_case_id
+from cases.utils_holidays import calculate_due_date
 
 @login_required
 def quick_case_submit(request):
@@ -44,8 +45,10 @@ def quick_case_submit(request):
             },
         }
         
-        # Default due date: 7 days from now
-        due_date = timezone.now().date() + timedelta(days=7)
+        # Default due date: holiday-adjusted from SystemSettings
+        from core.models import SystemSettings
+        sys_settings = SystemSettings.get_settings()
+        due_date, _ = calculate_due_date(timezone.now().date(), base_days=sys_settings.default_case_due_days)
         
         # Auto-set urgency based on due date
         # For now, members can override in the template view

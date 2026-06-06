@@ -12,6 +12,7 @@ import json
 from cases.models import Case
 from accounts.models import User
 from cases.services.case_id_generator import generate_case_id
+from cases.utils_holidays import calculate_due_date, sync_federal_holidays
 
 @login_required
 def submit_case(request):
@@ -63,11 +64,25 @@ def submit_case(request):
     is_single_choice = len(advisors_list) <= 1
     
     # Prepare context for form rendering
+    from core.models import SystemSettings, Holiday
+    sys_settings = SystemSettings.get_settings()
+    base_days = sys_settings.default_case_due_days
+    today = timezone.now().date()
+
+    # Auto-sync federal holidays for current + next year if not yet in DB
+    if not Holiday.objects.filter(date__year=today.year).exists():
+        sync_federal_holidays()
+
+    holiday_adjusted_date, holidays_in_window = calculate_due_date(today, base_days=base_days)
+
     context = {
         'advisors': advisors_list,
         'current_user': user,
-        'default_due_date': (timezone.now().date() + timedelta(days=7)).isoformat(),
-        'today': timezone.now().date().isoformat(),
+        'default_due_date': holiday_adjusted_date.isoformat(),
+        'holiday_adjusted_date': holiday_adjusted_date.isoformat(),
+        'holidays_in_window': [h.name for h in holidays_in_window],
+        'rush_threshold_days': sys_settings.rush_case_threshold_days,
+        'today': today.isoformat(),
         'is_single_choice': is_single_choice,
         'is_delegate': len(assigned_members) > 0,
     }
@@ -289,13 +304,16 @@ def api_calculate_rushed_fee(request):
             return JsonResponse({'is_rushed': False, 'fee': 0})
         
         due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
-        default_due_date = timezone.now().date() + timedelta(days=7)
-        
-        is_rushed = due_date < default_due_date
-        
-        # Flat $20 fee for rushed requests (less than 7 days)
+        from core.models import SystemSettings
+        sys_settings = SystemSettings.get_settings()
+        base_days = sys_settings.rush_case_threshold_days
+        rush_threshold_date = timezone.now().date() + timedelta(days=base_days)
+
+        is_rushed = due_date < rush_threshold_date
+
+        # Flat $20 fee for rushed requests
         fee = 20 if is_rushed else 0
-        
+
         return JsonResponse({
             'is_rushed': is_rushed,
             'fee': fee,
