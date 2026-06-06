@@ -39,6 +39,8 @@ urlpatterns = [
     path('reports/advisor-engagement/pdf/', views_reports.advisor_engagement_pdf, name='advisor_engagement_pdf'),
     path('reports/system-health/', views_reports.system_health_report, name='system_health_report'),
     path('reports/system-health/pdf/', views_reports.system_health_pdf, name='system_health_pdf'),
+    path('reports/reassignments/', views_reports.reassignment_analysis_report, name='reassignment_analysis_report'),
+    path('reports/reassignments/pdf/', views_reports.reassignment_analysis_pdf, name='reassignment_analysis_pdf'),
     # Audit Log URLs
     path('audit-log/', views_audit.view_audit_log, name='view_audit_log'),
     path('audit-log/<int:log_id>/', views_audit.audit_log_detail, name='audit_log_detail'),

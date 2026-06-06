@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Case Reassignment Analysis - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-arrow-left-right text-secondary"></i> Case Reassignment Analysis</h1>
+            <p class="text-muted">Reassignment events parsed from case history, reason breakdown, and technician patterns</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'reassignment_analysis_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Reassigned From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Reassigned To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'reassignment_analysis_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_events }}</div>
+                    <div class="small text-muted">Total Reassignments</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-secondary">{{ unique_cases }}</div>
+                    <div class="small text-muted">Unique Cases</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">{{ audit_count }}</div>
+                    <div class="small text-muted">Audit Log Events</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-muted">{{ reason_list|length }}</div>
+                    <div class="small text-muted">Distinct Reasons</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Left: distributions -->
+        <div class="col-md-4">
+
+            {% if reason_list %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-list-ul"></i> Reassignment Reasons</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Reason</th><th class="text-center">Count</th></tr></thead>
+                        <tbody>
+                        {% for reason, count in reason_list %}
+                        <tr>
+                            <td class="small">{{ reason }}</td>
+                            <td class="text-center fw-semibold">{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if most_reassigned %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-arrow-repeat"></i> Most Reassigned Cases</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Case ID</th><th class="text-center">Times</th></tr></thead>
+                        <tbody>
+                        {% for case_id, cnt in most_reassigned %}
+                        <tr>
+                            <td class="font-monospace small">{{ case_id }}</td>
+                            <td class="text-center fw-bold {% if cnt >= 3 %}text-danger{% elif cnt >= 2 %}text-warning{% endif %}">{{ cnt }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="row g-3">
+                <div class="col-12">
+                    {% if from_tech_list %}
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-header fw-semibold small"><i class="bi bi-box-arrow-right text-danger"></i> Most Reassigned Away From</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light"><tr><th>Technician</th><th class="text-center">Cases</th></tr></thead>
+                                <tbody>
+                                {% for tech, cnt in from_tech_list %}
+                                <tr><td class="small">{{ tech }}</td><td class="text-center">{{ cnt }}</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-12">
+                    {% if to_tech_list %}
+                    <div class="card shadow-sm">
+                        <div class="card-header fw-semibold small"><i class="bi bi-box-arrow-in-right text-success"></i> Most Assigned To</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm mb-0">
+                                <thead class="table-light"><tr><th>Technician</th><th class="text-center">Cases</th></tr></thead>
+                                <tbody>
+                                {% for tech, cnt in to_tech_list %}
+                                <tr><td class="small">{{ tech }}</td><td class="text-center">{{ cnt }}</td></tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: event log -->
+        <div class="col-md-8">
+            {% if all_events %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-clock-history"></i> Reassignment Event Log</span>
+                    {% if total_events > 100 %}
+                    <span class="badge bg-secondary">Showing 100 of {{ total_events }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0" style="max-height:600px; overflow-y:auto;">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th>Date</th>
+                                <th>Case ID</th>
+                                <th>Tier</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Reason</th>
+                                <th>By</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for ev in all_events %}
+                        <tr>
+                            <td class="small text-nowrap">{{ ev.date|slice:":10" }}</td>
+                            <td class="font-monospace small">{{ ev.case_id }}</td>
+                            <td><span class="badge bg-secondary">{{ ev.tier }}</span></td>
+                            <td class="small text-danger">{{ ev.from_tech }}</td>
+                            <td class="small text-success">{{ ev.to_tech }}</td>
+                            <td class="small text-muted" style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ ev.reason }}">{{ ev.reason }}</td>
+                            <td class="small text-muted">{{ ev.reassigned_by|truncatechars:20 }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info mt-2">No reassignment events found for this period.</div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

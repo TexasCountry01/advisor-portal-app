@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #6c757d; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #6c757d; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 14px; margin-bottom: 14px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 9px; text-align: center; }
+    .tile .val { font-size: 18pt; font-weight: 700; color: #6c757d; }
+    .tile.primary .val { color: #0d6efd; }
+    .tile.info .val { color: #0dcaf0; }
+    .tile .lbl { font-size: 7.5pt; color: #777; margin-top: 2px; }
+    .cols { display: flex; gap: 18px; }
+    .col-left { flex: 1; }
+    .col-right { flex: 1.8; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid #ccc; text-align: left; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #f0f0f0; }
+    .text-danger { color: #dc3545; }
+    .text-success { color: #198754; }
+    .text-muted { color: #999; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#8646; Case Reassignment Analysis</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    <div class="tile primary">
+        <div class="val">{{ total_events }}</div>
+        <div class="lbl">Total Reassignments</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ unique_cases }}</div>
+        <div class="lbl">Unique Cases</div>
+    </div>
+    <div class="tile info">
+        <div class="val">{{ audit_count }}</div>
+        <div class="lbl">Audit Log Events</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ reason_list|length }}</div>
+        <div class="lbl">Distinct Reasons</div>
+    </div>
+</div>
+
+<div class="cols">
+    <div class="col-left">
+        {% if reason_list %}
+        <div class="section-title">Reassignment Reasons</div>
+        <table>
+            <thead><tr><th>Reason</th><th style="text-align:right;">Count</th></tr></thead>
+            <tbody>
+            {% for reason, count in reason_list %}
+            <tr>
+                <td style="font-size:8pt;">{{ reason }}</td>
+                <td style="text-align:right; font-weight:600;">{{ count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if most_reassigned %}
+        <div class="section-title">Most Reassigned Cases</div>
+        <table>
+            <thead><tr><th>Case ID</th><th style="text-align:right;">Times</th></tr></thead>
+            <tbody>
+            {% for case_id, cnt in most_reassigned %}
+            <tr>
+                <td style="font-family:monospace; font-size:8pt;">{{ case_id }}</td>
+                <td style="text-align:right; font-weight:700; {% if cnt >= 3 %}color:#dc3545;{% elif cnt >= 2 %}color:#b38600;{% endif %}">{{ cnt }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if from_tech_list %}
+        <div class="section-title">Reassigned Away From</div>
+        <table>
+            <thead><tr><th>Technician</th><th style="text-align:right;">Cases</th></tr></thead>
+            <tbody>
+            {% for tech, cnt in from_tech_list %}
+            <tr><td style="font-size:8pt;">{{ tech }}</td><td style="text-align:right;" class="text-danger">{{ cnt }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if to_tech_list %}
+        <div class="section-title">Assigned To (via reassignment)</div>
+        <table>
+            <thead><tr><th>Technician</th><th style="text-align:right;">Cases</th></tr></thead>
+            <tbody>
+            {% for tech, cnt in to_tech_list %}
+            <tr><td style="font-size:8pt;">{{ tech }}</td><td style="text-align:right;" class="text-success">{{ cnt }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <div class="col-right">
+        {% if all_events %}
+        <div class="section-title">Reassignment Event Log{% if total_events > 100 %} (first 100 of {{ total_events }}){% endif %}</div>
+        <table>
+            <thead><tr>
+                <th>Date</th>
+                <th>Case ID</th>
+                <th>Tier</th>
+                <th>From</th>
+                <th>To</th>
+                <th>Reason</th>
+            </tr></thead>
+            <tbody>
+            {% for ev in all_events %}
+            <tr>
+                <td style="font-size:8pt;">{{ ev.date|slice:":10" }}</td>
+                <td style="font-family:monospace; font-size:8pt;">{{ ev.case_id }}</td>
+                <td style="font-size:8pt;">{{ ev.tier }}</td>
+                <td style="font-size:8pt;" class="text-danger">{{ ev.from_tech|truncatechars:20 }}</td>
+                <td style="font-size:8pt;" class="text-success">{{ ev.to_tech|truncatechars:20 }}</td>
+                <td style="font-size:7.5pt;" class="text-muted">{{ ev.reason|truncatechars:40 }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | Case Reassignment Analysis | {{ generated_at|date:"m/d/Y" }}
+</div>
+</body>
+</html>

@@ -2428,3 +2428,209 @@ def system_health_pdf(request):
     fname = f"system_health_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
+
+
+# ─── R9: Case Reassignment Analysis ─────────────────────────────────────────
+
+def get_reassignment_data(date_from=None, date_to=None):
+    """Parse reassignment_history JSON from Case records into analytics."""
+    from core.models import AuditLog
+    from datetime import datetime as dt
+
+    cases_with_history = (
+        Case.objects.exclude(reassignment_history=[])
+        .select_related('member')
+        .values(
+            'external_case_id', 'status', 'tier',
+            'member__first_name', 'member__last_name',
+            'reassignment_history',
+        )
+    )
+
+    all_events = []
+    reason_counts = {}
+    from_tech_counts = {}
+    to_tech_counts = {}
+    case_event_counts = {}
+
+    for case in cases_with_history:
+        history = case['reassignment_history']
+        if not isinstance(history, list) or not history:
+            continue
+        case_counted = 0
+        for entry in history:
+            if not isinstance(entry, dict):
+                continue
+            # Date-range filter
+            event_date_str = entry.get('date', '')
+            event_date = None
+            if event_date_str:
+                try:
+                    event_date = dt.fromisoformat(
+                        event_date_str.replace('Z', '+00:00')
+                    ).date()
+                    if date_from and event_date < date_from:
+                        continue
+                    if date_to and event_date > date_to:
+                        continue
+                except (ValueError, TypeError):
+                    pass
+
+            reason = (entry.get('reason') or 'Manual reassignment').strip()
+            from_tech = (entry.get('from_tech_name') or '—').strip()
+            to_tech = (entry.get('to_tech_name') or '—').strip()
+
+            all_events.append({
+                'case_id': case['external_case_id'],
+                'case_status': case['status'],
+                'tier': _normalize_tier(case['tier']),
+                'member': f"{case['member__first_name'] or ''} {case['member__last_name'] or ''}".strip() or '—',
+                'from_tech': from_tech,
+                'to_tech': to_tech,
+                'reason': reason,
+                'reassigned_by': (entry.get('reassigned_by') or '').strip(),
+                'date': event_date_str,
+                'date_sort': event_date.isoformat() if event_date else event_date_str,
+            })
+            reason_counts[reason] = reason_counts.get(reason, 0) + 1
+            from_tech_counts[from_tech] = from_tech_counts.get(from_tech, 0) + 1
+            to_tech_counts[to_tech] = to_tech_counts.get(to_tech, 0) + 1
+            case_counted += 1
+
+        if case_counted:
+            case_event_counts[case['external_case_id']] = case_counted
+
+    # Sort events newest first
+    all_events.sort(key=lambda x: x['date_sort'], reverse=True)
+
+    reason_list = sorted(reason_counts.items(), key=lambda x: x[1], reverse=True)
+    from_tech_list = sorted(from_tech_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    to_tech_list = sorted(to_tech_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    most_reassigned = sorted(case_event_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+
+    # AuditLog cross-reference
+    audit_qs = AuditLog.objects.filter(action_type='case_reassigned')
+    if date_from:
+        audit_qs = audit_qs.filter(timestamp__date__gte=date_from)
+    if date_to:
+        audit_qs = audit_qs.filter(timestamp__date__lte=date_to)
+    audit_count = audit_qs.count()
+
+    return {
+        'total_events': len(all_events),
+        'unique_cases': len(case_event_counts),
+        'audit_count': audit_count,
+        'all_events': all_events[:100],
+        'reason_list': reason_list,
+        'from_tech_list': from_tech_list,
+        'to_tech_list': to_tech_list,
+        'most_reassigned': most_reassigned,
+    }
+
+
+@login_required
+def reassignment_analysis_report(request):
+    """R9: Case Reassignment Analysis — HTML + inline CSV."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_reassignment_data(date_from=date_from, date_to=date_to)
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        fname = f"reassignments_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{fname}"'
+        writer = csv.writer(response)
+
+        writer.writerow(['Case Reassignment Analysis'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} – {date_to_str or 'present'}"])
+        writer.writerow([])
+
+        writer.writerow(['Summary'])
+        writer.writerow(['Total Reassignment Events', data['total_events']])
+        writer.writerow(['Unique Cases Reassigned', data['unique_cases']])
+        writer.writerow(['Audit Log Events (cross-ref)', data['audit_count']])
+        writer.writerow([])
+
+        writer.writerow(['Reassignment Reasons'])
+        writer.writerow(['Reason', 'Count'])
+        for reason, count in data['reason_list']:
+            writer.writerow([reason, count])
+        writer.writerow([])
+
+        writer.writerow(['Cases Most Often Reassigned'])
+        writer.writerow(['Case ID', 'Reassignment Count'])
+        for case_id, cnt in data['most_reassigned']:
+            writer.writerow([case_id, cnt])
+        writer.writerow([])
+
+        writer.writerow(['All Reassignment Events'])
+        writer.writerow(['Date', 'Case ID', 'Status', 'Tier', 'From Tech', 'To Tech', 'Reason', 'Reassigned By'])
+        for ev in data['all_events']:
+            writer.writerow([
+                ev['date'][:10] if ev['date'] else '',
+                ev['case_id'],
+                ev['case_status'],
+                ev['tier'],
+                ev['from_tech'],
+                ev['to_tech'],
+                ev['reason'],
+                ev['reassigned_by'],
+            ])
+        return response
+
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/reassignment_analysis_report.html', context)
+
+
+@login_required
+def reassignment_analysis_pdf(request):
+    """PDF export for Case Reassignment Analysis."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_reassignment_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/reassignment_analysis_report_pdf.html', {
+        **data,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    fname = f"reassignments_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return response
