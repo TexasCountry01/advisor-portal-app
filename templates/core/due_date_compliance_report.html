@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Due Date Compliance Report - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-calendar-check"></i> Due Date Compliance Report</h1>
+            <p class="text-muted">On-time completion rate and breakdown by technician, tier, and urgency</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'due_date_compliance_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Completed From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Completed To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'due_date_compliance_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if on_time_rate >= 99 %}text-success{% elif on_time_rate >= 95 %}text-primary{% else %}text-warning{% endif %}">
+                        {{ on_time_rate }}%
+                    </div>
+                    <div class="small text-muted">On-Time Rate</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total }}</div>
+                    <div class="small text-muted">Total Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if avg_days_early >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {% if avg_days_early >= 0 %}+{% endif %}{{ avg_days_early }}d
+                    </div>
+                    <div class="small text-muted">Avg Days Early/Late</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100 {% if late_count > 0 %}border-start border-4 border-danger{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if late_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ late_count }}
+                    </div>
+                    <div class="small text-muted">Late Cases</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left column -->
+        <div class="col-md-8">
+
+            {% if weekly_trend %}
+            <!-- Weekly Trend -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-graph-up"></i> Weekly On-Time Rate</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Week of</th>
+                                <th class="text-center">Total</th>
+                                <th class="text-center">On Time</th>
+                                <th class="text-center">Late</th>
+                                <th class="text-center">Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in weekly_trend %}
+                        <tr>
+                            <td>{{ row.week|date:"m/d/Y" }}</td>
+                            <td class="text-center">{{ row.total }}</td>
+                            <td class="text-center text-success">{{ row.on_time }}</td>
+                            <td class="text-center {% if row.total|add:'-1' >= row.on_time %}text-danger{% endif %}">{{ row.total|add:row.on_time|add:"-1"|default:"0" }}</td>
+                            <td class="text-center fw-semibold {% if row.rate >= 99 %}text-success{% elif row.rate >= 95 %}text-primary{% else %}text-warning{% endif %}">{{ row.rate }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if late_cases %}
+            <!-- Late Case Detail -->
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold text-danger"><i class="bi bi-exclamation-triangle"></i> Late Cases</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case ID</th>
+                                <th>Client</th>
+                                <th>Technician</th>
+                                <th>Due Date</th>
+                                <th>Completed</th>
+                                <th class="text-center">Days Late</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for case in late_cases %}
+                        <tr>
+                            <td><a href="{% url 'cases:case_detail' case.id %}">{{ case.external_case_id }}</a></td>
+                            <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td>{{ case.assigned_to.get_full_name|default:"—" }}</td>
+                            <td>{{ case.date_due|date:"m/d/Y" }}</td>
+                            <td>{% with cd=case.date_completed %}{% if cd %}{{ cd|date:"m/d/Y" }}{% endif %}{% endwith %}</td>
+                            <td class="text-center text-danger fw-semibold">
+                                {% with cd=case.date_completed %}
+                                {% if cd %}{{ cd.date|default:cd|date:"Y-m-d" }}{% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Right column -->
+        <div class="col-md-4">
+
+            <!-- By Technician -->
+            {% if by_tech %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-person"></i> By Technician</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Name</th><th class="text-center">Total</th><th class="text-center">Rate</th></tr></thead>
+                        <tbody>
+                        {% for name, stats in by_tech %}
+                        <tr>
+                            <td>{{ name }}</td>
+                            <td class="text-center">{{ stats.total }}</td>
+                            <td class="text-center fw-semibold {% if stats.rate >= 99 %}text-success{% elif stats.rate >= 95 %}text-primary{% else %}text-warning{% endif %}">{{ stats.rate }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- By Tier -->
+            {% if by_tier %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-layers"></i> By Tier</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Tier</th><th class="text-center">Total</th><th class="text-center">Rate</th></tr></thead>
+                        <tbody>
+                        {% for label, stats in by_tier %}
+                        <tr>
+                            <td>{{ label }}</td>
+                            <td class="text-center">{{ stats.total }}</td>
+                            <td class="text-center fw-semibold {% if stats.rate >= 99 %}text-success{% elif stats.rate >= 95 %}text-primary{% else %}text-warning{% endif %}">{{ stats.rate }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- By Urgency -->
+            {% if by_urgency %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-lightning"></i> By Urgency</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Type</th><th class="text-center">Total</th><th class="text-center">Rate</th></tr></thead>
+                        <tbody>
+                        {% for label, stats in by_urgency %}
+                        <tr>
+                            <td>{{ label }}</td>
+                            <td class="text-center">{{ stats.total }}</td>
+                            <td class="text-center fw-semibold {% if stats.rate >= 99 %}text-success{% elif stats.rate >= 95 %}text-primary{% else %}text-warning{% endif %}">{{ stats.rate }}%</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #198754; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #198754; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 16px; margin-bottom: 16px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 10px; text-align: center; }
+    .tile .val { font-size: 20pt; font-weight: 700; color: #198754; }
+    .tile.warn .val { color: #ffc107; }
+    .tile.danger .val { color: #dc3545; }
+    .tile .lbl { font-size: 7.5pt; color: #777; margin-top: 2px; }
+    .cols { display: flex; gap: 20px; }
+    .col-left { flex: 1.6; }
+    .col-right { flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 5px 6px; border-bottom: 1px solid #ccc; text-align: left; font-size: 8pt; }
+    tbody td { padding: 4px 6px; border-bottom: 1px solid #f0f0f0; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#128197; Due Date Compliance Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    <div class="tile {% if on_time_rate < 95 %}warn{% endif %}">
+        <div class="val">{{ on_time_rate }}%</div>
+        <div class="lbl">On-Time Rate</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ total }}</div>
+        <div class="lbl">Total Completed</div>
+    </div>
+    <div class="tile">
+        <div class="val">{% if avg_days_early >= 0 %}+{% endif %}{{ avg_days_early }}d</div>
+        <div class="lbl">Avg Days Early/Late</div>
+    </div>
+    <div class="tile {% if late_count > 0 %}danger{% endif %}">
+        <div class="val">{{ late_count }}</div>
+        <div class="lbl">Late Cases</div>
+    </div>
+</div>
+
+<div class="cols">
+    <div class="col-left">
+
+        {% if by_tech %}
+        <div class="section-title">Compliance by Technician</div>
+        <table>
+            <thead><tr><th>Technician</th><th style="text-align:right;">Total</th><th style="text-align:right;">On Time</th><th style="text-align:right;">Late</th><th style="text-align:right;">Rate</th></tr></thead>
+            <tbody>
+            {% for name, stats in by_tech %}
+            <tr>
+                <td>{{ name }}</td>
+                <td style="text-align:right;">{{ stats.total }}</td>
+                <td style="text-align:right;">{{ stats.on_time }}</td>
+                <td style="text-align:right;">{{ stats.late }}</td>
+                <td style="text-align:right; font-weight:600;">{{ stats.rate }}%</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if weekly_trend %}
+        <div class="section-title">Weekly Trend</div>
+        <table>
+            <thead><tr><th>Week of</th><th style="text-align:right;">Total</th><th style="text-align:right;">On Time</th><th style="text-align:right;">Rate</th></tr></thead>
+            <tbody>
+            {% for row in weekly_trend %}
+            <tr>
+                <td>{{ row.week|date:"m/d/Y" }}</td>
+                <td style="text-align:right;">{{ row.total }}</td>
+                <td style="text-align:right;">{{ row.on_time }}</td>
+                <td style="text-align:right; font-weight:600;">{{ row.rate }}%</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+    </div>
+    <div class="col-right">
+
+        {% if by_tier %}
+        <div class="section-title">By Tier</div>
+        <table>
+            <thead><tr><th>Tier</th><th style="text-align:right;">Total</th><th style="text-align:right;">Rate</th></tr></thead>
+            <tbody>
+            {% for label, stats in by_tier %}
+            <tr><td>{{ label }}</td><td style="text-align:right;">{{ stats.total }}</td><td style="text-align:right; font-weight:600;">{{ stats.rate }}%</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if by_urgency %}
+        <div class="section-title">By Urgency</div>
+        <table>
+            <thead><tr><th>Type</th><th style="text-align:right;">Total</th><th style="text-align:right;">Rate</th></tr></thead>
+            <tbody>
+            {% for label, stats in by_urgency %}
+            <tr><td>{{ label }}</td><td style="text-align:right;">{{ stats.total }}</td><td style="text-align:right; font-weight:600;">{{ stats.rate }}%</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+    </div>
+</div>
+
+{% if late_cases %}
+<div class="section-title">Late Case Detail</div>
+<table>
+    <thead><tr>
+        <th>Case ID</th>
+        <th>Client</th>
+        <th>Technician</th>
+        <th>Tier</th>
+        <th>Due Date</th>
+        <th>Completed</th>
+        <th style="text-align:right;">Days Late</th>
+    </tr></thead>
+    <tbody>
+    {% for case in late_cases %}
+    <tr>
+        <td>{{ case.external_case_id }}</td>
+        <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+        <td>{{ case.assigned_to.get_full_name|default:"—" }}</td>
+        <td>{{ case.tier }}</td>
+        <td>{{ case.date_due|date:"m/d/Y" }}</td>
+        <td>{{ case.date_completed|date:"m/d/Y" }}</td>
+        <td style="text-align:right; color:#dc3545; font-weight:600;"></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | Due Date Compliance Report | {{ generated_at|date:"m/d/Y" }}
+</div>
+
+</body>
+</html>

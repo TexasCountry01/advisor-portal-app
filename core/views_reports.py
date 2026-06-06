@@ -940,3 +940,236 @@ def pipeline_health_report(request):
         'total_active': total_active,
     }
     return render(request, 'core/pipeline_health_report.html', context)
+
+
+# ---------------------------------------------------------------------------
+# R2 — Due Date Compliance Report
+# ---------------------------------------------------------------------------
+
+def _normalize_tier(tier_val):
+    """Return display label regardless of legacy '1'/'2'/'3' or 'tier_1'/'tier_2'/'tier_3'."""
+    mapping = {
+        '1': 'Tier 1', 'tier_1': 'Tier 1',
+        '2': 'Tier 2', 'tier_2': 'Tier 2',
+        '3': 'Tier 3', 'tier_3': 'Tier 3',
+    }
+    return mapping.get(str(tier_val).lower(), str(tier_val).capitalize() if tier_val else 'Unknown')
+
+
+def get_due_date_compliance_data(date_from=None, date_to=None):
+    """
+    Compile due-date compliance metrics for completed cases.
+    date_from / date_to applied to date_completed.
+    """
+    from django.db.models.functions import TruncWeek
+
+    qs = Case.objects.filter(
+        status='completed',
+        date_due__isnull=False,
+        date_completed__isnull=False,
+    )
+
+    if date_from:
+        qs = qs.filter(date_completed__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(date_completed__date__lte=date_to)
+
+    total = qs.count()
+
+    # on-time vs late
+    on_time_qs = qs.filter(date_completed__date__lte=F('date_due'))
+    late_qs = qs.filter(date_completed__date__gt=F('date_due'))
+    on_time_count = on_time_qs.count()
+    late_count = late_qs.count()
+    on_time_rate = round(on_time_count / total * 100, 1) if total else 0
+
+    # avg days early (positive = early)
+    days_diff_list = []
+    for case in qs.only('id', 'date_due', 'date_completed'):
+        if case.date_completed and case.date_due:
+            completed_date = case.date_completed.date() if hasattr(case.date_completed, 'date') else case.date_completed
+            diff = (case.date_due - completed_date).days
+            days_diff_list.append(diff)
+
+    avg_days_early = round(sum(days_diff_list) / len(days_diff_list), 1) if days_diff_list else 0
+
+    # by technician
+    tech_stats = {}
+    for case in qs.select_related('assigned_to'):
+        tech = case.assigned_to
+        name = tech.get_full_name() if tech else 'Unassigned'
+        if name not in tech_stats:
+            tech_stats[name] = {'total': 0, 'on_time': 0, 'late': 0}
+        completed_date = case.date_completed.date() if hasattr(case.date_completed, 'date') else case.date_completed
+        tech_stats[name]['total'] += 1
+        if completed_date <= case.date_due:
+            tech_stats[name]['on_time'] += 1
+        else:
+            tech_stats[name]['late'] += 1
+    for v in tech_stats.values():
+        v['rate'] = round(v['on_time'] / v['total'] * 100, 1) if v['total'] else 0
+    by_tech = sorted(tech_stats.items(), key=lambda x: x[1]['total'], reverse=True)
+
+    # by tier
+    tier_stats = {}
+    for case in qs:
+        label = _normalize_tier(case.tier)
+        if label not in tier_stats:
+            tier_stats[label] = {'total': 0, 'on_time': 0, 'late': 0}
+        completed_date = case.date_completed.date() if hasattr(case.date_completed, 'date') else case.date_completed
+        tier_stats[label]['total'] += 1
+        if completed_date <= case.date_due:
+            tier_stats[label]['on_time'] += 1
+        else:
+            tier_stats[label]['late'] += 1
+    for v in tier_stats.values():
+        v['rate'] = round(v['on_time'] / v['total'] * 100, 1) if v['total'] else 0
+    by_tier = sorted(tier_stats.items())
+
+    # by urgency
+    urgency_stats = {}
+    for case in qs:
+        label = (case.urgency or 'standard').capitalize()
+        if label not in urgency_stats:
+            urgency_stats[label] = {'total': 0, 'on_time': 0, 'late': 0}
+        completed_date = case.date_completed.date() if hasattr(case.date_completed, 'date') else case.date_completed
+        urgency_stats[label]['total'] += 1
+        if completed_date <= case.date_due:
+            urgency_stats[label]['on_time'] += 1
+        else:
+            urgency_stats[label]['late'] += 1
+    for v in urgency_stats.values():
+        v['rate'] = round(v['on_time'] / v['total'] * 100, 1) if v['total'] else 0
+    by_urgency = sorted(urgency_stats.items())
+
+    # weekly trend (last 16 weeks)
+    weekly_qs = qs.filter(date_completed__isnull=False).annotate(
+        week=TruncWeek('date_completed')
+    ).values('week').annotate(
+        total=Count('id'),
+        on_time=Count('id', filter=Q(date_completed__date__lte=F('date_due'))),
+    ).order_by('week')
+
+    weekly_trend = []
+    for row in weekly_qs:
+        rate = round(row['on_time'] / row['total'] * 100, 1) if row['total'] else 0
+        weekly_trend.append({
+            'week': row['week'],
+            'total': row['total'],
+            'on_time': row['on_time'],
+            'rate': rate,
+        })
+
+    # late case detail
+    late_cases = late_qs.select_related('assigned_to', 'member').order_by('date_due')[:100]
+
+    return {
+        'total': total,
+        'on_time_count': on_time_count,
+        'late_count': late_count,
+        'on_time_rate': on_time_rate,
+        'avg_days_early': avg_days_early,
+        'by_tech': by_tech,
+        'by_tier': by_tier,
+        'by_urgency': by_urgency,
+        'weekly_trend': weekly_trend,
+        'late_cases': late_cases,
+    }
+
+
+@login_required
+def due_date_compliance_report(request):
+    """Due Date Compliance Report — admin/manager only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_due_date_compliance_data(date_from=date_from, date_to=date_to)
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        filename = f"due_date_compliance_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(['Case ID', 'Client', 'Advisor', 'Technician', 'Tier', 'Urgency',
+                         'Date Due', 'Date Completed', 'Days Diff', 'On Time'])
+        for case in Case.objects.filter(
+            status='completed', date_due__isnull=False, date_completed__isnull=False,
+        ).select_related('assigned_to', 'member').order_by('date_completed'):
+            completed_date = case.date_completed.date() if hasattr(case.date_completed, 'date') else case.date_completed
+            days_diff = (case.date_due - completed_date).days
+            writer.writerow([
+                case.external_case_id,
+                f"{case.employee_first_name} {case.employee_last_name}",
+                case.member.get_full_name() if case.member else '',
+                case.assigned_to.get_full_name() if case.assigned_to else '',
+                _normalize_tier(case.tier),
+                (case.urgency or '').capitalize(),
+                case.date_due.strftime('%Y-%m-%d') if case.date_due else '',
+                completed_date.strftime('%Y-%m-%d') if completed_date else '',
+                days_diff,
+                'Yes' if days_diff >= 0 else 'No',
+            ])
+        return response
+
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+    }
+    return render(request, 'core/due_date_compliance_report.html', context)
+
+
+@login_required
+def due_date_compliance_pdf(request):
+    """PDF export for Due Date Compliance Report."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_due_date_compliance_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/due_date_compliance_report_pdf.html', {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    filename = f"due_date_compliance_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
