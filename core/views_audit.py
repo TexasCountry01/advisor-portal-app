@@ -384,6 +384,20 @@ def activity_summary_report(request):
     # Quality review activities
     review_activities = logs.filter(action_type__in=['review_submitted', 'review_updated']).count()
     
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="activity_summary.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Activity Type', 'Count'])
+        for action, count in sorted(activity_by_type.items(), key=lambda x: x[1], reverse=True):
+            writer.writerow([action, count])
+        writer.writerow([])
+        writer.writerow(['Top Users', 'Activity Count'])
+        for username, count in top_users:
+            writer.writerow([username, count])
+        return response
+
     context = {
         'total_activities': total_activities,
         'activity_by_type': sorted(activity_by_type.items(), key=lambda x: x[1], reverse=True)[:15],
@@ -394,7 +408,7 @@ def activity_summary_report(request):
         'date_from': date_from,
         'date_to': date_to,
     }
-    
+
     return render(request, 'core/activity_summary_report.html', context)
 
 
@@ -459,6 +473,24 @@ def user_activity_report(request):
     
     users = User.objects.filter(role__in=['administrator', 'technician', 'manager']).order_by('username')
     
+    # CSV export (all records, not paginated)
+    if request.GET.get('export') == 'csv':
+        all_logs = logs.order_by('-timestamp')
+        response = HttpResponse(content_type='text/csv')
+        fname = f"user_activity_{target_user.username if target_user else 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{fname}"'
+        writer = csv.writer(response)
+        writer.writerow(['Timestamp', 'User', 'Action', 'Case ID', 'Details'])
+        for log in all_logs:
+            writer.writerow([
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.user.username if log.user else '',
+                log.get_action_type_display(),
+                log.case.external_case_id if log.case else '',
+                log.details or '',
+            ])
+        return response
+
     context = {
         'target_user': target_user,
         'logs': logs_page,
@@ -468,7 +500,7 @@ def user_activity_report(request):
         'date_from': date_from,
         'date_to': date_to,
     }
-    
+
     return render(request, 'core/user_activity_report.html', context)
 
 
@@ -524,6 +556,23 @@ def case_change_history_report(request):
     except:
         logs_page = paginator.page(1)
     
+    # CSV export (all records, not paginated)
+    if request.GET.get('export') == 'csv':
+        all_logs = logs.order_by('-timestamp')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="case_change_history.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Timestamp', 'User', 'Action', 'Case ID', 'Details'])
+        for log in all_logs:
+            writer.writerow([
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.user.username if log.user else '',
+                log.get_action_type_display(),
+                log.case.external_case_id if log.case else '',
+                log.details or '',
+            ])
+        return response
+
     context = {
         'logs': logs_page,
         'total_changes': logs.count(),
@@ -531,7 +580,7 @@ def case_change_history_report(request):
         'date_from': date_from,
         'date_to': date_to,
     }
-    
+
     return render(request, 'core/case_change_history_report.html', context)
 
 
@@ -608,6 +657,24 @@ def quality_review_audit_report(request):
     except:
         reviews_page = paginator.page(1)
     
+    # CSV export (all records, not paginated)
+    if request.GET.get('export') == 'csv':
+        all_reviews = reviews.order_by('-reviewed_at')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="quality_review_audit.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Reviewed At', 'Case ID', 'Outcome', 'Reviewed By', 'Original Technician', 'Notes'])
+        for r in all_reviews:
+            writer.writerow([
+                r.reviewed_at.strftime('%Y-%m-%d %H:%M:%S') if r.reviewed_at else '',
+                r.case.external_case_id if r.case else '',
+                r.get_review_action_display() if hasattr(r, 'get_review_action_display') else r.review_action,
+                r.reviewed_by.get_full_name() if r.reviewed_by else '',
+                r.original_technician.get_full_name() if r.original_technician else '',
+                r.notes or '',
+            ])
+        return response
+
     context = {
         'reviews': reviews_page,
         'total_reviews': total_reviews,
@@ -619,7 +686,7 @@ def quality_review_audit_report(request):
         'date_from': date_from,
         'date_to': date_to,
     }
-    
+
     return render(request, 'core/quality_review_audit_report.html', context)
 
 
@@ -683,6 +750,22 @@ def system_event_audit_report(request):
         action = log.get_action_type_display()
         event_stats[action] = event_stats.get(action, 0) + 1
     
+    # CSV export (all records, not paginated)
+    if request.GET.get('export') == 'csv':
+        all_logs = logs  # already ordered -timestamp
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="system_event_audit.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Timestamp', 'Event Type', 'User', 'Details'])
+        for log in all_logs:
+            writer.writerow([
+                log.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                log.get_action_type_display(),
+                log.user.username if log.user else 'System',
+                log.details or '',
+            ])
+        return response
+
     context = {
         'logs': logs_page,
         'total_events': logs.count(),
@@ -691,5 +774,220 @@ def system_event_audit_report(request):
         'date_from': date_from,
         'date_to': date_to,
     }
-    
+
     return render(request, 'core/system_event_audit_report.html', context)
+
+
+# ---------------------------------------------------------------------------
+# PDF export views for audit reports
+# ---------------------------------------------------------------------------
+
+def _weasyprint_pdf_response(html_string, base_url, filename):
+    """Helper: render WeasyPrint PDF and return HttpResponse."""
+    from weasyprint import HTML
+    from io import BytesIO
+    buf = BytesIO()
+    HTML(string=html_string, base_url=base_url).write_pdf(buf)
+    buf.seek(0)
+    response = HttpResponse(buf.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+@login_required
+def activity_summary_pdf(request):
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+    from django.template.loader import render_to_string
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    logs = AuditLog.objects.all()
+    if date_from:
+        try:
+            from_date = timezone.datetime.strptime(date_from, '%Y-%m-%d')
+            logs = logs.filter(timestamp__gte=timezone.make_aware(from_date))
+        except Exception:
+            pass
+    if date_to:
+        try:
+            to_date = timezone.datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            logs = logs.filter(timestamp__lt=timezone.make_aware(to_date))
+        except Exception:
+            pass
+    activity_by_type = {}
+    activity_by_user = {}
+    for log in logs:
+        action = log.get_action_type_display()
+        activity_by_type[action] = activity_by_type.get(action, 0) + 1
+        user = log.user.username if log.user else 'System'
+        activity_by_user[user] = activity_by_user.get(user, 0) + 1
+    html_string = render_to_string('core/activity_summary_report_pdf.html', {
+        'total_activities': logs.count(),
+        'activity_by_type': sorted(activity_by_type.items(), key=lambda x: x[1], reverse=True),
+        'top_users': sorted(activity_by_user.items(), key=lambda x: x[1], reverse=True)[:15],
+        'date_from': date_from, 'date_to': date_to,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    return _weasyprint_pdf_response(html_string, request.build_absolute_uri('/'), 'activity_summary.pdf')
+
+
+@login_required
+def user_activity_pdf(request):
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+    from django.template.loader import render_to_string
+    user_id = request.GET.get('user_id', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    target_user = None
+    logs = AuditLog.objects.all()
+    if user_id:
+        try:
+            from accounts.models import User
+            target_user = User.objects.get(id=int(user_id))
+            logs = logs.filter(user=target_user)
+        except Exception:
+            pass
+    if date_from:
+        try:
+            from_date = timezone.datetime.strptime(date_from, '%Y-%m-%d')
+            logs = logs.filter(timestamp__gte=timezone.make_aware(from_date))
+        except Exception:
+            pass
+    if date_to:
+        try:
+            to_date = timezone.datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            logs = logs.filter(timestamp__lt=timezone.make_aware(to_date))
+        except Exception:
+            pass
+    html_string = render_to_string('core/user_activity_report_pdf.html', {
+        'target_user': target_user,
+        'logs': logs.order_by('-timestamp')[:500],
+        'total_activities': logs.count(),
+        'date_from': date_from, 'date_to': date_to,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    fname = f"user_activity_{target_user.username if target_user else 'all'}.pdf"
+    return _weasyprint_pdf_response(html_string, request.build_absolute_uri('/'), fname)
+
+
+@login_required
+def case_change_history_pdf(request):
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+    from django.template.loader import render_to_string
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    change_type = request.GET.get('change_type', '')
+    logs = AuditLog.objects.filter(case__isnull=False).select_related('user', 'case')
+    if change_type == 'status':
+        logs = logs.filter(action_type__in=['case_status_changed', 'case_held', 'case_resumed'])
+    elif change_type == 'tier':
+        logs = logs.filter(action_type='case_tier_changed')
+    elif change_type == 'assignment':
+        logs = logs.filter(action_type__in=['case_assigned', 'case_reassigned'])
+    elif change_type == 'resubmission':
+        logs = logs.filter(action_type='case_resubmitted')
+    if date_from:
+        try:
+            from_date = timezone.datetime.strptime(date_from, '%Y-%m-%d')
+            logs = logs.filter(timestamp__gte=timezone.make_aware(from_date))
+        except Exception:
+            pass
+    if date_to:
+        try:
+            to_date = timezone.datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            logs = logs.filter(timestamp__lt=timezone.make_aware(to_date))
+        except Exception:
+            pass
+    html_string = render_to_string('core/case_change_history_report_pdf.html', {
+        'logs': logs.order_by('-timestamp')[:500],
+        'total_changes': logs.count(),
+        'change_type': change_type,
+        'date_from': date_from, 'date_to': date_to,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    return _weasyprint_pdf_response(html_string, request.build_absolute_uri('/'), 'case_change_history.pdf')
+
+
+@login_required
+def quality_review_audit_pdf(request):
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+    from django.template.loader import render_to_string
+    from cases.models import CaseReviewHistory
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    review_status = request.GET.get('review_status', '')
+    reviews = CaseReviewHistory.objects.select_related('case', 'reviewed_by', 'original_technician').all()
+    if review_status:
+        action_map = {'approved': 'approved', 'revisions': 'revisions_requested', 'corrections': 'corrections_needed'}
+        if review_status in action_map:
+            reviews = reviews.filter(review_action=action_map[review_status])
+    if date_from:
+        try:
+            from_date = timezone.datetime.strptime(date_from, '%Y-%m-%d')
+            reviews = reviews.filter(reviewed_at__gte=timezone.make_aware(from_date))
+        except Exception:
+            pass
+    if date_to:
+        try:
+            to_date = timezone.datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            reviews = reviews.filter(reviewed_at__lt=timezone.make_aware(to_date))
+        except Exception:
+            pass
+    approved = reviews.filter(review_action='approved').count()
+    revisions_req = reviews.filter(review_action='revisions_requested').count()
+    corrections = reviews.filter(review_action='corrections_needed').count()
+    html_string = render_to_string('core/quality_review_audit_report_pdf.html', {
+        'reviews': reviews.order_by('-reviewed_at')[:500],
+        'total_reviews': reviews.count(),
+        'approved': approved, 'revisions_requested': revisions_req, 'corrections': corrections,
+        'review_status': review_status,
+        'date_from': date_from, 'date_to': date_to,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    return _weasyprint_pdf_response(html_string, request.build_absolute_uri('/'), 'quality_review_audit.pdf')
+
+
+@login_required
+def system_event_audit_pdf(request):
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+    from django.template.loader import render_to_string
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    event_type = request.GET.get('event_type', '')
+    logs = AuditLog.objects.filter(
+        action_type__in=[
+            'cron_job_executed', 'quarterly_credit_reset', 'bulk_credit_reset',
+            'settings_updated', 'bulk_export', 'report_generated',
+        ]
+    ).select_related('user').order_by('-timestamp')
+    if event_type:
+        logs = logs.filter(action_type=event_type)
+    if date_from:
+        try:
+            from_date = timezone.datetime.strptime(date_from, '%Y-%m-%d')
+            logs = logs.filter(timestamp__gte=timezone.make_aware(from_date))
+        except Exception:
+            pass
+    if date_to:
+        try:
+            to_date = timezone.datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            logs = logs.filter(timestamp__lt=timezone.make_aware(to_date))
+        except Exception:
+            pass
+    html_string = render_to_string('core/system_event_audit_report_pdf.html', {
+        'logs': logs[:500],
+        'total_events': logs.count(),
+        'event_type': event_type,
+        'date_from': date_from, 'date_to': date_to,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    return _weasyprint_pdf_response(html_string, request.build_absolute_uri('/'), 'system_event_audit.pdf')

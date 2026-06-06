@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page {
+        size: letter;
+        margin: 0.6in 0.75in 0.9in 0.75in;
+        @bottom-center {
+            content: "Page " counter(page) " of " counter(pages);
+            font-size: 8pt; color: #999;
+        }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 10pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #c00000; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #c00000; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 16px; margin-bottom: 16px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 10px; text-align: center; }
+    .tile .val { font-size: 20pt; font-weight: 700; color: #c00000; }
+    .tile .lbl { font-size: 7.5pt; color: #777; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 9pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 5px 6px; border-bottom: 1px solid #ccc; text-align: left; font-size: 8pt; }
+    tbody td { padding: 4px 6px; border-bottom: 1px solid #f0f0f0; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#9888; ProFeds Error Tracking Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    <div class="tile">
+        <div class="val">{{ total_error_cases }}</div>
+        <div class="lbl">Total Error Cases</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ errors_per_tech|length }}</div>
+        <div class="lbl">Technicians with Errors</div>
+    </div>
+</div>
+
+{% if errors_per_tech %}
+<div class="section-title">Error Rate by Technician</div>
+<table>
+    <thead><tr>
+        <th>Technician</th>
+        <th style="text-align:right;">Error Cases</th>
+        <th style="text-align:right;">Avg Modifications</th>
+    </tr></thead>
+    <tbody>
+    {% for tech in errors_per_tech %}
+    <tr>
+        <td>{{ tech.assigned_to__first_name }} {{ tech.assigned_to__last_name }}</td>
+        <td style="text-align:right; font-weight:600;">{{ tech.error_count }}</td>
+        <td style="text-align:right;">{{ tech.avg_error_count|floatformat:1 }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if error_cases %}
+<div class="section-title">Error Case Detail</div>
+<table>
+    <thead><tr>
+        <th>Case ID</th>
+        <th>Client</th>
+        <th>Advisor</th>
+        <th>Technician</th>
+        <th>Status</th>
+        <th style="text-align:right;">Error Count</th>
+        <th>Submitted</th>
+    </tr></thead>
+    <tbody>
+    {% for case in error_cases %}
+    <tr>
+        <td style="font-weight:600;">{{ case.external_case_id }}</td>
+        <td>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+        <td>{{ case.member.get_full_name|default:"—" }}</td>
+        <td>{{ case.assigned_to.get_full_name|default:"Unassigned" }}</td>
+        <td>{{ case.get_status_display }}</td>
+        <td style="text-align:right;">{{ case.error_modification_count }}</td>
+        <td>{{ case.date_submitted|date:"m/d/Y" }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | ProFeds Error Tracking Report | {{ generated_at|date:"m/d/Y" }}
+</div>
+
+</body>
+</html>

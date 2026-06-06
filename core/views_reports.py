@@ -273,7 +273,10 @@ def export_reports_csv(request):
     writer.writerow(['Cases Per Technician'])
     writer.writerow(['Technician', 'Cases'])
     for tech in data['cases_per_tech']:
-        name = f"{tech['first_name']} {tech['last_name']}" if tech['first_name'] else tech['username']
+        first = tech.get('assigned_to__first_name') or ''
+        last = tech.get('assigned_to__last_name') or ''
+        username = tech.get('assigned_to__username') or ''
+        name = f"{first} {last}".strip() if (first or last) else username
         writer.writerow([name, tech['case_count']])
     writer.writerow([])
     
@@ -400,8 +403,70 @@ def profeds_error_tracking_report(request):
     # Handle CSV export
     if request.GET.get('export') == 'csv':
         return export_error_tracking_csv(error_cases, date_from, date_to)
-    
+
     return render(request, 'core/profeds_error_tracking_report.html', context)
+
+
+@login_required
+def profeds_error_tracking_pdf(request):
+    """PDF export of the ProFeds error tracking report."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+    from datetime import datetime
+
+    date_from = request.GET.get('date_from', '').strip()
+    date_to = request.GET.get('date_to', '').strip()
+
+    error_cases_qs = Case.objects.filter(has_profeds_error=True)
+    if date_from:
+        error_cases_qs = error_cases_qs.filter(
+            date_submitted__date__gte=datetime.strptime(date_from, '%Y-%m-%d').date()
+        )
+    if date_to:
+        error_cases_qs = error_cases_qs.filter(
+            date_submitted__date__lte=datetime.strptime(date_to, '%Y-%m-%d').date()
+        )
+
+    errors_per_tech = error_cases_qs.filter(assigned_to__isnull=False).values(
+        'assigned_to__first_name', 'assigned_to__last_name'
+    ).annotate(error_count=Count('id'), avg_error_count=Avg('error_modification_count')).order_by('-error_count')
+
+    error_cases = error_cases_qs.select_related('assigned_to', 'member').order_by('-date_submitted')[:500]
+
+    period_label = ''
+    if date_from and date_to:
+        period_label = f"{date_from} – {date_to}"
+    elif date_from:
+        period_label = f"From {date_from}"
+    elif date_to:
+        period_label = f"Through {date_to}"
+    else:
+        period_label = 'All Time'
+
+    context = {
+        'total_error_cases': error_cases_qs.count(),
+        'errors_per_tech': errors_per_tech,
+        'error_cases': error_cases,
+        'date_from': date_from,
+        'date_to': date_to,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    }
+
+    html_string = render_to_string('core/profeds_error_tracking_report_pdf.html', context)
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+
+    date_slug = timezone.now().strftime('%Y%m%d')
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="ProFeds_Error_Report_{date_slug}.pdf"'
+    return response
 
 
 def export_error_tracking_csv(error_cases, date_from, date_to):
@@ -440,14 +505,56 @@ def beta_feedback_report(request):
     if not is_admin(request.user):
         messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
-    
+
     feedback_list = BetaFeedback.objects.select_related('user').all()
-    
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="member_portal_feedback.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['#', 'Member Name', 'Username', 'Email', 'Date Submitted', 'Feedback'])
+        for i, fb in enumerate(feedback_list, start=1):
+            writer.writerow([
+                i,
+                fb.user.get_full_name() if fb.user else '',
+                fb.user.username if fb.user else '',
+                fb.user.email if fb.user else '',
+                fb.created_at.strftime('%Y-%m-%d %H:%M'),
+                fb.feedback,
+            ])
+        return response
+
     context = {
         'feedback_list': feedback_list,
         'total_count': feedback_list.count(),
     }
     return render(request, 'core/beta_feedback_report.html', context)
+
+
+@login_required
+def beta_feedback_pdf(request):
+    """Download Member Portal Feedback report as PDF."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    feedback_list = BetaFeedback.objects.select_related('user').all()
+    html_string = render_to_string('core/beta_feedback_report_pdf.html', {
+        'feedback_list': feedback_list,
+        'total_count': feedback_list.count(),
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="member_portal_feedback.pdf"'
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -614,6 +721,37 @@ def technician_productivity_report(request):
                 except (User.DoesNotExist, ValueError):
                     pass
 
+    # CSV export
+    if form_submitted and not error_msg and report_data and request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        filename = f"technician_productivity_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow([
+            'Technician', 'Total Accepted', 'Completed', 'Completion Rate %',
+            'In Progress', 'On Hold', 'Pending Review', 'Rush Cases', 'Error Cases',
+            'Avg Days', 'Fastest Days', 'Slowest Days',
+            'Tier 1', 'Tier 2', 'Tier 3', 'Total Credits', 'Avg Credits',
+            'Reviews Sent', 'Reviews Approved',
+        ])
+        for row in report_data:
+            tech = row['tech']
+            writer.writerow([
+                f"{tech.first_name} {tech.last_name}",
+                row['total_accepted'], row['completed_count'], row['completion_rate'],
+                row['in_progress_count'], row['on_hold_count'], row['pending_review_count'],
+                row['rush_count'], row['error_count'],
+                row['avg_days'] if row['avg_days'] is not None else '',
+                row['fastest_days'] if row['fastest_days'] is not None else '',
+                row['slowest_days'] if row['slowest_days'] is not None else '',
+                row['tier_counts'].get('Tier 1', 0),
+                row['tier_counts'].get('Tier 2', 0),
+                row['tier_counts'].get('Tier 3', 0),
+                row['total_credits'], row['avg_credits'],
+                row['reviews_sent'], row['reviews_approved'],
+            ])
+        return response
+
     context = {
         'all_techs': all_techs,
         'tech_id': tech_id,
@@ -698,3 +836,107 @@ def technician_productivity_pdf(request):
     response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ---------------------------------------------------------------------------
+# R1 — Pipeline Health Dashboard (live snapshot, no date range)
+# ---------------------------------------------------------------------------
+
+@login_required
+def pipeline_health_report(request):
+    """Live pipeline snapshot — admin/manager only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    today = timezone.now().date()
+
+    # ── Queue: submitted but not yet accepted ──────────────────────────────
+    queue_qs = Case.objects.filter(status='submitted').order_by('date_submitted').select_related('assigned_to', 'member')
+    queue_cases = []
+    for c in queue_qs:
+        queue_cases.append({
+            'case': c,
+            'hours_waiting': round((timezone.now() - c.date_submitted).total_seconds() / 3600, 1),
+        })
+
+    # ── Unassigned active cases ────────────────────────────────────────────
+    unassigned_qs = Case.objects.filter(
+        status__in=['submitted', 'accepted', 'pending_review', 'hold'],
+        assigned_to__isnull=True,
+    ).order_by('date_submitted').select_related('member')
+
+    # ── Active by staff member (any role, active, has cases) ──────────────
+    active_by_tech = []
+    staff_qs = _exclude_super_dev_users(
+        User.objects.filter(role__in=['technician', 'administrator', 'manager'], is_active=True)
+    ).order_by('first_name', 'last_name')
+    for person in staff_qs:
+        active = Case.objects.filter(assigned_to=person, status__in=['accepted', 'pending_review']).count()
+        on_hold = Case.objects.filter(assigned_to=person, status='hold').count()
+        if active or on_hold:
+            active_by_tech.append({
+                'name': person.get_full_name() or person.username,
+                'role': person.role,
+                'level': person.user_level,
+                'active': active,
+                'on_hold': on_hold,
+            })
+
+    # ── Due in 3 and 7 days ───────────────────────────────────────────────
+    active_statuses = ['accepted', 'pending_review', 'hold']
+    due_3 = Case.objects.filter(
+        status__in=active_statuses, date_due__isnull=False,
+        date_due__lte=today + timedelta(days=3), date_due__gte=today,
+    ).order_by('date_due').select_related('assigned_to')
+
+    due_7 = Case.objects.filter(
+        status__in=active_statuses, date_due__isnull=False,
+        date_due__lte=today + timedelta(days=7), date_due__gt=today + timedelta(days=3),
+    ).order_by('date_due').select_related('assigned_to')
+
+    # ── Overdue ───────────────────────────────────────────────────────────
+    overdue_qs = Case.objects.filter(
+        status__in=['accepted', 'pending_review', 'hold', 'submitted'],
+        date_due__isnull=False, date_due__lt=today,
+    ).order_by('date_due').select_related('assigned_to')
+
+    # ── On hold ───────────────────────────────────────────────────────────
+    hold_cases = []
+    for c in Case.objects.filter(status='hold').order_by('hold_start_date').select_related('assigned_to', 'member'):
+        days_held = (timezone.now() - c.hold_start_date).days if c.hold_start_date else None
+        hold_cases.append({'case': c, 'days_held': days_held})
+
+    # ── Pending review ────────────────────────────────────────────────────
+    pending_review_qs = Case.objects.filter(status='pending_review').order_by('date_submitted').select_related('assigned_to', 'reviewed_by')
+
+    # ── Rush in flight ────────────────────────────────────────────────────
+    rush_active = Case.objects.filter(
+        status__in=['submitted', 'accepted', 'pending_review'], urgency='rush',
+    ).order_by('date_due').select_related('assigned_to')
+
+    total_active = Case.objects.filter(status__in=['submitted', 'accepted', 'pending_review', 'hold']).count()
+
+    context = {
+        'generated_at': timezone.now(),
+        'today': today,
+        'queue_cases': queue_cases,
+        'queue_count': len(queue_cases),
+        'unassigned_qs': unassigned_qs,
+        'unassigned_count': unassigned_qs.count(),
+        'active_by_tech': active_by_tech,
+        'due_3': due_3,
+        'due_3_count': due_3.count(),
+        'due_7': due_7,
+        'due_7_count': due_7.count(),
+        'overdue_qs': overdue_qs,
+        'overdue_count': overdue_qs.count(),
+        'hold_cases': hold_cases,
+        'hold_count': len(hold_cases),
+        'pending_review_qs': pending_review_qs,
+        'pending_review_count': pending_review_qs.count(),
+        'rush_active': rush_active,
+        'rush_active_count': rush_active.count(),
+        'total_active': total_active,
+    }
+    return render(request, 'core/pipeline_health_report.html', context)

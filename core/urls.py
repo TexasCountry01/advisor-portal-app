@@ -19,20 +19,28 @@ urlpatterns = [
     path('reports/', views_reports.view_reports, name='view_reports'),
     path('reports/export-csv/', views_reports.export_reports_csv, name='export_reports_csv'),
     path('reports/profeds-errors/', views_reports.profeds_error_tracking_report, name='profeds_error_tracking_report'),
+    path('reports/profeds-errors/pdf/', views_reports.profeds_error_tracking_pdf, name='profeds_error_tracking_pdf'),
     path('reports/beta-feedback/', views_reports.beta_feedback_report, name='beta_feedback_report'),
+    path('reports/beta-feedback/pdf/', views_reports.beta_feedback_pdf, name='beta_feedback_pdf'),
     path('reports/technician-productivity/', views_reports.technician_productivity_report, name='technician_productivity_report'),
     path('reports/technician-productivity/pdf/', views_reports.technician_productivity_pdf, name='technician_productivity_pdf'),
+    path('reports/pipeline/', views_reports.pipeline_health_report, name='pipeline_health_report'),
     # Audit Log URLs
     path('audit-log/', views_audit.view_audit_log, name='view_audit_log'),
     path('audit-log/<int:log_id>/', views_audit.audit_log_detail, name='audit_log_detail'),
     path('audit-log/export-csv/', views_audit.export_audit_log_csv, name='export_audit_log_csv'),
     path('cases/<int:case_id>/audit-trail/', views_audit.case_audit_trail, name='case_audit_trail'),
-    # NEW: Audit Report URLs
+    # Audit Report URLs
     path('reports/activity-summary/', views_audit.activity_summary_report, name='activity_summary_report'),
+    path('reports/activity-summary/pdf/', views_audit.activity_summary_pdf, name='activity_summary_pdf'),
     path('reports/user-activity/', views_audit.user_activity_report, name='user_activity_report'),
+    path('reports/user-activity/pdf/', views_audit.user_activity_pdf, name='user_activity_pdf'),
     path('reports/case-changes/', views_audit.case_change_history_report, name='case_change_history_report'),
+    path('reports/case-changes/pdf/', views_audit.case_change_history_pdf, name='case_change_history_pdf'),
     path('reports/quality-review-audit/', views_audit.quality_review_audit_report, name='quality_review_audit_report'),
+    path('reports/quality-review-audit/pdf/', views_audit.quality_review_audit_pdf, name='quality_review_audit_pdf'),
     path('reports/system-events/', views_audit.system_event_audit_report, name='system_event_audit_report'),
+    path('reports/system-events/pdf/', views_audit.system_event_audit_pdf, name='system_event_audit_pdf'),
 ]
 
 # Data Sync routes — only available when ENABLE_DATA_SYNC=True in .env

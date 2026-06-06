@@ -13,14 +13,17 @@
             <p class="text-muted">System-wide activity overview and statistics</p>
         </div>
         <div class="col-md-4 text-end">
-            <a href="{% url 'view_audit_log' %}" class="btn btn-outline-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Audit Log
-            </a>
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'activity_summary_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
         </div>
     </div>
-
-    <!-- Date Range Filter -->
-    <div class="card mb-4">
         <div class="card-header bg-light">
             <h5 class="mb-0">Filter by Date Range</h5>
         </div>

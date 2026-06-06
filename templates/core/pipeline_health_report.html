@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pipeline Health Dashboard - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h1 class="mb-0">Pipeline Health Dashboard</h1>
+            <small class="text-muted">Live snapshot &mdash; as of {{ generated_at|date:"m/d/Y g:i A" }}</small>
+        </div>
+        <div class="col-auto d-flex gap-2">
+            <a href="?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </a>
+            <a href="{% url 'view_reports' %}" class="btn btn-outline-secondary btn-sm">← Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_active }}</div>
+                    <div class="small text-muted">Total Active Cases</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100 {% if queue_count > 0 %}border-start border-4 border-info{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">{{ queue_count }}</div>
+                    <div class="small text-muted">In Queue (Unaccepted)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100 {% if overdue_count > 0 %}border-start border-4 border-danger{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if overdue_count > 0 %}text-danger{% else %}text-success{% endif %}">{{ overdue_count }}</div>
+                    <div class="small text-muted">Overdue</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100 {% if due_3_count > 0 %}border-start border-4 border-warning{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if due_3_count > 0 %}text-warning{% else %}text-secondary{% endif %}">{{ due_3_count }}</div>
+                    <div class="small text-muted">Due in 3 Days</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-secondary">{{ hold_count }}</div>
+                    <div class="small text-muted">On Hold</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100 {% if rush_active_count > 0 %}border-start border-4 border-danger{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if rush_active_count > 0 %}text-danger{% else %}text-secondary{% endif %}">{{ rush_active_count }}</div>
+                    <div class="small text-muted">Rush In Flight</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- LEFT COLUMN -->
+        <div class="col-lg-8">
+
+            <!-- Overdue Cases -->
+            {% if overdue_count > 0 %}
+            <div class="card mb-4 border-danger shadow-sm">
+                <div class="card-header bg-danger text-white d-flex justify-content-between">
+                    <span><i class="bi bi-exclamation-triangle-fill me-2"></i>Overdue Cases ({{ overdue_count }})</span>
+                    <small>Past due date and not completed</small>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light"><tr>
+                                <th>Case</th><th>Client</th><th>Assigned To</th>
+                                <th>Due Date</th><th>Days Overdue</th><th>Status</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for c in overdue_qs %}
+                            <tr class="table-danger">
+                                <td><a href="{% url 'cases:case_detail' c.id %}" class="text-decoration-none fw-semibold">{{ c.external_case_id }}</a></td>
+                                <td>{{ c.employee_first_name }} {{ c.employee_last_name }}</td>
+                                <td>{{ c.assigned_to.get_full_name|default:"—" }}</td>
+                                <td>{{ c.date_due|date:"m/d/Y" }}</td>
+                                <td class="text-danger fw-bold">{{ today|timeuntil:c.date_due }}</td>
+                                <td><span class="badge bg-secondary">{{ c.get_status_display }}</span></td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Due in 3 Days -->
+            {% if due_3_count > 0 %}
+            <div class="card mb-4 border-warning shadow-sm">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between">
+                    <span><i class="bi bi-clock-fill me-2"></i>Due Within 3 Days ({{ due_3_count }})</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light"><tr>
+                                <th>Case</th><th>Client</th><th>Assigned To</th>
+                                <th>Due Date</th><th>Urgency</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for c in due_3 %}
+                            <tr>
+                                <td><a href="{% url 'cases:case_detail' c.id %}" class="text-decoration-none fw-semibold">{{ c.external_case_id }}</a></td>
+                                <td>{{ c.employee_first_name }} {{ c.employee_last_name }}</td>
+                                <td>{{ c.assigned_to.get_full_name|default:"—" }}</td>
+                                <td>{{ c.date_due|date:"m/d/Y" }}</td>
+                                <td>{% if c.urgency == 'rush' %}<span class="badge bg-danger">Rush</span>{% else %}<span class="badge bg-secondary">Normal</span>{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Due in 4–7 Days -->
+            {% if due_7_count > 0 %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between">
+                    <span class="fw-semibold"><i class="bi bi-calendar-event me-2 text-primary"></i>Due in 4–7 Days ({{ due_7_count }})</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light"><tr>
+                                <th>Case</th><th>Client</th><th>Assigned To</th>
+                                <th>Due Date</th><th>Urgency</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for c in due_7 %}
+                            <tr>
+                                <td><a href="{% url 'cases:case_detail' c.id %}" class="text-decoration-none fw-semibold">{{ c.external_case_id }}</a></td>
+                                <td>{{ c.employee_first_name }} {{ c.employee_last_name }}</td>
+                                <td>{{ c.assigned_to.get_full_name|default:"—" }}</td>
+                                <td>{{ c.date_due|date:"m/d/Y" }}</td>
+                                <td>{% if c.urgency == 'rush' %}<span class="badge bg-danger">Rush</span>{% else %}<span class="badge bg-secondary">Normal</span>{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cases In Queue (Submitted, Not Yet Accepted) -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <span class="fw-semibold"><i class="bi bi-inbox me-2 text-info"></i>In Queue — Awaiting Acceptance ({{ queue_count }})</span>
+                </div>
+                {% if queue_cases %}
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light"><tr>
+                                <th>Case</th><th>Advisor</th><th>Client</th>
+                                <th>Submitted</th><th>Hours Waiting</th><th>Urgency</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for item in queue_cases %}
+                            <tr>
+                                <td><a href="{% url 'cases:case_detail' item.case.id %}" class="text-decoration-none fw-semibold">{{ item.case.external_case_id }}</a></td>
+                                <td>{{ item.case.member.get_full_name|default:"—" }}</td>
+                                <td>{{ item.case.employee_first_name }} {{ item.case.employee_last_name }}</td>
+                                <td>{{ item.case.date_submitted|date:"m/d/Y g:i A" }}</td>
+                                <td>{{ item.hours_waiting }}h</td>
+                                <td>{% if item.case.urgency == 'rush' %}<span class="badge bg-danger">Rush</span>{% else %}<span class="badge bg-secondary">Normal</span>{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card-body"><p class="text-muted mb-0">No cases waiting in queue. ✓</p></div>
+                {% endif %}
+            </div>
+
+            <!-- Rush Cases In Flight -->
+            {% if rush_active_count > 0 %}
+            <div class="card mb-4 border-danger shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between">
+                    <span class="fw-semibold text-danger"><i class="bi bi-lightning-fill me-2"></i>Rush Cases In Flight ({{ rush_active_count }})</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light"><tr>
+                                <th>Case</th><th>Client</th><th>Assigned To</th>
+                                <th>Status</th><th>Due</th>
+                            </tr></thead>
+                            <tbody>
+                            {% for c in rush_active %}
+                            <tr>
+                                <td><a href="{% url 'cases:case_detail' c.id %}" class="text-decoration-none fw-semibold">{{ c.external_case_id }}</a></td>
+                                <td>{{ c.employee_first_name }} {{ c.employee_last_name }}</td>
+                                <td>{{ c.assigned_to.get_full_name|default:"—" }}</td>
+                                <td><span class="badge bg-secondary">{{ c.get_status_display }}</span></td>
+                                <td>{% if c.date_due %}{{ c.date_due|date:"m/d/Y" }}{% else %}—{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div><!-- /left col -->
+
+        <!-- RIGHT COLUMN -->
+        <div class="col-lg-4">
+
+            <!-- Active Load by Technician -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-white fw-semibold">
+                    <i class="bi bi-people-fill text-primary me-2"></i>Active Load by Staff
+                </div>
+                <div class="card-body p-0">
+                    {% if active_by_tech %}
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr>
+                            <th>Name</th><th class="text-center">Active</th><th class="text-center">On Hold</th>
+                        </tr></thead>
+                        <tbody>
+                        {% for row in active_by_tech %}
+                        <tr>
+                            <td>
+                                <span class="fw-semibold">{{ row.name }}</span>
+                                <br><small class="text-muted">{{ row.role }}{% if row.level %} · {{ row.level }}{% endif %}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-primary">{{ row.active }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if row.on_hold %}<span class="badge bg-secondary">{{ row.on_hold }}</span>{% else %}&mdash;{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="p-3 text-muted">No staff have active cases right now.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pending Review -->
+            <div class="card mb-4 shadow-sm {% if pending_review_count > 0 %}border-info{% endif %}">
+                <div class="card-header bg-white fw-semibold">
+                    <i class="bi bi-clipboard2-check text-info me-2"></i>Pending Review ({{ pending_review_count }})
+                </div>
+                {% if pending_review_qs %}
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr>
+                            <th>Case</th><th>Client</th><th>Tech</th>
+                        </tr></thead>
+                        <tbody>
+                        {% for c in pending_review_qs %}
+                        <tr>
+                            <td><a href="{% url 'cases:case_detail' c.id %}" class="text-decoration-none fw-semibold">{{ c.external_case_id }}</a></td>
+                            <td>{{ c.employee_first_name }} {{ c.employee_last_name }}</td>
+                            <td>{{ c.assigned_to.get_full_name|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="card-body"><p class="text-muted mb-0">No cases pending review. ✓</p></div>
+                {% endif %}
+            </div>
+
+            <!-- On Hold -->
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header bg-white fw-semibold">
+                    <i class="bi bi-pause-circle text-secondary me-2"></i>Cases On Hold ({{ hold_count }})
+                </div>
+                {% if hold_cases %}
+                <div class="card-body p-0">
+                    {% for item in hold_cases %}
+                    <div class="p-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <a href="{% url 'cases:case_detail' item.case.id %}" class="fw-semibold text-decoration-none">{{ item.case.external_case_id }}</a>
+                            {% if item.days_held is not None %}
+                            <span class="badge {% if item.days_held > 14 %}bg-danger{% elif item.days_held > 7 %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ item.days_held }} day{{ item.days_held|pluralize }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="small text-muted mt-1">
+                            {{ item.case.employee_first_name }} {{ item.case.employee_last_name }}
+                            {% if item.case.assigned_to %} &middot; {{ item.case.assigned_to.get_full_name }}{% endif %}
+                        </div>
+                        {% if item.case.hold_reason %}
+                        <div class="small mt-1 text-secondary fst-italic">{{ item.case.hold_reason|truncatechars:100 }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="card-body"><p class="text-muted mb-0">No cases on hold. ✓</p></div>
+                {% endif %}
+            </div>
+
+            <!-- Unassigned Cases -->
+            {% if unassigned_count > 0 %}
+            <div class="card mb-4 border-warning shadow-sm">
+                <div class="card-header bg-white fw-semibold text-warning">
+                    <i class="bi bi-person-dash me-2"></i>Unassigned Cases ({{ unassigned_count }})
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Case</th><th>Client</th><th>Status</th></tr></thead>
+                        <tbody>
+                        {% for c in unassigned_qs|slice:":20" %}
+                        <tr>
+                            <td><a href="{% url 'cases:case_detail' c.id %}" class="text-decoration-none fw-semibold">{{ c.external_case_id }}</a></td>
+                            <td>{{ c.employee_first_name }} {{ c.employee_last_name }}</td>
+                            <td><span class="badge bg-secondary">{{ c.get_status_display }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% if unassigned_count > 20 %}
+                        <tr><td colspan="3" class="text-muted small text-center">...and {{ unassigned_count|add:"-20" }} more</td></tr>
+                        {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div><!-- /right col -->
+
+    </div><!-- /row -->
+</div>
+{% endblock %}
