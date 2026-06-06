@@ -1547,3 +1547,196 @@ def member_activity_pdf(request):
     filename = f"member_activity_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ─── R5: Credit Distribution & Integrity ────────────────────────────────────
+
+def get_credit_distribution_data(date_from=None, date_to=None):
+    """Aggregate credit_value statistics across cases."""
+    qs = Case.objects.all()
+    if date_from:
+        qs = qs.filter(date_submitted__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(date_submitted__date__lte=date_to)
+
+    total_cases = qs.count()
+    unassigned_credit = qs.filter(credit_value__isnull=True).count()
+
+    # Distribution by credit value
+    credit_dist_raw = (
+        qs.exclude(credit_value__isnull=True)
+        .values('credit_value')
+        .annotate(count=Count('id'))
+        .order_by('credit_value')
+    )
+    credit_dist = list(credit_dist_raw)
+    total_with_credit = sum(r['count'] for r in credit_dist)
+    for r in credit_dist:
+        r['pct'] = round(r['count'] / total_with_credit * 100, 1) if total_with_credit else 0
+        r['credit_value'] = float(r['credit_value'])
+
+    # Aggregate stats
+    agg = qs.exclude(credit_value__isnull=True).aggregate(
+        avg_credit=Avg('credit_value'),
+        total_credit=Sum('credit_value'),
+    )
+    avg_credit_overall = round(float(agg['avg_credit'] or 0), 2)
+    total_credit_sum = round(float(agg['total_credit'] or 0), 1)
+
+    # By tier (normalize raw tier strings)
+    tier_raw = (
+        qs.exclude(credit_value__isnull=True)
+        .values('tier')
+        .annotate(count=Count('id'), total_credit=Sum('credit_value'))
+    )
+    tier_merged = {}
+    for row in tier_raw:
+        norm = _normalize_tier(row['tier'])
+        if norm not in tier_merged:
+            tier_merged[norm] = {'tier': norm, 'count': 0, 'total_credit': 0.0}
+        tier_merged[norm]['count'] += row['count']
+        tier_merged[norm]['total_credit'] += float(row['total_credit'] or 0)
+    for v in tier_merged.values():
+        v['avg_credit'] = round(v['total_credit'] / v['count'], 2) if v['count'] else 0.0
+    tier_avg = sorted(tier_merged.values(), key=lambda x: x['tier'])
+
+    # Zero-credit completed cases
+    zero_credit_completed = qs.filter(status='completed', credit_value=0.0).count()
+    zero_credit_null_completed = qs.filter(status='completed', credit_value__isnull=True).count()
+
+    # High-credit cases (>= 2.0)
+    high_credit_qs = (
+        qs.filter(credit_value__gte=2.0)
+        .values(
+            'external_case_id', 'credit_value', 'tier', 'status',
+            'assigned_to__first_name', 'assigned_to__last_name',
+            'member__first_name', 'member__last_name', 'date_submitted',
+        )
+        .order_by('-credit_value', 'date_submitted')[:50]
+    )
+    high_credit_cases = []
+    for r in high_credit_qs:
+        r['tier_display'] = _normalize_tier(r['tier'])
+        r['credit_value'] = float(r['credit_value'])
+        high_credit_cases.append(r)
+
+    return {
+        'total_cases': total_cases,
+        'total_with_credit': total_with_credit,
+        'unassigned_credit': unassigned_credit,
+        'avg_credit_overall': avg_credit_overall,
+        'total_credit_sum': total_credit_sum,
+        'credit_dist': credit_dist,
+        'tier_avg': tier_avg,
+        'zero_credit_completed': zero_credit_completed,
+        'zero_credit_null_completed': zero_credit_null_completed,
+        'high_credit_cases': high_credit_cases,
+    }
+
+
+@login_required
+def credit_distribution_report(request):
+    """R5: Credit Distribution & Integrity — HTML + inline CSV."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_credit_distribution_data(date_from=date_from, date_to=date_to)
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        fname = f"credit_distribution_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{fname}"'
+        writer = csv.writer(response)
+
+        writer.writerow(['Credit Distribution Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} – {date_to_str or 'present'}"])
+        writer.writerow([])
+
+        writer.writerow(['Summary'])
+        writer.writerow(['Total Cases', data['total_cases']])
+        writer.writerow(['Cases with Credit Assigned', data['total_with_credit']])
+        writer.writerow(['Cases without Credit', data['unassigned_credit']])
+        writer.writerow(['Average Credit', data['avg_credit_overall']])
+        writer.writerow(['Total Credits Issued', data['total_credit_sum']])
+        writer.writerow(['Zero-credit Completed Cases', data['zero_credit_completed']])
+        writer.writerow([])
+
+        writer.writerow(['Credit Value', 'Cases', 'Percentage'])
+        for row in data['credit_dist']:
+            writer.writerow([row['credit_value'], row['count'], f"{row['pct']}%"])
+        writer.writerow([])
+
+        writer.writerow(['Tier', 'Cases', 'Avg Credit', 'Total Credits'])
+        for row in data['tier_avg']:
+            writer.writerow([row['tier'], row['count'], row['avg_credit'], round(row['total_credit'], 1)])
+        writer.writerow([])
+
+        writer.writerow(['High-Credit Cases (2.0+)'])
+        writer.writerow(['Case ID', 'Credit', 'Tier', 'Status', 'Technician', 'Advisor', 'Submitted'])
+        for r in data['high_credit_cases']:
+            writer.writerow([
+                r['external_case_id'],
+                r['credit_value'],
+                r['tier_display'],
+                r['status'],
+                f"{r.get('assigned_to__first_name') or ''} {r.get('assigned_to__last_name') or ''}".strip(),
+                f"{r.get('member__first_name') or ''} {r.get('member__last_name') or ''}".strip(),
+                r['date_submitted'].strftime('%m/%d/%Y') if r['date_submitted'] else '',
+            ])
+        return response
+
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/credit_distribution_report.html', context)
+
+
+@login_required
+def credit_distribution_pdf(request):
+    """PDF export for Credit Distribution Report."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_credit_distribution_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/credit_distribution_report_pdf.html', {
+        **data,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    fname = f"credit_distribution_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return response

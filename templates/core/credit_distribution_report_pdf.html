@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #198754; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #198754; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 14px; margin-bottom: 14px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 9px; text-align: center; }
+    .tile .val { font-size: 18pt; font-weight: 700; color: #198754; }
+    .tile.info .val { color: #0dcaf0; }
+    .tile.warn .val { color: #ffc107; }
+    .tile .lbl { font-size: 7.5pt; color: #777; margin-top: 2px; }
+    .cols { display: flex; gap: 20px; }
+    .col-left { flex: 1; }
+    .col-right { flex: 1.2; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid #ccc; text-align: left; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #f0f0f0; }
+    .bar-track { background: #f0f0f0; border-radius: 2px; height: 8px; overflow: hidden; }
+    .bar-fill { background: #198754; height: 8px; border-radius: 2px; }
+    .anomaly-box { border: 1px solid #ffc107; border-radius: 4px; padding: 10px; margin-bottom: 14px; display: flex; gap: 20px; }
+    .anomaly-box .val { font-size: 16pt; font-weight: 700; color: #ffc107; }
+    .anomaly-box .lbl { font-size: 7.5pt; color: #777; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#128179; Credit Distribution Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    <div class="tile">
+        <div class="val">{{ total_cases }}</div>
+        <div class="lbl">Total Cases</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ avg_credit_overall }}</div>
+        <div class="lbl">Avg Credit</div>
+    </div>
+    <div class="tile info">
+        <div class="val" style="color:#0d6efd;">{{ total_credit_sum }}</div>
+        <div class="lbl">Total Credits Issued</div>
+    </div>
+    <div class="tile warn">
+        <div class="val">{{ zero_credit_completed }}</div>
+        <div class="lbl">Zero-Credit Completed</div>
+    </div>
+</div>
+
+<div class="cols">
+    <div class="col-left">
+        {% if credit_dist %}
+        <div class="section-title">Credit Value Distribution</div>
+        <table>
+            <thead><tr>
+                <th>Credit</th>
+                <th style="text-align:right;">Cases</th>
+                <th style="text-align:right;">%</th>
+                <th style="width:80px;">Bar</th>
+            </tr></thead>
+            <tbody>
+            {% for row in credit_dist %}
+            <tr>
+                <td style="font-weight:600;">{{ row.credit_value }}</td>
+                <td style="text-align:right;">{{ row.count }}</td>
+                <td style="text-align:right;">{{ row.pct }}%</td>
+                <td>
+                    <div class="bar-track">
+                        <div class="bar-fill" style="width:{{ row.pct }}%;"></div>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if unassigned_credit > 0 %}
+        <p style="font-size:8pt; color:#999; margin-top:5px;">* {{ unassigned_credit }} case(s) have no credit value assigned.</p>
+        {% endif %}
+        {% endif %}
+
+        {% if tier_avg %}
+        <div class="section-title">Average Credit by Tier</div>
+        <table>
+            <thead><tr>
+                <th>Tier</th>
+                <th style="text-align:right;">Cases</th>
+                <th style="text-align:right;">Avg Credit</th>
+                <th style="text-align:right;">Total Credits</th>
+            </tr></thead>
+            <tbody>
+            {% for row in tier_avg %}
+            <tr>
+                <td style="font-weight:600;">{{ row.tier }}</td>
+                <td style="text-align:right;">{{ row.count }}</td>
+                <td style="text-align:right;">{{ row.avg_credit }}</td>
+                <td style="text-align:right;">{{ row.total_credit|floatformat:1 }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <div class="col-right">
+        {% if zero_credit_completed > 0 or zero_credit_null_completed > 0 %}
+        <div class="section-title">Credit Anomalies</div>
+        <div class="anomaly-box">
+            <div style="flex:1; text-align:center;">
+                <div class="val">{{ zero_credit_completed }}</div>
+                <div class="lbl">Completed with 0.0 credit</div>
+            </div>
+            <div style="flex:1; text-align:center;">
+                <div class="val" style="color:#dc3545;">{{ zero_credit_null_completed }}</div>
+                <div class="lbl">Completed — no credit set</div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if high_credit_cases %}
+        <div class="section-title">High-Credit Cases (2.0+)</div>
+        <table>
+            <thead><tr>
+                <th>Case ID</th>
+                <th style="text-align:right;">Credit</th>
+                <th>Tier</th>
+                <th>Status</th>
+                <th>Technician</th>
+            </tr></thead>
+            <tbody>
+            {% for r in high_credit_cases %}
+            <tr>
+                <td style="font-size:8pt; font-family:monospace;">{{ r.external_case_id }}</td>
+                <td style="text-align:right; font-weight:700; color:#e6a600;">{{ r.credit_value }}</td>
+                <td>{{ r.tier_display }}</td>
+                <td>{{ r.status }}</td>
+                <td>{{ r.assigned_to__first_name|default:"" }} {{ r.assigned_to__last_name|default:"" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | Credit Distribution Report | {{ generated_at|date:"m/d/Y" }}
+</div>
+</body>
+</html>

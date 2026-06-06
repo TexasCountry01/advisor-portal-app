@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Credit Distribution Report - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-credit-card text-success"></i> Credit Distribution Report</h1>
+            <p class="text-muted">Credit value distribution, tier averages, zero-credit anomalies, and high-credit outliers</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'credit_distribution_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Submitted From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Submitted To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'credit_distribution_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_cases }}</div>
+                    <div class="small text-muted">Total Cases</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ avg_credit_overall }}</div>
+                    <div class="small text-muted">Avg Credit</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">{{ total_credit_sum }}</div>
+                    <div class="small text-muted">Total Credits Issued</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100 {% if zero_credit_completed > 0 %}border-start border-4 border-warning{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ zero_credit_completed }}</div>
+                    <div class="small text-muted">Zero-Credit Completed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Left: credit distribution + tier avg -->
+        <div class="col-md-6">
+
+            {% if credit_dist %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-bar-chart"></i> Credit Value Distribution</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Credit Value</th>
+                                <th class="text-center">Cases</th>
+                                <th class="text-center">% of Total</th>
+                                <th>Bar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in credit_dist %}
+                        <tr>
+                            <td class="fw-semibold">{{ row.credit_value }}</td>
+                            <td class="text-center">{{ row.count }}</td>
+                            <td class="text-center">{{ row.pct }}%</td>
+                            <td style="width:160px;">
+                                <div class="progress" style="height:10px;">
+                                    <div class="progress-bar bg-success" style="width:{{ row.pct }}%;"></div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if unassigned_credit > 0 %}
+                <div class="card-footer text-muted small">
+                    <i class="bi bi-exclamation-triangle text-warning"></i>
+                    {{ unassigned_credit }} case{{ unassigned_credit|pluralize }} have no credit value assigned.
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if tier_avg %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-layers"></i> Average Credit by Tier</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tier</th>
+                                <th class="text-center">Cases</th>
+                                <th class="text-center">Avg Credit</th>
+                                <th class="text-center">Total Credits</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in tier_avg %}
+                        <tr>
+                            <td class="fw-semibold">{{ row.tier }}</td>
+                            <td class="text-center">{{ row.count }}</td>
+                            <td class="text-center">{{ row.avg_credit }}</td>
+                            <td class="text-center">{{ row.total_credit|floatformat:1 }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Right: high-credit cases + anomalies -->
+        <div class="col-md-6">
+
+            {% if zero_credit_completed > 0 or zero_credit_null_completed > 0 %}
+            <div class="card mb-4 shadow-sm border-warning">
+                <div class="card-header fw-semibold text-warning"><i class="bi bi-exclamation-triangle"></i> Credit Anomalies</div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col">
+                            <div class="fs-4 fw-bold text-warning">{{ zero_credit_completed }}</div>
+                            <div class="small text-muted">Completed with 0.0 credit</div>
+                        </div>
+                        <div class="col">
+                            <div class="fs-4 fw-bold text-danger">{{ zero_credit_null_completed }}</div>
+                            <div class="small text-muted">Completed — no credit set</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if high_credit_cases %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-star text-warning"></i> High-Credit Cases (2.0+)</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Case ID</th>
+                                <th class="text-center">Credit</th>
+                                <th>Tier</th>
+                                <th>Status</th>
+                                <th>Technician</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in high_credit_cases %}
+                        <tr>
+                            <td class="font-monospace small">{{ r.external_case_id }}</td>
+                            <td class="text-center fw-bold text-warning">{{ r.credit_value }}</td>
+                            <td><span class="badge bg-secondary">{{ r.tier_display }}</span></td>
+                            <td><span class="badge bg-light text-dark">{{ r.status }}</span></td>
+                            <td>{{ r.assigned_to__first_name|default:"" }} {{ r.assigned_to__last_name|default:"" }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}
