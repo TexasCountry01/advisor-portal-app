@@ -6,7 +6,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponse
-from django.db.models import Count, Q, Avg, F, Sum, Case as CaseWhen, When, Value, FloatField
+from django.db.models import Count, Q, Avg, F, Sum, Max, Case as CaseWhen, When, Value, FloatField
 from django.utils import timezone
 from datetime import timedelta
 import csv
@@ -1369,5 +1369,181 @@ def quality_review_analytics_pdf(request):
     pdf_buffer.seek(0)
     response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
     filename = f"quality_review_analytics_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+# ---------------------------------------------------------------------------
+# R4 — Member / Advisor Activity Report
+# ---------------------------------------------------------------------------
+
+def get_member_activity_data(date_from=None, date_to=None):
+    """Compile per-advisor submission activity."""
+    from django.db.models.functions import TruncWeek
+
+    # All active members
+    all_members = User.objects.filter(role='member', is_active=True).order_by('first_name', 'last_name')
+    total_members = all_members.count()
+
+    # Case queryset scoped to date range
+    case_qs = _exclude_super_dev_users(
+        Case.objects.filter(member__isnull=False).select_related('member')
+    )
+    if date_from:
+        case_qs = case_qs.filter(date_submitted__date__gte=date_from)
+    if date_to:
+        case_qs = case_qs.filter(date_submitted__date__lte=date_to)
+
+    # Per-member stats
+    member_counts = (
+        case_qs.values('member__id', 'member__first_name', 'member__last_name',
+                       'member__workshop_code', 'member__email')
+        .annotate(
+            case_count=Count('id'),
+            rush_count=Count('id', filter=Q(urgency='rush')),
+            last_submitted=Max('date_submitted'),
+        )
+        .order_by('-case_count')
+    )
+
+    # Members who submitted at least once
+    active_submitter_ids = set(case_qs.values_list('member__id', flat=True).distinct())
+    never_submitted_count = total_members - len(active_submitter_ids)
+
+    # Workshop code breakdown (top 15)
+    workshop_counts = (
+        case_qs.exclude(member__workshop_code='')
+        .exclude(member__workshop_code__isnull=True)
+        .values('member__workshop_code')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:15]
+    )
+
+    # Submission distribution buckets
+    buckets = {'1': 0, '2–5': 0, '6–10': 0, '11–20': 0, '21–50': 0, '51+': 0}
+    for row in member_counts:
+        c = row['case_count']
+        if c == 1:
+            buckets['1'] += 1
+        elif c <= 5:
+            buckets['2–5'] += 1
+        elif c <= 10:
+            buckets['6–10'] += 1
+        elif c <= 20:
+            buckets['11–20'] += 1
+        elif c <= 50:
+            buckets['21–50'] += 1
+        else:
+            buckets['51+'] += 1
+
+    # Weekly unique submitters
+    weekly_qs = (
+        case_qs.annotate(week=TruncWeek('date_submitted'))
+        .values('week')
+        .annotate(
+            total_cases=Count('id'),
+            unique_submitters=Count('member__id', distinct=True),
+        )
+        .order_by('week')
+    )
+
+    return {
+        'total_members': total_members,
+        'never_submitted_count': never_submitted_count,
+        'active_submitter_count': len(active_submitter_ids),
+        'member_counts': list(member_counts),
+        'workshop_counts': list(workshop_counts),
+        'buckets': buckets,
+        'weekly_qs': list(weekly_qs),
+        'total_cases_in_range': case_qs.count(),
+    }
+
+
+@login_required
+def member_activity_report(request):
+    """Member / Advisor Activity Report — admin/manager only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_member_activity_data(date_from=date_from, date_to=date_to)
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        filename = f"member_activity_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        writer = csv.writer(response)
+        writer.writerow(['Advisor Name', 'Email', 'Workshop Code', 'Total Cases',
+                         'Rush Cases', 'Last Submitted'])
+        for row in data['member_counts']:
+            writer.writerow([
+                f"{row['member__first_name']} {row['member__last_name']}",
+                row['member__email'] or '',
+                row['member__workshop_code'] or '',
+                row['case_count'],
+                row['rush_count'],
+                row['last_submitted'].strftime('%Y-%m-%d') if row['last_submitted'] else '',
+            ])
+        return response
+
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+    }
+    return render(request, 'core/member_activity_report.html', context)
+
+
+@login_required
+def member_activity_pdf(request):
+    """PDF export for Member / Advisor Activity Report."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_member_activity_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/member_activity_report_pdf.html', {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    filename = f"member_activity_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response

@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #0d6efd; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #0d6efd; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 14px; margin-bottom: 14px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 9px; text-align: center; }
+    .tile .val { font-size: 18pt; font-weight: 700; color: #0d6efd; }
+    .tile.warn .val { color: #ffc107; }
+    .tile .lbl { font-size: 7.5pt; color: #777; margin-top: 2px; }
+    .cols { display: flex; gap: 20px; }
+    .col-main { flex: 1.8; }
+    .col-side { flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid #ccc; text-align: left; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #f0f0f0; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#128101; Member / Advisor Activity Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    <div class="tile">
+        <div class="val">{{ total_cases_in_range }}</div>
+        <div class="lbl">Total Cases</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ active_submitter_count }}</div>
+        <div class="lbl">Active Submitters</div>
+    </div>
+    <div class="tile warn">
+        <div class="val">{{ never_submitted_count }}</div>
+        <div class="lbl">Never Submitted</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ total_members }}</div>
+        <div class="lbl">Total Members</div>
+    </div>
+</div>
+
+<div class="cols">
+    <div class="col-main">
+        {% if member_counts %}
+        <div class="section-title">Advisor Submission Counts</div>
+        <table>
+            <thead><tr>
+                <th>#</th><th>Advisor</th><th>Workshop</th>
+                <th style="text-align:right;">Cases</th>
+                <th style="text-align:right;">Rush</th>
+                <th>Last Submitted</th>
+            </tr></thead>
+            <tbody>
+            {% for row in member_counts %}
+            <tr>
+                <td style="color:#999;">{{ forloop.counter }}</td>
+                <td>{{ row.member__first_name }} {{ row.member__last_name }}</td>
+                <td>{{ row.member__workshop_code|default:"—" }}</td>
+                <td style="text-align:right; font-weight:600;">{{ row.case_count }}</td>
+                <td style="text-align:right;">{{ row.rush_count }}</td>
+                <td>{{ row.last_submitted|date:"m/d/Y"|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+    <div class="col-side">
+        {% if workshop_counts %}
+        <div class="section-title">Top Workshop Codes</div>
+        <table>
+            <thead><tr><th>Workshop</th><th style="text-align:right;">Cases</th></tr></thead>
+            <tbody>
+            {% for row in workshop_counts %}
+            <tr>
+                <td>{{ row.member__workshop_code }}</td>
+                <td style="text-align:right; font-weight:600;">{{ row.count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if buckets %}
+        <div class="section-title">Submission Distribution</div>
+        <table>
+            <thead><tr><th>Cases Range</th><th style="text-align:right;">Advisors</th></tr></thead>
+            <tbody>
+            {% for range, count in buckets.items %}
+            <tr><td>{{ range }}</td><td style="text-align:right; font-weight:600;">{{ count }}</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | Member / Advisor Activity Report | {{ generated_at|date:"m/d/Y" }}
+</div>
+</body>
+</html>

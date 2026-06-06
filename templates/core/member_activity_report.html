@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Member / Advisor Activity Report - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-people text-primary"></i> Member / Advisor Activity Report</h1>
+            <p class="text-muted">Submission counts per advisor, workshop breakdown, and engagement trends</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'member_activity_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Submitted From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Submitted To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'member_activity_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_cases_in_range }}</div>
+                    <div class="small text-muted">Total Cases</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ active_submitter_count }}</div>
+                    <div class="small text-muted">Active Submitters</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100 {% if never_submitted_count > 0 %}border-start border-4 border-warning{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ never_submitted_count }}</div>
+                    <div class="small text-muted">Never Submitted</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-secondary">{{ total_members }}</div>
+                    <div class="small text-muted">Total Active Members</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Left: advisor table -->
+        <div class="col-md-8">
+
+            {% if member_counts %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-person"></i> Advisor Submission Counts</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Advisor</th>
+                                <th>Workshop</th>
+                                <th class="text-center">Cases</th>
+                                <th class="text-center">Rush</th>
+                                <th>Last Submitted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for row in member_counts %}
+                        <tr>
+                            <td class="text-muted">{{ forloop.counter }}</td>
+                            <td>{{ row.member__first_name }} {{ row.member__last_name }}</td>
+                            <td><span class="badge bg-secondary">{{ row.member__workshop_code|default:"—" }}</span></td>
+                            <td class="text-center fw-semibold">{{ row.case_count }}</td>
+                            <td class="text-center {% if row.rush_count > 0 %}text-danger{% endif %}">{{ row.rush_count }}</td>
+                            <td>{{ row.last_submitted|date:"m/d/Y"|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- Right column -->
+        <div class="col-md-4">
+
+            <!-- Submission distribution -->
+            {% if buckets %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-bar-chart"></i> Submission Distribution</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Cases Range</th><th class="text-center">Advisors</th></tr></thead>
+                        <tbody>
+                        {% for range, count in buckets.items %}
+                        <tr>
+                            <td>{{ range }} case{{ range|pluralize }}</td>
+                            <td class="text-center fw-semibold">{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Top workshops -->
+            {% if workshop_counts %}
+            <div class="card mb-4 shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-building"></i> Top Workshop Codes</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Workshop</th><th class="text-center">Cases</th></tr></thead>
+                        <tbody>
+                        {% for row in workshop_counts %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ row.member__workshop_code }}</span></td>
+                            <td class="text-center fw-semibold">{{ row.count }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Weekly trend -->
+            {% if weekly_qs %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-graph-up"></i> Weekly Submissions</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Week of</th><th class="text-center">Cases</th><th class="text-center">Advisors</th></tr></thead>
+                        <tbody>
+                        {% for row in weekly_qs %}
+                        <tr>
+                            <td>{{ row.week|date:"m/d/Y" }}</td>
+                            <td class="text-center">{{ row.total_cases }}</td>
+                            <td class="text-center">{{ row.unique_submitters }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

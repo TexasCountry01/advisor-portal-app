@@ -29,6 +29,8 @@ urlpatterns = [
     path('reports/due-date-compliance/pdf/', views_reports.due_date_compliance_pdf, name='due_date_compliance_pdf'),
     path('reports/quality-review/', views_reports.quality_review_analytics_report, name='quality_review_analytics_report'),
     path('reports/quality-review/pdf/', views_reports.quality_review_analytics_pdf, name='quality_review_analytics_pdf'),
+    path('reports/member-activity/', views_reports.member_activity_report, name='member_activity_report'),
+    path('reports/member-activity/pdf/', views_reports.member_activity_pdf, name='member_activity_pdf'),
     # Audit Log URLs
     path('audit-log/', views_audit.view_audit_log, name='view_audit_log'),
     path('audit-log/<int:log_id>/', views_audit.audit_log_detail, name='audit_log_detail'),
