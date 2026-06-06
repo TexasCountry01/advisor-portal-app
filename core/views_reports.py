@@ -1950,3 +1950,245 @@ def hold_analysis_pdf(request):
     fname = f"hold_analysis_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
+
+
+# ─── R7: Advisor Engagement Trend ───────────────────────────────────────────
+
+def get_advisor_engagement_data(date_from=None, date_to=None):
+    """Aggregate advisor engagement and submission trend data."""
+    from django.db.models.functions import TruncWeek, TruncMonth
+    from django.db.models import Min
+
+    # All active members
+    total_members = User.objects.filter(role='member', is_active=True).count()
+
+    # Members who ever submitted (all-time, not filtered)
+    ever_submitted_ids = set(
+        Case.objects.values_list('member_id', flat=True).distinct()
+    )
+    ever_submitted = len(ever_submitted_ids)
+    never_submitted = total_members - ever_submitted
+
+    # Period-scoped base queryset
+    qs = Case.objects.all()
+    if date_from:
+        qs = qs.filter(date_submitted__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(date_submitted__date__lte=date_to)
+
+    total_cases_period = qs.count()
+
+    # Active in period (unique submitters)
+    active_in_period_ids = set(qs.values_list('member_id', flat=True).distinct())
+    active_in_period = len(active_in_period_ids)
+
+    # Repeat submitters (2+ cases) within period
+    repeat_qs = (
+        qs.values('member_id')
+        .annotate(cnt=Count('id'))
+        .filter(cnt__gte=2)
+    )
+    repeat_submitters = repeat_qs.count()
+    repeat_rate = round(repeat_submitters / active_in_period * 100, 1) if active_in_period else 0
+    never_rate = round(never_submitted / total_members * 100, 1) if total_members else 0
+
+    # New submitters in period = members whose very first-ever case is within period
+    first_sub_per_member = (
+        Case.objects.values('member_id')
+        .annotate(first_date=Min('date_submitted'))
+    )
+    new_submitter_ids = set()
+    for row in first_sub_per_member:
+        fd = row['first_date']
+        if fd is None:
+            continue
+        fd_date = fd.date() if hasattr(fd, 'date') else fd
+        if date_from and fd_date < date_from:
+            continue
+        if date_to and fd_date > date_to:
+            continue
+        new_submitter_ids.add(row['member_id'])
+    new_submitters = len(new_submitter_ids)
+
+    # Weekly trend (last 26 weeks if no filter)
+    weekly_qs = (
+        qs.annotate(week=TruncWeek('date_submitted'))
+        .values('week')
+        .annotate(total_cases=Count('id'), unique_submitters=Count('member_id', distinct=True))
+        .order_by('week')
+    )
+    weekly_trend = list(weekly_qs)
+
+    # Monthly trend
+    monthly_qs = (
+        qs.annotate(month=TruncMonth('date_submitted'))
+        .values('month')
+        .annotate(total_cases=Count('id'), unique_submitters=Count('member_id', distinct=True))
+        .order_by('month')
+    )
+    monthly_trend = list(monthly_qs)
+
+    # Top 15 most active advisors in period
+    top_advisors = (
+        qs.values(
+            'member_id',
+            'member__first_name',
+            'member__last_name',
+            'member__workshop_code',
+        )
+        .annotate(case_count=Count('id'))
+        .order_by('-case_count')[:15]
+    )
+    top_advisors_list = list(top_advisors)
+
+    # Submission frequency buckets (in period)
+    freq_qs = (
+        qs.values('member_id')
+        .annotate(cnt=Count('id'))
+    )
+    freq_buckets = {'1 case': 0, '2–5 cases': 0, '6–10 cases': 0, '11–20 cases': 0, '21+ cases': 0}
+    for row in freq_qs:
+        c = row['cnt']
+        if c == 1:
+            freq_buckets['1 case'] += 1
+        elif c <= 5:
+            freq_buckets['2–5 cases'] += 1
+        elif c <= 10:
+            freq_buckets['6–10 cases'] += 1
+        elif c <= 20:
+            freq_buckets['11–20 cases'] += 1
+        else:
+            freq_buckets['21+ cases'] += 1
+
+    return {
+        'total_members': total_members,
+        'ever_submitted': ever_submitted,
+        'never_submitted': never_submitted,
+        'never_rate': never_rate,
+        'active_in_period': active_in_period,
+        'new_submitters': new_submitters,
+        'repeat_submitters': repeat_submitters,
+        'repeat_rate': repeat_rate,
+        'total_cases_period': total_cases_period,
+        'weekly_trend': weekly_trend,
+        'monthly_trend': monthly_trend,
+        'top_advisors': top_advisors_list,
+        'freq_buckets': freq_buckets,
+    }
+
+
+@login_required
+def advisor_engagement_report(request):
+    """R7: Advisor Engagement Trend — HTML + inline CSV."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_advisor_engagement_data(date_from=date_from, date_to=date_to)
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        fname = f"advisor_engagement_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
+        response['Content-Disposition'] = f'attachment; filename="{fname}"'
+        writer = csv.writer(response)
+
+        writer.writerow(['Advisor Engagement Trend Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} – {date_to_str or 'present'}"])
+        writer.writerow([])
+
+        writer.writerow(['Summary'])
+        writer.writerow(['Total Active Members', data['total_members']])
+        writer.writerow(['Ever Submitted (all-time)', data['ever_submitted']])
+        writer.writerow(['Never Submitted', data['never_submitted']])
+        writer.writerow(['Never-Submitted Rate', f"{data['never_rate']}%"])
+        writer.writerow(['Active in Period', data['active_in_period']])
+        writer.writerow(['New Submitters in Period', data['new_submitters']])
+        writer.writerow(['Repeat Submitters in Period', data['repeat_submitters']])
+        writer.writerow(['Repeat Rate', f"{data['repeat_rate']}%"])
+        writer.writerow(['Total Cases in Period', data['total_cases_period']])
+        writer.writerow([])
+
+        writer.writerow(['Monthly Trend'])
+        writer.writerow(['Month', 'Total Cases', 'Unique Submitters'])
+        for row in data['monthly_trend']:
+            writer.writerow([
+                row['month'].strftime('%Y-%m') if row['month'] else '',
+                row['total_cases'],
+                row['unique_submitters'],
+            ])
+        writer.writerow([])
+
+        writer.writerow(['Weekly Trend'])
+        writer.writerow(['Week of', 'Total Cases', 'Unique Submitters'])
+        for row in data['weekly_trend']:
+            writer.writerow([
+                row['week'].strftime('%Y-%m-%d') if row['week'] else '',
+                row['total_cases'],
+                row['unique_submitters'],
+            ])
+        writer.writerow([])
+
+        writer.writerow(['Top Advisors in Period'])
+        writer.writerow(['Advisor', 'Workshop', 'Cases'])
+        for r in data['top_advisors']:
+            writer.writerow([
+                f"{r.get('member__first_name') or ''} {r.get('member__last_name') or ''}".strip(),
+                r.get('member__workshop_code') or '',
+                r['case_count'],
+            ])
+        return response
+
+    context = {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/advisor_engagement_report.html', context)
+
+
+@login_required
+def advisor_engagement_pdf(request):
+    """PDF export for Advisor Engagement Trend Report."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = datetime.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = datetime.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = get_advisor_engagement_data(date_from=date_from, date_to=date_to)
+    period_label = f"{date_from_str or 'All time'} – {date_to_str or 'present'}"
+
+    html_string = render_to_string('core/advisor_engagement_report_pdf.html', {
+        **data,
+        'period_label': period_label,
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    fname = f"advisor_engagement_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{fname}"'
+    return response

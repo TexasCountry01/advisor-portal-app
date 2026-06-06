@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #6f42c1; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #6f42c1; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 10px; margin-bottom: 14px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 8px; text-align: center; }
+    .tile .val { font-size: 14pt; font-weight: 700; color: #6f42c1; }
+    .tile.warn .val { color: #b38600; }
+    .tile.success .val { color: #198754; }
+    .tile.primary .val { color: #0d6efd; }
+    .tile.info .val { color: #0dcaf0; }
+    .tile .lbl { font-size: 7pt; color: #777; margin-top: 2px; }
+    .cols { display: flex; gap: 18px; }
+    .col-main { flex: 1.6; }
+    .col-side { flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid #ccc; text-align: left; }
+    tbody td { padding: 3px 6px; border-bottom: 1px solid #f0f0f0; }
+    .bar-track { background: #f0f0f0; border-radius: 2px; height: 7px; overflow: hidden; display: inline-block; width: 80px; vertical-align: middle; }
+    .bar-fill { background: #6f42c1; height: 7px; border-radius: 2px; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#128200; Advisor Engagement Trend</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    <div class="tile">
+        <div class="val" style="color:#555;">{{ total_members }}</div>
+        <div class="lbl">Total Members</div>
+    </div>
+    <div class="tile success">
+        <div class="val">{{ ever_submitted }}</div>
+        <div class="lbl">Ever Submitted</div>
+    </div>
+    <div class="tile warn">
+        <div class="val">{{ never_submitted }}</div>
+        <div class="lbl">Never Submitted ({{ never_rate }}%)</div>
+    </div>
+    <div class="tile primary">
+        <div class="val">{{ active_in_period }}</div>
+        <div class="lbl">Active in Period</div>
+    </div>
+    <div class="tile">
+        <div class="val">{{ new_submitters }}</div>
+        <div class="lbl">New Submitters</div>
+    </div>
+    <div class="tile info">
+        <div class="val">{{ repeat_rate }}%</div>
+        <div class="lbl">Repeat Rate</div>
+    </div>
+</div>
+
+<div class="cols">
+    <div class="col-main">
+        {% if monthly_trend %}
+        <div class="section-title">Monthly Submission Trend</div>
+        <table>
+            <thead><tr>
+                <th>Month</th>
+                <th style="text-align:right;">Cases</th>
+                <th style="text-align:right;">Advisors</th>
+                <th>Bar</th>
+            </tr></thead>
+            <tbody>
+            {% for row in monthly_trend %}
+            <tr>
+                <td style="font-weight:600;">{{ row.month|date:"M Y" }}</td>
+                <td style="text-align:right;">{{ row.total_cases }}</td>
+                <td style="text-align:right; font-weight:600;">{{ row.unique_submitters }}</td>
+                <td>
+                    {% if total_members > 0 %}
+                    {% widthratio row.unique_submitters total_members 100 as pct_val %}
+                    <div class="bar-track"><div class="bar-fill" style="width:{{ pct_val }}%;"></div></div>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if freq_buckets %}
+        <div class="section-title">Submission Frequency Distribution</div>
+        <table>
+            <thead><tr><th>Cases Range</th><th style="text-align:right;">Advisors</th></tr></thead>
+            <tbody>
+            {% for range, count in freq_buckets.items %}
+            <tr>
+                <td>{{ range }}</td>
+                <td style="text-align:right; font-weight:600;">{{ count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    <div class="col-side">
+        {% if top_advisors %}
+        <div class="section-title">Top Advisors in Period</div>
+        <table>
+            <thead><tr><th>#</th><th>Advisor</th><th>Workshop</th><th style="text-align:right;">Cases</th></tr></thead>
+            <tbody>
+            {% for r in top_advisors %}
+            <tr>
+                <td style="color:#999;">{{ forloop.counter }}</td>
+                <td>{{ r.member__first_name }} {{ r.member__last_name }}</td>
+                <td>{{ r.member__workshop_code|default:"—" }}</td>
+                <td style="text-align:right; font-weight:700;">{{ r.case_count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+</div>
+
+<div class="doc-footer">
+    Confidential — ProFeds Advisor Portal | Advisor Engagement Trend | {{ generated_at|date:"m/d/Y" }}
+</div>
+</body>
+</html>
