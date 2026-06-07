@@ -995,15 +995,20 @@ def get_due_date_compliance_data(date_from=None, date_to=None):
     late_count = late_qs.count()
     on_time_rate = round(on_time_count / total * 100, 1) if total else 0
 
-    # avg days early (positive = early)
-    days_diff_list = []
+    # avg days early (on-time cases only) and avg days late (late cases only)
+    early_diffs = []
+    late_diffs = []
     for case in qs.only('id', 'date_due', 'date_completed'):
         if case.date_completed and case.date_due:
             completed_date = case.date_completed.date() if hasattr(case.date_completed, 'date') else case.date_completed
             diff = (case.date_due - completed_date).days
-            days_diff_list.append(diff)
+            if diff >= 0:
+                early_diffs.append(diff)
+            else:
+                late_diffs.append(abs(diff))
 
-    avg_days_early = round(sum(days_diff_list) / len(days_diff_list), 1) if days_diff_list else 0
+    avg_days_early = round(sum(early_diffs) / len(early_diffs), 1) if early_diffs else 0
+    avg_days_late = round(sum(late_diffs) / len(late_diffs), 1) if late_diffs else 0
 
     # by technician
     tech_stats = {}
@@ -1081,6 +1086,7 @@ def get_due_date_compliance_data(date_from=None, date_to=None):
         'late_count': late_count,
         'on_time_rate': on_time_rate,
         'avg_days_early': avg_days_early,
+        'avg_days_late': avg_days_late,
         'by_tech': by_tech,
         'by_tier': by_tier,
         'by_urgency': by_urgency,
@@ -1115,6 +1121,12 @@ def due_date_compliance_report(request):
         filename = f"due_date_compliance_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         writer = csv.writer(response)
+        writer.writerow(['Due Date Compliance Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} – {date_to_str or 'present'}"])
+        writer.writerow(['On-Time Rate', f"{data['on_time_rate']}%"])
+        writer.writerow(['Avg Days Early (on-time cases)', data['avg_days_early']])
+        writer.writerow(['Avg Days Late (late cases)', data['avg_days_late']])
+        writer.writerow([])
         writer.writerow(['Case ID', 'Client', 'Advisor', 'Technician', 'Tier', 'Urgency',
                          'Date Due', 'Date Completed', 'Days Diff', 'On Time'])
         for case in Case.objects.filter(
@@ -1269,6 +1281,25 @@ def get_quality_review_data(date_from=None, date_to=None):
     # recent reviews detail
     recent_reviews = qs.order_by('-reviewed_at')[:100]
 
+    # Avg review turnaround: time from submitted_for_review → outcome decision
+    from django.db.models import Min as _Min
+    submitted_map = {
+        r['case_id']: r['sub_at']
+        for r in CaseReviewHistory.objects.filter(review_action='submitted_for_review')
+        .values('case_id').annotate(sub_at=_Min('reviewed_at'))
+    }
+    outcome_map = {
+        r['case_id']: r['out_at']
+        for r in CaseReviewHistory.objects.filter(review_action__in=OUTCOME_ACTIONS)
+        .values('case_id').annotate(out_at=_Min('reviewed_at'))
+    }
+    turnaround_hours = []
+    for case_id, sub_at in submitted_map.items():
+        out_at = outcome_map.get(case_id)
+        if out_at and out_at >= sub_at:
+            turnaround_hours.append((out_at - sub_at).total_seconds() / 3600)
+    avg_review_turnaround = round(sum(turnaround_hours) / len(turnaround_hours) / 24, 1) if turnaround_hours else None
+
     return {
         'total': total,
         'approved': approved,
@@ -1279,6 +1310,7 @@ def get_quality_review_data(date_from=None, date_to=None):
         'by_tech': by_tech,
         'weekly_trend': weekly_trend,
         'recent_reviews': recent_reviews,
+        'avg_review_turnaround': avg_review_turnaround,
     }
 
 
@@ -1320,6 +1352,11 @@ def quality_review_analytics_report(request):
         filename = f"quality_review_analytics_{date_from_str or 'all'}_{date_to_str or 'all'}.csv"
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         writer = csv.writer(response)
+        writer.writerow(['Quality Review Analytics Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} – {date_to_str or 'present'}"])
+        writer.writerow(['First-Pass Approval Rate', f"{data['approval_rate']}%"])
+        writer.writerow(['Avg Review Turnaround (days)', data['avg_review_turnaround'] if data['avg_review_turnaround'] is not None else 'N/A'])
+        writer.writerow([])
         writer.writerow(['Reviewed At', 'Case ID', 'Outcome', 'Reviewed By',
                          'Original Technician', 'Notes'])
         for r in reviews:
@@ -1414,6 +1451,7 @@ def get_member_activity_data(date_from=None, date_to=None):
         .annotate(
             case_count=Count('id'),
             rush_count=Count('id', filter=Q(urgency='rush')),
+            multi_report_count=Count('id', filter=Q(num_reports_requested__gte=2)),
             last_submitted=Max('date_submitted'),
         )
         .order_by('-case_count')
@@ -1460,11 +1498,26 @@ def get_member_activity_data(date_from=None, date_to=None):
         .order_by('week')
     )
 
+    # Inactive submitters: submitted before but not in the last 30 days
+    ref_date = date_to if date_to else timezone.now().date()
+    cutoff_date = ref_date - timedelta(days=30)
+    member_counts_list = list(member_counts)
+    inactive_submitters = []
+    for row in member_counts_list:
+        ls = row['last_submitted']
+        if ls is None:
+            continue
+        ls_date = ls.date() if hasattr(ls, 'date') else ls
+        if ls_date < cutoff_date:
+            inactive_submitters.append(row)
+    inactive_submitters.sort(key=lambda x: x['last_submitted'])
+
     return {
         'total_members': total_members,
         'never_submitted_count': never_submitted_count,
         'active_submitter_count': len(active_submitter_ids),
-        'member_counts': list(member_counts),
+        'member_counts': member_counts_list,
+        'inactive_submitters': inactive_submitters,
         'workshop_counts': list(workshop_counts),
         'buckets': buckets,
         'weekly_qs': list(weekly_qs),
@@ -1499,7 +1552,7 @@ def member_activity_report(request):
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
         writer = csv.writer(response)
         writer.writerow(['Advisor Name', 'Email', 'Workshop Code', 'Total Cases',
-                         'Rush Cases', 'Last Submitted'])
+                         'Rush Cases', 'Multi-Report Cases', 'Last Submitted'])
         for row in data['member_counts']:
             writer.writerow([
                 f"{row['member__first_name']} {row['member__last_name']}",
@@ -1507,7 +1560,19 @@ def member_activity_report(request):
                 row['member__workshop_code'] or '',
                 row['case_count'],
                 row['rush_count'],
+                row.get('multi_report_count', 0),
                 row['last_submitted'].strftime('%Y-%m-%d') if row['last_submitted'] else '',
+            ])
+        writer.writerow([])
+        writer.writerow(['Inactive Submitters (30+ days dormant)'])
+        writer.writerow(['Advisor Name', 'Workshop Code', 'Last Submitted'])
+        for row in data.get('inactive_submitters', []):
+            ls = row['last_submitted']
+            ls_date = ls.date() if hasattr(ls, 'date') else ls
+            writer.writerow([
+                f"{row['member__first_name']} {row['member__last_name']}",
+                row['member__workshop_code'] or '',
+                ls_date.strftime('%Y-%m-%d') if ls_date else '',
             ])
         return response
 
@@ -1633,6 +1698,25 @@ def get_credit_distribution_data(date_from=None, date_to=None):
         r['credit_value'] = float(r['credit_value'])
         high_credit_cases.append(r)
 
+    # Monthly credit trend (completed/accepted cases)
+    from django.db.models.functions import TruncMonth
+    monthly_raw = (
+        qs.filter(status__in=['accepted', 'completed'])
+        .exclude(credit_value__isnull=True)
+        .annotate(month=TruncMonth('date_submitted'))
+        .values('month')
+        .annotate(count=Count('id'), avg_credit=Avg('credit_value'), total_credits=Sum('credit_value'))
+        .order_by('month')
+    )
+    credit_monthly_trend = []
+    for r in monthly_raw:
+        credit_monthly_trend.append({
+            'month': r['month'],
+            'count': r['count'],
+            'avg_credit': round(float(r['avg_credit'] or 0), 2),
+            'total_credits': round(float(r['total_credits'] or 0), 1),
+        })
+
     return {
         'total_cases': total_cases,
         'total_with_credit': total_with_credit,
@@ -1644,6 +1728,7 @@ def get_credit_distribution_data(date_from=None, date_to=None):
         'zero_credit_completed': zero_credit_completed,
         'zero_credit_null_completed': zero_credit_null_completed,
         'high_credit_cases': high_credit_cases,
+        'credit_monthly_trend': credit_monthly_trend,
     }
 
 
@@ -1706,6 +1791,16 @@ def credit_distribution_report(request):
                 f"{r.get('assigned_to__first_name') or ''} {r.get('assigned_to__last_name') or ''}".strip(),
                 f"{r.get('member__first_name') or ''} {r.get('member__last_name') or ''}".strip(),
                 r['date_submitted'].strftime('%m/%d/%Y') if r['date_submitted'] else '',
+            ])
+        writer.writerow([])
+        writer.writerow(['Monthly Credit Trend (Completed/Accepted)'])
+        writer.writerow(['Month', 'Cases', 'Avg Credit', 'Total Credits'])
+        for r in data.get('credit_monthly_trend', []):
+            writer.writerow([
+                r['month'].strftime('%Y-%m') if r['month'] else '',
+                r['count'],
+                r['avg_credit'],
+                r['total_credits'],
             ])
         return response
 
@@ -1841,6 +1936,21 @@ def get_hold_analysis_data(date_from=None, date_to=None):
     audit_held_count = audit_held.count()
     audit_resumed_count = audit_resumed.count()
 
+    # Holds by technician
+    holds_by_tech_qs = (
+        qs.filter(assigned_to__isnull=False)
+        .values('assigned_to__first_name', 'assigned_to__last_name')
+        .annotate(hold_count=Count('id'))
+        .order_by('-hold_count')
+    )
+    holds_by_tech = [
+        {
+            'name': f"{r['assigned_to__first_name'] or ''} {r['assigned_to__last_name'] or ''}".strip() or 'Unassigned',
+            'count': r['hold_count'],
+        }
+        for r in holds_by_tech_qs
+    ]
+
     return {
         'total_holds': total_holds,
         'currently_on_hold': currently_on_hold,
@@ -1853,6 +1963,7 @@ def get_hold_analysis_data(date_from=None, date_to=None):
         'longest_holds': longest_holds,
         'audit_held_count': audit_held_count,
         'audit_resumed_count': audit_resumed_count,
+        'holds_by_tech': holds_by_tech,
     }
 
 
@@ -1917,6 +2028,11 @@ def hold_analysis_report(request):
                 (r['hold_reason'] or '')[:80],
                 f"{r.get('assigned_to__first_name') or ''} {r.get('assigned_to__last_name') or ''}".strip(),
             ])
+        writer.writerow([])
+        writer.writerow(['Holds by Technician'])
+        writer.writerow(['Technician', 'Hold Count'])
+        for r in data.get('holds_by_tech', []):
+            writer.writerow([r['name'], r['count']])
         return response
 
     context = {
@@ -2073,6 +2189,29 @@ def get_advisor_engagement_data(date_from=None, date_to=None):
         else:
             freq_buckets['21+ cases'] += 1
 
+    # 30-day dormancy list: submitted at some point but not in the last 30 days
+    ref_date = date_to if date_to else timezone.now().date()
+    dormancy_cutoff = ref_date - timedelta(days=30)
+    all_last_sub = (
+        Case.objects.filter(member__isnull=False)
+        .values('member__first_name', 'member__last_name', 'member__workshop_code')
+        .annotate(last_submitted=Max('date_submitted'))
+    )
+    dormant_list = []
+    for row in all_last_sub:
+        ls = row['last_submitted']
+        if ls is None:
+            continue
+        ls_date = ls.date() if hasattr(ls, 'date') else ls
+        if ls_date < dormancy_cutoff:
+            dormant_list.append({
+                'name': f"{row['member__first_name'] or ''} {row['member__last_name'] or ''}".strip() or '—',
+                'workshop': row['member__workshop_code'] or '—',
+                'last_submitted': ls_date,
+                'days_dormant': (ref_date - ls_date).days,
+            })
+    dormant_list.sort(key=lambda x: x['last_submitted'])
+
     return {
         'total_members': total_members,
         'ever_submitted': ever_submitted,
@@ -2087,6 +2226,7 @@ def get_advisor_engagement_data(date_from=None, date_to=None):
         'monthly_trend': monthly_trend,
         'top_advisors': top_advisors_list,
         'freq_buckets': freq_buckets,
+        'dormant_list': dormant_list,
     }
 
 
@@ -2158,6 +2298,16 @@ def advisor_engagement_report(request):
                 f"{r.get('member__first_name') or ''} {r.get('member__last_name') or ''}".strip(),
                 r.get('member__workshop_code') or '',
                 r['case_count'],
+            ])
+        writer.writerow([])
+        writer.writerow(['30-Day Dormancy List'])
+        writer.writerow(['Advisor', 'Workshop', 'Last Submitted', 'Days Dormant'])
+        for r in data.get('dormant_list', []):
+            writer.writerow([
+                r['name'],
+                r['workshop'],
+                r['last_submitted'].strftime('%Y-%m-%d') if r['last_submitted'] else '',
+                r['days_dormant'],
             ])
         return response
 
@@ -2528,6 +2678,32 @@ def get_reassignment_data(date_from=None, date_to=None):
         audit_qs = audit_qs.filter(timestamp__date__lte=date_to)
     audit_count = audit_qs.count()
 
+    # Turnaround comparison: do reassigned cases take longer?
+    reassigned_ids = list(case_event_counts.keys())
+    avg_reassigned_turnaround = None
+    avg_normal_turnaround = None
+    turnaround_delta = None
+    if reassigned_ids:
+        r_agg = Case.objects.filter(
+            external_case_id__in=reassigned_ids,
+            status='completed',
+            date_submitted__isnull=False,
+            date_completed__isnull=False,
+        ).annotate(days=F('date_completed') - F('date_submitted')).aggregate(avg=Avg('days'))
+        n_agg = Case.objects.exclude(
+            external_case_id__in=reassigned_ids,
+        ).filter(
+            status='completed',
+            date_submitted__isnull=False,
+            date_completed__isnull=False,
+        ).annotate(days=F('date_completed') - F('date_submitted')).aggregate(avg=Avg('days'))
+        if r_agg['avg']:
+            avg_reassigned_turnaround = round(r_agg['avg'].days, 1)
+        if n_agg['avg']:
+            avg_normal_turnaround = round(n_agg['avg'].days, 1)
+        if avg_reassigned_turnaround is not None and avg_normal_turnaround is not None:
+            turnaround_delta = round(avg_reassigned_turnaround - avg_normal_turnaround, 1)
+
     return {
         'total_events': len(all_events),
         'unique_cases': len(case_event_counts),
@@ -2537,6 +2713,9 @@ def get_reassignment_data(date_from=None, date_to=None):
         'from_tech_list': from_tech_list,
         'to_tech_list': to_tech_list,
         'most_reassigned': most_reassigned,
+        'avg_reassigned_turnaround': avg_reassigned_turnaround,
+        'avg_normal_turnaround': avg_normal_turnaround,
+        'turnaround_delta': turnaround_delta,
     }
 
 
@@ -2573,6 +2752,9 @@ def reassignment_analysis_report(request):
         writer.writerow(['Total Reassignment Events', data['total_events']])
         writer.writerow(['Unique Cases Reassigned', data['unique_cases']])
         writer.writerow(['Audit Log Events (cross-ref)', data['audit_count']])
+        writer.writerow(['Avg Turnaround — Reassigned Cases (days)', data['avg_reassigned_turnaround'] if data['avg_reassigned_turnaround'] is not None else 'N/A'])
+        writer.writerow(['Avg Turnaround — Non-Reassigned Cases (days)', data['avg_normal_turnaround'] if data['avg_normal_turnaround'] is not None else 'N/A'])
+        writer.writerow(['Turnaround Delta (reassigned − normal)', data['turnaround_delta'] if data['turnaround_delta'] is not None else 'N/A'])
         writer.writerow([])
 
         writer.writerow(['Reassignment Reasons'])

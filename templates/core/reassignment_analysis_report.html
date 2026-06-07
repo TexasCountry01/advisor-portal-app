@@ -81,6 +81,37 @@
         </div>
     </div>
 
+    {% if avg_reassigned_turnaround is not None or avg_normal_turnaround is not None %}
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-4">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{% if avg_reassigned_turnaround is not None %}{{ avg_reassigned_turnaround }}d{% else %}N/A{% endif %}</div>
+                    <div class="small text-muted">Avg Turnaround — Reassigned</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{% if avg_normal_turnaround is not None %}{{ avg_normal_turnaround }}d{% else %}N/A{% endif %}</div>
+                    <div class="small text-muted">Avg Turnaround — Non-Reassigned</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4">
+            <div class="card text-center border-0 shadow-sm h-100 {% if turnaround_delta and turnaround_delta > 0 %}border-start border-4 border-warning{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if turnaround_delta is not None and turnaround_delta > 0 %}text-warning{% else %}text-success{% endif %}">
+                        {% if turnaround_delta is not None %}{% if turnaround_delta > 0 %}+{% endif %}{{ turnaround_delta }}d{% else %}N/A{% endif %}
+                    </div>
+                    <div class="small text-muted">Turnaround Delta</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row g-4">
 
         <!-- Left: distributions -->

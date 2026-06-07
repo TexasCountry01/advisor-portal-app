@@ -164,7 +164,7 @@
 
             <!-- Weekly trend -->
             {% if weekly_qs %}
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header fw-semibold"><i class="bi bi-graph-up"></i> Weekly Submissions</div>
                 <div class="card-body p-0">
                     <table class="table table-sm mb-0">
@@ -175,6 +175,26 @@
                             <td>{{ row.week|date:"m/d/Y" }}</td>
                             <td class="text-center">{{ row.total_cases }}</td>
                             <td class="text-center">{{ row.unique_submitters }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if inactive_submitters %}
+            <div class="card shadow-sm border-warning">
+                <div class="card-header fw-semibold text-warning"><i class="bi bi-clock"></i> Inactive (30+ Days)</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Advisor</th><th>Workshop</th><th>Last Submitted</th></tr></thead>
+                        <tbody>
+                        {% for row in inactive_submitters %}
+                        <tr>
+                            <td>{{ row.member__first_name }} {{ row.member__last_name }}</td>
+                            <td><span class="badge bg-secondary">{{ row.member__workshop_code|default:"\u2014" }}</span></td>
+                            <td class="text-muted small">{{ row.last_submitted|date:"m/d/Y"|default:"\u2014" }}</td>
                         </tr>
                         {% endfor %}
                         </tbody>

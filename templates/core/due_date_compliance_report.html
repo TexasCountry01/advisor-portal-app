@@ -68,10 +68,18 @@
         <div class="col-6 col-md-3">
             <div class="card text-center border-0 shadow-sm h-100">
                 <div class="card-body py-3">
-                    <div class="fs-2 fw-bold {% if avg_days_early >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {% if avg_days_early >= 0 %}+{% endif %}{{ avg_days_early }}d
+                    <div class="fs-2 fw-bold text-success">+{{ avg_days_early }}d</div>
+                    <div class="small text-muted">Avg Days Early</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100 {% if avg_days_late > 0 %}border-start border-4 border-danger{% endif %}">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if avg_days_late > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {% if avg_days_late > 0 %}-{% endif %}{{ avg_days_late }}d
                     </div>
-                    <div class="small text-muted">Avg Days Early/Late</div>
+                    <div class="small text-muted">Avg Days Late</div>
                 </div>
             </div>
         </div>

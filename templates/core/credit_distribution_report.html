@@ -208,5 +208,37 @@
         </div>
     </div>
 
+    {% if credit_monthly_trend %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-calendar3"></i> Monthly Credit Trend (Completed/Accepted Cases)</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Month</th>
+                                <th class="text-center">Cases</th>
+                                <th class="text-center">Avg Credit</th>
+                                <th class="text-center">Total Credits</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in credit_monthly_trend %}
+                        <tr>
+                            <td class="fw-semibold">{{ r.month|date:"M Y" }}</td>
+                            <td class="text-center">{{ r.count }}</td>
+                            <td class="text-center">{{ r.avg_credit }}</td>
+                            <td class="text-center">{{ r.total_credits }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

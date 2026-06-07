@@ -149,7 +149,7 @@
 
             <!-- Status before hold -->
             {% if status_list %}
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header fw-semibold"><i class="bi bi-arrow-left-right"></i> Status Before Hold</div>
                 <div class="card-body p-0">
                     <table class="table table-sm mb-0">
@@ -160,6 +160,27 @@
                         {% for r in status_list %}
                         <tr>
                             <td>{{ r.status_before_hold }}</td>
+                            <td class="text-center fw-semibold">{{ r.count }}</td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if holds_by_tech %}
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold"><i class="bi bi-person-badge"></i> Holds by Technician</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr><th>Technician</th><th class="text-center">Hold Count</th></tr>
+                        </thead>
+                        <tbody>
+                        {% for r in holds_by_tech %}
+                        <tr>
+                            <td>{{ r.name }}</td>
                             <td class="text-center fw-semibold">{{ r.count }}</td>
                         </tr>
                         {% endfor %}
