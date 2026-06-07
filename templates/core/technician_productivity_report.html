@@ -290,16 +290,6 @@
     </div><!-- /card -->
     {% endfor %}
 
-    <!-- Download PDF button (bottom) -->
-    {% if report_data %}
-    <div class="text-end mb-5">
-        <a href="{% url 'technician_productivity_pdf' %}?tech_id={{ tech_id }}&date_from={{ date_from }}&date_to={{ date_to }}"
-           class="btn btn-danger" target="_blank">
-            <i class="bi bi-file-earmark-pdf"></i> Download PDF Report
-        </a>
-    </div>
-    {% endif %}
-
     {% endif %}{# end report_data #}
 
 </div>
