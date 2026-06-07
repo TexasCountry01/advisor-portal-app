@@ -613,6 +613,14 @@ def get_technician_productivity_data(tech_id=None, date_from=None, date_to=None)
         fastest_days = min(durations) if durations else None
         slowest_days = max(durations) if durations else None
 
+        # ── On-time rate ─────────────────────────────────────────────────────
+        on_time_count = completed_qs.filter(
+            date_completed__isnull=False,
+            date_due__isnull=False,
+            date_completed__lte=F('date_due'),
+        ).count()
+        on_time_rate = round(on_time_count / completed_count * 100, 1) if completed_count else 0
+
         # ── Tier breakdown ───────────────────────────────────────────────────
         tier_counts = {}
         for tier_val, tier_label in [('tier_1', 'Tier 1'), ('tier_2', 'Tier 2'), ('tier_3', 'Tier 3')]:
@@ -667,6 +675,8 @@ def get_technician_productivity_data(tech_id=None, date_from=None, date_to=None)
             'avg_days': avg_days,
             'fastest_days': fastest_days,
             'slowest_days': slowest_days,
+            'on_time_count': on_time_count,
+            'on_time_rate': on_time_rate,
             'tier_counts': tier_counts,
             'total_credits': total_credits,
             'avg_credits': avg_credits,
@@ -729,6 +739,7 @@ def technician_productivity_report(request):
         writer = csv.writer(response)
         writer.writerow([
             'Technician', 'Total Accepted', 'Completed', 'Completion Rate %',
+            'On-Time Count', 'On-Time Rate %',
             'In Progress', 'On Hold', 'Pending Review', 'Rush Cases', 'Error Cases',
             'Avg Days', 'Fastest Days', 'Slowest Days',
             'Tier 1', 'Tier 2', 'Tier 3', 'Total Credits', 'Avg Credits',
@@ -739,6 +750,7 @@ def technician_productivity_report(request):
             writer.writerow([
                 f"{tech.first_name} {tech.last_name}",
                 row['total_accepted'], row['completed_count'], row['completion_rate'],
+                row['on_time_count'], row['on_time_rate'],
                 row['in_progress_count'], row['on_hold_count'], row['pending_review_count'],
                 row['rush_count'], row['error_count'],
                 row['avg_days'] if row['avg_days'] is not None else '',

@@ -231,6 +231,7 @@
                             <tr><td>Average Turnaround</td><td class="text-end">{% if row.avg_days is not None %}{{ row.avg_days }} day{{ row.avg_days|pluralize }}{% else %}—{% endif %}</td></tr>
                             <tr><td>Fastest Case</td><td class="text-end">{% if row.fastest_days is not None %}{{ row.fastest_days }} day{{ row.fastest_days|pluralize }}{% else %}—{% endif %}</td></tr>
                             <tr><td>Slowest Case</td><td class="text-end">{% if row.slowest_days is not None %}{{ row.slowest_days }} day{{ row.slowest_days|pluralize }}{% else %}—{% endif %}</td></tr>
+                            <tr><td>On-Time Rate</td><td class="text-end fw-semibold {% if row.on_time_rate >= 99 %}text-success{% elif row.on_time_rate >= 95 %}text-warning{% else %}text-danger{% endif %}">{{ row.on_time_rate }}% <span class="text-muted fw-normal">({{ row.on_time_count }})</span></td></tr>
                             <tr><td>Rush Cases</td><td class="text-end">{{ row.rush_count }}</td></tr>
                         </tbody>
                     </table>
