@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Case Analytics Report - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-graph-up text-primary"></i> Case Analytics Report</h1>
+            <p class="text-muted">Total case counts, completion rate, processing time, and urgency breakdown</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'case_analytics_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Submitted From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Submitted To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'case_analytics_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_cases }}</div>
+                    <div class="small text-muted">Total Cases</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ completed_cases }}</div>
+                    <div class="small text-muted">Completed <span class="text-secondary">({{ completed_rate }}%)</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-info">{{ submitted_cases }}</div>
+                    <div class="small text-muted">Submitted (in-progress)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">
+                        {% if avg_processing_time %}{{ avg_processing_time }}d{% else %}N/A{% endif %}
+                    </div>
+                    <div class="small text-muted">Avg Processing Time</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <!-- Rush vs Standard -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light fw-semibold">Rush vs Standard Cases</div>
+                <div class="card-body d-flex align-items-center justify-content-around">
+                    <div class="text-center">
+                        <div class="fs-1 fw-bold text-danger">{{ rush_cases }}</div>
+                        <div class="text-muted small">Rush Cases</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="fs-1 fw-bold text-success">{{ standard_cases }}</div>
+                        <div class="text-muted small">Standard Cases</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cases by Urgency -->
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-light fw-semibold">Cases by Urgency Level</div>
+                <div class="card-body">
+                    {% if cases_by_urgency %}
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Urgency</th>
+                                <th class="text-end">Count</th>
+                                <th class="text-end">% of Total</th>
+                                <th>Distribution</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in cases_by_urgency %}
+                            <tr>
+                                <td>
+                                    {% if row.urgency == 'rush' %}
+                                        <span class="badge bg-danger">Rush</span>
+                                    {% else %}
+                                        <span class="badge bg-primary">Normal</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end fw-semibold">{{ row.count }}</td>
+                                <td class="text-end">{{ row.pct }}%</td>
+                                <td style="width:40%;">
+                                    <div class="progress" style="height:10px;">
+                                        <div class="progress-bar {% if row.urgency == 'rush' %}bg-danger{% else %}bg-primary{% endif %}" style="width:{{ row.pct }}%;"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted text-center my-3">No cases in selected period.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completion Rate Progress -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light fw-semibold">Overall Completion Rate</div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="small text-muted">{{ completed_cases }} of {{ total_cases }} cases completed</span>
+                <span class="small fw-semibold {% if completed_rate >= 80 %}text-success{% elif completed_rate >= 50 %}text-warning{% else %}text-danger{% endif %}">{{ completed_rate }}%</span>
+            </div>
+            <div class="progress" style="height:18px;">
+                <div class="progress-bar bg-success" style="width:{{ completed_rate }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="alert alert-light border mt-3" role="alert">
+        <small class="text-muted"><i class="bi bi-clock-history"></i> Report generated: <strong>{{ now|date:"M d, Y H:i:s" }} UTC</strong></small>
+    </div>
+</div>
+{% endblock %}

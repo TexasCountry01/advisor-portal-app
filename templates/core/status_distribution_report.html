@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Status Distribution Report - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-clipboard-check text-secondary"></i> Status Distribution Report</h1>
+            <p class="text-muted">Breakdown of all cases by current status with counts and percentages</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="?export=csv{% if date_from %}&date_from={{ date_from }}{% endif %}{% if date_to %}&date_to={{ date_to }}{% endif %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-download"></i> Export CSV
+                </a>
+                <a href="{% url 'status_distribution_pdf' %}{% if date_from or date_to %}?{% if date_from %}date_from={{ date_from }}{% endif %}{% if date_from and date_to %}&{% endif %}{% if date_to %}date_to={{ date_to }}{% endif %}{% endif %}" class="btn btn-sm btn-outline-danger" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Download PDF
+                </a>
+                <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="date_from" class="form-label fw-semibold">Submitted From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-4">
+                    <label for="date_to" class="form-label fw-semibold">Submitted To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Apply Filter</button>
+                    <a href="{% url 'status_distribution_report' %}" class="btn btn-outline-secondary">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary tile -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_cases }}</div>
+                    <div class="small text-muted">Total Cases</div>
+                </div>
+            </div>
+        </div>
+        {% for row in cases_by_status %}
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-left: 4px solid {{ row.color }} !important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold" style="color:{{ row.color }};">{{ row.count }}</div>
+                    <div class="small text-muted">{{ row.label }} <span class="text-secondary">({{ row.percentage }}%)</span></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Distribution table + progress bars -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light fw-semibold">Status Breakdown</div>
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Status</th>
+                        <th class="text-end">Count</th>
+                        <th class="text-end">% of Total</th>
+                        <th style="width:40%;" class="pe-4">Distribution</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in cases_by_status %}
+                    <tr>
+                        <td class="ps-4">
+                            <span class="fw-semibold" style="color:{{ row.color }};">
+                                <i class="bi bi-circle-fill me-1" style="font-size:0.6rem;"></i>
+                                {{ row.label }}
+                            </span>
+                        </td>
+                        <td class="text-end fw-bold">{{ row.count }}</td>
+                        <td class="text-end">{{ row.percentage }}%</td>
+                        <td class="pe-4">
+                            <div class="progress" style="height:12px;">
+                                <div class="progress-bar" style="width:{{ row.percentage }}%; background-color:{{ row.color }};"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">No cases in selected period.</td></tr>
+                    {% endfor %}
+                    {% if cases_by_status %}
+                    <tr class="table-light fw-bold">
+                        <td class="ps-4">Total</td>
+                        <td class="text-end">{{ total_cases }}</td>
+                        <td class="text-end">100%</td>
+                        <td></td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="alert alert-light border mt-3" role="alert">
+        <small class="text-muted"><i class="bi bi-clock-history"></i> Report generated: <strong>{{ now|date:"M d, Y H:i:s" }} UTC</strong></small>
+    </div>
+</div>
+{% endblock %}

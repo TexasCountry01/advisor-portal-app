@@ -2646,3 +2646,248 @@ def reassignment_analysis_pdf(request):
     fname = f"reassignments_{date_from_str or 'all'}_{date_to_str or 'all'}.pdf"
     response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
+
+
+# ── Case Analytics Report ────────────────────────────────────────────────────
+
+def _get_case_analytics_data(date_from=None, date_to=None):
+    from datetime import datetime as dt
+    cases_qs = Case.objects.all()
+    if date_from:
+        cases_qs = cases_qs.filter(date_submitted__date__gte=date_from)
+    if date_to:
+        cases_qs = cases_qs.filter(date_submitted__date__lte=date_to)
+
+    total_cases = cases_qs.count()
+    completed_cases = cases_qs.filter(status='completed').count()
+    submitted_cases = cases_qs.filter(status='submitted').count()
+    rush_cases = cases_qs.filter(urgency='rush').count()
+    standard_cases = cases_qs.filter(urgency='normal').count()
+
+    completed_rate = round(completed_cases / total_cases * 100, 1) if total_cases else 0
+
+    completed_with_dates = cases_qs.filter(
+        status='completed',
+        date_submitted__isnull=False,
+        date_completed__isnull=False,
+    ).annotate(
+        processing_days=F('date_completed') - F('date_submitted')
+    ).aggregate(avg_days=Avg('processing_days'))
+    avg_proc = completed_with_dates['avg_days']
+    avg_processing_time = avg_proc.days if avg_proc else None
+
+    cases_by_urgency = []
+    for item in cases_qs.values('urgency').annotate(count=Count('id')).order_by('urgency'):
+        pct = round(item['count'] / total_cases * 100, 1) if total_cases else 0
+        cases_by_urgency.append({'urgency': item['urgency'], 'count': item['count'], 'pct': pct})
+
+    return {
+        'total_cases': total_cases,
+        'completed_cases': completed_cases,
+        'completed_rate': completed_rate,
+        'submitted_cases': submitted_cases,
+        'rush_cases': rush_cases,
+        'standard_cases': standard_cases,
+        'avg_processing_time': avg_processing_time,
+        'cases_by_urgency': cases_by_urgency,
+    }
+
+
+@login_required
+def case_analytics_report(request):
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime as dt
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = dt.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    if request.GET.get('export') == 'csv':
+        data = _get_case_analytics_data(date_from=date_from, date_to=date_to)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="case_analytics_{date_from_str or "all"}_{date_to_str or "all"}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Case Analytics Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} to {date_to_str or 'present'}"])
+        writer.writerow([])
+        writer.writerow(['Summary'])
+        writer.writerow(['Metric', 'Value'])
+        writer.writerow(['Total Cases', data['total_cases']])
+        writer.writerow(['Completed Cases', data['completed_cases']])
+        writer.writerow(['Completion Rate %', data['completed_rate']])
+        writer.writerow(['Submitted (in-progress)', data['submitted_cases']])
+        writer.writerow(['Rush Cases', data['rush_cases']])
+        writer.writerow(['Standard Cases', data['standard_cases']])
+        writer.writerow(['Avg Processing Time (days)', data['avg_processing_time'] or 'N/A'])
+        writer.writerow([])
+        writer.writerow(['Cases by Urgency'])
+        writer.writerow(['Urgency', 'Count', '%'])
+        for row in data['cases_by_urgency']:
+            writer.writerow([row['urgency'].capitalize(), row['count'], row['pct']])
+        return response
+
+    data = _get_case_analytics_data(date_from=date_from, date_to=date_to)
+    return render(request, 'core/case_analytics_report.html', {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'now': timezone.now(),
+    })
+
+
+@login_required
+def case_analytics_pdf(request):
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime as dt
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = dt.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = _get_case_analytics_data(date_from=date_from, date_to=date_to)
+    html_string = render_to_string('core/case_analytics_report_pdf.html', {
+        **data,
+        'period_label': f"{date_from_str or 'All time'} – {date_to_str or 'present'}",
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="case_analytics_{date_from_str or "all"}_{date_to_str or "all"}.pdf"'
+    return response
+
+
+# ── Status Distribution Report ───────────────────────────────────────────────
+
+def _get_status_distribution_data(date_from=None, date_to=None):
+    cases_qs = Case.objects.all()
+    if date_from:
+        cases_qs = cases_qs.filter(date_submitted__date__gte=date_from)
+    if date_to:
+        cases_qs = cases_qs.filter(date_submitted__date__lte=date_to)
+
+    total_cases = cases_qs.count()
+    status_labels = {
+        'draft': 'Draft',
+        'submitted': 'Submitted',
+        'accepted': 'Accepted',
+        'hold': 'On Hold',
+        'pending_review': 'Pending Review',
+        'completed': 'Completed',
+    }
+    status_colors = {
+        'draft': '#6c757d',
+        'submitted': '#0d6efd',
+        'accepted': '#0dcaf0',
+        'hold': '#ffc107',
+        'pending_review': '#fd7e14',
+        'completed': '#198754',
+    }
+
+    cases_by_status = []
+    for item in cases_qs.values('status').annotate(count=Count('id')).order_by('status'):
+        pct = round(item['count'] / total_cases * 100, 1) if total_cases else 0
+        cases_by_status.append({
+            'status': item['status'],
+            'label': status_labels.get(item['status'], item['status']),
+            'count': item['count'],
+            'percentage': pct,
+            'color': status_colors.get(item['status'], '#6c757d'),
+        })
+
+    return {
+        'total_cases': total_cases,
+        'cases_by_status': cases_by_status,
+    }
+
+
+@login_required
+def status_distribution_report(request):
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime as dt
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = dt.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    if request.GET.get('export') == 'csv':
+        data = _get_status_distribution_data(date_from=date_from, date_to=date_to)
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="status_distribution_{date_from_str or "all"}_{date_to_str or "all"}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Status Distribution Report'])
+        writer.writerow(['Period', f"{date_from_str or 'All time'} to {date_to_str or 'present'}"])
+        writer.writerow(['Total Cases', data['total_cases']])
+        writer.writerow([])
+        writer.writerow(['Status', 'Count', '% of Total'])
+        for row in data['cases_by_status']:
+            writer.writerow([row['label'], row['count'], row['percentage']])
+        return response
+
+    data = _get_status_distribution_data(date_from=date_from, date_to=date_to)
+    return render(request, 'core/status_distribution_report.html', {
+        **data,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+        'now': timezone.now(),
+    })
+
+
+@login_required
+def status_distribution_pdf(request):
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from datetime import datetime as dt
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    try:
+        date_from = dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = dt.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    data = _get_status_distribution_data(date_from=date_from, date_to=date_to)
+    html_string = render_to_string('core/status_distribution_report_pdf.html', {
+        **data,
+        'period_label': f"{date_from_str or 'All time'} – {date_to_str or 'present'}",
+        'generated_at': timezone.now(),
+        'generated_by': request.user.get_full_name() or request.user.username,
+    })
+    pdf_buffer = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+    response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="status_distribution_{date_from_str or "all"}_{date_to_str or "all"}.pdf"'
+    return response

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page { size: letter; margin: 0.6in 0.75in 0.9in 0.75in; @bottom-center { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #999; } }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.45; }
+    .doc-header { border-bottom: 2px solid #6c757d; padding-bottom: 10px; margin-bottom: 14px; }
+    .doc-header h1 { font-size: 15pt; font-weight: 700; color: #495057; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 8.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 20px; }
+    .section-title { font-size: 9pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #888; border-bottom: 1px solid #e0e0e0; padding-bottom: 3px; margin: 14px 0 7px; }
+    .scorecard { display: flex; gap: 10px; margin-bottom: 14px; }
+    .tile { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 8px; text-align: center; }
+    .tile .val { font-size: 15pt; font-weight: 700; color: #0d6efd; }
+    .tile .lbl { font-size: 7pt; color: #777; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+    thead th { background: #f5f5f5; font-weight: 700; padding: 4px 6px; border-bottom: 1px solid #ccc; text-align: left; }
+    tbody td { padding: 4px 6px; border-bottom: 1px solid #f0f0f0; }
+    tbody tr:last-child td { font-weight: 700; background: #f9f9f9; }
+    .bar-bg { background: #e9ecef; border-radius: 3px; height: 8px; }
+    .bar-fill { border-radius: 3px; height: 8px; }
+    .doc-footer { margin-top: 20px; padding-top: 8px; border-top: 1px solid #ddd; font-size: 7.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#9989; Status Distribution Report</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ period_label }}</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<div class="scorecard">
+    {% for row in cases_by_status %}
+    <div class="tile">
+        <div class="val" style="color:{{ row.color }};">{{ row.count }}</div>
+        <div class="lbl">{{ row.label }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="section-title">Status Breakdown</div>
+<table>
+    <thead>
+        <tr>
+            <th>Status</th>
+            <th style="text-align:right;">Count</th>
+            <th style="text-align:right;">% of Total</th>
+            <th style="width:35%;">Distribution</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in cases_by_status %}
+        <tr>
+            <td><strong style="color:{{ row.color }};">{{ row.label }}</strong></td>
+            <td style="text-align:right;">{{ row.count }}</td>
+            <td style="text-align:right;">{{ row.percentage }}%</td>
+            <td>
+                <div class="bar-bg">
+                    <div class="bar-fill" style="width:{{ row.percentage }}%; background-color:{{ row.color }};"></div>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td>Total</td>
+            <td style="text-align:right;">{{ total_cases }}</td>
+            <td style="text-align:right;">100%</td>
+            <td></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="doc-footer">ProFeds Advisor Portal &mdash; Status Distribution Report &mdash; Confidential</div>
+</body>
+</html>
