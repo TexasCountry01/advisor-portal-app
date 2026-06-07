@@ -54,6 +54,10 @@
         <div class="val">{{ corrections }}</div>
         <div class="lbl">Corrections Needed</div>
     </div>
+    <div class="tile">
+        <div class="val">{% if avg_review_turnaround %}{{ avg_review_turnaround }}d{% else %}—{% endif %}</div>
+        <div class="lbl">Avg Review Turnaround</div>
+    </div>
 </div>
 
 <div class="cols">

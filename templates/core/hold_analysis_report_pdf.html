@@ -117,6 +117,21 @@
             </tbody>
         </table>
         {% endif %}
+
+        {% if holds_by_tech %}
+        <div class="section-title">Holds by Technician</div>
+        <table>
+            <thead><tr><th>Technician</th><th style="text-align:right;">Hold Count</th></tr></thead>
+            <tbody>
+            {% for r in holds_by_tech %}
+            <tr>
+                <td>{{ r.name }}</td>
+                <td style="text-align:right; font-weight:600;">{{ r.count }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
     </div>
 
     <div class="col-right">

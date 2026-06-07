@@ -47,8 +47,12 @@
         <div class="lbl">Total Completed</div>
     </div>
     <div class="tile">
-        <div class="val">{% if avg_days_early >= 0 %}+{% endif %}{{ avg_days_early }}d</div>
-        <div class="lbl">Avg Days Early/Late</div>
+        <div class="val" style="color:#198754;">+{{ avg_days_early }}d</div>
+        <div class="lbl">Avg Days Early</div>
+    </div>
+    <div class="tile {% if avg_days_late > 0 %}danger{% endif %}">
+        <div class="val">{% if avg_days_late > 0 %}-{% endif %}{{ avg_days_late }}d</div>
+        <div class="lbl">Avg Days Late</div>
     </div>
     <div class="tile {% if late_count > 0 %}danger{% endif %}">
         <div class="val">{{ late_count }}</div>

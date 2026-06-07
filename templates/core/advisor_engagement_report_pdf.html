@@ -133,6 +133,23 @@
     </div>
 </div>
 
+{% if dormant_list %}
+<div class="section-title">30-Day Dormancy List</div>
+<table>
+    <thead><tr><th>Advisor</th><th>Workshop</th><th>Last Submitted</th><th style="text-align:right;">Days</th></tr></thead>
+    <tbody>
+    {% for r in dormant_list %}
+    <tr>
+        <td>{{ r.name }}</td>
+        <td>{{ r.workshop }}</td>
+        <td>{{ r.last_submitted|date:"m/d/Y" }}</td>
+        <td style="text-align:right; {% if r.days_dormant >= 90 %}color:#dc3545; font-weight:600;{% elif r.days_dormant >= 60 %}color:#b38600; font-weight:600;{% endif %}">{{ r.days_dormant }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
 <div class="doc-footer">
     Confidential — ProFeds Advisor Portal | Advisor Engagement Trend | {{ generated_at|date:"m/d/Y" }}
 </div>

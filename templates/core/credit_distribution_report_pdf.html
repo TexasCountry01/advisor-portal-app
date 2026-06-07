@@ -156,6 +156,28 @@
     </div>
 </div>
 
+{% if credit_monthly_trend %}
+<div class="section-title">Monthly Credit Trend (Completed/Accepted Cases)</div>
+<table>
+    <thead><tr>
+        <th>Month</th>
+        <th style="text-align:right;">Cases</th>
+        <th style="text-align:right;">Avg Credit</th>
+        <th style="text-align:right;">Total Credits</th>
+    </tr></thead>
+    <tbody>
+    {% for r in credit_monthly_trend %}
+    <tr>
+        <td>{{ r.month|date:"M Y" }}</td>
+        <td style="text-align:right;">{{ r.count }}</td>
+        <td style="text-align:right;">{{ r.avg_credit }}</td>
+        <td style="text-align:right; font-weight:600;">{{ r.total_credits }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
 <div class="doc-footer">
     Confidential — ProFeds Advisor Portal | Credit Distribution Report | {{ generated_at|date:"m/d/Y" }}
 </div>

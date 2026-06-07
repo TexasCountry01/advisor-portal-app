@@ -64,6 +64,7 @@
                 <th>#</th><th>Advisor</th><th>Workshop</th>
                 <th style="text-align:right;">Cases</th>
                 <th style="text-align:right;">Rush</th>
+                <th style="text-align:right;">Multi-Rpt</th>
                 <th>Last Submitted</th>
             </tr></thead>
             <tbody>
@@ -71,10 +72,27 @@
             <tr>
                 <td style="color:#999;">{{ forloop.counter }}</td>
                 <td>{{ row.member__first_name }} {{ row.member__last_name }}</td>
-                <td>{{ row.member__workshop_code|default:"—" }}</td>
+                <td>{{ row.member__workshop_code|default:"\u2014" }}</td>
                 <td style="text-align:right; font-weight:600;">{{ row.case_count }}</td>
                 <td style="text-align:right;">{{ row.rush_count }}</td>
+                <td style="text-align:right;">{{ row.multi_report_count }}</td>
                 <td>{{ row.last_submitted|date:"m/d/Y"|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+
+        {% if inactive_submitters %}
+        <div class="section-title">Inactive (30+ Days)</div>
+        <table>
+            <thead><tr><th>Advisor</th><th>Workshop</th><th>Last Submitted</th></tr></thead>
+            <tbody>
+            {% for row in inactive_submitters %}
+            <tr>
+                <td>{{ row.member__first_name }} {{ row.member__last_name }}</td>
+                <td>{{ row.member__workshop_code|default:"\u2014" }}</td>
+                <td>{{ row.last_submitted|date:"m/d/Y"|default:"\u2014" }}</td>
             </tr>
             {% endfor %}
             </tbody>
