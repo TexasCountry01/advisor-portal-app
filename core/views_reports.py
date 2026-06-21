@@ -16,8 +16,8 @@ from core.models import BetaFeedback, SystemSettings
 
 
 def is_admin(user):
-    """Helper function to check if user is admin or manager"""
-    return user.is_authenticated and user.role in ['administrator', 'manager']
+    """Helper function to check if user is administrator"""
+    return user.is_authenticated and user.role == 'administrator'
 
 
 def _get_super_dev_email():
