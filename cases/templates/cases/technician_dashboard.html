@@ -149,9 +149,41 @@
                     display: inline-block;
                 }
                 #view-stats-container .tile-link.active .stat-mini {
-                    outline: 3px solid #0d6efd;
-                    outline-offset: 1px;
+                    box-shadow: 0 0 0 3px white, 0 0 0 5px #0d6efd;
+                    outline: none;
                 }
+                #view-stats-container .tile-divider {
+                    width: 1px;
+                    background: #dee2e6;
+                    align-self: stretch;
+                    margin: 0 2px;
+                }
+                #view-stats-container .quick-tech-outline-btn {
+                    background-color: white;
+                    border-color: #285fbf;
+                    color: #285fbf;
+                }
+                #view-stats-container .quick-tech-outline-btn:hover {
+                    background-color: #285fbf;
+                    border-color: #285fbf;
+                    color: white;
+                }
+                #view-stats-container .quick-tech-outline-btn.active {
+                    background-color: #285fbf;
+                    border-color: #285fbf;
+                    color: white;
+                }
+                .tech-status-dot {
+                    display: inline-block;
+                    width: 8px; height: 8px;
+                    border-radius: 50%;
+                    margin-left: 4px;
+                    vertical-align: middle;
+                    flex-shrink: 0;
+                }
+                .tech-status-dot.status-active  { background-color: #28a745; }
+                .tech-status-dot.status-away    { background-color: #ffc107; }
+                .tech-status-dot.status-offline { background-color: #adb5bd; }
             </style>
             <!-- Build query string for status filters -->
             {% url 'cases:technician_dashboard' as base_url %}
@@ -187,27 +219,29 @@
 
                     <!-- RIGHT: Quick Tech Filters -->
                     <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
-                        <small class="text-muted">Pending:</small>
                         <div class="btn-group" role="group">
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Techs</a>
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Techs</a>
                             {% for tech in quick_technicians %}
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == tech.username %}active{% endif %}">{{ tech.first_name }}</a>
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == tech.username %}active{% endif %}" data-tech-username="{{ tech.username }}">{{ tech.first_name|default:tech.username }} <span class="tech-status-dot status-{{ tech.status }}" title="{{ tech.label }}"></span></a>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
 
                 <!-- Row 2: Clickable Fast-Filter Tiles -->
-                <div class="row mb-3">
-                    <div class="col d-flex gap-2" style="flex-wrap: wrap; justify-content: flex-end;">
-                        <a class="tile-link {% if quick_filter == 'submitted' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=submitted"><div class="stat-mini bg-secondary"><div class="stat-mini-value">{{ quick_tiles.submitted }}</div><div class="stat-mini-label">Submitted</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=pending"><div class="stat-mini"><div class="stat-mini-value">{{ quick_tiles.pending }}</div><div class="stat-mini-label">Pending</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'scheduled' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=scheduled"><div class="stat-mini" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);"><div class="stat-mini-value">{{ quick_tiles.scheduled }}</div><div class="stat-mini-label">Scheduled</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'need_review' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=need_review"><div class="stat-mini" style="background: linear-gradient(135deg, #51216b 0%, #3f1853 100%);"><div class="stat-mini-value">{{ quick_tiles.need_review }}</div><div class="stat-mini-label">Need Review</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=on_hold"><div class="stat-mini" style="background: linear-gradient(135deg, #e6a400 0%, #c48a14 100%);"><div class="stat-mini-value">{{ quick_tiles.on_hold }}</div><div class="stat-mini-label">On Hold</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=alerts"><div class="stat-mini" style="background: linear-gradient(135deg, #c00000 0%, #9a0000 100%);"><div class="stat-mini-value">{{ quick_tiles.alerts }}</div><div class="stat-mini-label">Alerts</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'due_today' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_today"><div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a00000 100%);"><div class="stat-mini-value">{{ quick_tiles.due_today }}</div><div class="stat-mini-label">Due Today</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'due_tomorrow' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_tomorrow"><div class="stat-mini" style="background: linear-gradient(135deg, #b30000 0%, #850000 100%);"><div class="stat-mini-value">{{ quick_tiles.due_tomorrow }}</div><div class="stat-mini-label">Due Tomorrow</div></div></a>
+                <div class="row mb-2">
+                    <div class="col d-flex gap-2 align-items-stretch" style="flex-wrap: nowrap; justify-content: flex-end;">
+                        <a class="tile-link {% if quick_filter == 'submitted' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=submitted"><div class="stat-mini" style="background:#676777;"><div class="stat-mini-value">{{ quick_tiles.submitted }}</div><div class="stat-mini-label">Need to<br>Accept</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=pending"><div class="stat-mini" style="background:#285fbf;"><div class="stat-mini-value">{{ quick_tiles.pending }}</div><div class="stat-mini-label">Pending<br>Completion</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=on_hold"><div class="stat-mini" style="background:#eda618;"><div class="stat-mini-value">{{ quick_tiles.on_hold }}</div><div class="stat-mini-label">On<br>Hold</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'need_review' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=need_review"><div class="stat-mini" style="background:#4f1b8b;"><div class="stat-mini-value">{{ quick_tiles.need_review }}</div><div class="stat-mini-label">Need<br>Review</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'scheduled' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=scheduled"><div class="stat-mini" style="background:#198754;"><div class="stat-mini-value">{{ quick_tiles.scheduled }}</div><div class="stat-mini-label">Scheduled<br>Release</div></div></a>
+                        <div class="tile-divider"></div>
+                        <a class="tile-link {% if quick_filter == 'due_next_7d' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_next_7d"><div class="stat-mini" style="background:#062677;"><div class="stat-mini-value">{{ quick_tiles.due_next_7d }}</div><div class="stat-mini-label">Due Next<br>7 Days</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'due_today' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_today"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.due_today }}</div><div class="stat-mini-label">Due<br>Today</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'due_tomorrow' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_tomorrow"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.due_tomorrow }}</div><div class="stat-mini-label">Due<br>Tomorrow</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'past_due' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=past_due"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.past_due }}</div><div class="stat-mini-label">Past<br>Due</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=alerts"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.alerts }}</div><div class="stat-mini-label">Active<br>Alerts</div></div></a>
                     </div>
                 </div>
 
@@ -1083,6 +1117,30 @@ function refreshBadgeCounts() {
 }
 // Poll every 30 seconds
 setInterval(refreshBadgeCounts, 30000);
+</script>
+
+<script>
+// Tech status dot polling — updates every 60 seconds without page reload
+(function() {
+    function refreshTechStatus() {
+        fetch('{% url "cases:api_technician_status" %}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(r => r.json())
+            .then(data => {
+                (data.techs || []).forEach(tech => {
+                    const btn = document.querySelector(`[data-tech-username="${tech.username}"]`);
+                    if (!btn) return;
+                    const d = btn.querySelector('.tech-status-dot');
+                    if (!d) return;
+                    d.className = `tech-status-dot status-${tech.status}`;
+                    d.title = tech.label;
+                });
+            })
+            .catch(() => {}); // Silent — status dots are non-critical
+    }
+    // Initial fetch + repeat every 60 s
+    refreshTechStatus();
+    setInterval(refreshTechStatus, 60000);
+})();
 </script>
 
 {% endblock %}
