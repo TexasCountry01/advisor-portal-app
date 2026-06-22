@@ -41,6 +41,80 @@
         </div>
     </div>
 
+    <!-- REVIEW ALERT BANNERS -->
+    {% if my_cases_pending_review %}
+    <div class="alert alert-warning border-2 border-warning mb-3" role="alert">
+        <div class="d-flex align-items-center justify-content-between">
+            <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('pending-review-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
+                <i class="bi bi-hourglass-split"></i> {{ my_cases_pending_review|length }} Case{{ my_cases_pending_review|length|pluralize }} Pending Review
+                <i class="bi bi-chevron-up" style="margin-left: 8px;"></i>
+            </h5>
+            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
+        </div>
+        <div id="pending-review-content" class="mt-2">
+            <p class="mb-2 small text-muted">Your case{{ my_cases_pending_review|length|pluralize }} {{ my_cases_pending_review|length|pluralize:"is,are" }} awaiting quality review:</p>
+            <ul class="mb-0">
+                {% for c in my_cases_pending_review %}
+                <li>
+                    <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
+                    {% if c.reviewed_by %}<span class="text-muted small"> — Reviewer: {{ c.reviewed_by.get_full_name|default:c.reviewed_by.username }}</span>{% endif %}
+                    <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-warning ms-2"><i class="bi bi-eye"></i> See Case Details</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if my_cases_needing_revision %}
+    <div class="alert alert-warning border-2 border-danger mb-3" role="alert">
+        <div class="d-flex align-items-center justify-content-between">
+            <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('revisions-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ my_cases_needing_revision|length }} Case{{ my_cases_needing_revision|length|pluralize }} Need{{ my_cases_needing_revision|length|pluralize:"s," }} Revisions
+                <i class="bi bi-chevron-up" style="margin-left: 8px;"></i>
+            </h5>
+            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
+        </div>
+        <div id="revisions-content" class="mt-2">
+            <p class="mb-2 small text-muted">Revisions have been requested on your case{{ my_cases_needing_revision|length|pluralize }}:</p>
+            <ul class="mb-0">
+                {% for c in my_cases_needing_revision %}
+                <li>
+                    <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
+                    {% if c.reviewed_by %}<span class="text-muted small"> — Reviewer: {{ c.reviewed_by.get_full_name|default:c.reviewed_by.username }}</span>{% endif %}
+                    {% if c.review_notes %}<br><span class="small">Feedback: {{ c.review_notes|truncatewords:20 }}</span>{% endif %}
+                    <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-danger ms-2"><i class="bi bi-eye"></i> See Case Details</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if user.user_level in 'level_2,level_3' and cases_awaiting_my_review %}
+    <div class="alert alert-warning border-2 border-warning mb-3" role="alert">
+        <div class="d-flex align-items-center justify-content-between">
+            <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('awaiting-review-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
+                <i class="bi bi-clipboard-check"></i> {{ cases_awaiting_my_review|length }} Case{{ cases_awaiting_my_review|length|pluralize }} Awaiting Your Review
+                <i class="bi bi-chevron-up" style="margin-left: 8px;"></i>
+            </h5>
+            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
+        </div>
+        <div id="awaiting-review-content" class="mt-2">
+            <p class="mb-2 small text-muted">The following case{{ cases_awaiting_my_review|length|pluralize }} {{ cases_awaiting_my_review|length|pluralize:"is,are" }} pending quality review:</p>
+            <ul class="mb-0">
+                {% for c in cases_awaiting_my_review %}
+                <li>
+                    <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
+                    {% if c.assigned_to %}<span class="text-muted small"> — Submitted by: {{ c.assigned_to.get_full_name|default:c.assigned_to.username }}</span>{% endif %}
+                    <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-warning ms-2"><i class="bi bi-eye"></i> Review Case</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Filters + View Options + Stats (All in One Card) -->
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
@@ -70,13 +144,25 @@
                     opacity: 0.9;
                     margin-top: 6px;
                 }
+                #view-stats-container .tile-link {
+                    text-decoration: none;
+                    display: inline-block;
+                }
+                #view-stats-container .tile-link.active .stat-mini {
+                    outline: 3px solid #0d6efd;
+                    outline-offset: 1px;
+                }
             </style>
             <!-- Build query string for status filters -->
             {% url 'cases:technician_dashboard' as base_url %}
             {% with status_query=status_filters|join:"&status=" %}
             
             <form method="get" action="{% url 'cases:technician_dashboard' %}">
-                <!-- Row 1: View Options (Left) | Stats (Right) -->
+                <input type="hidden" name="assigned" value="{{ assigned_filter }}">
+                <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
+                <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
+
+                <!-- Row 1: View Options (Left) | Quick Tech Filters (Right) -->
                 <div class="row mb-3" id="top-row">
                     <!-- LEFT: View Options -->
                     <div class="col-auto d-flex align-items-center gap-2">
@@ -99,46 +185,33 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT: Compact Stats -->
-                    <div class="col-auto ms-auto d-flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
-                        <div class="stat-mini">
-                            <div class="stat-mini-value">{{ stats.total }}</div>
-                            <div class="stat-mini-label">Total</div>
-                        </div>
-                        <div class="stat-mini">
-                            <div class="stat-mini-value">{{ stats.submitted }}</div>
-                            <div class="stat-mini-label">Submitted</div>
-                        </div>
-                        <div class="stat-mini">
-                            <div class="stat-mini-value">{{ stats.accepted }}</div>
-                            <div class="stat-mini-label">Accepted</div>
-                        </div>
-                        <div class="stat-mini" style="background: linear-gradient(135deg, #0dcaf0 0%, #0a9bc4 100%);">
-                            <div class="stat-mini-value">{{ stats.resubmitted }}</div>
-                            <div class="stat-mini-label">Resubmitted</div>
-                        </div>
-                        <div class="stat-mini">
-                            <div class="stat-mini-value">{{ stats.pending_review }}</div>
-                            <div class="stat-mini-label">Pending</div>
-                        </div>
-                        {% if stats.needs_revision %}
-                        <div class="stat-mini" style="background: linear-gradient(135deg, #EDA618 0%, #C48A14 100%);">
-                            <div class="stat-mini-value">{{ stats.needs_revision }}</div>
-                            <div class="stat-mini-label">Needs Revision</div>
-                        </div>
-                        {% endif %}
-                        <div class="stat-mini">
-                            <div class="stat-mini-value">{{ stats.completed }}</div>
-                            <div class="stat-mini-label">Completed</div>
-                        </div>
-                        <div class="stat-mini" style="background: linear-gradient(135deg, #C00000 0%, #9A0000 100%);">
-                            <div class="stat-mini-value">{{ stats.rush }}</div>
-                            <div class="stat-mini-label">Rush</div>
+                    <!-- RIGHT: Quick Tech Filters -->
+                    <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
+                        <small class="text-muted">Pending:</small>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Techs</a>
+                            {% for tech in quick_technicians %}
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-primary {% if quick_tech == tech.username %}active{% endif %}">{{ tech.first_name }}</a>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 2: Filter Controls (Collapsible) -->
+                <!-- Row 2: Clickable Fast-Filter Tiles -->
+                <div class="row mb-3">
+                    <div class="col d-flex gap-2" style="flex-wrap: wrap; justify-content: flex-end;">
+                        <a class="tile-link {% if quick_filter == 'submitted' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=submitted"><div class="stat-mini bg-secondary"><div class="stat-mini-value">{{ quick_tiles.submitted }}</div><div class="stat-mini-label">Submitted</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=pending"><div class="stat-mini"><div class="stat-mini-value">{{ quick_tiles.pending }}</div><div class="stat-mini-label">Pending</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'scheduled' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=scheduled"><div class="stat-mini" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);"><div class="stat-mini-value">{{ quick_tiles.scheduled }}</div><div class="stat-mini-label">Scheduled</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'need_review' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=need_review"><div class="stat-mini" style="background: linear-gradient(135deg, #51216b 0%, #3f1853 100%);"><div class="stat-mini-value">{{ quick_tiles.need_review }}</div><div class="stat-mini-label">Need Review</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=on_hold"><div class="stat-mini" style="background: linear-gradient(135deg, #e6a400 0%, #c48a14 100%);"><div class="stat-mini-value">{{ quick_tiles.on_hold }}</div><div class="stat-mini-label">On Hold</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=alerts"><div class="stat-mini" style="background: linear-gradient(135deg, #c00000 0%, #9a0000 100%);"><div class="stat-mini-value">{{ quick_tiles.alerts }}</div><div class="stat-mini-label">Alerts</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'due_today' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_today"><div class="stat-mini" style="background: linear-gradient(135deg, #cc0000 0%, #a00000 100%);"><div class="stat-mini-value">{{ quick_tiles.due_today }}</div><div class="stat-mini-label">Due Today</div></div></a>
+                        <a class="tile-link {% if quick_filter == 'due_tomorrow' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_tomorrow"><div class="stat-mini" style="background: linear-gradient(135deg, #b30000 0%, #850000 100%);"><div class="stat-mini-value">{{ quick_tiles.due_tomorrow }}</div><div class="stat-mini-label">Due Tomorrow</div></div></a>
+                    </div>
+                </div>
+
+                <!-- Row 3: Filter Controls (Collapsible) -->
                 <div class="row g-3 mt-1 mb-2">
                     <div class="col-12">
                         <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filter-row">
