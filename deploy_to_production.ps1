@@ -91,32 +91,23 @@ Write-Host ""
 # STEP 4: Restart Gunicorn
 Write-Host "[4/4] Restarting Gunicorn..." -ForegroundColor Yellow
 
-ssh $prodServerUser@$prodServerHost "pkill -f gunicorn"
-Start-Sleep -Seconds 2
+# Kill any existing gunicorn (pkill may return non-zero if nothing to kill — that's fine)
+# then start fresh in one SSH session so the daemon fully detaches before SSH exits
+ssh $prodServerUser@$prodServerHost "pkill -f gunicorn 2>/dev/null; sleep 2; cd $projectPath && rm -f gunicorn.sock && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
 
-$timeout = 5
-$startGunicornScript = {
-    ssh dev@104.248.126.74 "cd /var/www/advisor-portal && rm -f gunicorn.sock && venv/bin/gunicorn --workers 3 --bind unix:/var/www/advisor-portal/gunicorn.sock --umask 0000 --daemon --pid /tmp/gunicorn.pid config.wsgi:application"
-}
-
-$job = Start-Job -ScriptBlock $startGunicornScript
-$job | Wait-Job -Timeout $timeout | Out-Null
-
-if ($job.State -eq "Running") {
-    Write-Host "OK - Gunicorn startup sent" -ForegroundColor Green
-    $job | Stop-Job | Out-Null
-    Remove-Job $job | Out-Null
-} else {
-    Write-Host "OK - Gunicorn startup command completed" -ForegroundColor Green
-    Remove-Job $job | Out-Null
-}
-
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 4
 
 # Verify gunicorn is running
 Write-Host "Verifying Gunicorn process..." -ForegroundColor Yellow
-$processCount = ssh dev@104.248.126.74 "ps aux | grep gunicorn | grep -v grep | wc -l"
-Write-Host "Found $processCount gunicorn processes" -ForegroundColor Green
+$processCount = ssh $prodServerUser@$prodServerHost "ps aux | grep gunicorn | grep -v grep | wc -l"
+
+if ([int]$processCount -lt 2) {
+    Write-Host "WARNING: Only $processCount gunicorn process(es) found — checking logs..." -ForegroundColor Red
+    ssh $prodServerUser@$prodServerHost "tail -20 /tmp/gunicorn.log 2>/dev/null"
+    exit 1
+}
+
+Write-Host "OK - $processCount gunicorn processes running" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
