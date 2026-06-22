@@ -102,7 +102,7 @@ Write-Host "Verifying Gunicorn process..." -ForegroundColor Yellow
 $processCount = ssh $prodServerUser@$prodServerHost "ps aux | grep gunicorn | grep -v grep | wc -l"
 
 if ([int]$processCount -lt 2) {
-    Write-Host "WARNING: Only $processCount gunicorn process(es) found — checking logs..." -ForegroundColor Red
+    Write-Host "WARNING: Only $processCount gunicorn process(es) found - checking logs..." -ForegroundColor Red
     ssh $prodServerUser@$prodServerHost "tail -20 /tmp/gunicorn.log 2>/dev/null"
     exit 1
 }
