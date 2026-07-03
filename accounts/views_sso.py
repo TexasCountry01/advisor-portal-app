@@ -87,6 +87,7 @@ def sso_callback(request):
         messages.error(request, 'Login failed: No authorization code received.')
         return redirect('login')
     
+    profile_data = {}  # initialised here so it's in scope in all except handlers
     try:
         # Exchange code for token
         token_data = exchange_code_for_token(code)
@@ -124,6 +125,7 @@ def sso_callback(request):
             metadata={
                 'error_type': 'access_denied',
                 'error_message': str(e),
+                'email': profile_data.get('email', ''),
                 'user_agent': request.META.get('HTTP_USER_AGENT', ''),
             },
             ip_address=_get_client_ip(request),
@@ -139,6 +141,7 @@ def sso_callback(request):
             metadata={
                 'error_type': 'sso_error',
                 'error_message': str(e),
+                'email': profile_data.get('email', ''),
                 'user_agent': request.META.get('HTTP_USER_AGENT', ''),
             },
             ip_address=_get_client_ip(request),
@@ -155,6 +158,7 @@ def sso_callback(request):
                 'error_type': 'unexpected',
                 'error_class': type(e).__name__,
                 'error_message': str(e),
+                'email': profile_data.get('email', ''),
                 'user_agent': request.META.get('HTTP_USER_AGENT', ''),
             },
             ip_address=_get_client_ip(request),
