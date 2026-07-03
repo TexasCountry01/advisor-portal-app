@@ -489,6 +489,9 @@ class Case(models.Model):
             models.Index(fields=['status', '-date_submitted']),
             models.Index(fields=['member', '-date_submitted']),
             models.Index(fields=['assigned_to', 'status']),
+            models.Index(fields=['date_due']),
+            models.Index(fields=['has_member_updates']),
+            models.Index(fields=['date_due', 'status']),
         ]
     
     def __str__(self):

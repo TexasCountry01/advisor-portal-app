@@ -761,16 +761,11 @@ def delegate_management(request):
         return redirect('cases:member_dashboard')
     
     User = get_user_model()
-    
-    # Get all active members for dropdowns
-    all_members = User.objects.filter(
+
+    # Single query for all active members — reused for both dropdowns
+    all_members = list(User.objects.filter(
         role='member', is_active=True
-    ).order_by('workshop_code', 'last_name', 'first_name')
-    
-    # Get all active users who could be delegates (members with portal accounts)
-    all_possible_delegates = User.objects.filter(
-        role='member', is_active=True
-    ).order_by('workshop_code', 'last_name', 'first_name')
+    ).order_by('workshop_code', 'last_name', 'first_name'))
     
     # Get existing delegate assignments from MemberDelegate model
     from accounts.models import MemberDelegate
@@ -898,11 +893,11 @@ def delegate_management(request):
     context = {
         'assignments': assignments,
         'all_members': all_members,
-        'all_possible_delegates': all_possible_delegates,
+        'all_possible_delegates': all_members,  # same list, no second query
         'total_assignments': len(assignments),
         'total_delegates': len(unique_delegates),
         'total_members_with_delegates': len(unique_members),
-        'total_members': all_members.count(),
+        'total_members': len(all_members),  # len() — list already in memory, no COUNT query
     }
     
     return render(request, 'accounts/delegate_management.html', context)

@@ -107,9 +107,10 @@ Write-Host ""
 # STEP 4: Restart Gunicorn
 Write-Host "[4/4] Restarting Gunicorn..." -ForegroundColor Yellow
 
-# Kill any existing gunicorn (pkill may return non-zero if nothing to kill — that's fine)
-# then start fresh in one SSH session so the daemon fully detaches before SSH exits
-ssh $prodServerUser@$prodServerHost "pkill -f gunicorn 2>/dev/null; sleep 2; cd $projectPath && rm -f gunicorn.sock && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+# Kill existing gunicorn master via pidfile (avoids pkill -f which self-kills the SSH bash
+# because the command string itself contains 'gunicorn').
+# Removes stale socket and pidfile before starting fresh daemon.
+ssh $prodServerUser@$prodServerHost "kill `$(cat /tmp/gunicorn.pid 2>/dev/null) 2>/dev/null; sleep 3; cd $projectPath && rm -f gunicorn.sock /tmp/gunicorn.pid && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
 
 Start-Sleep -Seconds 6
 

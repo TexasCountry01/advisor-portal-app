@@ -104,7 +104,9 @@ Write-Host "OK - Migrations completed" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "[5/5] Restarting Gunicorn..." -ForegroundColor Yellow
-ssh $testServerUser@$testServerHost "pkill -f gunicorn 2>/dev/null; sleep 2; cd $projectPath && rm -f gunicorn.sock && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+# Kill existing gunicorn master via pidfile (avoids pkill -f which self-kills the SSH bash
+# because the command string itself contains 'gunicorn').
+ssh $testServerUser@$testServerHost "kill `$(cat /tmp/gunicorn.pid 2>/dev/null) 2>/dev/null; sleep 3; cd $projectPath && rm -f gunicorn.sock /tmp/gunicorn.pid && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
 
 Start-Sleep -Seconds 6
 

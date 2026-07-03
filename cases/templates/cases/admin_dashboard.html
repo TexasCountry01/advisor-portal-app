@@ -500,6 +500,30 @@
                 <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-primary"><i class="bi bi-list"></i> View All Cases</a>
             </div>
             {% endif %}
+            {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="mt-3" aria-label="Case list pagination">
+                <ul class="pagination pagination-sm justify-content-center flex-wrap">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_params|urlencode }}">&#8249; Prev</a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}&{{ filter_params|urlencode }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_params|urlencode }}">Next &#8250;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+                <p class="text-center text-muted small">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} cases</p>
+            </nav>
+            {% endif %}
         </div>
     </div>
 </div>
