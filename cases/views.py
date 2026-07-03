@@ -720,6 +720,10 @@ def technician_dashboard(request):
     )
     stats = {k: (v or 0) for k, v in _s.items()}
     quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
+    # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
+    if quick_tech and quick_tech != 'all':
+        quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
     
     # Single batch query for unread message counts on current page only
     from django.db.models import Count as _Count
@@ -949,6 +953,10 @@ def admin_dashboard(request):
     stats['total_technicians'] = active_technicians
     stats['requiring_review'] = stats['pending_review']
     quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
+    # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
+    if quick_tech and quick_tech != 'all':
+        quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
     
     # Get active technicians for quick-filter buttons
     quick_technicians = _get_active_technicians()
@@ -1162,6 +1170,10 @@ def manager_dashboard(request):
         'hold_pct': hold_pct,
     }
     quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
+    # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
+    if quick_tech and quick_tech != 'all':
+        quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
     
     # Get active technicians for quick-filter buttons
     quick_technicians = _get_active_technicians()
