@@ -227,7 +227,20 @@ def download_document(request, doc_id):
     
     if not doc.file:
         return HttpResponse('File not found', status=404)
-    
+
+    from core.models import AuditLog
+    AuditLog.objects.create(
+        user=request.user,
+        action_type='document_downloaded',
+        case=case,
+        metadata={
+            'document_id': doc.id,
+            'filename': os.path.basename(doc.file.name),
+            'downloader': request.user.username,
+            'downloader_role': request.user.role,
+        }
+    )
+
     return FileResponse(
         doc.file.open('rb'),
         as_attachment=True,

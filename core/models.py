@@ -16,6 +16,7 @@ class AuditLog(models.Model):
         ('case_created', 'Case Created'),
         ('case_updated', 'Case Updated'),
         ('case_submitted', 'Case Submitted'),
+        ('case_accessed', 'Case Accessed'),
         ('case_accepted', 'Case Accepted'),
         ('case_assigned', 'Case Assigned'),
         ('case_reassigned', 'Case Reassigned'),

@@ -1632,7 +1632,20 @@ def case_detail(request, pk):
             marked_count += 1
         if marked_count > 0:
             logger.info(f'Auto-marked {marked_count} notification(s) as read for member {user.username} on case {case.external_case_id}')
-    
+
+    # Log member/delegate case access
+    if user.role == 'member' and (case.member == user or is_delegate_viewer):
+        from core.models import AuditLog
+        AuditLog.objects.create(
+            user=user,
+            action_type='case_accessed',
+            case=case,
+            metadata={
+                'message': f'{"Delegate" if is_delegate_viewer else "Member"} viewed case {case.external_case_id}',
+                'viewer': user.username,
+            }
+        )
+
     # Handle draft edit POST requests
     if request.method == 'POST' and request.POST.get('edit_draft'):
         if case.status == 'draft' and user.role == 'member' and (case.member == user or is_delegate_viewer):
