@@ -680,3 +680,64 @@ Both migrations were applied to the TEST server database on July 3, 2026.
 - **Manager dashboard** not reviewed or updated — likely has the same N+1 unread loop and separate COUNT queries as the technician dashboard.
 - **Option D (async tile counts)** not implemented — tile counts are still computed synchronously on every page load. This remains the best long-term UX improvement for perceived load time.
 - **No `pip install` step in deploy scripts** — if new packages are added to `requirements.txt`, the deploy scripts will not install them automatically.
+
+---
+
+## Rollback Plan
+
+**Rollback tag:** `rollback/pre-performance-2026-07-03` (commit `e8a4a60`) — pushed to GitHub.  
+**What reverts:** All five optimizations (A1–A3, B, C), audit logging additions, and deploy script fixes. The tag points to `main` immediately before the feature branch was merged.
+
+### When to roll back
+
+Roll back if any of the following are observed in PROD after this deployment:
+- Dashboard pages return 500 errors or blank content
+- Case counts in stats or tiles are visibly wrong (e.g. all zeros, or counts that don't match the case list)
+- Pagination links lose filter state (cases page 2+ shows wrong cases)
+- Member dashboard shows 0 unread badges when badges were previously showing
+- Gunicorn workers crash-loop (check `/tmp/gunicorn.log` on the server)
+
+### Risk assessment per change
+
+| Change | Risk | Why |
+|---|---|---|
+| A1 — Batch unread queries | Very Low | Same data, fewer queries. Worst case: 0 badges everywhere (not a data-loss issue). |
+| A2 — New indexes | Zero | Additive only. Never affects query correctness, only speed. |
+| A3 — Delegate page dedup | Very Low | Same queryset, just materialised once. `len()` on list is identical to `.count()` result. |
+| B — Aggregate COUNTs | Low-Medium | `Case/When` expressions with complex conditions could produce different counts than individual `.count()` calls if any `When` condition has a logic error. Verify tile counts against known data after deployment. |
+| C — Pagination | Medium | Template changes add pagination links. If `filter_params` is missing from a page's context, page 2+ links could lose filter state. Test filtered views with >50 cases. |
+| SQL sort (member dashboard) | Low | `nulls_last=True` is semantically better than the previous `or timezone.now()` fallback but changes sort order for cases with null dates. |
+
+### Rollback commands — PROD
+
+Run from your local machine. This reverts PROD to the pre-performance state and restores the old application code and reverses the index migrations. It does **not** affect case data.
+
+```powershell
+# Step 1: Check out the rollback tag on PROD and reverse the additive migrations
+ssh dev@104.248.126.74 "cd /var/www/advisor-portal && git fetch origin && git checkout rollback/pre-performance-2026-07-03"
+
+# Step 2: Reverse the two migrations (cases/0038 drops the 3 indexes; core/0024 is state-only)
+ssh dev@104.248.126.74 "cd /var/www/advisor-portal && source venv/bin/activate && python manage.py migrate cases 0037 && python manage.py migrate core 0023"
+
+# Step 3: Restart gunicorn with rolled-back code
+ssh dev@104.248.126.74 "kill `$(cat /tmp/gunicorn.pid) 2>/dev/null; sleep 3; cd /var/www/advisor-portal && rm -f gunicorn.sock /tmp/gunicorn.pid && venv/bin/gunicorn --workers 3 --bind unix:/var/www/advisor-portal/gunicorn.sock --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+
+# Step 4: Verify
+Start-Sleep 8
+ssh dev@104.248.126.74 "ps aux | grep '[g]unicorn' | wc -l"
+```
+
+After rollback, PROD will be running the pre-performance code. The 3 index migrations (`cases/0038`) will have been reversed (indexes dropped). The `core/0024` migration reversal removes `case_accessed` from Django's migration state (no schema change since it was always a state-only migration).
+
+### Re-deploying after a rollback
+
+Once the issue is diagnosed and fixed on the feature branch:
+1. Push a fix commit to `feature/performance-optimizations`
+2. Merge into `main`
+3. Run `.\deploy_to_production.ps1` — the deploy script will re-apply any outstanding migrations
+
+To restore main to the rollback point on GitHub after reverting (if needed):
+```powershell
+git revert HEAD  # creates a revert commit rather than destroying history
+git push origin main
+```
