@@ -169,30 +169,45 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
 
 
 def _build_staff_quick_tiles(queryset, user):
-    """Build tile counts for technician/manager/admin dashboards."""
-    from django.db.models import Exists, OuterRef
+    """Build tile counts for technician/manager/admin dashboards.
+    Uses a single SQL aggregate instead of 10 separate COUNT queries.
+    The 'alerts' tile requires an Exists subquery and is kept as one extra COUNT.
+    """
+    from django.db.models import Sum, Case as DbCase, When, IntegerField, Exists, OuterRef
 
     today = timezone.now().date()
     tomorrow = today + timedelta(days=1)
     next_7d = today + timedelta(days=7)
-    has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+    inactive = Q(status__in=['completed', 'cancelled', 'draft'])
 
-    return {
-        'submitted': queryset.filter(status='submitted').count(),
-        'pending': queryset.exclude(status__in=['completed', 'cancelled', 'draft']).count(),
-        'scheduled': queryset.filter(
+    counts = queryset.aggregate(
+        submitted=Sum(DbCase(When(status='submitted', then=1), default=0, output_field=IntegerField())),
+        pending=Sum(DbCase(When(~inactive, then=1), default=0, output_field=IntegerField())),
+        scheduled=Sum(DbCase(When(
             status='completed',
             actual_release_date__isnull=True,
-            scheduled_release_date__isnull=False
-        ).count(),
-        'need_review': queryset.filter(status='pending_review').count(),
-        'on_hold': queryset.filter(status='hold').count(),
-        'alerts': queryset.filter(Q(has_member_updates=True) | has_unread).count(),
-        'due_today': queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'draft']).count(),
-        'due_tomorrow': queryset.filter(date_due=tomorrow).exclude(status__in=['completed', 'cancelled', 'draft']).count(),
-        'due_next_7d': queryset.filter(date_due__gte=today, date_due__lte=next_7d).exclude(status__in=['completed', 'cancelled', 'draft']).count(),
-        'past_due': queryset.filter(date_due__lt=today).exclude(status__in=['completed', 'cancelled', 'draft']).count(),
-    }
+            scheduled_release_date__isnull=False,
+            then=1
+        ), default=0, output_field=IntegerField())),
+        need_review=Sum(DbCase(When(status='pending_review', then=1), default=0, output_field=IntegerField())),
+        on_hold=Sum(DbCase(When(status='hold', then=1), default=0, output_field=IntegerField())),
+        due_today=Sum(DbCase(When(
+            Q(date_due=today) & ~inactive, then=1
+        ), default=0, output_field=IntegerField())),
+        due_tomorrow=Sum(DbCase(When(
+            Q(date_due=tomorrow) & ~inactive, then=1
+        ), default=0, output_field=IntegerField())),
+        due_next_7d=Sum(DbCase(When(
+            Q(date_due__gte=today, date_due__lte=next_7d) & ~inactive, then=1
+        ), default=0, output_field=IntegerField())),
+        past_due=Sum(DbCase(When(
+            Q(date_due__lt=today) & ~inactive, then=1
+        ), default=0, output_field=IntegerField())),
+    )
+    # Alerts requires Exists subquery — one separate COUNT
+    has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+    counts['alerts'] = queryset.filter(Q(has_member_updates=True) | has_unread).count()
+    return {k: (v or 0) for k, v in counts.items()}
 
 
 def _apply_member_quick_filter(queryset, quick_filter, user):
@@ -232,12 +247,32 @@ def _apply_member_quick_filter(queryset, quick_filter, user):
 
 
 def _build_member_quick_tiles(queryset, user):
-    """Build tile counts for member dashboard."""
-    from django.db.models import Exists, OuterRef
+    """Build tile counts for member dashboard.
+    Uses a single SQL aggregate instead of 5 separate COUNT queries.
+    The 'alerts' tile requires Exists subqueries and is kept as one extra COUNT.
+    """
+    from django.db.models import Sum, Case as DbCase, When, IntegerField, Exists, OuterRef
     from cases.models import CaseNotification
 
     now = timezone.now()
     ready_since = now - timedelta(days=14)
+
+    counts = queryset.aggregate(
+        ready_14d=Sum(DbCase(When(
+            status='completed',
+            actual_release_date__isnull=False,
+            actual_release_date__gte=ready_since,
+            then=1
+        ), default=0, output_field=IntegerField())),
+        pending=Sum(DbCase(When(
+            ~Q(status__in=['cancelled', 'draft']) &
+            ~Q(status='completed', actual_release_date__isnull=False),
+            then=1
+        ), default=0, output_field=IntegerField())),
+        on_hold=Sum(DbCase(When(status='hold', then=1), default=0, output_field=IntegerField())),
+        drafts=Sum(DbCase(When(status='draft', then=1), default=0, output_field=IntegerField())),
+    )
+    # Alerts requires Exists subqueries — one separate COUNT
     has_unread_msg = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
     has_unread_notif = Exists(
         CaseNotification.objects.filter(
@@ -246,20 +281,8 @@ def _build_member_quick_tiles(queryset, user):
             is_read=False
         ).exclude(notification_type='member_update_received')
     )
-
-    return {
-        'ready_14d': queryset.filter(
-            status='completed',
-            actual_release_date__isnull=False,
-            actual_release_date__gte=ready_since
-        ).count(),
-        'pending': queryset.exclude(status__in=['cancelled', 'draft']).exclude(
-            status='completed', actual_release_date__isnull=False
-        ).count(),
-        'on_hold': queryset.filter(status='hold').count(),
-        'alerts': queryset.filter(has_unread_msg | has_unread_notif).count(),
-        'drafts': queryset.filter(status='draft').count(),
-    }
+    counts['alerts'] = queryset.filter(has_unread_msg | has_unread_notif).count()
+    return {k: (v or 0) for k, v in counts.items()}
 
 
 # DEV ONLY - Form preview without authentication
@@ -424,78 +447,62 @@ def member_dashboard(request):
 
     if quick_filter == 'ready_14d' and not request.GET.get('sort'):
         sort_by = '-date_completed'
-    
-    # Add unread count to each case:
-    # 1. UnreadMessage (chat messages) — keyed by logged-in user
-    # 2. Unread CaseNotification lifecycle events (hold, resume, release, documents_needed)
-    #    — keyed by case.member (not logged-in user) so delegates see them too
-    #    — exclude 'member_update_received' (chat notifs) to avoid double-counting
-    #    — for delegated cases, respect portal_notifications toggle
+
+    # SQL-based ordering (replaces Python sort-after-list-conversion)
+    from django.db.models import F as _F
+    _sql_sorts = {
+        'external_case_id': 'external_case_id', '-external_case_id': '-external_case_id',
+        'workshop_code': 'workshop_code', '-workshop_code': '-workshop_code',
+        'employee_first_name': 'employee_first_name', '-employee_first_name': '-employee_first_name',
+        'date_submitted': 'date_submitted', '-date_submitted': '-date_submitted',
+        'status': 'status', '-status': '-status',
+        'urgency': 'urgency', '-urgency': '-urgency',
+    }
+    _null_sorts = {
+        'date_due': _F('date_due').asc(nulls_last=True),
+        '-date_due': _F('date_due').desc(nulls_last=True),
+        'date_accepted': _F('date_accepted').asc(nulls_last=True),
+        '-date_accepted': _F('date_accepted').desc(nulls_last=True),
+        'date_completed': _F('date_completed').asc(nulls_last=True),
+        '-date_completed': _F('date_completed').desc(nulls_last=True),
+    }
+    if sort_by in _sql_sorts:
+        cases = cases.order_by(_sql_sorts[sort_by])
+    elif sort_by in _null_sorts:
+        cases = cases.order_by(_null_sorts[sort_by])
+
+    # Paginate before evaluating the queryset
+    paginator = Paginator(cases, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    page_cases = list(page_obj.object_list)
+
+    # Batch unread counts for current page only (2 queries instead of 2×N)
     from cases.models import CaseNotification
-    # Build set of member IDs with portal notifications enabled for this delegate
+    from django.db.models import Count as _Count
     notif_enabled_member_ids = set(
         da.member_id for da in delegate_assignments if da.portal_notifications
     )
-    notif_enabled_member_ids.add(user.id)  # always show for own cases
-    for case in cases:
-        chat_unread = UnreadMessage.objects.filter(
-            case=case,
-            user=user
-        ).count()
-        # Only show lifecycle unread badges if notifications enabled for this member
-        if case.member_id in notif_enabled_member_ids:
-            lifecycle_unread = CaseNotification.objects.filter(
-                case=case,
-                member=case.member,
+    notif_enabled_member_ids.add(user.id)
+    _chat_map = {
+        row['case_id']: row['cnt']
+        for row in UnreadMessage.objects
+            .filter(case_id__in=[c.pk for c in page_cases], user=user)
+            .values('case_id').annotate(cnt=_Count('id'))
+    }
+    _lifecycle_map = {
+        row['case_id']: row['cnt']
+        for row in CaseNotification.objects
+            .filter(
+                case_id__in=[c.pk for c in page_cases],
+                member_id__in=notif_enabled_member_ids,
                 is_read=False
-            ).exclude(
-                notification_type='member_update_received'
-            ).count()
-        else:
-            lifecycle_unread = 0
-        case.unread_message_count = chat_unread + lifecycle_unread
-    
-    # Convert to list to preserve the modified case objects with unread_message_count
-    cases = list(cases)
-    
-    # Handle sorting on the list (after filters applied)
-    if sort_by == 'external_case_id':
-        cases = sorted(cases, key=lambda x: x.external_case_id or '')
-    elif sort_by == '-external_case_id':
-        cases = sorted(cases, key=lambda x: x.external_case_id or '', reverse=True)
-    elif sort_by == 'workshop_code':
-        cases = sorted(cases, key=lambda x: x.workshop_code or '')
-    elif sort_by == '-workshop_code':
-        cases = sorted(cases, key=lambda x: x.workshop_code or '', reverse=True)
-    elif sort_by == 'employee_first_name':
-        cases = sorted(cases, key=lambda x: x.employee_first_name or '')
-    elif sort_by == '-employee_first_name':
-        cases = sorted(cases, key=lambda x: x.employee_first_name or '', reverse=True)
-    elif sort_by == 'date_submitted':
-        cases = sorted(cases, key=lambda x: x.date_submitted or timezone.now())
-    elif sort_by == '-date_submitted':
-        cases = sorted(cases, key=lambda x: x.date_submitted or timezone.now(), reverse=True)
-    elif sort_by == 'date_due':
-        cases = sorted(cases, key=lambda x: x.date_due or timezone.now().date())
-    elif sort_by == '-date_due':
-        cases = sorted(cases, key=lambda x: x.date_due or timezone.now().date(), reverse=True)
-    elif sort_by == 'date_accepted':
-        cases = sorted(cases, key=lambda x: x.date_accepted or timezone.now())
-    elif sort_by == '-date_accepted':
-        cases = sorted(cases, key=lambda x: x.date_accepted or timezone.now(), reverse=True)
-    elif sort_by == 'date_completed':
-        cases = sorted(cases, key=lambda x: x.date_completed or timezone.now())
-    elif sort_by == '-date_completed':
-        cases = sorted(cases, key=lambda x: x.date_completed or timezone.now(), reverse=True)
-    elif sort_by == 'status':
-        cases = sorted(cases, key=lambda x: x.status or '')
-    elif sort_by == '-status':
-        cases = sorted(cases, key=lambda x: x.status or '', reverse=True)
-    elif sort_by == 'urgency':
-        cases = sorted(cases, key=lambda x: x.urgency or '')
-    elif sort_by == '-urgency':
-        cases = sorted(cases, key=lambda x: x.urgency or '', reverse=True)
-    
+            )
+            .exclude(notification_type='member_update_received')
+            .values('case_id').annotate(cnt=_Count('id'))
+    } if notif_enabled_member_ids else {}
+    for case in page_cases:
+        case.unread_message_count = _chat_map.get(case.pk, 0) + _lifecycle_map.get(case.pk, 0)
+
     # Calculate statistics (for the active view)
     if active_view == 'all':
         all_member_ids = [user.id] + delegated_member_ids
@@ -504,18 +511,22 @@ def member_dashboard(request):
         all_cases = Case.objects.filter(member_id__in=delegated_member_ids)
     else:
         all_cases = Case.objects.filter(member=user)
-    stats = {
-        'total_cases': all_cases.count(),
-        'draft': all_cases.filter(status='draft').count(),
-        'submitted': all_cases.filter(status='submitted').count(),
-        'accepted': all_cases.filter(
-            Q(status='accepted') | Q(status='completed', actual_release_date__isnull=True)
-        ).count(),
-        'resubmitted': all_cases.filter(status='resubmitted').count(),
-        'completed': all_cases.filter(status='completed', actual_release_date__isnull=False).count(),
-        'cancelled': all_cases.filter(status='cancelled').count(),
-        'rush': all_cases.filter(urgency='rush').count(),
-    }
+    # Single aggregate replaces 8 separate COUNT queries
+    from django.db.models import Sum, Case as DbCase, When, IntegerField, Count as _Count
+    _s = all_cases.aggregate(
+        total_cases=_Count('id'),
+        draft=Sum(DbCase(When(status='draft', then=1), default=0, output_field=IntegerField())),
+        submitted=Sum(DbCase(When(status='submitted', then=1), default=0, output_field=IntegerField())),
+        accepted=Sum(DbCase(When(
+            Q(status='accepted') | Q(status='completed', actual_release_date__isnull=True),
+            then=1
+        ), default=0, output_field=IntegerField())),
+        resubmitted=Sum(DbCase(When(status='resubmitted', then=1), default=0, output_field=IntegerField())),
+        completed=Sum(DbCase(When(status='completed', actual_release_date__isnull=False, then=1), default=0, output_field=IntegerField())),
+        cancelled=Sum(DbCase(When(status='cancelled', then=1), default=0, output_field=IntegerField())),
+        rush=Sum(DbCase(When(urgency='rush', then=1), default=0, output_field=IntegerField())),
+    )
+    stats = {k: (v or 0) for k, v in _s.items()}
     member_quick_tiles = _build_member_quick_tiles(all_cases, user)
     
     # Get column visibility settings
@@ -533,7 +544,8 @@ def member_dashboard(request):
         draft_cases = None
     
     context = {
-        'cases': cases,
+        'cases': page_obj,
+        'page_obj': page_obj,
         'stats': stats,
         'draft_cases': draft_cases,
         'status_filter': status_filter,
@@ -694,34 +706,46 @@ def technician_dashboard(request):
     else:
         cases = cases.order_by('-date_submitted')
     
-    # Calculate statistics - based on accessible cases
-    stats = {
-        'total': cases.count(),
-        'submitted': cases.filter(status='submitted').count(),
-        'accepted': cases.filter(status='accepted').count(),
-        'resubmitted': cases.filter(status='resubmitted').count(),
-        'pending_review': cases.filter(status='pending_review').count(),
-        'needs_revision': cases.filter(status='accepted', review_status='revisions_requested').count(),
-        'completed': cases.filter(status='completed').count(),
-        'rush': cases.filter(urgency='rush').count(),
-    }
+    # Single aggregate replaces 8 separate COUNT queries
+    from django.db.models import Sum, Case as DbCase, When, IntegerField, Count as _Count
+    _s = cases.aggregate(
+        total=_Count('id'),
+        submitted=Sum(DbCase(When(status='submitted', then=1), default=0, output_field=IntegerField())),
+        accepted=Sum(DbCase(When(status='accepted', then=1), default=0, output_field=IntegerField())),
+        resubmitted=Sum(DbCase(When(status='resubmitted', then=1), default=0, output_field=IntegerField())),
+        pending_review=Sum(DbCase(When(status='pending_review', then=1), default=0, output_field=IntegerField())),
+        needs_revision=Sum(DbCase(When(status='accepted', review_status='revisions_requested', then=1), default=0, output_field=IntegerField())),
+        completed=Sum(DbCase(When(status='completed', then=1), default=0, output_field=IntegerField())),
+        rush=Sum(DbCase(When(urgency='rush', then=1), default=0, output_field=IntegerField())),
+    )
+    stats = {k: (v or 0) for k, v in _s.items()}
     quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
     
-    # Add unread message count to each case
-    for case in cases:
-        unread_count = UnreadMessage.objects.filter(case=case, user=user).count()
-        case.unread_message_count = unread_count
-    
+    # Single batch query for unread message counts on current page only
+    from django.db.models import Count as _Count
+    paginator = Paginator(cases, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    page_cases = list(page_obj.object_list)
+    _unread_map = {
+        row['case_id']: row['cnt']
+        for row in UnreadMessage.objects
+            .filter(case_id__in=[c.pk for c in page_cases], user=user)
+            .values('case_id').annotate(cnt=_Count('id'))
+    }
+    for case in page_cases:
+        case.unread_message_count = _unread_map.get(case.pk, 0)
+
     # Get available technicians and administrators for assignment dropdown
     technicians = _exclude_super_dev_users(User.objects.filter(
         role__in=['technician', 'administrator']
     )).order_by('last_name', 'first_name')
-    
+
     # Get active technicians for quick-filter buttons
     quick_technicians = _get_active_technicians()
-    
+
     context = {
-        'cases': cases,
+        'cases': page_obj,
+        'page_obj': page_obj,
         'stats': stats,
         'status_filters': status_filters,  # List of selected statuses
         'urgency_filter': urgency_filter,
@@ -907,32 +931,45 @@ def admin_dashboard(request):
     active_members = _exclude_super_dev_users(User.objects.filter(id__in=active_user_ids, role='member')).count()
     active_technicians = _exclude_super_dev_users(User.objects.filter(id__in=active_user_ids, role='technician')).count()
     
-    stats = {
-        'total': all_cases.count(),
-        'submitted': all_cases.filter(status='submitted').count(),
-        'accepted': all_cases.filter(status='accepted').count(),
-        'resubmitted': all_cases.filter(status='resubmitted').count(),
-        'hold': all_cases.filter(status='hold').count(),
-        'pending_review': all_cases.filter(status='pending_review').count(),
-        'completed': all_cases.filter(status='completed').count(),
-        'rush': all_cases.filter(urgency='rush').count(),
-        'total_members': active_members,
-        'total_technicians': active_technicians,
-        'unassigned': all_cases.filter(assigned_to__isnull=True).count(),
-        'requiring_review': all_cases.filter(status='pending_review').count(),
-    }
+    # Single aggregate replaces 10 separate COUNT queries
+    from django.db.models import Sum, Case as DbCase, When, IntegerField, Count as _Count
+    _s = all_cases.aggregate(
+        total=_Count('id'),
+        submitted=Sum(DbCase(When(status='submitted', then=1), default=0, output_field=IntegerField())),
+        accepted=Sum(DbCase(When(status='accepted', then=1), default=0, output_field=IntegerField())),
+        resubmitted=Sum(DbCase(When(status='resubmitted', then=1), default=0, output_field=IntegerField())),
+        hold=Sum(DbCase(When(status='hold', then=1), default=0, output_field=IntegerField())),
+        pending_review=Sum(DbCase(When(status='pending_review', then=1), default=0, output_field=IntegerField())),
+        completed=Sum(DbCase(When(status='completed', then=1), default=0, output_field=IntegerField())),
+        rush=Sum(DbCase(When(urgency='rush', then=1), default=0, output_field=IntegerField())),
+        unassigned=Sum(DbCase(When(assigned_to__isnull=True, then=1), default=0, output_field=IntegerField())),
+    )
+    stats = {k: (v or 0) for k, v in _s.items()}
+    stats['total_members'] = active_members
+    stats['total_technicians'] = active_technicians
+    stats['requiring_review'] = stats['pending_review']
     quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
     
     # Get active technicians for quick-filter buttons
     quick_technicians = _get_active_technicians()
-    
-    # Add unread message count to each case
-    for case in cases:
-        unread_count = UnreadMessage.objects.filter(case=case, user=user).count()
-        case.unread_message_count = unread_count
+
+    # Single batch query for unread message counts on current page only
+    from django.db.models import Count as _Count
+    paginator = Paginator(cases, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    page_cases = list(page_obj.object_list)
+    _unread_map = {
+        row['case_id']: row['cnt']
+        for row in UnreadMessage.objects
+            .filter(case_id__in=[c.pk for c in page_cases], user=user)
+            .values('case_id').annotate(cnt=_Count('id'))
+    }
+    for case in page_cases:
+        case.unread_message_count = _unread_map.get(case.pk, 0)
 
     context = {
-        'cases': cases,
+        'cases': page_obj,
+        'page_obj': page_obj,
         'stats': stats,
         'members': members,
         'technicians': technicians,
