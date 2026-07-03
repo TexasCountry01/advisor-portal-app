@@ -31,7 +31,7 @@ $testServerHost = "157.245.141.42"
 $testServerUser = "dev"
 $projectPath = "/home/dev/advisor-portal-app"
 $venvPath = "/home/dev/advisor-portal-app/venv"
-$gunicornSocket = "/home/dev/advisor-portal-app/gunicorn.sock"
+$gunicornSocket = "unix:/home/dev/advisor-portal-app/gunicorn.sock"
 
 # ⚠️ TEST SERVER DATABASE - DigitalOcean Managed MySQL/MariaDB
 # (NOT SQLite - only use SQLite for LOCAL development)
@@ -52,7 +52,8 @@ Write-Host "[1/5] Committing and pushing local changes to GitHub..." -Foreground
 $gitStatus = git status --porcelain
 if ($gitStatus) {
     git add -A
-    git commit -m "Deploy: super dev exclusion, dynamic technicians, reviewer logic restored"
+    $commitMessage = "Deploy to test: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+    git commit -m $commitMessage
     if ($LASTEXITCODE -ne 0) {
         Write-Host "ERROR: Git commit failed!" -ForegroundColor Red
         exit 1
@@ -91,16 +92,21 @@ Write-Host "OK - Git pull completed" -ForegroundColor Green
 Write-Host ""
 
 # STEP 4: Run database migrations
-Write-Host "[4/4] Running database migrations and restarting Gunicorn..." -ForegroundColor Yellow
+Write-Host "[4/5] Running database migrations..." -ForegroundColor Yellow
 ssh $testServerUser@$testServerHost "cd $projectPath && source $venvPath/bin/activate && python manage.py migrate && python manage.py collectstatic --noinput 2>&1 | tail -3"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Migration or collectstatic failed!" -ForegroundColor Red
+    exit 1
+}
 
 Write-Host "OK - Migrations completed" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "[5/5] Restarting Gunicorn..." -ForegroundColor Yellow
-ssh $testServerUser@$testServerHost "pkill -f gunicorn 2>/dev/null; sleep 2; cd $projectPath && rm -f gunicorn.sock && $venvPath/bin/gunicorn --workers 3 --bind unix:$gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+ssh $testServerUser@$testServerHost "pkill -f gunicorn 2>/dev/null; sleep 2; cd $projectPath && rm -f gunicorn.sock && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
 
-Start-Sleep -Seconds 4
+Start-Sleep -Seconds 6
 
 # Verify gunicorn is running
 Write-Host "Verifying Gunicorn process..." -ForegroundColor Yellow
