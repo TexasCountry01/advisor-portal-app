@@ -97,32 +97,23 @@ ssh $testServerUser@$testServerHost "cd $projectPath && source $venvPath/bin/act
 Write-Host "OK - Migrations completed" -ForegroundColor Green
 Write-Host ""
 
-ssh $testServerUser@$testServerHost "pkill -f gunicorn"
-Start-Sleep -Seconds 2
+Write-Host "[5/5] Restarting Gunicorn..." -ForegroundColor Yellow
+ssh $testServerUser@$testServerHost "pkill -f gunicorn 2>/dev/null; sleep 2; cd $projectPath && rm -f gunicorn.sock && $venvPath/bin/gunicorn --workers 3 --bind unix:$gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
 
-$timeout = 5
-$startGunicornScript = {
-    ssh dev@157.245.141.42 "cd /home/dev/advisor-portal-app && rm -f gunicorn.sock && venv/bin/gunicorn --workers 3 --bind unix:/home/dev/advisor-portal-app/gunicorn.sock --umask 0000 --daemon --pid /tmp/gunicorn.pid config.wsgi:application"
-}
-
-$job = Start-Job -ScriptBlock $startGunicornScript
-$job | Wait-Job -Timeout $timeout | Out-Null
-
-if ($job.State -eq "Running") {
-    Write-Host "OK - Gunicorn startup sent" -ForegroundColor Green
-    $job | Stop-Job | Out-Null
-    Remove-Job $job | Out-Null
-} else {
-    Write-Host "OK - Gunicorn startup command completed" -ForegroundColor Green
-    Remove-Job $job | Out-Null
-}
-
-Start-Sleep -Seconds 2
+Start-Sleep -Seconds 4
 
 # Verify gunicorn is running
 Write-Host "Verifying Gunicorn process..." -ForegroundColor Yellow
-$processCount = ssh dev@157.245.141.42 "ps aux | grep gunicorn | grep -v grep | wc -l"
-Write-Host "Found $processCount gunicorn processes" -ForegroundColor Green
+$processCount = ssh $testServerUser@$testServerHost "ps aux | grep gunicorn | grep -v grep | wc -l"
+Write-Host "Found $processCount gunicorn processes" -ForegroundColor Cyan
+
+if ([int]$processCount -lt 2) {
+    Write-Host "ERROR: Gunicorn did not start. Printing log:" -ForegroundColor Red
+    ssh $testServerUser@$testServerHost "cat /tmp/gunicorn.log"
+    exit 1
+}
+
+Write-Host "OK - Gunicorn running" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
