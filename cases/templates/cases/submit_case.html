@@ -560,7 +560,7 @@
                     <div style="display: flex; align-items: flex-start; gap: 10px;">
                         <div style="font-size: 1.3em;">⚠️</div>
                         <div>
-                            <strong style="display: block; margin-bottom: 4px;">Rushed Request</strong>
+                            <strong id="rushAlertTitle" style="display: block; margin-bottom: 4px;">Rushed Request</strong>
                             <p style="margin: 0; line-height: 1.4; font-size: 0.95em;">
                                 This date is less than the standard 7-day turnaround period and will be considered a "rushed" request which incurs a <strong>$20 fee</strong>.
                             </p>
@@ -764,15 +764,18 @@
 
             const isRushed = dueDate < rushThresholdDate;
             const isInHolidayWindow = !isRushed && (dueDate < holidayAdjustedDate);
+            const rushTitle = document.getElementById('rushAlertTitle');
 
             if (isRushed) {
+                if (rushTitle) rushTitle.textContent = 'Rushed Request';
                 if (rushContainer) rushContainer.classList.add('show');
                 if (holidayMsg) holidayMsg.style.display = 'none';
                 if (urgencyInput) urgencyInput.value = 'rush';
             } else if (isInHolidayWindow) {
-                if (rushContainer) rushContainer.classList.remove('show');
-                if (holidayMsg) holidayMsg.style.display = 'block';
-                if (urgencyInput) urgencyInput.value = 'normal';
+                if (rushTitle) rushTitle.textContent = 'ALERT: Upcoming Holiday!';
+                if (rushContainer) rushContainer.classList.add('show');
+                if (holidayMsg) holidayMsg.style.display = 'none';
+                if (urgencyInput) urgencyInput.value = 'rush';
             } else {
                 if (rushContainer) rushContainer.classList.remove('show');
                 if (holidayMsg) holidayMsg.style.display = 'none';
