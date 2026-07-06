@@ -56,6 +56,9 @@ def log_user_logout(sender, request, user, **kwargs):
             description=f'{logout_user.username} logged out',
             ip_address=ip_address
         )
+        # Clear last_active so the status dot goes grey immediately
+        if getattr(logout_user, 'role', None) in ('technician', 'administrator', 'manager'):
+            User.objects.filter(pk=logout_user.pk).update(last_active=None)
 
 
 # ============================================================================
