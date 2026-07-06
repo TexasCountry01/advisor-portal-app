@@ -624,6 +624,18 @@ def technician_dashboard(request):
     else:
         sort_by = get_user_sort_preference(user, 'technician_dashboard', 'date_due')
     assigned_filter = request.GET.get('assigned', default_view)  # Use saved preference as default
+
+    # On a fresh page load (no URL params) for a technician, default to their own
+    # pending-completion cases sorted by due date — closest due first.
+    _has_params = any(request.GET.get(p) for p in [
+        'quick_filter', 'quick_tech', 'status', 'urgency', 'tier',
+        'date_range', 'date_from', 'date_to', 'search', 'assigned', 'sort', 'page'
+    ])
+    if not _has_params and user.role == 'technician':
+        quick_filter = 'pending'
+        quick_tech = user.username
+        if sort_by not in ('date_due', '-date_due'):
+            sort_by = 'date_due'
     
     # Apply "My Cases" filter
     if assigned_filter == 'mine':
