@@ -194,30 +194,9 @@
                 <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
                 <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
 
-                <!-- Row 1: View Options (Left) | Quick Tech Filters (Right) -->
+                <!-- Row 1: Quick Tech Filters (Right-aligned) -->
                 <div class="row mb-3" id="top-row">
-                    <!-- LEFT: View Options -->
-                    <div class="col-auto d-flex align-items-center gap-2">
-                        <small class="text-muted">View:</small>
-                        <div class="btn-group" role="group">
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if custom_date_from %}&date_from={{ custom_date_from }}{% endif %}{% if custom_date_to %}&date_to={{ custom_date_to }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
-                               id="view-all-btn"
-                               class="btn btn-sm btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
-                               data-view-type="all"
-                               onclick="saveViewPreference('all'); return true;">
-                                <i class="bi bi-list-ul"></i> All Cases
-                            </a>
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if custom_date_from %}&date_from={{ custom_date_from }}{% endif %}{% if custom_date_to %}&date_to={{ custom_date_to }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}" 
-                               id="view-mine-btn"
-                               class="btn btn-sm btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
-                               data-view-type="mine"
-                               onclick="saveViewPreference('mine'); return true;">
-                                <i class="bi bi-person-check"></i> My Cases
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- RIGHT: Quick Tech Filters -->
+                    <!-- Quick Tech Filters -->
                     <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
                         <div class="btn-group" role="group">
                             <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Techs</a>
