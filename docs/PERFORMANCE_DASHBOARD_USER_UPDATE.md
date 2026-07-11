@@ -8,7 +8,7 @@ A **Team Performance Dashboard** is now live at **https://reports.profeds.com** 
 
 **Access:** Administrators only (for now).
 
-**7 metrics displayed:**
+**7 metrics displayed — team totals and per-technician breakdown:**
 
 | Metric | What it shows |
 |---|---|
@@ -22,13 +22,14 @@ A **Team Performance Dashboard** is now live at **https://reports.profeds.com** 
 
 **Date range:** Defaults to the last 7 days. Fully adjustable with a custom from/to date filter.
 
+**Per-technician breakdown:** A table below the team totals shows each tech's individual numbers for all 7 metrics, color-coded green/yellow/red.
+
 **Data:** Uses real production data. No mock or hardcoded numbers.
 
 ---
 
 ## What This Version Does NOT Include
 
-- Per-technician breakdown (team totals only right now)
 - Visible on the Manager or Technician dashboards
 - Individual tech can see only their own numbers
 - PDF or CSV export
@@ -51,7 +52,6 @@ These are the next steps — but we want your feedback on this version first bef
 
 | Step | What it adds |
 |---|---|
-| Per-tech breakdown table | Same page, table below the tiles showing each tech's individual numbers |
 | Panel on Admin dashboard | Compact version of the 7 tiles embedded directly on the main admin dashboard |
 | Panel on Manager dashboard | Same panel on the manager view |
 | Tech dashboard (own numbers) | Tech sees their own metrics on their dashboard — not team totals |

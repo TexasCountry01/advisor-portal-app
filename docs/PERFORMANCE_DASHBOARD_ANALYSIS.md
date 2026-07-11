@@ -273,9 +273,9 @@ When `tech_id` is provided, all queries additionally filter by `assigned_to=tech
 
 ---
 
-### Step 3 — Add Per-Tech Breakdown Table
+### ✅ Step 3 — Add Per-Tech Breakdown Table *(COMPLETE)*
 **Files:** `templates/core/performance_dashboard.html`, `core/views_reports.py`
-**What:** Below the 7 team-total tiles, add a table showing each technician's individual numbers for all 7 metrics.
+**What:** `get_performance_metrics()` extended with `tech_user` parameter. View loops over all active techs and passes `per_tech` list to template. Breakdown table added below team tiles showing all 7 metrics per technician, color-coded. Deployed to PROD 2026-07-11.
 
 **Table structure:** One row per active technician, one column per metric. Sortable by name.
 
