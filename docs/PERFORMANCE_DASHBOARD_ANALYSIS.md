@@ -213,6 +213,11 @@ Build Option 1 first as a standalone page AND add a summary panel to the Admin d
 
 **Scope:** Steps 1 + 2 of the incremental plan only.
 
+**Status (2026-07-11): ✅ COMPLETE — deployed to PROD at https://reports.profeds.com**
+- Feature branch `feature/performance-dashboard-demo` merged into `main`
+- URL: `/reports/performance/` — admin-only
+- Accessible from Reports & Analytics menu
+
 **After the demo:** User reviews and confirms, modifies, or rejects the metric definitions. Full plan resumes only after sign-off.
 
 ---
@@ -223,9 +228,9 @@ Each step ends with a defined validation checkpoint before moving to the next st
 
 ---
 
-### Step 1 — Write & Validate the Backend Data Function
+### ✅ Step 1 — Write & Validate the Backend Data Function *(COMPLETE)*
 **Files:** `core/views_reports.py`
-**What:** Write a single function `get_performance_metrics(date_from, date_to, tech_id=None)` that returns all 7 metric values. No UI yet.
+**What:** `get_performance_metrics(date_from, date_to)` function written and verified. All 7 queries run against real production data.
 
 **Metrics and their queries:**
 
@@ -251,9 +256,9 @@ When `tech_id` is provided, all queries additionally filter by `assigned_to=tech
 
 ---
 
-### Step 2 — Build the Standalone Admin-Only Page
-**Files:** `core/views_reports.py` (new view), `core/urls.py`, `templates/core/performance_dashboard.html`
-**What:** A simple page at `/reports/performance/` showing all 7 metrics as plain numbers. Team totals only — no per-tech breakdown yet. Date range filter (default: last 7 days). Admin access only.
+### ✅ Step 2 — Build the Standalone Admin-Only Page *(COMPLETE)*
+**Files:** `core/views_reports.py` (view), `core/urls.py`, `templates/core/performance_dashboard.html`
+**What:** Page built at `/reports/performance/`. All 7 metrics, date range filter, color-coded tiles, metric definitions footer. Deployed to PROD 2026-07-11.
 
 **Page layout:**
 - Date range filter bar at top
@@ -355,3 +360,166 @@ Step 1 (backend function)
 ```
 
 Steps 3 and 4 are independent of each other and can be done in either order after Step 2.
+
+---
+
+## SQL Reference
+
+All queries run against the production MySQL database. Replace `'DATE_FROM'` and `'DATE_TO'` with ISO dates (`YYYY-MM-DD`).
+
+**Key tables:**
+- `cases_case` — all cases
+- `cases_casereviewhistory` — quality review events (submitted for review, approved, etc.)
+
+---
+
+### 1. Reports Generated
+```sql
+SELECT COUNT(*) AS reports_generated
+FROM cases_case
+WHERE status = 'completed'
+  AND DATE(date_completed) >= 'DATE_FROM'
+  AND DATE(date_completed) <= 'DATE_TO';
+```
+
+---
+
+### 2. Submitted for Review
+```sql
+SELECT COUNT(*) AS submitted_for_review
+FROM cases_casereviewhistory
+WHERE review_action = 'submitted_for_review'
+  AND DATE(reviewed_at) >= 'DATE_FROM'
+  AND DATE(reviewed_at) <= 'DATE_TO';
+```
+
+---
+
+### 3. On-Time Delivery %
+```sql
+SELECT
+  COUNT(*)                                                                AS total_with_due_date,
+  SUM(CASE WHEN DATE(date_completed) <= date_due THEN 1 ELSE 0 END)      AS on_time_count,
+  ROUND(
+    SUM(CASE WHEN DATE(date_completed) <= date_due THEN 1 ELSE 0 END)
+    * 100.0 / COUNT(*),
+  1)                                                                      AS on_time_pct
+FROM cases_case
+WHERE status = 'completed'
+  AND date_due       IS NOT NULL
+  AND date_completed IS NOT NULL
+  AND DATE(date_completed) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+```
+
+---
+
+### 4. ProFeds Errors
+```sql
+-- Counts modification cases where the member flagged it as a ProFeds error.
+-- Filtered by when the error mod was submitted, not the original case.
+SELECT COUNT(*) AS errors_count
+FROM cases_case
+WHERE has_profeds_error = 1
+  AND original_case_id  IS NOT NULL
+  AND DATE(date_submitted) >= 'DATE_FROM'
+  AND DATE(date_submitted) <= 'DATE_TO';
+```
+
+---
+
+### 5. Avg Production Cycle Time
+```sql
+-- Days from member submission to tech release, averaged across completed cases.
+SELECT ROUND(
+  AVG(TIMESTAMPDIFF(DAY, date_submitted, date_completed)),
+1) AS avg_cycle_days
+FROM cases_case
+WHERE status          = 'completed'
+  AND date_submitted  IS NOT NULL
+  AND date_completed  IS NOT NULL
+  AND DATE(date_completed) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+```
+
+---
+
+### 6. Avg Readiness Window
+```sql
+-- Positive = finished early; negative = finished late.
+SELECT ROUND(
+  AVG(DATEDIFF(date_due, DATE(date_completed))),
+1) AS avg_readiness_days
+FROM cases_case
+WHERE status          = 'completed'
+  AND date_due        IS NOT NULL
+  AND date_completed  IS NOT NULL
+  AND DATE(date_completed) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+```
+
+---
+
+### 7. Report Accuracy %
+```sql
+SELECT
+  COUNT(*)                                                              AS total_completed,
+  SUM(CASE WHEN has_profeds_error = 0 THEN 1 ELSE 0 END)              AS error_free,
+  ROUND(
+    SUM(CASE WHEN has_profeds_error = 0 THEN 1 ELSE 0 END)
+    * 100.0 / NULLIF(COUNT(*), 0),
+  1)                                                                    AS accuracy_pct
+FROM cases_case
+WHERE status = 'completed'
+  AND DATE(date_completed) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+```
+
+---
+
+### All 7 Metrics — Single Combined Query
+```sql
+SELECT
+  -- 1. Reports Generated
+  COUNT(*)                                                                        AS reports_generated,
+
+  -- 3. On-Time Delivery
+  SUM(CASE WHEN date_due IS NOT NULL
+            AND DATE(date_completed) <= date_due THEN 1 ELSE 0 END)              AS on_time_count,
+  COUNT(CASE WHEN date_due IS NOT NULL THEN 1 END)                               AS on_time_total,
+  ROUND(
+    SUM(CASE WHEN date_due IS NOT NULL
+              AND DATE(date_completed) <= date_due THEN 1 ELSE 0 END)
+    * 100.0 / NULLIF(COUNT(CASE WHEN date_due IS NOT NULL THEN 1 END), 0),
+  1)                                                                              AS on_time_pct,
+
+  -- 5. Production Cycle Time
+  ROUND(AVG(TIMESTAMPDIFF(DAY, date_submitted, date_completed)), 1)              AS avg_cycle_days,
+
+  -- 6. Readiness Window
+  ROUND(AVG(DATEDIFF(date_due, DATE(date_completed))), 1)                        AS avg_readiness_days,
+
+  -- 7. Report Accuracy
+  SUM(CASE WHEN has_profeds_error = 0 THEN 1 ELSE 0 END)                        AS error_free,
+  ROUND(
+    SUM(CASE WHEN has_profeds_error = 0 THEN 1 ELSE 0 END)
+    * 100.0 / NULLIF(COUNT(*), 0),
+  1)                                                                              AS accuracy_pct
+
+FROM cases_case
+WHERE status          = 'completed'
+  AND date_submitted  IS NOT NULL
+  AND date_completed  IS NOT NULL
+  AND DATE(date_completed) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+
+-- Metrics 2 and 4 require separate queries (different source tables):
+
+-- 2. Submitted for Review
+SELECT COUNT(*) AS submitted_for_review
+FROM cases_casereviewhistory
+WHERE review_action = 'submitted_for_review'
+  AND DATE(reviewed_at) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+
+-- 4. ProFeds Errors
+SELECT COUNT(*) AS errors_count
+FROM cases_case
+WHERE has_profeds_error = 1
+  AND original_case_id IS NOT NULL
+  AND DATE(date_submitted) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+```
