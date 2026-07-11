@@ -642,7 +642,8 @@ def technician_dashboard(request):
         cases = cases.filter(assigned_to=user)
 
     # Apply quick technician filter from top buttons.
-    if quick_tech and quick_tech != 'all':
+    # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
+    if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
             cases = cases.filter(assigned_to=tech_user)
@@ -861,7 +862,8 @@ def admin_dashboard(request):
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
 
-    if quick_tech and quick_tech != 'all':
+    # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
+    if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
             cases = cases.filter(assigned_to=tech_user)
@@ -1070,7 +1072,8 @@ def manager_dashboard(request):
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
 
-    if quick_tech and quick_tech != 'all':
+    # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
+    if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
             cases = cases.filter(assigned_to=tech_user)
