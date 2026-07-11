@@ -24,7 +24,7 @@ A **Team Performance Dashboard** is now live at **https://reports.profeds.com** 
 
 **Per-technician breakdown:** A table below the team totals shows each tech's individual numbers for all 7 metrics, color-coded green/yellow/red.
 
-**Data:** Uses real production data. No mock or hardcoded numbers.
+**Data:** Uses real production data. No mock or hardcoded numbers. Test accounts (Devops*) are excluded from all metrics.
 
 ---
 
@@ -43,8 +43,7 @@ These are the next steps — but we want your feedback on this version first bef
 1. Do the 7 metrics match what you were expecting to see?
 2. Are the metric definitions (shown at the bottom of the page) correct?
 3. Anything you'd remove, rename, or add?
-4. Would you want the numbers broken down by technician on the same page?
-5. Should techs be able to see their own numbers on their dashboard?
+4. Should techs and managers be able to see this dashboard (and their own numbers) directly from their dashboards?
 
 ---
 
