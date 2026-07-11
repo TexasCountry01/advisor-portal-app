@@ -167,7 +167,7 @@
     </div>
 
     <!-- Metric Definitions -->
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-light">
             <h6 class="mb-0 text-muted"><i class="bi bi-info-circle"></i> Metric Definitions</h6>
         </div>
@@ -197,6 +197,94 @@
             </div>
         </div>
     </div>
+
+    <!-- Per-Technician Breakdown -->
+    {% if per_tech %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light d-flex align-items-center justify-content-between">
+            <h5 class="mb-0"><i class="bi bi-people-fill text-primary"></i> Breakdown by Technician</h5>
+            <small class="text-muted">{{ date_from }} → {{ date_to }}</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0" style="font-size:0.875rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Technician</th>
+                            <th class="text-center">Reports<br>Generated</th>
+                            <th class="text-center">Submitted<br>for Review</th>
+                            <th class="text-center">On-Time<br>Delivery</th>
+                            <th class="text-center">ProFeds<br>Errors</th>
+                            <th class="text-center">Avg Cycle<br>Time</th>
+                            <th class="text-center">Avg Readiness<br>Window</th>
+                            <th class="text-center">Report<br>Accuracy</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in per_tech %}
+                        <tr>
+                            <td class="ps-3 fw-semibold">{{ row.tech.get_full_name|default:row.tech.username }}</td>
+
+                            <!-- Reports Generated -->
+                            <td class="text-center">{{ row.reports_generated }}</td>
+
+                            <!-- Submitted for Review -->
+                            <td class="text-center">{{ row.submitted_for_review }}</td>
+
+                            <!-- On-Time Delivery -->
+                            <td class="text-center">
+                                {% if row.on_time_pct is not None %}
+                                    <span class="fw-semibold {% if row.on_time_pct >= 95 %}text-success{% elif row.on_time_pct >= 80 %}text-warning{% else %}text-danger{% endif %}">
+                                        {{ row.on_time_pct }}%
+                                    </span>
+                                    <br><small class="text-muted">{{ row.on_time_count }}/{{ row.on_time_total }}</small>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- ProFeds Errors -->
+                            <td class="text-center">
+                                <span class="{% if row.errors_count > 0 %}text-danger fw-semibold{% else %}text-success{% endif %}">
+                                    {{ row.errors_count }}
+                                </span>
+                            </td>
+
+                            <!-- Avg Cycle Time -->
+                            <td class="text-center">
+                                {% if row.avg_cycle_days is not None %}{{ row.avg_cycle_days }}d{% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+
+                            <!-- Avg Readiness Window -->
+                            <td class="text-center">
+                                {% if row.avg_readiness_days is not None %}
+                                    <span class="{% if row.avg_readiness_days >= 1 %}text-success{% elif row.avg_readiness_days >= 0 %}text-warning{% else %}text-danger{% endif %}">
+                                        {% if row.avg_readiness_days >= 0 %}+{% endif %}{{ row.avg_readiness_days }}d
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Report Accuracy -->
+                            <td class="text-center">
+                                {% if row.accuracy_pct is not None %}
+                                    <span class="fw-semibold {% if row.accuracy_pct >= 99 %}text-success{% elif row.accuracy_pct >= 95 %}text-warning{% else %}text-danger{% endif %}">
+                                        {{ row.accuracy_pct }}%
+                                    </span>
+                                    <br><small class="text-muted">{{ row.accuracy_error_free }}/{{ row.accuracy_total }}</small>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
 </div>
 {% endblock %}

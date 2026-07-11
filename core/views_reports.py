@@ -3077,11 +3077,12 @@ def status_distribution_pdf(request):
 
 # ── Team Performance Dashboard (Demo) ────────────────────────────────────────
 
-def get_performance_metrics(date_from=None, date_to=None):
+def get_performance_metrics(date_from=None, date_to=None, tech_user=None):
     """
     Compute all 7 team performance metrics for the given date window.
     All case-based metrics filter on date_completed within the window.
     Errors filter on the mod case's date_submitted (when the error was reported).
+    If tech_user is provided, all metrics are scoped to that technician only.
     """
     from cases.models import CaseReviewHistory
 
@@ -3100,6 +3101,8 @@ def get_performance_metrics(date_from=None, date_to=None):
         completed_qs = completed_qs.filter(date_completed__date__gte=date_from_obj)
     if date_to_obj:
         completed_qs = completed_qs.filter(date_completed__date__lte=date_to_obj)
+    if tech_user:
+        completed_qs = completed_qs.filter(assigned_to=tech_user)
 
     # 1. Reports Generated
     reports_generated = completed_qs.count()
@@ -3110,6 +3113,8 @@ def get_performance_metrics(date_from=None, date_to=None):
         review_qs = review_qs.filter(reviewed_at__date__gte=date_from_obj)
     if date_to_obj:
         review_qs = review_qs.filter(reviewed_at__date__lte=date_to_obj)
+    if tech_user:
+        review_qs = review_qs.filter(original_technician=tech_user)
     submitted_for_review = review_qs.count()
 
     # 3. On-Time Delivery %
@@ -3124,6 +3129,8 @@ def get_performance_metrics(date_from=None, date_to=None):
         error_qs = error_qs.filter(date_submitted__date__gte=date_from_obj)
     if date_to_obj:
         error_qs = error_qs.filter(date_submitted__date__lte=date_to_obj)
+    if tech_user:
+        error_qs = error_qs.filter(assigned_to=tech_user)
     errors_count = error_qs.count()
 
     # 5. Production Cycle Time — avg days from member submission to tech finish
@@ -3178,9 +3185,20 @@ def performance_dashboard(request):
 
     metrics = get_performance_metrics(date_from or None, date_to or None)
 
+    # Per-technician breakdown (Step 3)
+    techs = _exclude_super_dev_users(
+        User.objects.filter(role__in=['technician', 'administrator'], is_active=True)
+    ).order_by('first_name', 'last_name')
+    per_tech = []
+    for tech in techs:
+        t = get_performance_metrics(date_from or None, date_to or None, tech_user=tech)
+        t['tech'] = tech
+        per_tech.append(t)
+
     context = {
         **metrics,
         'date_from': date_from,
         'date_to': date_to,
+        'per_tech': per_tech,
     }
     return render(request, 'core/performance_dashboard.html', context)
