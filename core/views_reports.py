@@ -3073,3 +3073,114 @@ def status_distribution_pdf(request):
     response = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="status_distribution_{date_from_str or "all"}_{date_to_str or "all"}.pdf"'
     return response
+
+
+# ── Team Performance Dashboard (Demo) ────────────────────────────────────────
+
+def get_performance_metrics(date_from=None, date_to=None):
+    """
+    Compute all 7 team performance metrics for the given date window.
+    All case-based metrics filter on date_completed within the window.
+    Errors filter on the mod case's date_submitted (when the error was reported).
+    """
+    from cases.models import CaseReviewHistory
+
+    date_from_obj = None
+    date_to_obj = None
+    if date_from:
+        from datetime import datetime as _dt
+        date_from_obj = _dt.strptime(date_from, '%Y-%m-%d').date()
+    if date_to:
+        from datetime import datetime as _dt
+        date_to_obj = _dt.strptime(date_to, '%Y-%m-%d').date()
+
+    # Base queryset: completed cases filtered by date_completed
+    completed_qs = Case.objects.filter(status='completed')
+    if date_from_obj:
+        completed_qs = completed_qs.filter(date_completed__date__gte=date_from_obj)
+    if date_to_obj:
+        completed_qs = completed_qs.filter(date_completed__date__lte=date_to_obj)
+
+    # 1. Reports Generated
+    reports_generated = completed_qs.count()
+
+    # 2. Reports Submitted for Review (count events, not unique cases)
+    review_qs = CaseReviewHistory.objects.filter(review_action='submitted_for_review')
+    if date_from_obj:
+        review_qs = review_qs.filter(reviewed_at__date__gte=date_from_obj)
+    if date_to_obj:
+        review_qs = review_qs.filter(reviewed_at__date__lte=date_to_obj)
+    submitted_for_review = review_qs.count()
+
+    # 3. On-Time Delivery %
+    completed_with_due = completed_qs.filter(date_due__isnull=False, date_completed__isnull=False)
+    on_time_total = completed_with_due.count()
+    on_time_count = completed_with_due.filter(date_completed__date__lte=F('date_due')).count()
+    on_time_pct = round(on_time_count / on_time_total * 100, 1) if on_time_total > 0 else None
+
+    # 4. Errors (mod cases flagged as ProFeds errors, filtered by mod case date_submitted)
+    error_qs = Case.objects.filter(has_profeds_error=True, original_case__isnull=False)
+    if date_from_obj:
+        error_qs = error_qs.filter(date_submitted__date__gte=date_from_obj)
+    if date_to_obj:
+        error_qs = error_qs.filter(date_submitted__date__lte=date_to_obj)
+    errors_count = error_qs.count()
+
+    # 5. Production Cycle Time — avg days from member submission to tech finish
+    cycle_qs = completed_qs.filter(date_submitted__isnull=False, date_completed__isnull=False)
+    cycle_agg = cycle_qs.annotate(
+        cycle=F('date_completed') - F('date_submitted')
+    ).aggregate(avg=Avg('cycle'))
+    avg_cycle_days = round(cycle_agg['avg'].days, 1) if cycle_agg['avg'] else None
+
+    # 6. Readiness Window — avg days BEFORE due date the tech finished (positive = early)
+    readiness_qs = completed_qs.filter(date_due__isnull=False, date_completed__isnull=False)
+    early_diffs = []
+    for case in readiness_qs.only('date_due', 'date_completed'):
+        completed_date = case.date_completed.date() if hasattr(case.date_completed, 'date') else case.date_completed
+        early_diffs.append((case.date_due - completed_date).days)
+    avg_readiness_days = round(sum(early_diffs) / len(early_diffs), 1) if early_diffs else None
+
+    # 7. Report Accuracy — % of completed cases with no PF error flag
+    total_completed = completed_qs.count()
+    error_free = completed_qs.filter(has_profeds_error=False).count()
+    accuracy_pct = round(error_free / total_completed * 100, 1) if total_completed > 0 else None
+
+    return {
+        'reports_generated': reports_generated,
+        'submitted_for_review': submitted_for_review,
+        'on_time_pct': on_time_pct,
+        'on_time_count': on_time_count,
+        'on_time_total': on_time_total,
+        'errors_count': errors_count,
+        'avg_cycle_days': avg_cycle_days,
+        'avg_readiness_days': avg_readiness_days,
+        'accuracy_pct': accuracy_pct,
+        'accuracy_error_free': error_free,
+        'accuracy_total': total_completed,
+    }
+
+
+@login_required
+def performance_dashboard(request):
+    """Team Performance Dashboard — demo, admin-only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators only.')
+        return redirect('home')
+
+    date_to = request.GET.get('date_to', '').strip()
+    date_from = request.GET.get('date_from', '').strip()
+
+    # Default: last 7 days
+    if not date_from and not date_to:
+        date_to = timezone.now().date().strftime('%Y-%m-%d')
+        date_from = (timezone.now().date() - timedelta(days=7)).strftime('%Y-%m-%d')
+
+    metrics = get_performance_metrics(date_from or None, date_to or None)
+
+    context = {
+        **metrics,
+        'date_from': date_from,
+        'date_to': date_to,
+    }
+    return render(request, 'core/performance_dashboard.html', context)

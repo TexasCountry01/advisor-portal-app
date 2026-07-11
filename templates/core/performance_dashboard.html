@@ -1,0 +1,202 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Team Performance Dashboard - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-speedometer2 text-primary"></i> Team Performance Dashboard
+                <span class="badge bg-warning text-dark ms-2" style="font-size:0.5em; vertical-align: middle;">DEMO</span>
+            </h1>
+            <p class="text-muted mb-0">7 key production metrics — filtered by date cases were <strong>completed</strong></p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label fw-semibold small">Completed From</label>
+                    <input type="date" class="form-control form-control-sm" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label fw-semibold small">Completed To</label>
+                    <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    <a href="{% url 'performance_dashboard' %}" class="btn btn-outline-secondary btn-sm">Reset (7 days)</a>
+                </div>
+                <div class="col-md-auto ms-auto text-end">
+                    <small class="text-muted">
+                        Showing: <strong>{{ date_from }}</strong> → <strong>{{ date_to }}</strong>
+                    </small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Metric Tiles — Row 1 -->
+    <div class="row g-3 mb-3">
+
+        <!-- 1. Reports Generated -->
+        <div class="col-6 col-md-3 col-xl">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #198754 !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold text-success">{{ reports_generated }}</div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Reports Generated</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Cases finished &amp; released</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Submitted for Review -->
+        <div class="col-6 col-md-3 col-xl">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #6f42c1 !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold" style="color:#6f42c1;">{{ submitted_for_review }}</div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Submitted for Review</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Review submission events</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. On-Time Delivery % -->
+        <div class="col-6 col-md-3 col-xl">
+            <div class="card border-0 shadow-sm h-100 text-center"
+                 style="border-top: 4px solid {% if on_time_pct is not None %}{% if on_time_pct >= 95 %}#198754{% elif on_time_pct >= 80 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold
+                        {% if on_time_pct is not None %}
+                            {% if on_time_pct >= 95 %}text-success
+                            {% elif on_time_pct >= 80 %}text-warning
+                            {% else %}text-danger{% endif %}
+                        {% else %}text-muted{% endif %}">
+                        {% if on_time_pct is not None %}{{ on_time_pct }}%{% else %}—{% endif %}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">On-Time Delivery</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">
+                        {% if on_time_total > 0 %}{{ on_time_count }} of {{ on_time_total }} on time{% else %}No data{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Errors -->
+        <div class="col-6 col-md-3 col-xl">
+            <div class="card border-0 shadow-sm h-100 text-center"
+                 style="border-top: 4px solid {% if errors_count > 0 %}#dc3545{% else %}#198754{% endif %} !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold {% if errors_count > 0 %}text-danger{% else %}text-success{% endif %}">
+                        {{ errors_count }}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">ProFeds Errors</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Member-reported error mods</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Metric Tiles — Row 2 -->
+    <div class="row g-3 mb-4">
+
+        <!-- 5. Production Cycle Time -->
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0d6efd !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold text-primary">
+                        {% if avg_cycle_days is not None %}{{ avg_cycle_days }}d{% else %}—{% endif %}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Avg Production Cycle Time</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Member submission → Tech finish</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. Readiness Window -->
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm h-100 text-center"
+                 style="border-top: 4px solid {% if avg_readiness_days is not None %}{% if avg_readiness_days >= 1 %}#198754{% elif avg_readiness_days >= 0 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold
+                        {% if avg_readiness_days is not None %}
+                            {% if avg_readiness_days >= 1 %}text-success
+                            {% elif avg_readiness_days >= 0 %}text-warning
+                            {% else %}text-danger{% endif %}
+                        {% else %}text-muted{% endif %}">
+                        {% if avg_readiness_days is not None %}
+                            {% if avg_readiness_days >= 0 %}+{% endif %}{{ avg_readiness_days }}d
+                        {% else %}—{% endif %}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Avg Readiness Window</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Days finished before due date</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 7. Report Accuracy -->
+        <div class="col-6 col-md-4">
+            <div class="card border-0 shadow-sm h-100 text-center"
+                 style="border-top: 4px solid {% if accuracy_pct is not None %}{% if accuracy_pct >= 99 %}#198754{% elif accuracy_pct >= 95 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold
+                        {% if accuracy_pct is not None %}
+                            {% if accuracy_pct >= 99 %}text-success
+                            {% elif accuracy_pct >= 95 %}text-warning
+                            {% else %}text-danger{% endif %}
+                        {% else %}text-muted{% endif %}">
+                        {% if accuracy_pct is not None %}{{ accuracy_pct }}%{% else %}—{% endif %}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Report Accuracy</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">
+                        {% if accuracy_total > 0 %}{{ accuracy_error_free }} of {{ accuracy_total }} error-free{% else %}No data{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Metric Definitions -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h6 class="mb-0 text-muted"><i class="bi bi-info-circle"></i> Metric Definitions</h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3" style="font-size:0.82rem;">
+                <div class="col-md-6">
+                    <strong>Reports Generated</strong> — Cases where the tech clicked "Release Case" (status = completed) within the date window.
+                </div>
+                <div class="col-md-6">
+                    <strong>Submitted for Review</strong> — Number of times any tech submitted a case for senior review within the date window. One case can generate multiple events.
+                </div>
+                <div class="col-md-6">
+                    <strong>On-Time Delivery %</strong> — Completed cases where <code>date_completed ≤ date_due</code>, divided by total completed cases with a due date.
+                </div>
+                <div class="col-md-6">
+                    <strong>ProFeds Errors</strong> — Modification cases created by a member who flagged the issue as a ProFeds error, filtered by when the mod was submitted.
+                </div>
+                <div class="col-md-6">
+                    <strong>Avg Production Cycle Time</strong> — Average days from when the member submitted the original case to when the tech released it.
+                </div>
+                <div class="col-md-6">
+                    <strong>Avg Readiness Window</strong> — Average days in advance of the due date that the tech finished. Positive = early; negative = late.
+                </div>
+                <div class="col-md-12">
+                    <strong>Report Accuracy</strong> — Percentage of completed cases that have no ProFeds error flag. Note: errors are member self-reported and may appear days or weeks after completion.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
