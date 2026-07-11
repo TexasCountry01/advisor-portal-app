@@ -29,11 +29,19 @@ def _get_super_dev_email():
 
 
 def _exclude_super_dev_users(queryset):
-    """Exclude configured super-dev account from report user metrics."""
+    """Exclude test accounts (is_test_account=True) and the configured super-dev
+    email from report user metrics."""
+    queryset = queryset.filter(is_test_account=False)
     super_dev_email = _get_super_dev_email()
-    if not super_dev_email:
-        return queryset
-    return queryset.exclude(email__iexact=super_dev_email)
+    if super_dev_email:
+        queryset = queryset.exclude(email__iexact=super_dev_email)
+    return queryset
+
+
+def _exclude_test_account_cases(qs):
+    """Exclude cases where the assigned technician or submitting member is a test
+    account (is_test_account=True). NULL assigned_to/member are kept."""
+    return qs.exclude(assigned_to__is_test_account=True).exclude(member__is_test_account=True)
 
 
 @login_required
@@ -59,8 +67,8 @@ def get_all_reports_data(date_from=None, date_to=None):
     """Compile all report data for the dashboard with optional date filtering"""
     from datetime import datetime
     
-    # Build base queryset with optional date filter
-    cases_qs = Case.objects.all()
+    # Build base queryset with optional date filter — exclude test account cases
+    cases_qs = _exclude_test_account_cases(Case.objects.all())
     
     if date_from or date_to:
         if date_from:
@@ -346,8 +354,8 @@ def profeds_error_tracking_report(request):
     date_from = request.GET.get('date_from')
     date_to = request.GET.get('date_to')
     
-    # Build queryset for cases with ProFeds errors
-    error_cases_qs = Case.objects.filter(has_profeds_error=True)
+    # Build queryset for cases with ProFeds errors — exclude test account cases
+    error_cases_qs = _exclude_test_account_cases(Case.objects.filter(has_profeds_error=True))
     
     if date_from:
         from datetime import datetime
@@ -421,7 +429,7 @@ def profeds_error_tracking_pdf(request):
     date_from = request.GET.get('date_from', '').strip()
     date_to = request.GET.get('date_to', '').strip()
 
-    error_cases_qs = Case.objects.filter(has_profeds_error=True)
+    error_cases_qs = _exclude_test_account_cases(Case.objects.filter(has_profeds_error=True))
     if date_from:
         error_cases_qs = error_cases_qs.filter(
             date_submitted__date__gte=datetime.strptime(date_from, '%Y-%m-%d').date()
@@ -975,11 +983,11 @@ def get_due_date_compliance_data(date_from=None, date_to=None):
     """
     from django.db.models.functions import TruncWeek
 
-    qs = Case.objects.filter(
+    qs = _exclude_test_account_cases(Case.objects.filter(
         status='completed',
         date_due__isnull=False,
         date_completed__isnull=False,
-    )
+    ))
 
     if date_from:
         qs = qs.filter(date_completed__date__gte=date_from)
@@ -2834,7 +2842,7 @@ def reassignment_analysis_pdf(request):
 
 def _get_case_analytics_data(date_from=None, date_to=None):
     from datetime import datetime as dt
-    cases_qs = Case.objects.all()
+    cases_qs = _exclude_test_account_cases(Case.objects.all())
     if date_from:
         cases_qs = cases_qs.filter(date_submitted__date__gte=date_from)
     if date_to:
@@ -2961,7 +2969,7 @@ def case_analytics_pdf(request):
 # ── Status Distribution Report ───────────────────────────────────────────────
 
 def _get_status_distribution_data(date_from=None, date_to=None):
-    cases_qs = Case.objects.all()
+    cases_qs = _exclude_test_account_cases(Case.objects.all())
     if date_from:
         cases_qs = cases_qs.filter(date_submitted__date__gte=date_from)
     if date_to:
@@ -3095,8 +3103,8 @@ def get_performance_metrics(date_from=None, date_to=None, tech_user=None):
         from datetime import datetime as _dt
         date_to_obj = _dt.strptime(date_to, '%Y-%m-%d').date()
 
-    # Base queryset: completed cases filtered by date_completed
-    completed_qs = Case.objects.filter(status='completed')
+    # Base queryset: completed cases filtered by date_completed — exclude test account cases
+    completed_qs = _exclude_test_account_cases(Case.objects.filter(status='completed'))
     if date_from_obj:
         completed_qs = completed_qs.filter(date_completed__date__gte=date_from_obj)
     if date_to_obj:
@@ -3124,7 +3132,7 @@ def get_performance_metrics(date_from=None, date_to=None, tech_user=None):
     on_time_pct = round(on_time_count / on_time_total * 100, 1) if on_time_total > 0 else None
 
     # 4. Errors (mod cases flagged as ProFeds errors, filtered by mod case date_submitted)
-    error_qs = Case.objects.filter(has_profeds_error=True, original_case__isnull=False)
+    error_qs = _exclude_test_account_cases(Case.objects.filter(has_profeds_error=True, original_case__isnull=False))
     if date_from_obj:
         error_qs = error_qs.filter(date_submitted__date__gte=date_from_obj)
     if date_to_obj:
