@@ -625,3 +625,140 @@ WHERE rh.review_action IN ('revisions_requested', 'corrections_needed')
   AND u.is_test_account = 0
   AND DATE(rh.reviewed_at) BETWEEN 'DATE_FROM' AND 'DATE_TO';
 ```
+
+---
+
+## Drill-Down Detail Views — Analysis & Implementation Plan
+
+**Goal:** Each metric tile on the Benefits Team Portal Metrics page becomes clickable and opens a detail page showing the individual records that make up that number, using the same date range.
+
+**URL pattern:** `/reports/performance/detail/<metric_slug>/?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD`
+
+**Shared infrastructure needed (once):**
+- One new view `performance_detail(request, metric_slug)` that dispatches by `metric_slug`
+- One reusable detail template `templates/core/performance_detail.html` with consistent table layout and Back link
+- Tile links in `performance_dashboard.html` use `{% url 'performance_detail' metric_slug %}?date_from={{ date_from }}&date_to={{ date_to }}`
+
+---
+
+### Drill-Down Step A — Tiles that link to EXISTING reports (zero new code)
+
+Two tiles already have full standalone reports with date filter support.
+
+| Tile | Existing Report | URL |
+|---|---|---|
+| On-Time Delivery % | Due Date Compliance Report | `/reports/due-date-compliance/?date_from=&date_to=` |
+| ProFeds Errors | ProFeds Error Tracking Report | `/reports/profeds-errors/?date_from=&date_to=` |
+
+**Work required:** 2 tile cards get an `<a href>` wrapper. No view or template changes.
+**Validation:** Click tile → existing report opens filtered to the same date range.
+
+---
+
+### Drill-Down Step B — Reports Generated
+
+**Slug:** `reports-generated`
+**Data source:** `Case` — `status='completed'`, `date_completed` in range
+**Table columns:** Case ID (link), Advisor, Employee, Technician, Submitted, Finished, Due Date, Urgency
+**Sort:** `date_completed` DESC
+**New code:** 1 view + 1 shared template (establishes the reusable pattern for all remaining tiles)
+**Validation:** Row count = Reports Generated tile number.
+
+---
+
+### Drill-Down Step C — Initial Submissions
+
+**Slug:** `initial-submissions`
+**Data source:** `Case` — `status != draft`, `member not null`, `date_submitted` in range
+**Table columns:** Case ID (link), Advisor, Workshop Code, Employee, Submitted Date, Status, Urgency
+**Sort:** `date_submitted` DESC
+**Note:** Shows every individual case — the main page shows these aggregated by advisor only.
+**Validation:** Row count = Initial Submissions tile number.
+
+---
+
+### Drill-Down Step D — Submitted for Review
+
+**Slug:** `submitted-for-review`
+**Data source:** `CaseReviewHistory` — `review_action='submitted_for_review'`, `reviewed_at` in range
+**Table columns:** Date, Case ID (link), Employee, Technician (who submitted), Sequence (1st, 2nd, 3rd)
+**Sort:** `reviewed_at` DESC
+**Note:** One case can appear multiple times if submitted, revised, and resubmitted.
+**Validation:** Row count = Submitted for Review tile number.
+
+---
+
+### Drill-Down Step E — Level 1/2 Accuracy Rate (Returns)
+
+**Slug:** `level-12-accuracy-rate`
+**Data source:** `CaseReviewHistory` — `review_action='revisions_requested'`, `reviewed_at` in range
+**Table columns:** Date, Case ID (link), Employee, Original Tech, L3 Reviewer, Review Notes
+**Sort:** `reviewed_at` DESC
+**Validation:** Row count = Level 1/2 Accuracy Rate tile number.
+
+---
+
+### Drill-Down Step F — Corrected by L3
+
+**Slug:** `corrected-by-l3`
+**Data source:** `CaseReviewHistory` — `review_action='corrections_needed'`, `reviewed_at` in range
+**Table columns:** Date, Case ID (link), Employee, Original Tech, L3 Reviewer, Review Notes
+**Sort:** `reviewed_at` DESC
+**Validation:** Row count = Corrected by L3 tile number.
+
+---
+
+### Drill-Down Step G — L1/L2 Review Accuracy %
+
+**Slug:** `l12-review-accuracy`
+**Data source:** `CaseReviewHistory` — all three outcome actions, L1/L2 techs only, `reviewed_at` in range
+**Table columns:** Date, Case ID (link), Employee, Tech, Level, Outcome (color-coded), Reviewer, Notes
+**Sort:** non-approved outcomes first, then `reviewed_at` DESC
+**Validation:** Approved row count matches team_approved; total rows match team_total.
+
+---
+
+### Drill-Down Step H — Production Cycle Time
+
+**Slug:** `production-cycle-time`
+**Data source:** `Case` — `status='completed'`, `date_submitted not null`, `date_completed` in range
+**Table columns:** Case ID (link), Advisor, Technician, Submitted, Finished, Cycle Days (computed)
+**Sort:** `cycle_days` DESC (slowest cases at top)
+**Computed field:** `(date_completed.date() - date_submitted.date()).days`
+**Validation:** Average of Cycle Days column matches the tile value.
+
+---
+
+### Drill-Down Step I — Readiness Window
+
+**Slug:** `readiness-window`
+**Data source:** `Case` — `status='completed'`, `date_due not null`, `date_completed` in range
+**Table columns:** Case ID (link), Tech, Due Date, Finished Date, Days Early/Late (color-coded)
+**Sort:** `days_diff` ASC (most overdue at top)
+**Computed field:** `(date_due - date_completed.date()).days`
+**Validation:** Average of Days column matches the tile value.
+
+---
+
+### Drill-Down Step J — Report Accuracy %
+
+**Slug:** `report-accuracy`
+**Data source:** `Case` — `status='completed'`, `date_completed` in range
+**Table columns:** Case ID (link), Tech, Advisor, Finished Date, Error Flagged (yes/no badge)
+**Sort:** error-flagged cases first, then `date_completed` DESC
+**Validation:** Count of flagged rows = `accuracy_total - accuracy_error_free`.
+
+---
+
+## Drill-Down Implementation Options
+
+**Option 1 — Fastest wins (Step A only, ~30 min)**
+Wire up On-Time Delivery and ProFeds Errors tiles to existing reports by adding `href`. No new views or templates. Immediately shows the concept.
+
+**Option 2 — Establish the pattern (Steps A + B, ~2–3 hrs)**
+Option 1 plus build the `performance_detail` view and shared template using Reports Generated as the first full implementation. Creates reusable infrastructure all remaining tiles (C–J) plug into.
+
+**Option 3 — Start with review data (Steps A + E + F, ~2–3 hrs)**
+Option 1 plus Returns and Corrected by L3 detail views. These are the highest-value new pages since review event details aren't currently visible anywhere.
+
+**Recommended starting sequence:** Option 2 — establishes the pattern and Reports Generated is the most commonly referenced metric.

@@ -53,9 +53,21 @@ A **Team Performance Dashboard** is now live at **https://reports.profeds.com** 
 
 ## What Comes Next (pending your feedback)
 
-| Step | What it adds |
-|---|---|
-| Panel on Admin dashboard | Compact version of the tiles embedded directly on the main admin dashboard |
-| Panel on Manager dashboard | Same panel on the manager view |
-| Tech dashboard (own numbers) | Tech sees their own metrics on their dashboard — not team totals |
-| Open to all roles | Managers and techs can navigate to the full standalone page |
+**Approved for implementation:** Drill-down detail views — clicking each tile opens a detail page showing the individual records behind that number.
+
+| Drill-Down Step | Tile | New code needed |
+|---|---|---|
+| A | On-Time Delivery %, ProFeds Errors | None — link to existing reports |
+| B | Reports Generated | New shared detail view + template |
+| C | Initial Submissions | Reuses pattern from B |
+| D | Submitted for Review | Reuses pattern from B |
+| E | Level 1/2 Accuracy Rate | Reuses pattern from B |
+| F | Corrected by L3 | Reuses pattern from B |
+| G | L1/L2 Review Accuracy % | Reuses pattern from B |
+| H | Production Cycle Time | Reuses pattern from B |
+| I | Readiness Window | Reuses pattern from B |
+| J | Report Accuracy % | Reuses pattern from B |
+
+**Also pending your feedback:**
+- Panel on Admin/Manager/Tech dashboards
+- Managers and techs can access the full page directly
