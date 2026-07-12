@@ -2,6 +2,8 @@
 
 **Request:** A mini reporting dashboard showing 7 team performance metrics, visible to all Techs, Managers, and Admins. Start on Admin dashboard for testing; expand to all dashboards.
 
+**Expanded (2026-07-12):** Dashboard now includes 11 total metrics (original 7 + 4 new) plus an Advisor Submission Breakdown table. All integrated into the single Team Performance Dashboard page.
+
 ---
 
 ## Metric-by-Metric Analysis
@@ -273,17 +275,28 @@ When `tech_id` is provided, all queries additionally filter by `assigned_to=tech
 
 ---
 
-### ✅ Step 3 — Add Per-Tech Breakdown Table *(COMPLETE)*
+### ✅ Step 3 — Add Per-Tech Breakdown Table + Expand with 4 New Metrics *(COMPLETE)*
 **Files:** `templates/core/performance_dashboard.html`, `core/views_reports.py`
-**What:** `get_performance_metrics()` extended with `tech_user` parameter. View loops over all active techs and passes `per_tech` list to template. Breakdown table added below team tiles showing all 7 metrics per technician, color-coded. Deployed to PROD 2026-07-11.
+**What (original):** `get_performance_metrics()` extended with `tech_user` parameter. View loops over all active techs. Breakdown table added below team tiles. Deployed to PROD 2026-07-11.
 
-**Table structure:** One row per active technician, one column per metric. Sortable by name.
+**Expansion (2026-07-12):** Three additional data helper functions added. Dashboard expanded with:
+- 4 new team-total tiles: Advisor Submissions, L1/L2 Review Accuracy %, Returned to Tech, Corrected by L3
+- 3 new columns in per-tech table: Review Accuracy %, Returned to Tech, Corrected by L3
+- New Advisor Submission Breakdown section at bottom (per-advisor table)
+- Standalone reports for the 3 new metrics removed from Reports menu — all data now lives in the dashboard
 
-**Validation checkpoint:**
-- Each column's per-tech numbers should sum to (or average toward) the team total above
-- Confirm techs with no activity in the period show zeros, not errors
-- Confirm a tech who is inactive/archived does not appear
-- ✅ Per-tech numbers are consistent with team totals
+**New data helpers added:**
+- `_get_review_accuracy_by_tech(date_from_obj, date_to_obj)` — first-pass approval rate per tech from `CaseReviewHistory`
+- `_get_returns_corrections_by_tech(date_from_obj, date_to_obj)` — revisions requested vs corrections made by L3
+- `_get_advisor_submissions(date_from_obj, date_to_obj)` — cases submitted per advisor from `Case`
+
+**New metric definitions:**
+- **Advisor Submissions** — all non-draft cases submitted by advisors filtered by `date_submitted`
+- **L1/L2 Review Accuracy %** — `approved` outcomes ÷ all outcomes (approved + revisions_requested + corrections_needed) from `CaseReviewHistory` where `original_technician.user_level` in L1/L2
+- **Returned to Tech** — count of `revisions_requested` outcomes
+- **Corrected by L3** — count of `corrections_needed` outcomes (L3 fixed it without returning)
+
+**Deployed to TEST:** 2026-07-12. PROD pending.
 
 ---
 
@@ -522,4 +535,93 @@ FROM cases_case
 WHERE has_profeds_error = 1
   AND original_case_id IS NOT NULL
   AND DATE(date_submitted) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+```
+
+---
+
+### 8. Advisor Submissions
+```sql
+-- All non-draft cases submitted by advisors in the window.
+-- Filter: date_submitted (when member submitted, not when tech finished).
+SELECT
+  u.first_name, u.last_name, c.workshop_code,
+  COUNT(*)                                                              AS total_submitted,
+  SUM(CASE WHEN c.status = 'completed' THEN 1 ELSE 0 END)             AS completed,
+  SUM(CASE WHEN c.status IN ('accepted','pending_review','hold') THEN 1 ELSE 0 END) AS in_progress,
+  SUM(CASE WHEN c.status IN ('submitted','resubmitted') THEN 1 ELSE 0 END)          AS pending_accept,
+  SUM(CASE WHEN c.has_profeds_error = 1 THEN 1 ELSE 0 END)            AS pf_errors
+FROM cases_case c
+JOIN accounts_user u ON u.id = c.member_id
+WHERE c.status != 'draft'
+  AND c.member_id IS NOT NULL
+  AND u.is_test_account = 0
+  AND DATE(c.date_submitted) BETWEEN 'DATE_FROM' AND 'DATE_TO'
+GROUP BY u.id, u.first_name, u.last_name, c.workshop_code
+ORDER BY total_submitted DESC;
+```
+
+---
+
+### 9. L1/L2 Review Accuracy %
+```sql
+-- First-pass approval rate: approved outcomes ÷ all outcomes for L1/L2 techs.
+-- Outcome actions: 'approved', 'revisions_requested', 'corrections_needed'
+SELECT
+  u.first_name, u.last_name, u.user_level,
+  COUNT(*)                                                                   AS total_reviews,
+  SUM(CASE WHEN rh.review_action = 'approved' THEN 1 ELSE 0 END)           AS approved,
+  SUM(CASE WHEN rh.review_action = 'revisions_requested' THEN 1 ELSE 0 END) AS revisions,
+  SUM(CASE WHEN rh.review_action = 'corrections_needed' THEN 1 ELSE 0 END)  AS corrected_by_l3,
+  ROUND(
+    SUM(CASE WHEN rh.review_action = 'approved' THEN 1 ELSE 0 END)
+    * 100.0 / NULLIF(COUNT(*), 0),
+  1) AS accuracy_pct
+FROM cases_casereviewhistory rh
+JOIN accounts_user u ON u.id = rh.original_technician_id
+WHERE rh.review_action IN ('approved', 'revisions_requested', 'corrections_needed')
+  AND u.user_level IN ('level_1', 'level_2')
+  AND u.is_test_account = 0
+  AND DATE(rh.reviewed_at) BETWEEN 'DATE_FROM' AND 'DATE_TO'
+GROUP BY u.id, u.first_name, u.last_name, u.user_level
+ORDER BY u.first_name;
+
+-- Team total:
+SELECT
+  COUNT(*)                                                                   AS total_reviews,
+  ROUND(SUM(CASE WHEN review_action = 'approved' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 1) AS team_accuracy_pct
+FROM cases_casereviewhistory rh
+JOIN accounts_user u ON u.id = rh.original_technician_id
+WHERE rh.review_action IN ('approved', 'revisions_requested', 'corrections_needed')
+  AND u.user_level IN ('level_1', 'level_2')
+  AND u.is_test_account = 0
+  AND DATE(rh.reviewed_at) BETWEEN 'DATE_FROM' AND 'DATE_TO';
+```
+
+---
+
+### 10. Returned to Tech & 11. Corrected by L3
+```sql
+-- Returned to Tech  = review_action = 'revisions_requested'
+-- Corrected by L3   = review_action = 'corrections_needed'
+SELECT
+  u.first_name, u.last_name,
+  SUM(CASE WHEN rh.review_action = 'revisions_requested' THEN 1 ELSE 0 END) AS returned_to_tech,
+  SUM(CASE WHEN rh.review_action = 'corrections_needed'  THEN 1 ELSE 0 END) AS corrected_by_l3
+FROM cases_casereviewhistory rh
+JOIN accounts_user u ON u.id = rh.original_technician_id
+WHERE rh.review_action IN ('revisions_requested', 'corrections_needed')
+  AND u.is_test_account = 0
+  AND DATE(rh.reviewed_at) BETWEEN 'DATE_FROM' AND 'DATE_TO'
+GROUP BY u.id, u.first_name, u.last_name
+ORDER BY u.first_name;
+
+-- Team totals:
+SELECT
+  SUM(CASE WHEN review_action = 'revisions_requested' THEN 1 ELSE 0 END) AS team_returned,
+  SUM(CASE WHEN review_action = 'corrections_needed'  THEN 1 ELSE 0 END) AS team_corrected_by_l3
+FROM cases_casereviewhistory rh
+JOIN accounts_user u ON u.id = rh.original_technician_id
+WHERE rh.review_action IN ('revisions_requested', 'corrections_needed')
+  AND u.is_test_account = 0
+  AND DATE(rh.reviewed_at) BETWEEN 'DATE_FROM' AND 'DATE_TO';
 ```

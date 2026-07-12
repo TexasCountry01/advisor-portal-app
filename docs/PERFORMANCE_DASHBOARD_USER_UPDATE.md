@@ -8,23 +8,29 @@ A **Team Performance Dashboard** is now live at **https://reports.profeds.com** 
 
 **Access:** Administrators only (for now).
 
-**7 metrics displayed — team totals and per-technician breakdown:**
+**11 metrics — team totals with per-technician breakdown:**
 
-| Metric | What it shows |
-|---|---|
-| Reports Generated | # of cases finished and released by techs in the date window |
-| Submitted for Review | # of times a tech submitted a case for senior review |
-| On-Time Delivery % | Cases completed on or before due date ÷ total cases with a due date |
-| ProFeds Errors | # of modification cases submitted by members flagging a ProFeds error |
-| Avg Production Cycle Time | Average days from member submission to tech release |
-| Avg Readiness Window | Average days the tech finished ahead of (or behind) the due date |
-| Report Accuracy % | Completed cases with no error flag ÷ all completed cases |
+| # | Metric | What it shows |
+|---|---|---|
+| 1 | Reports Generated | Cases finished and released by techs in the window |
+| 2 | Submitted for Review | Times any tech submitted a case for senior review (event count) |
+| 3 | On-Time Delivery % | Cases completed on or before due date ÷ total cases with a due date |
+| 4 | ProFeds Errors | Member-flagged error modification cases in the window |
+| 5 | Avg Production Cycle Time | Average days from member submission to tech release |
+| 6 | Avg Readiness Window | Average days the tech finished ahead of (or behind) the due date |
+| 7 | Report Accuracy % | Completed cases with no error flag ÷ all completed cases |
+| 8 | Advisor Submissions | Total cases submitted by advisors in the window |
+| 9 | L1/L2 Review Accuracy % | First-pass approval rate for L1/L2 techs going through quality review |
+| 10 | Returned to Tech | Cases sent back to the tech by L3 with revisions requested |
+| 11 | Corrected by L3 | Cases where L3 fixed the issue directly without returning to the tech |
 
-**Date range:** Defaults to the last 7 days. Fully adjustable with a custom from/to date filter.
+**Per-technician breakdown table:** All 11 metrics shown per tech. Review Accuracy, Returned, and Corrected columns appear for techs subject to quality review; others show "Not reviewed."
 
-**Per-technician breakdown:** A table below the team totals shows each tech's individual numbers for all 7 metrics, color-coded green/yellow/red.
+**Advisor Submission Breakdown:** A separate table at the bottom shows each advisor's submissions with status breakdown (completed, in-progress, pending accept, PF errors).
 
-**Data:** Uses real production data. No mock or hardcoded numbers. Test accounts (Devops*) are excluded from all metrics.
+**Date range:** Defaults to the last 7 days. Fully adjustable.
+
+**Data:** Real production data. Test accounts (Devops*) are excluded from all metrics.
 
 ---
 
@@ -34,13 +40,11 @@ A **Team Performance Dashboard** is now live at **https://reports.profeds.com** 
 - Individual tech can see only their own numbers
 - PDF or CSV export
 
-These are the next steps — but we want your feedback on this version first before building further.
-
 ---
 
 ## Questions for You
 
-1. Do the 7 metrics match what you were expecting to see?
+1. Do the 11 metrics match what you were expecting to see?
 2. Are the metric definitions (shown at the bottom of the page) correct?
 3. Anything you'd remove, rename, or add?
 4. Should techs and managers be able to see this dashboard (and their own numbers) directly from their dashboards?
@@ -51,7 +55,7 @@ These are the next steps — but we want your feedback on this version first bef
 
 | Step | What it adds |
 |---|---|
-| Panel on Admin dashboard | Compact version of the 7 tiles embedded directly on the main admin dashboard |
+| Panel on Admin dashboard | Compact version of the tiles embedded directly on the main admin dashboard |
 | Panel on Manager dashboard | Same panel on the manager view |
 | Tech dashboard (own numbers) | Tech sees their own metrics on their dashboard — not team totals |
 | Open to all roles | Managers and techs can navigate to the full standalone page |
