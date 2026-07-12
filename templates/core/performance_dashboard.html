@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Team Performance Dashboard - ProFeds Portal{% endblock %}
+{% block title %}Benefits Team Portal Metrics - ProFeds Portal{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -9,10 +9,8 @@
     <!-- Header -->
     <div class="row mb-3 align-items-start">
         <div class="col-md-8">
-            <h1><i class="bi bi-speedometer2 text-primary"></i> Team Performance Dashboard
-                <span class="badge bg-warning text-dark ms-2" style="font-size:0.5em; vertical-align: middle;">DEMO</span>
-            </h1>
-            <p class="text-muted mb-0">7 key production metrics — filtered by date cases were <strong>completed</strong></p>
+            <h1><i class="bi bi-speedometer2 text-primary"></i> Benefits Team Portal Metrics</h1>
+            <p class="text-muted mb-0">11 production metrics — filtered by date cases were <strong>finished</strong> by the technician</p>
         </div>
         <div class="col-md-4 text-end">
             <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
@@ -53,7 +51,7 @@
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold text-success">{{ reports_generated }}</div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Reports Generated</div>
-                    <div class="text-muted mt-1" style="font-size:0.75rem;">Cases finished &amp; released</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Reports finished &amp; set for release</div>
                 </div>
             </div>
         </div>
@@ -64,7 +62,7 @@
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold" style="color:#6f42c1;">{{ submitted_for_review }}</div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Submitted for Review</div>
-                    <div class="text-muted mt-1" style="font-size:0.75rem;">Review submission events</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Reports sent to Level 3 Tech for review</div>
                 </div>
             </div>
         </div>
@@ -99,7 +97,7 @@
                         {{ errors_count }}
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">ProFeds Errors</div>
-                    <div class="text-muted mt-1" style="font-size:0.75rem;">Member-reported error mods</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Member requested mods due to ProFeds error</div>
                 </div>
             </div>
         </div>
@@ -117,7 +115,7 @@
                         {% if avg_cycle_days is not None %}{{ avg_cycle_days }}d{% else %}—{% endif %}
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Avg Production Cycle Time</div>
-                    <div class="text-muted mt-1" style="font-size:0.75rem;">Member submission → Tech finish</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Member submission → Tech schedules release</div>
                 </div>
             </div>
         </div>
