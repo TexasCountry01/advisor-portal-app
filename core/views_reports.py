@@ -3275,6 +3275,7 @@ def performance_detail(request, metric_slug):
     title   = _DETAIL_TITLES[metric_slug]
     headers = []
     rows    = []
+    extra_context = {}
 
     # ── Step B: Reports Generated ─────────────────────────────────────────
     if metric_slug == 'reports-generated':
@@ -3305,29 +3306,34 @@ def performance_detail(request, metric_slug):
 
     # ── Step C: Initial Submissions ───────────────────────────────────────
     elif metric_slug == 'initial-submissions':
-        headers = ['Case ID', 'Advisor', 'Workshop', 'Employee',
-                   'Submitted', 'Status', 'Urgency']
-        qs = _exclude_test_account_cases(
-            Case.objects.exclude(status='draft').filter(member__isnull=False)
-        ).select_related('member', 'assigned_to')
-        if date_from_obj:
-            qs = qs.filter(date_submitted__date__gte=date_from_obj)
-        if date_to_obj:
-            qs = qs.filter(date_submitted__date__lte=date_to_obj)
-        for c in qs.order_by('-date_submitted'):
+        headers = ['Advisor', 'Workshop', 'Submitted', 'Completed', 'In Progress', 'Pending Accept', 'PF Errors']
+        data = _get_advisor_submissions(date_from_obj, date_to_obj)
+        for row in data['advisor_stats']:
+            name = (f"{row['member__first_name'] or ''} {row['member__last_name'] or ''}".strip()
+                    or row['member__username'])
             rows.append({
-                'case_pk': c.pk,
                 'cells': [
-                    c.external_case_id,
-                    c.member.get_full_name() if c.member else '—',
-                    c.workshop_code or '—',
-                    f'{c.employee_first_name} {c.employee_last_name}'.strip(),
-                    c.date_submitted.strftime('%m/%d/%y') if c.date_submitted else '—',
-                    c.get_status_display(),
-                    c.urgency.capitalize(),
+                    name,
+                    row['workshop_code'] or '—',
+                    str(row['total_submitted']),
+                    str(row['completed']),
+                    str(row['in_progress']),
+                    str(row['pending_accept']),
+                    str(row['errors']),
                 ],
-                'highlight': 'danger' if c.urgency == 'rush' else '',
             })
+        # Pass totals for footer row
+        t = data['totals']
+        extra_context = {
+            'totals_row': [
+                'TOTALS', '',
+                str(t['total_submitted'] or 0),
+                str(t['completed'] or 0),
+                str(t['in_progress'] or 0),
+                str(t['pending_accept'] or 0),
+                str(t['errors'] or 0),
+            ]
+        }
 
     context = {
         'title':        title,
@@ -3338,6 +3344,7 @@ def performance_detail(request, metric_slug):
         'rows':         rows,
         'total':        len(rows),
     }
+    context.update(extra_context)
     return render(request, 'core/performance_detail.html', context)
 
 

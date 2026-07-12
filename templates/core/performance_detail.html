@@ -63,6 +63,13 @@
                             {% endfor %}
                         </tr>
                         {% endfor %}
+                        {% if totals_row %}
+                        <tr class="table-secondary fw-semibold border-top">
+                            {% for cell in totals_row %}
+                            <td class="{% if forloop.first %}ps-3{% else %}text-center{% endif %}">{{ cell }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
