@@ -3193,14 +3193,32 @@ def performance_dashboard(request):
 
     metrics = get_performance_metrics(date_from or None, date_to or None)
 
-    # Per-technician breakdown (Step 3)
+    # Per-technician breakdown (Step 3) — merge performance + review accuracy + returns/corrections
     techs = _exclude_super_dev_users(
         User.objects.filter(role__in=['technician', 'administrator'], is_active=True)
     ).order_by('first_name', 'last_name')
+
+    # Parse dates once for helpers
+    from datetime import datetime as _dt2
+    date_from_obj = _dt2.strptime(date_from, '%Y-%m-%d').date() if date_from else None
+    date_to_obj   = _dt2.strptime(date_to,   '%Y-%m-%d').date() if date_to   else None
+
+    review_acc_data   = _get_review_accuracy_by_tech(date_from_obj, date_to_obj)
+    returns_corr_data = _get_returns_corrections_by_tech(date_from_obj, date_to_obj)
+    advisor_data      = _get_advisor_submissions(date_from_obj, date_to_obj)
+
     per_tech = []
     for tech in techs:
         t = get_performance_metrics(date_from or None, date_to or None, tech_user=tech)
         t['tech'] = tech
+        acc = review_acc_data['per_tech'].get(tech.id, {})
+        t['review_accuracy_pct'] = acc.get('review_accuracy_pct')
+        t['review_total']        = acc.get('total', 0)
+        t['review_revisions']    = acc.get('revisions', 0)
+        t['review_corrections']  = acc.get('corrections', 0)
+        rc = returns_corr_data['per_tech'].get(tech.id, {})
+        t['returned']         = rc.get('returned', 0)
+        t['corrected_by_l3']  = rc.get('corrected_by_l3', 0)
         per_tech.append(t)
 
     context = {
@@ -3208,8 +3226,125 @@ def performance_dashboard(request):
         'date_from': date_from,
         'date_to': date_to,
         'per_tech': per_tech,
+        # Team-level tiles for the 3 new sections
+        'team_accuracy_pct':    review_acc_data['team_accuracy_pct'],
+        'team_returned':        returns_corr_data['team_returned'],
+        'team_corrected_by_l3': returns_corr_data['team_corrected_by_l3'],
+        'total_submissions':    advisor_data['total_submissions'],
+        'advisor_stats':        advisor_data['advisor_stats'],
+        'advisor_totals':       advisor_data['totals'],
     }
     return render(request, 'core/performance_dashboard.html', context)
+
+
+# ── Helper data functions for expanded dashboard ─────────────────────────────
+
+def _get_review_accuracy_by_tech(date_from_obj=None, date_to_obj=None):
+    """First-pass approval rate per tech keyed by user ID, plus team totals."""
+    from cases.models import CaseReviewHistory
+    OUTCOMES = ['approved', 'revisions_requested', 'corrections_needed']
+    qs = CaseReviewHistory.objects.filter(
+        review_action__in=OUTCOMES,
+        original_technician__isnull=False,
+        original_technician__is_test_account=False,
+    )
+    if date_from_obj:
+        qs = qs.filter(reviewed_at__date__gte=date_from_obj)
+    if date_to_obj:
+        qs = qs.filter(reviewed_at__date__lte=date_to_obj)
+
+    result = {}
+    for r in qs.select_related('original_technician'):
+        tid = r.original_technician.id
+        if tid not in result:
+            result[tid] = {'total': 0, 'approved': 0, 'revisions': 0, 'corrections': 0}
+        result[tid]['total'] += 1
+        if r.review_action == 'approved':
+            result[tid]['approved'] += 1
+        elif r.review_action == 'revisions_requested':
+            result[tid]['revisions'] += 1
+        else:
+            result[tid]['corrections'] += 1
+    for v in result.values():
+        v['review_accuracy_pct'] = round(v['approved'] / v['total'] * 100, 1) if v['total'] else None
+
+    total    = sum(v['total']       for v in result.values())
+    approved = sum(v['approved']    for v in result.values())
+    return {
+        'per_tech':          result,
+        'team_total':        total,
+        'team_approved':     approved,
+        'team_revisions':    sum(v['revisions']   for v in result.values()),
+        'team_corrections':  sum(v['corrections'] for v in result.values()),
+        'team_accuracy_pct': round(approved / total * 100, 1) if total else None,
+    }
+
+
+def _get_returns_corrections_by_tech(date_from_obj=None, date_to_obj=None):
+    """Returns and L3 corrections keyed by tech user ID, plus team totals."""
+    from cases.models import CaseReviewHistory
+    qs = CaseReviewHistory.objects.filter(
+        review_action__in=['revisions_requested', 'corrections_needed'],
+        original_technician__isnull=False,
+        original_technician__is_test_account=False,
+    )
+    if date_from_obj:
+        qs = qs.filter(reviewed_at__date__gte=date_from_obj)
+    if date_to_obj:
+        qs = qs.filter(reviewed_at__date__lte=date_to_obj)
+
+    result = {}
+    for r in qs.select_related('original_technician'):
+        tid = r.original_technician.id
+        if tid not in result:
+            result[tid] = {'returned': 0, 'corrected_by_l3': 0}
+        if r.review_action == 'revisions_requested':
+            result[tid]['returned'] += 1
+        else:
+            result[tid]['corrected_by_l3'] += 1
+
+    return {
+        'per_tech':           result,
+        'team_returned':      sum(v['returned']         for v in result.values()),
+        'team_corrected_by_l3': sum(v['corrected_by_l3'] for v in result.values()),
+    }
+
+
+def _get_advisor_submissions(date_from_obj=None, date_to_obj=None):
+    """Case submission stats per advisor for the date window."""
+    cases_qs = _exclude_test_account_cases(
+        Case.objects.exclude(status='draft').filter(member__isnull=False)
+    )
+    if date_from_obj:
+        cases_qs = cases_qs.filter(date_submitted__date__gte=date_from_obj)
+    if date_to_obj:
+        cases_qs = cases_qs.filter(date_submitted__date__lte=date_to_obj)
+
+    advisor_stats = list(
+        cases_qs
+        .values('member__id', 'member__first_name', 'member__last_name',
+                'member__username', 'workshop_code')
+        .annotate(
+            total_submitted=Count('id'),
+            completed=Count('id', filter=Q(status='completed')),
+            in_progress=Count('id', filter=Q(status__in=['accepted', 'pending_review', 'hold'])),
+            pending_accept=Count('id', filter=Q(status__in=['submitted', 'resubmitted'])),
+            errors=Count('id', filter=Q(has_profeds_error=True)),
+        )
+        .order_by('-total_submitted')
+    )
+    totals = cases_qs.aggregate(
+        total_submitted=Count('id'),
+        completed=Count('id', filter=Q(status='completed')),
+        in_progress=Count('id', filter=Q(status__in=['accepted', 'pending_review', 'hold'])),
+        pending_accept=Count('id', filter=Q(status__in=['submitted', 'resubmitted'])),
+        errors=Count('id', filter=Q(has_profeds_error=True)),
+    )
+    return {
+        'advisor_stats':    advisor_stats,
+        'totals':           totals,
+        'total_submissions': totals['total_submitted'] or 0,
+    }
 
 
 # ── Report 1: Advisor Case Submission Report ─────────────────────────────────

@@ -166,6 +166,68 @@
 
     </div>
 
+    <!-- Metric Tiles — Row 3: Quality & Submissions -->
+    <div class="row g-3 mb-4">
+
+        <!-- 8. Advisor Submissions -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0dcaf0 !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold text-info">{{ total_submissions }}</div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Advisor Submissions</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Total cases submitted in window</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. L1/L2 Review Accuracy -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 text-center"
+                 style="border-top: 4px solid {% if team_accuracy_pct is not None %}{% if team_accuracy_pct >= 90 %}#198754{% elif team_accuracy_pct >= 75 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold
+                        {% if team_accuracy_pct is not None %}
+                            {% if team_accuracy_pct >= 90 %}text-success{% elif team_accuracy_pct >= 75 %}text-warning{% else %}text-danger{% endif %}
+                        {% else %}text-muted{% endif %}">
+                        {% if team_accuracy_pct is not None %}{{ team_accuracy_pct }}%{% else %}—{% endif %}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">L1/L2 Review Accuracy</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">First-pass approval rate</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10. Returned to Tech -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 text-center"
+                 style="border-top: 4px solid {% if team_returned > 0 %}#ffc107{% else %}#198754{% endif %} !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold {% if team_returned > 0 %}text-warning{% else %}text-success{% endif %}">
+                        {{ team_returned }}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Returned to Tech</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Revisions requested by L3</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 11. Corrected by L3 -->
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm h-100 text-center"
+                 style="border-top: 4px solid {% if team_corrected_by_l3 > 0 %}#6f42c1{% else %}#198754{% endif %} !important;">
+                <div class="card-body py-4">
+                    <div class="display-5 fw-bold {% if team_corrected_by_l3 > 0 %}text-muted{% else %}text-success{% endif %}"
+                         style="{% if team_corrected_by_l3 > 0 %}color:#6f42c1 !important;{% endif %}">
+                        {{ team_corrected_by_l3 }}
+                    </div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Corrected by L3</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">L3 fixed without returning</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <!-- Metric Definitions -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-light">
@@ -173,41 +235,31 @@
         </div>
         <div class="card-body">
             <div class="row g-3" style="font-size:0.82rem;">
-                <div class="col-md-6">
-                    <strong>Reports Generated</strong> — Cases where the tech clicked "Release Case" (status = completed) within the date window.
-                </div>
-                <div class="col-md-6">
-                    <strong>Submitted for Review</strong> — Number of times any tech submitted a case for senior review within the date window. One case can generate multiple events.
-                </div>
-                <div class="col-md-6">
-                    <strong>On-Time Delivery %</strong> — Completed cases where <code>date_completed ≤ date_due</code>, divided by total completed cases with a due date.
-                </div>
-                <div class="col-md-6">
-                    <strong>ProFeds Errors</strong> — Modification cases created by a member who flagged the issue as a ProFeds error, filtered by when the mod was submitted.
-                </div>
-                <div class="col-md-6">
-                    <strong>Avg Production Cycle Time</strong> — Average days from when the member submitted the original case to when the tech released it.
-                </div>
-                <div class="col-md-6">
-                    <strong>Avg Readiness Window</strong> — Average days in advance of the due date that the tech finished. Positive = early; negative = late.
-                </div>
-                <div class="col-md-12">
-                    <strong>Report Accuracy</strong> — Percentage of completed cases that have no ProFeds error flag. Note: errors are member self-reported and may appear days or weeks after completion.
-                </div>
+                <div class="col-md-6"><strong>Reports Generated</strong> — Cases released (status = completed) within the date window.</div>
+                <div class="col-md-6"><strong>Submitted for Review</strong> — Review submission events (one case can generate multiple).</div>
+                <div class="col-md-6"><strong>On-Time Delivery %</strong> — <code>date_completed ≤ date_due</code> ÷ completed cases with a due date.</div>
+                <div class="col-md-6"><strong>ProFeds Errors</strong> — Member-flagged error modification cases, by when the mod was submitted.</div>
+                <div class="col-md-6"><strong>Avg Production Cycle Time</strong> — Avg days from member submission to tech release.</div>
+                <div class="col-md-6"><strong>Avg Readiness Window</strong> — Avg days finished ahead of due date. Positive = early.</div>
+                <div class="col-md-6"><strong>Report Accuracy</strong> — Completed cases with no PF error flag ÷ all completed cases.</div>
+                <div class="col-md-6"><strong>Advisor Submissions</strong> — All non-draft cases submitted by advisors in the window (by date_submitted).</div>
+                <div class="col-md-6"><strong>L1/L2 Review Accuracy</strong> — % of L1/L2 review outcomes where the case was approved first-pass (no revisions or corrections needed).</div>
+                <div class="col-md-6"><strong>Returned to Tech</strong> — L3 sent the case back with revisions requested.</div>
+                <div class="col-md-12"><strong>Corrected by L3</strong> — L3 found an issue and corrected it directly without returning the case to the tech.</div>
             </div>
         </div>
     </div>
 
     <!-- Per-Technician Breakdown -->
     {% if per_tech %}
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm mb-4">
         <div class="card-header bg-light d-flex align-items-center justify-content-between">
             <h5 class="mb-0"><i class="bi bi-people-fill text-primary"></i> Breakdown by Technician</h5>
             <small class="text-muted">{{ date_from }} → {{ date_to }}</small>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover table-sm mb-0" style="font-size:0.875rem;">
+                <table class="table table-hover table-sm mb-0" style="font-size:0.825rem;">
                     <thead class="table-light">
                         <tr>
                             <th class="ps-3">Technician</th>
@@ -218,67 +270,113 @@
                             <th class="text-center">Avg Cycle<br>Time</th>
                             <th class="text-center">Avg Readiness<br>Window</th>
                             <th class="text-center">Report<br>Accuracy</th>
+                            <th class="text-center border-start">Review<br>Accuracy</th>
+                            <th class="text-center">Returned<br>to Tech</th>
+                            <th class="text-center">Corrected<br>by L3</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for row in per_tech %}
                         <tr>
                             <td class="ps-3 fw-semibold">{{ row.tech.get_full_name|default:row.tech.username }}</td>
-
-                            <!-- Reports Generated -->
                             <td class="text-center">{{ row.reports_generated }}</td>
-
-                            <!-- Submitted for Review -->
                             <td class="text-center">{{ row.submitted_for_review }}</td>
-
-                            <!-- On-Time Delivery -->
                             <td class="text-center">
                                 {% if row.on_time_pct is not None %}
-                                    <span class="fw-semibold {% if row.on_time_pct >= 95 %}text-success{% elif row.on_time_pct >= 80 %}text-warning{% else %}text-danger{% endif %}">
-                                        {{ row.on_time_pct }}%
-                                    </span>
+                                    <span class="fw-semibold {% if row.on_time_pct >= 95 %}text-success{% elif row.on_time_pct >= 80 %}text-warning{% else %}text-danger{% endif %}">{{ row.on_time_pct }}%</span>
                                     <br><small class="text-muted">{{ row.on_time_count }}/{{ row.on_time_total }}</small>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
+                                {% else %}<span class="text-muted">—</span>{% endif %}
                             </td>
-
-                            <!-- ProFeds Errors -->
                             <td class="text-center">
-                                <span class="{% if row.errors_count > 0 %}text-danger fw-semibold{% else %}text-success{% endif %}">
-                                    {{ row.errors_count }}
-                                </span>
+                                <span class="{% if row.errors_count > 0 %}text-danger fw-semibold{% else %}text-success{% endif %}">{{ row.errors_count }}</span>
                             </td>
-
-                            <!-- Avg Cycle Time -->
-                            <td class="text-center">
-                                {% if row.avg_cycle_days is not None %}{{ row.avg_cycle_days }}d{% else %}<span class="text-muted">—</span>{% endif %}
-                            </td>
-
-                            <!-- Avg Readiness Window -->
+                            <td class="text-center">{% if row.avg_cycle_days is not None %}{{ row.avg_cycle_days }}d{% else %}<span class="text-muted">—</span>{% endif %}</td>
                             <td class="text-center">
                                 {% if row.avg_readiness_days is not None %}
                                     <span class="{% if row.avg_readiness_days >= 1 %}text-success{% elif row.avg_readiness_days >= 0 %}text-warning{% else %}text-danger{% endif %}">
                                         {% if row.avg_readiness_days >= 0 %}+{% endif %}{{ row.avg_readiness_days }}d
                                     </span>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
+                                {% else %}<span class="text-muted">—</span>{% endif %}
                             </td>
-
-                            <!-- Report Accuracy -->
                             <td class="text-center">
                                 {% if row.accuracy_pct is not None %}
-                                    <span class="fw-semibold {% if row.accuracy_pct >= 99 %}text-success{% elif row.accuracy_pct >= 95 %}text-warning{% else %}text-danger{% endif %}">
-                                        {{ row.accuracy_pct }}%
-                                    </span>
+                                    <span class="fw-semibold {% if row.accuracy_pct >= 99 %}text-success{% elif row.accuracy_pct >= 95 %}text-warning{% else %}text-danger{% endif %}">{{ row.accuracy_pct }}%</span>
                                     <br><small class="text-muted">{{ row.accuracy_error_free }}/{{ row.accuracy_total }}</small>
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <!-- New columns -->
+                            <td class="text-center border-start">
+                                {% if row.review_accuracy_pct is not None %}
+                                    <span class="fw-semibold {% if row.review_accuracy_pct >= 90 %}text-success{% elif row.review_accuracy_pct >= 75 %}text-warning{% else %}text-danger{% endif %}">{{ row.review_accuracy_pct }}%</span>
+                                    <br><small class="text-muted">{{ row.review_total }} reviews</small>
+                                {% elif row.review_total == 0 %}<small class="text-muted">Not reviewed</small>
+                                {% else %}<span class="text-muted">—</span>{% endif %}
+                            </td>
+                            <td class="text-center">
+                                <span class="{% if row.returned > 0 %}text-warning fw-semibold{% else %}text-success{% endif %}">{{ row.returned }}</span>
+                            </td>
+                            <td class="text-center">
+                                <span class="{% if row.corrected_by_l3 > 0 %}fw-semibold{% endif %}" style="{% if row.corrected_by_l3 > 0 %}color:#6f42c1;{% endif %}">{{ row.corrected_by_l3 }}</span>
                             </td>
                         </tr>
                         {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Advisor Submission Breakdown -->
+    {% if advisor_stats %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light d-flex align-items-center justify-content-between">
+            <h5 class="mb-0"><i class="bi bi-person-lines-fill text-info"></i> Advisor Submission Breakdown</h5>
+            <small class="text-muted">By date submitted — {{ date_from }} → {{ date_to }}</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0" style="font-size:0.875rem;">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Advisor</th>
+                            <th>Workshop</th>
+                            <th class="text-center">Submitted</th>
+                            <th class="text-center">Completed</th>
+                            <th class="text-center">In Progress</th>
+                            <th class="text-center">Pending Accept</th>
+                            <th class="text-center">PF Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in advisor_stats %}
+                        <tr>
+                            <td class="ps-3 fw-semibold">
+                                {% if row.member__first_name or row.member__last_name %}
+                                    {{ row.member__first_name }} {{ row.member__last_name }}
+                                {% else %}
+                                    {{ row.member__username }}
+                                {% endif %}
+                            </td>
+                            <td>{{ row.workshop_code|default:"—" }}</td>
+                            <td class="text-center fw-semibold">{{ row.total_submitted }}</td>
+                            <td class="text-center text-success">{{ row.completed }}</td>
+                            <td class="text-center text-primary">{{ row.in_progress }}</td>
+                            <td class="text-center text-muted">{{ row.pending_accept }}</td>
+                            <td class="text-center {% if row.errors > 0 %}text-danger fw-semibold{% else %}text-success{% endif %}">{{ row.errors }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% if advisor_totals %}
+                        <tr class="table-secondary fw-semibold">
+                            <td class="ps-3">TOTALS</td>
+                            <td></td>
+                            <td class="text-center">{{ advisor_totals.total_submitted }}</td>
+                            <td class="text-center text-success">{{ advisor_totals.completed }}</td>
+                            <td class="text-center text-primary">{{ advisor_totals.in_progress }}</td>
+                            <td class="text-center text-muted">{{ advisor_totals.pending_accept }}</td>
+                            <td class="text-center {% if advisor_totals.errors > 0 %}text-danger{% else %}text-success{% endif %}">{{ advisor_totals.errors }}</td>
+                        </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
