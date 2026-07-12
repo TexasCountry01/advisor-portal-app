@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Advisor Case Submission Report{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-person-lines-fill text-primary"></i> Advisor Case Submission Report</h1>
+            <p class="text-muted mb-0">Cases submitted by each advisor in the selected date window</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="?export=csv&date_from={{ date_from }}&date_to={{ date_to }}" class="btn btn-sm btn-outline-primary me-2">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+            <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Submitted From</label>
+                    <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Submitted To</label>
+                    <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    <a href="{% url 'advisor_submission_report' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                </div>
+                <div class="col-md-auto ms-auto text-end">
+                    <small class="text-muted">Showing: <strong>{{ date_from }}</strong> → <strong>{{ date_to }}</strong></small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #0d6efd!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ totals.total_submitted }}</div>
+                    <div class="small text-muted">Total Submitted</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #198754!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ totals.completed }}</div>
+                    <div class="small text-muted">Completed</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #ffc107!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ totals.in_progress }}</div>
+                    <div class="small text-muted">In Progress</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #6c757d!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-secondary">{{ totals.pending_accept }}</div>
+                    <div class="small text-muted">Pending Accept</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #dc3545!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if totals.errors > 0 %}text-danger{% else %}text-success{% endif %}">{{ totals.errors }}</div>
+                    <div class="small text-muted">ProFeds Errors</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #6f42c1!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold" style="color:#6f42c1;">{{ advisor_stats|length }}</div>
+                    <div class="small text-muted">Advisors Active</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detail Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Submissions by Advisor</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if advisor_stats %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Workshop</th>
+                            <th>Advisor</th>
+                            <th class="text-center">Submitted</th>
+                            <th class="text-center">Completed</th>
+                            <th class="text-center">In Progress</th>
+                            <th class="text-center">Pending Accept</th>
+                            <th class="text-center">ProFeds Errors</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in advisor_stats %}
+                        <tr>
+                            <td class="ps-3 text-muted small">{{ row.workshop_code|default:"—" }}</td>
+                            <td class="fw-semibold">
+                                {% if row.member__first_name or row.member__last_name %}
+                                    {{ row.member__first_name }} {{ row.member__last_name }}
+                                {% else %}
+                                    {{ row.member__username }}
+                                {% endif %}
+                            </td>
+                            <td class="text-center fw-bold">{{ row.total_submitted }}</td>
+                            <td class="text-center text-success">{{ row.completed }}</td>
+                            <td class="text-center text-warning">{{ row.in_progress }}</td>
+                            <td class="text-center text-secondary">{{ row.pending_accept }}</td>
+                            <td class="text-center {% if row.errors > 0 %}text-danger fw-semibold{% else %}text-success{% endif %}">{{ row.errors }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td class="ps-3" colspan="2">TOTAL</td>
+                            <td class="text-center">{{ totals.total_submitted }}</td>
+                            <td class="text-center text-success">{{ totals.completed }}</td>
+                            <td class="text-center text-warning">{{ totals.in_progress }}</td>
+                            <td class="text-center text-secondary">{{ totals.pending_accept }}</td>
+                            <td class="text-center {% if totals.errors > 0 %}text-danger{% else %}text-success{% endif %}">{{ totals.errors }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-muted text-center">No cases submitted in the selected date range.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

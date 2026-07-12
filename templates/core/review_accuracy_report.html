@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}L1/L2 Review Accuracy Report{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-patch-check text-success"></i> L1/L2 Review Accuracy Report</h1>
+            <p class="text-muted mb-0">First-pass approval rate for Level 1 and Level 2 technicians whose work was reviewed</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="?export=csv&date_from={{ date_from }}&date_to={{ date_to }}" class="btn btn-sm btn-outline-primary me-2">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+            <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Reviewed From</label>
+                    <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Reviewed To</label>
+                    <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    <a href="{% url 'review_accuracy_report' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                </div>
+                <div class="col-md-auto ms-auto text-end">
+                    <small class="text-muted">Showing: <strong>{{ date_from }}</strong> → <strong>{{ date_to }}</strong></small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Team Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #0d6efd!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-primary">{{ total_reviews }}</div>
+                    <div class="small text-muted">Total Reviews</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #198754!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-success">{{ total_approved }}</div>
+                    <div class="small text-muted">Approved</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #ffc107!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ total_revisions }}</div>
+                    <div class="small text-muted">Revisions Requested</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card text-center border-0 shadow-sm h-100"
+                 style="border-top:4px solid {% if team_accuracy is not None %}{% if team_accuracy >= 90 %}#198754{% elif team_accuracy >= 75 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %}!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold {% if team_accuracy is not None %}{% if team_accuracy >= 90 %}text-success{% elif team_accuracy >= 75 %}text-warning{% else %}text-danger{% endif %}{% else %}text-muted{% endif %}">
+                        {% if team_accuracy is not None %}{{ team_accuracy }}%{% else %}—{% endif %}
+                    </div>
+                    <div class="small text-muted">Team Accuracy</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Per-Tech Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Accuracy by Technician</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if per_tech %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Technician</th>
+                            <th>Level</th>
+                            <th class="text-center">Total Reviews</th>
+                            <th class="text-center">Approved</th>
+                            <th class="text-center">Revisions<br>Requested</th>
+                            <th class="text-center">Corrected<br>by L3</th>
+                            <th class="text-center">Accuracy %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in per_tech %}
+                        <tr>
+                            <td class="ps-3 fw-semibold">{{ row.tech.get_full_name|default:row.tech.username }}</td>
+                            <td><span class="badge bg-secondary">{{ row.tech.get_user_level_display }}</span></td>
+                            <td class="text-center">{{ row.total }}</td>
+                            <td class="text-center text-success fw-semibold">{{ row.approved }}</td>
+                            <td class="text-center {% if row.revisions > 0 %}text-warning fw-semibold{% else %}text-muted{% endif %}">{{ row.revisions }}</td>
+                            <td class="text-center {% if row.corrections > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">{{ row.corrections }}</td>
+                            <td class="text-center">
+                                {% if row.accuracy_pct is not None %}
+                                <span class="fw-bold {% if row.accuracy_pct >= 90 %}text-success{% elif row.accuracy_pct >= 75 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ row.accuracy_pct }}%
+                                </span>
+                                {% else %}
+                                <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-light fw-bold">
+                        <tr>
+                            <td class="ps-3" colspan="2">TEAM TOTAL</td>
+                            <td class="text-center">{{ total_reviews }}</td>
+                            <td class="text-center text-success">{{ total_approved }}</td>
+                            <td class="text-center text-warning">{{ total_revisions }}</td>
+                            <td class="text-center text-danger">{{ total_corrections }}</td>
+                            <td class="text-center {% if team_accuracy is not None %}{% if team_accuracy >= 90 %}text-success{% elif team_accuracy >= 75 %}text-warning{% else %}text-danger{% endif %}{% endif %}">
+                                {% if team_accuracy is not None %}{{ team_accuracy }}%{% else %}—{% endif %}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-muted text-center">No review outcomes found for L1/L2 technicians in the selected date range.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Definitions -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-light"><h6 class="mb-0 text-muted"><i class="bi bi-info-circle"></i> Definitions</h6></div>
+        <div class="card-body" style="font-size:0.82rem;">
+            <div class="row g-2">
+                <div class="col-md-4"><strong>Approved</strong> — L3 reviewed the case and accepted it as-is.</div>
+                <div class="col-md-4"><strong>Revisions Requested</strong> — L3 returned the case to the tech for corrections.</div>
+                <div class="col-md-4"><strong>Corrected by L3</strong> — L3 fixed the case themselves without returning it.</div>
+                <div class="col-md-12 mt-2"><strong>Accuracy %</strong> — Approved ÷ Total reviews. Only counts cases that went through the review process. Techs not subject to review are not included.</div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

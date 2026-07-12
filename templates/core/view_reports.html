@@ -31,6 +31,39 @@
             </div>
         </div>
         <div class="col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #0dcaf0 !important;">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-person-lines-fill text-info"></i> Advisor Case Submissions
+                    </h5>
+                    <p class="card-text text-muted">Cases submitted by each advisor in the selected date window, with status breakdown</p>
+                    <a href="{% url 'advisor_submission_report' %}" class="btn btn-sm btn-outline-success">View Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #198754 !important;">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-patch-check text-success"></i> L1/L2 Review Accuracy
+                    </h5>
+                    <p class="card-text text-muted">First-pass approval rate for Level 1 and Level 2 technicians whose work goes through quality review</p>
+                    <a href="{% url 'review_accuracy_report' %}" class="btn btn-sm btn-outline-success">View Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 border-0 shadow-sm" style="border-left: 4px solid #ffc107 !important;">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-arrow-repeat text-warning"></i> Returns & L3 Corrections
+                    </h5>
+                    <p class="card-text text-muted">Cases returned to techs for revision vs. cases corrected directly by L3 without returning</p>
+                    <a href="{% url 'review_returns_corrections_report' %}" class="btn btn-sm btn-outline-success">View Report</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
             <div class="card h-100 border-0 shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">

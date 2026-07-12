@@ -3210,3 +3210,290 @@ def performance_dashboard(request):
         'per_tech': per_tech,
     }
     return render(request, 'core/performance_dashboard.html', context)
+
+
+# ── Report 1: Advisor Case Submission Report ─────────────────────────────────
+
+@login_required
+def advisor_submission_report(request):
+    """Cases submitted by each advisor in the selected date window. Admin/Manager only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime as _dt
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    # Default: last 30 days
+    if not date_from_str and not date_to_str:
+        date_to_str = timezone.now().date().strftime('%Y-%m-%d')
+        date_from_str = (timezone.now().date() - timedelta(days=30)).strftime('%Y-%m-%d')
+
+    try:
+        date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = _dt.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    # Base: non-draft cases submitted in window, excluding test accounts
+    cases_qs = _exclude_test_account_cases(
+        Case.objects.exclude(status='draft').filter(member__isnull=False)
+    )
+    if date_from:
+        cases_qs = cases_qs.filter(date_submitted__date__gte=date_from)
+    if date_to:
+        cases_qs = cases_qs.filter(date_submitted__date__lte=date_to)
+
+    # Aggregate per advisor
+    from django.db.models import IntegerField as _IntField
+    advisor_stats = (
+        cases_qs
+        .values('member__id', 'member__first_name', 'member__last_name',
+                'member__username', 'workshop_code')
+        .annotate(
+            total_submitted=Count('id'),
+            completed=Count('id', filter=Q(status='completed')),
+            in_progress=Count('id', filter=Q(status__in=['accepted', 'pending_review', 'hold'])),
+            pending_accept=Count('id', filter=Q(status__in=['submitted', 'resubmitted'])),
+            errors=Count('id', filter=Q(has_profeds_error=True)),
+        )
+        .order_by('-total_submitted')
+    )
+
+    totals = cases_qs.aggregate(
+        total_submitted=Count('id'),
+        completed=Count('id', filter=Q(status='completed')),
+        in_progress=Count('id', filter=Q(status__in=['accepted', 'pending_review', 'hold'])),
+        pending_accept=Count('id', filter=Q(status__in=['submitted', 'resubmitted'])),
+        errors=Count('id', filter=Q(has_profeds_error=True)),
+    )
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="advisor_submissions_{date_from_str}_{date_to_str}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Advisor Case Submission Report'])
+        writer.writerow([f'Period: {date_from_str or "All time"} to {date_to_str or "present"}'])
+        writer.writerow([])
+        writer.writerow(['Workshop Code', 'Advisor', 'Total Submitted', 'Completed',
+                         'In Progress', 'Pending Accept', 'ProFeds Errors'])
+        for row in advisor_stats:
+            name = f"{row['member__first_name'] or ''} {row['member__last_name'] or ''}".strip() or row['member__username']
+            writer.writerow([row['workshop_code'], name, row['total_submitted'],
+                             row['completed'], row['in_progress'], row['pending_accept'], row['errors']])
+        writer.writerow([])
+        writer.writerow(['TOTALS', '', totals['total_submitted'], totals['completed'],
+                         totals['in_progress'], totals['pending_accept'], totals['errors']])
+        return response
+
+    context = {
+        'advisor_stats': list(advisor_stats),
+        'totals': totals,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/advisor_submission_report.html', context)
+
+
+# ── Report 2: L1/L2 Review Accuracy ─────────────────────────────────────────
+
+@login_required
+def review_accuracy_report(request):
+    """First-pass approval rate for L1 and L2 technicians. Admin/Manager only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime as _dt
+    from cases.models import CaseReviewHistory
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    if not date_from_str and not date_to_str:
+        date_to_str = timezone.now().date().strftime('%Y-%m-%d')
+        date_from_str = (timezone.now().date() - timedelta(days=30)).strftime('%Y-%m-%d')
+
+    try:
+        date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = _dt.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    OUTCOME_ACTIONS = ['approved', 'revisions_requested', 'corrections_needed']
+
+    # Outcome review events for L1/L2 original technicians only
+    qs = CaseReviewHistory.objects.filter(
+        review_action__in=OUTCOME_ACTIONS,
+        original_technician__isnull=False,
+        original_technician__user_level__in=['level_1', 'level_2'],
+        original_technician__is_test_account=False,
+    )
+    if date_from:
+        qs = qs.filter(reviewed_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(reviewed_at__date__lte=date_to)
+
+    # Team totals
+    total_reviews = qs.count()
+    total_approved = qs.filter(review_action='approved').count()
+    total_revisions = qs.filter(review_action='revisions_requested').count()
+    total_corrections = qs.filter(review_action='corrections_needed').count()
+    team_accuracy = round(total_approved / total_reviews * 100, 1) if total_reviews else None
+
+    # Per-technician breakdown
+    tech_rows = {}
+    for r in qs.select_related('original_technician', 'reviewed_by', 'case'):
+        tech = r.original_technician
+        key = tech.id
+        if key not in tech_rows:
+            tech_rows[key] = {
+                'tech': tech,
+                'total': 0, 'approved': 0, 'revisions': 0, 'corrections': 0,
+            }
+        tech_rows[key]['total'] += 1
+        if r.review_action == 'approved':
+            tech_rows[key]['approved'] += 1
+        elif r.review_action == 'revisions_requested':
+            tech_rows[key]['revisions'] += 1
+        else:
+            tech_rows[key]['corrections'] += 1
+
+    per_tech = []
+    for row in sorted(tech_rows.values(), key=lambda x: x['tech'].get_full_name()):
+        row['accuracy_pct'] = round(row['approved'] / row['total'] * 100, 1) if row['total'] else None
+        per_tech.append(row)
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="review_accuracy_{date_from_str}_{date_to_str}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['L1/L2 Review Accuracy Report'])
+        writer.writerow([f'Period: {date_from_str or "All time"} to {date_to_str or "present"}'])
+        writer.writerow([])
+        writer.writerow(['Technician', 'Level', 'Total Reviews', 'Approved',
+                         'Revisions Requested', 'Corrections by L3', 'Accuracy %'])
+        for row in per_tech:
+            writer.writerow([
+                row['tech'].get_full_name(), row['tech'].get_user_level_display(),
+                row['total'], row['approved'], row['revisions'], row['corrections'],
+                row['accuracy_pct'] or 'N/A',
+            ])
+        writer.writerow([])
+        writer.writerow(['TEAM TOTAL', '', total_reviews, total_approved,
+                         total_revisions, total_corrections, team_accuracy or 'N/A'])
+        return response
+
+    context = {
+        'per_tech': per_tech,
+        'total_reviews': total_reviews,
+        'total_approved': total_approved,
+        'total_revisions': total_revisions,
+        'total_corrections': total_corrections,
+        'team_accuracy': team_accuracy,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/review_accuracy_report.html', context)
+
+
+# ── Report 3: Returns & L3 Corrections Tracker ───────────────────────────────
+
+@login_required
+def review_returns_corrections_report(request):
+    """Cases returned to L1/L2 for revision vs cases corrected directly by L3. Admin/Manager only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime as _dt
+    from cases.models import CaseReviewHistory
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str = request.GET.get('date_to', '').strip()
+
+    if not date_from_str and not date_to_str:
+        date_to_str = timezone.now().date().strftime('%Y-%m-%d')
+        date_from_str = (timezone.now().date() - timedelta(days=30)).strftime('%Y-%m-%d')
+
+    try:
+        date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to = _dt.strptime(date_to_str, '%Y-%m-%d').date() if date_to_str else None
+    except ValueError:
+        date_from = date_to = None
+
+    base_qs = CaseReviewHistory.objects.filter(
+        review_action__in=['revisions_requested', 'corrections_needed'],
+        original_technician__isnull=False,
+        original_technician__is_test_account=False,
+    ).select_related('case', 'original_technician', 'reviewed_by')
+
+    if date_from:
+        base_qs = base_qs.filter(reviewed_at__date__gte=date_from)
+    if date_to:
+        base_qs = base_qs.filter(reviewed_at__date__lte=date_to)
+
+    returned_qs = base_qs.filter(review_action='revisions_requested').order_by('-reviewed_at')
+    corrected_qs = base_qs.filter(review_action='corrections_needed').order_by('-reviewed_at')
+
+    # Per-tech summary
+    tech_summary = {}
+    for r in base_qs:
+        tech = r.original_technician
+        key = tech.id
+        if key not in tech_summary:
+            tech_summary[key] = {'tech': tech, 'returned': 0, 'corrected_by_l3': 0}
+        if r.review_action == 'revisions_requested':
+            tech_summary[key]['returned'] += 1
+        else:
+            tech_summary[key]['corrected_by_l3'] += 1
+
+    per_tech = sorted(tech_summary.values(), key=lambda x: x['tech'].get_full_name())
+
+    totals = {
+        'returned': returned_qs.count(),
+        'corrected_by_l3': corrected_qs.count(),
+        'total': base_qs.count(),
+    }
+
+    if request.GET.get('export') == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="returns_corrections_{date_from_str}_{date_to_str}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Returns & L3 Corrections Tracker'])
+        writer.writerow([f'Period: {date_from_str or "All time"} to {date_to_str or "present"}'])
+        writer.writerow([])
+        writer.writerow(['--- Cases Returned to Tech (Revisions Requested) ---'])
+        writer.writerow(['Date', 'Case ID', 'Original Tech', 'Reviewed By', 'Notes'])
+        for r in returned_qs:
+            writer.writerow([
+                r.reviewed_at.strftime('%Y-%m-%d'),
+                r.case.external_case_id,
+                r.original_technician.get_full_name() if r.original_technician else '—',
+                r.reviewed_by.get_full_name() if r.reviewed_by else '—',
+                r.review_notes[:200] if r.review_notes else '',
+            ])
+        writer.writerow([])
+        writer.writerow(['--- Cases Corrected by L3 (No Return) ---'])
+        writer.writerow(['Date', 'Case ID', 'Original Tech', 'Corrected By', 'Notes'])
+        for r in corrected_qs:
+            writer.writerow([
+                r.reviewed_at.strftime('%Y-%m-%d'),
+                r.case.external_case_id,
+                r.original_technician.get_full_name() if r.original_technician else '—',
+                r.reviewed_by.get_full_name() if r.reviewed_by else '—',
+                r.review_notes[:200] if r.review_notes else '',
+            ])
+        return response
+
+    context = {
+        'returned_qs': returned_qs[:200],
+        'corrected_qs': corrected_qs[:200],
+        'per_tech': per_tech,
+        'totals': totals,
+        'date_from': date_from_str,
+        'date_to': date_to_str,
+    }
+    return render(request, 'core/review_returns_corrections_report.html', context)

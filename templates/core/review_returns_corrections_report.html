@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Returns & L3 Corrections Tracker{% endblock %}
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-8">
+            <h1><i class="bi bi-arrow-repeat text-warning"></i> Returns & L3 Corrections Tracker</h1>
+            <p class="text-muted mb-0">Cases returned to techs for revision vs. cases corrected directly by L3</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="?export=csv&date_from={{ date_from }}&date_to={{ date_to }}" class="btn btn-sm btn-outline-primary me-2">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+            <a href="{% url 'view_reports' %}" class="btn btn-sm btn-outline-secondary">← Back to Reports</a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card mb-4 shadow-sm border-0">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Reviewed From</label>
+                    <input type="date" class="form-control form-control-sm" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold small">Reviewed To</label>
+                    <input type="date" class="form-control form-control-sm" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    <a href="{% url 'review_returns_corrections_report' %}" class="btn btn-outline-secondary btn-sm">Reset</a>
+                </div>
+                <div class="col-md-auto ms-auto text-end">
+                    <small class="text-muted">Showing: <strong>{{ date_from }}</strong> → <strong>{{ date_to }}</strong></small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Summary Tiles -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #ffc107!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-warning">{{ totals.returned }}</div>
+                    <div class="small text-muted">Returned to Tech<br>(Revisions Requested)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #dc3545!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-danger">{{ totals.corrected_by_l3 }}</div>
+                    <div class="small text-muted">Corrected by L3<br>(No Return)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center border-0 shadow-sm h-100" style="border-top:4px solid #6c757d!important;">
+                <div class="card-body py-3">
+                    <div class="fs-2 fw-bold text-secondary">{{ totals.total }}</div>
+                    <div class="small text-muted">Total Issues Found</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Per-Tech Summary -->
+    {% if per_tech %}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Summary by Technician</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Technician</th>
+                            <th class="text-center">Returned for Revision</th>
+                            <th class="text-center">Corrected by L3</th>
+                            <th class="text-center">Total Issues</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in per_tech %}
+                        <tr>
+                            <td class="ps-3 fw-semibold">{{ row.tech.get_full_name|default:row.tech.username }}</td>
+                            <td class="text-center {% if row.returned > 0 %}text-warning fw-semibold{% else %}text-muted{% endif %}">{{ row.returned }}</td>
+                            <td class="text-center {% if row.corrected_by_l3 > 0 %}text-danger fw-semibold{% else %}text-muted{% endif %}">{{ row.corrected_by_l3 }}</td>
+                            <td class="text-center fw-bold">{{ row.returned|add:row.corrected_by_l3 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Returned Cases Detail -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-warning bg-opacity-25">
+            <h5 class="mb-0"><i class="bi bi-arrow-counterclockwise text-warning"></i> Cases Returned for Revision ({{ totals.returned }})</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if returned_qs %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Case ID</th>
+                            <th>Original Tech</th>
+                            <th>Reviewed By</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in returned_qs %}
+                        <tr>
+                            <td class="ps-3 text-muted small">{{ r.reviewed_at|date:"m/d/Y" }}</td>
+                            <td><a href="{% url 'cases:case_detail' r.case.pk %}"><strong>{{ r.case.external_case_id }}</strong></a></td>
+                            <td>{{ r.original_technician.get_full_name|default:"—" }}</td>
+                            <td>{{ r.reviewed_by.get_full_name|default:"—" }}</td>
+                            <td class="text-muted small">{{ r.review_notes|truncatechars:120|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-muted text-center">No cases returned for revision in this period.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- L3 Corrections Detail -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-danger bg-opacity-10">
+            <h5 class="mb-0"><i class="bi bi-wrench text-danger"></i> Cases Corrected Directly by L3 ({{ totals.corrected_by_l3 }})</h5>
+        </div>
+        <div class="card-body p-0">
+            {% if corrected_qs %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Date</th>
+                            <th>Case ID</th>
+                            <th>Original Tech</th>
+                            <th>Corrected By</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in corrected_qs %}
+                        <tr>
+                            <td class="ps-3 text-muted small">{{ r.reviewed_at|date:"m/d/Y" }}</td>
+                            <td><a href="{% url 'cases:case_detail' r.case.pk %}"><strong>{{ r.case.external_case_id }}</strong></a></td>
+                            <td>{{ r.original_technician.get_full_name|default:"—" }}</td>
+                            <td>{{ r.reviewed_by.get_full_name|default:"—" }}</td>
+                            <td class="text-muted small">{{ r.review_notes|truncatechars:120|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-4 text-muted text-center">No L3 corrections recorded in this period.</div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}
