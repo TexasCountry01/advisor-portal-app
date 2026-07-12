@@ -167,12 +167,12 @@
     <!-- Metric Tiles — Row 3: Quality & Submissions -->
     <div class="row g-3 mb-4">
 
-        <!-- 8. Advisor Submissions -->
+        <!-- 8. Initial Submissions -->
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0dcaf0 !important;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold text-info">{{ total_submissions }}</div>
-                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Advisor Submissions</div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Initial Submissions</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Total cases submitted in window</div>
                 </div>
             </div>
@@ -195,7 +195,7 @@
             </div>
         </div>
 
-        <!-- 10. Returned to Tech -->
+        <!-- 10. Level 1/2 Accuracy Rate -->
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 text-center"
                  style="border-top: 4px solid {% if team_returned > 0 %}#ffc107{% else %}#198754{% endif %} !important;">
@@ -203,8 +203,8 @@
                     <div class="display-5 fw-bold {% if team_returned > 0 %}text-warning{% else %}text-success{% endif %}">
                         {{ team_returned }}
                     </div>
-                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Returned to Tech</div>
-                    <div class="text-muted mt-1" style="font-size:0.75rem;">Revisions requested by L3</div>
+                    <div class="fw-semibold mt-1" style="font-size:0.85rem;">Level 1/2 Accuracy Rate</div>
+                    <div class="text-muted mt-1" style="font-size:0.75rem;">Cases returned by L3 for revision</div>
                 </div>
             </div>
         </div>
@@ -240,9 +240,9 @@
                 <div class="col-md-6"><strong>Avg Production Cycle Time</strong> — Avg days from member submission to tech release.</div>
                 <div class="col-md-6"><strong>Avg Readiness Window</strong> — Avg days finished ahead of due date. Positive = early.</div>
                 <div class="col-md-6"><strong>Report Accuracy</strong> — Completed cases with no PF error flag ÷ all completed cases.</div>
-                <div class="col-md-6"><strong>Advisor Submissions</strong> — All non-draft cases submitted by advisors in the window (by date_submitted).</div>
+                <div class="col-md-6"><strong>Initial Submissions</strong> — All non-draft cases submitted by advisors in the window (by date_submitted).</div>
                 <div class="col-md-6"><strong>L1/L2 Review Accuracy</strong> — % of L1/L2 review outcomes where the case was approved first-pass (no revisions or corrections needed).</div>
-                <div class="col-md-6"><strong>Returned to Tech</strong> — L3 sent the case back with revisions requested.</div>
+                <div class="col-md-6"><strong>Level 1/2 Accuracy Rate</strong> — Cases returned to the tech by L3 with revisions requested.</div>
                 <div class="col-md-12"><strong>Corrected by L3</strong> — L3 found an issue and corrected it directly without returning the case to the tech.</div>
             </div>
         </div>
@@ -269,7 +269,7 @@
                             <th class="text-center">Avg Readiness<br>Window</th>
                             <th class="text-center">Report<br>Accuracy</th>
                             <th class="text-center border-start">Review<br>Accuracy</th>
-                            <th class="text-center">Returned<br>to Tech</th>
+                            <th class="text-center">Level 1/2<br>Accuracy Rate</th>
                             <th class="text-center">Corrected<br>by L3</th>
                         </tr>
                     </thead>
@@ -325,11 +325,11 @@
     </div>
     {% endif %}
 
-    <!-- Advisor Submission Breakdown -->
+    <!-- Initial Submission Breakdown -->
     {% if advisor_stats %}
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-light d-flex align-items-center justify-content-between">
-            <h5 class="mb-0"><i class="bi bi-person-lines-fill text-info"></i> Advisor Submission Breakdown</h5>
+            <h5 class="mb-0"><i class="bi bi-person-lines-fill text-info"></i> Initial Submission Breakdown</h5>
             <small class="text-muted">By date submitted — {{ date_from }} → {{ date_to }}</small>
         </div>
         <div class="card-body p-0">
