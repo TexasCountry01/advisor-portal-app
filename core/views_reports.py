@@ -3237,6 +3237,110 @@ def performance_dashboard(request):
     return render(request, 'core/performance_dashboard.html', context)
 
 
+# ── Drill-Down Detail View ────────────────────────────────────────────────────
+
+# Implemented slugs and their display titles.
+# Add new slugs here as each drill-down step is completed.
+_DETAIL_TITLES = {
+    'reports-generated':    'Reports Generated',
+    'initial-submissions':  'Initial Submissions',
+    # Steps D–J added incrementally
+}
+
+@login_required
+def performance_detail(request, metric_slug):
+    """
+    Drill-down detail page for a Benefits Team Portal Metrics tile.
+    URL: /reports/performance/detail/<metric_slug>/?date_from=&date_to=
+    Each slug returns the individual records behind that metric tile.
+    """
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied.')
+        return redirect('home')
+
+    if metric_slug not in _DETAIL_TITLES:
+        from django.http import Http404
+        raise Http404(f"Unknown metric slug: {metric_slug}")
+
+    date_from = request.GET.get('date_from', '').strip()
+    date_to   = request.GET.get('date_to',   '').strip()
+    if not date_from and not date_to:
+        date_to   = timezone.now().date().strftime('%Y-%m-%d')
+        date_from = (timezone.now().date() - timedelta(days=7)).strftime('%Y-%m-%d')
+
+    from datetime import datetime as _dt
+    date_from_obj = _dt.strptime(date_from, '%Y-%m-%d').date() if date_from else None
+    date_to_obj   = _dt.strptime(date_to,   '%Y-%m-%d').date() if date_to   else None
+
+    title   = _DETAIL_TITLES[metric_slug]
+    headers = []
+    rows    = []
+
+    # ── Step B: Reports Generated ─────────────────────────────────────────
+    if metric_slug == 'reports-generated':
+        headers = ['Case ID', 'Advisor', 'Employee', 'Technician',
+                   'Submitted', 'Finished', 'Due Date', 'Urgency']
+        qs = _exclude_test_account_cases(
+            Case.objects.filter(status='completed')
+        ).select_related('member', 'assigned_to')
+        if date_from_obj:
+            qs = qs.filter(date_completed__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(date_completed__date__lte=date_to_obj)
+        for c in qs.order_by('-date_completed'):
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    c.member.get_full_name() if c.member else '—',
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip(),
+                    c.assigned_to.get_full_name() if c.assigned_to else '—',
+                    c.date_submitted.strftime('%m/%d/%y') if c.date_submitted else '—',
+                    c.date_completed.strftime('%m/%d/%y') if c.date_completed else '—',
+                    c.date_due.strftime('%m/%d/%y') if c.date_due else '—',
+                    c.urgency.capitalize(),
+                ],
+                'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── Step C: Initial Submissions ───────────────────────────────────────
+    elif metric_slug == 'initial-submissions':
+        headers = ['Case ID', 'Advisor', 'Workshop', 'Employee',
+                   'Submitted', 'Status', 'Urgency']
+        qs = _exclude_test_account_cases(
+            Case.objects.exclude(status='draft').filter(member__isnull=False)
+        ).select_related('member', 'assigned_to')
+        if date_from_obj:
+            qs = qs.filter(date_submitted__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(date_submitted__date__lte=date_to_obj)
+        for c in qs.order_by('-date_submitted'):
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    c.member.get_full_name() if c.member else '—',
+                    c.workshop_code or '—',
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip(),
+                    c.date_submitted.strftime('%m/%d/%y') if c.date_submitted else '—',
+                    c.get_status_display(),
+                    c.urgency.capitalize(),
+                ],
+                'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    context = {
+        'title':        title,
+        'metric_slug':  metric_slug,
+        'date_from':    date_from,
+        'date_to':      date_to,
+        'headers':      headers,
+        'rows':         rows,
+        'total':        len(rows),
+    }
+    return render(request, 'core/performance_detail.html', context)
+
+
 # ── Helper data functions for expanded dashboard ─────────────────────────────
 
 def _get_review_accuracy_by_tech(date_from_obj=None, date_to_obj=None):

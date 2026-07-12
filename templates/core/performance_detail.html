@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} — Detail View - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-center">
+        <div class="col-md-8">
+            <h2><i class="bi bi-table text-primary"></i> {{ title }}
+                <small class="text-muted fs-6 ms-2">Detail View</small>
+            </h2>
+            <p class="text-muted mb-0">
+                {{ total }} record{{ total|pluralize }} &mdash;
+                <strong>{{ date_from }}</strong> &rarr; <strong>{{ date_to }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'performance_dashboard' %}?date_from={{ date_from }}&date_to={{ date_to }}"
+               class="btn btn-sm btn-outline-secondary">
+                &larr; Back to Benefits Team Portal Metrics
+            </a>
+        </div>
+    </div>
+
+    <!-- Records Table -->
+    {% if rows %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light d-flex align-items-center justify-content-between">
+            <span class="fw-semibold">{{ total }} record{{ total|pluralize }}</span>
+            <small class="text-muted">{{ date_from }} &rarr; {{ date_to }}</small>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0" style="font-size:0.875rem;">
+                    <thead class="table-light">
+                        <tr>
+                            {% for header in headers %}
+                            <th class="{% if forloop.first %}ps-3{% else %}text-center{% endif %}">
+                                {{ header }}
+                            </th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr class="{% if row.highlight == 'danger' %}table-danger{% endif %}">
+                            {% for cell in row.cells %}
+                            {% if forloop.first and row.case_pk %}
+                                <td class="ps-3 fw-semibold">
+                                    <a href="{% url 'cases:case_detail' row.case_pk %}"
+                                       class="text-decoration-none text-primary">
+                                        {{ cell }}
+                                    </a>
+                                </td>
+                            {% elif forloop.first %}
+                                <td class="ps-3 fw-semibold">{{ cell }}</td>
+                            {% else %}
+                                <td class="text-center">{{ cell }}</td>
+                            {% endif %}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-inbox text-muted" style="font-size:2.5rem;"></i>
+            <p class="text-muted mt-3 mb-0">No records found for this date range.</p>
+            <a href="{% url 'performance_dashboard' %}" class="btn btn-sm btn-outline-secondary mt-3">
+                &larr; Back to Metrics
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

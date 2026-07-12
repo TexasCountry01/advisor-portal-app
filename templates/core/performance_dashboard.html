@@ -45,13 +45,14 @@
     <!-- Metric Tiles — Row 1 -->
     <div class="row g-3 mb-3">
 
-        <!-- 1. Reports Generated -->
+        <!-- 1. Reports Generated (clickable → detail) -->
         <div class="col-6 col-md-3 col-xl">
-            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #198754 !important;">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #198754 !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold text-success">{{ reports_generated }}</div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Reports Generated</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Reports finished &amp; set for release</div>
+                    <a href="{% url 'performance_detail' 'reports-generated' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Reports Generated detail"></a>
                 </div>
             </div>
         </div>
@@ -67,10 +68,10 @@
             </div>
         </div>
 
-        <!-- 3. On-Time Delivery % -->
+        <!-- 3. On-Time Delivery % (clickable → Due Date Compliance Report) -->
         <div class="col-6 col-md-3 col-xl">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if on_time_pct is not None %}{% if on_time_pct >= 95 %}#198754{% elif on_time_pct >= 80 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                 style="border-top: 4px solid {% if on_time_pct is not None %}{% if on_time_pct >= 95 %}#198754{% elif on_time_pct >= 80 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold
                         {% if on_time_pct is not None %}
@@ -84,20 +85,22 @@
                     <div class="text-muted mt-1" style="font-size:0.75rem;">
                         {% if on_time_total > 0 %}{{ on_time_count }} of {{ on_time_total }} on time{% else %}No data{% endif %}
                     </div>
+                    <a href="{% url 'due_date_compliance_report' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View On-Time Delivery detail"></a>
                 </div>
             </div>
         </div>
 
-        <!-- 4. Errors -->
+        <!-- 4. Errors (clickable → ProFeds Error Tracking Report) -->
         <div class="col-6 col-md-3 col-xl">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if errors_count > 0 %}#dc3545{% else %}#198754{% endif %} !important;">
+                 style="border-top: 4px solid {% if errors_count > 0 %}#dc3545{% else %}#198754{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold {% if errors_count > 0 %}text-danger{% else %}text-success{% endif %}">
                         {{ errors_count }}
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">ProFeds Errors</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Member requested mods due to ProFeds error</div>
+                    <a href="{% url 'profeds_error_tracking_report' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View ProFeds Errors detail"></a>
                 </div>
             </div>
         </div>
@@ -167,13 +170,14 @@
     <!-- Metric Tiles — Row 3: Quality & Submissions -->
     <div class="row g-3 mb-4">
 
-        <!-- 8. Initial Submissions -->
+        <!-- 8. Initial Submissions (clickable → detail) -->
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0dcaf0 !important;">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0dcaf0 !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold text-info">{{ total_submissions }}</div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Initial Submissions</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Total cases submitted in window</div>
+                    <a href="{% url 'performance_detail' 'initial-submissions' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Initial Submissions detail"></a>
                 </div>
             </div>
         </div>
