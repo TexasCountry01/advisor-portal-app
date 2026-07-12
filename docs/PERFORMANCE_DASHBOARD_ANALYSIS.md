@@ -641,7 +641,7 @@ WHERE rh.review_action IN ('revisions_requested', 'corrections_needed')
 
 ---
 
-### Drill-Down Step A — Tiles that link to EXISTING reports (zero new code)
+### ✅ Drill-Down Step A — Tiles that link to EXISTING reports *(COMPLETE 2026-07-12)*
 
 Two tiles already have full standalone reports with date filter support.
 
@@ -655,7 +655,7 @@ Two tiles already have full standalone reports with date filter support.
 
 ---
 
-### Drill-Down Step B — Reports Generated
+### ✅ Drill-Down Step B — Reports Generated *(COMPLETE 2026-07-12)*
 
 **Slug:** `reports-generated`
 **Data source:** `Case` — `status='completed'`, `date_completed` in range
@@ -666,7 +666,7 @@ Two tiles already have full standalone reports with date filter support.
 
 ---
 
-### Drill-Down Step C — Initial Submissions
+### ✅ Drill-Down Step C — Initial Submissions *(COMPLETE 2026-07-12)*
 
 **Slug:** `initial-submissions`
 **Data source:** `Case` — `status != draft`, `member not null`, `date_submitted` in range
