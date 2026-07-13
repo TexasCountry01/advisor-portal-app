@@ -12,4 +12,5 @@ def clear_last_active_on_logout(sender, request, user, **kwargs):
         return
     if getattr(user, 'role', None) not in ('technician', 'administrator', 'manager'):
         return
-    type(user).objects.filter(pk=user.pk).update(last_active=None)
+    from accounts.models import User
+    User.objects.filter(pk=user.pk).update(last_active=None)
