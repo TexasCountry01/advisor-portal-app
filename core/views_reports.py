@@ -3242,8 +3242,9 @@ def performance_dashboard(request):
 # Implemented slugs and their display titles.
 # Add new slugs here as each drill-down step is completed.
 _DETAIL_TITLES = {
-    'reports-generated':    'Reports Generated',
-    'initial-submissions':  'Initial Submissions',
+    'reports-generated':      'Reports Generated',
+    'initial-submissions':    'Initial Submissions',
+    'submitted-for-review':   'Submitted for Review',
     # Steps D–J added incrementally
 }
 
@@ -3302,6 +3303,29 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── Step D: Submitted for Review ─────────────────────────────────────
+    elif metric_slug == 'submitted-for-review':
+        from cases.models import CaseReviewHistory
+        headers = ['Case ID', 'Employee', 'Technician', 'Submitted At']
+        qs = CaseReviewHistory.objects.filter(
+            review_action='submitted_for_review'
+        ).select_related('case', 'case__member', 'original_technician')
+        if date_from_obj:
+            qs = qs.filter(reviewed_at__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(reviewed_at__date__lte=date_to_obj)
+        for r in qs.order_by('-reviewed_at'):
+            c = r.case
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip() or '—',
+                    r.original_technician.get_full_name() if r.original_technician else '—',
+                    r.reviewed_at.strftime('%m/%d/%y %I:%M %p'),
+                ],
             })
 
     # ── Step C: Initial Submissions ───────────────────────────────────────

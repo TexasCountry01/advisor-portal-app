@@ -59,11 +59,12 @@
 
         <!-- 2. Submitted for Review -->
         <div class="col-6 col-md-3 col-xl">
-            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #6f42c1 !important;">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #6f42c1 !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold" style="color:#6f42c1;">{{ submitted_for_review }}</div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Submitted for Review</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Reports sent to Level 3 Tech for review</div>
+                    <a href="{% url 'performance_detail' 'submitted-for-review' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Submitted for Review detail"></a>
                 </div>
             </div>
         </div>
