@@ -169,14 +169,13 @@
     <!-- Metric Tiles — Row 3: Quality & Submissions -->
     <div class="row g-3 mb-4">
 
-        <!-- 8. Initial Submissions (clickable → detail) -->
+        <!-- 8. Initial Submissions -->
         <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0dcaf0 !important; position:relative; cursor:pointer;">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0dcaf0 !important;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold text-info">{{ total_submissions }}</div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Initial Submissions</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Total cases submitted in window</div>
-                    <a href="{% url 'performance_detail' 'initial-submissions' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Initial Submissions detail"></a>
                 </div>
             </div>
         </div>
