@@ -91,16 +91,17 @@
             </div>
         </div>
 
-        <!-- 4. ProFeds Errors -->
+        <!-- 4. ProFeds Errors (clickable → detail) -->
         <div class="col-6 col-md-3 col-xl">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if errors_count > 0 %}#dc3545{% else %}#198754{% endif %} !important;">
+                 style="border-top: 4px solid {% if errors_count > 0 %}#dc3545{% else %}#198754{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold {% if errors_count > 0 %}text-danger{% else %}text-success{% endif %}">
                         {{ errors_count }}
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">ProFeds Errors</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Member requested mods due to ProFeds error</div>
+                    <a href="{% url 'performance_detail' 'profeds-errors' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View ProFeds Errors detail"></a>
                 </div>
             </div>
         </div>

@@ -3246,6 +3246,7 @@ _DETAIL_TITLES = {
     'initial-submissions':    'Initial Submissions',
     'submitted-for-review':   'Submitted for Review',
     'on-time-delivery':       'On-Time Delivery',
+    'profeds-errors':         'ProFeds Errors',
     # Added incrementally
 }
 
@@ -3304,6 +3305,32 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── ProFeds Errors ────────────────────────────────────────────────────
+    elif metric_slug == 'profeds-errors':
+        headers = ['Mod Case ID', 'Original Case ID', 'Employee', 'Technician', 'Error Reported']
+        qs = _exclude_test_account_cases(
+            Case.objects.filter(
+                has_profeds_error=True,
+                original_case__isnull=False,
+            )
+        ).select_related('member', 'assigned_to', 'original_case')
+        if date_from_obj:
+            qs = qs.filter(date_submitted__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(date_submitted__date__lte=date_to_obj)
+        for c in qs.order_by('-date_submitted'):
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    c.original_case.external_case_id if c.original_case else '—',
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip() or '—',
+                    c.assigned_to.get_full_name() if c.assigned_to else '—',
+                    c.date_submitted.strftime('%m/%d/%y') if c.date_submitted else '—',
+                ],
+                'highlight': 'danger',
             })
 
     # ── On-Time Delivery ─────────────────────────────────────────────────
