@@ -3245,7 +3245,8 @@ _DETAIL_TITLES = {
     'reports-generated':      'Reports Generated',
     'initial-submissions':    'Initial Submissions',
     'submitted-for-review':   'Submitted for Review',
-    # Steps D–J added incrementally
+    'on-time-delivery':       'On-Time Delivery',
+    # Added incrementally
 }
 
 @login_required
@@ -3303,6 +3304,37 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── On-Time Delivery ─────────────────────────────────────────────────
+    elif metric_slug == 'on-time-delivery':
+        headers = ['Case ID', 'Employee', 'Technician', 'Due Date', 'Finished', 'Days Early/Late', 'Status']
+        qs = _exclude_test_account_cases(
+            Case.objects.filter(
+                status='completed',
+                date_due__isnull=False,
+                date_completed__isnull=False,
+            )
+        ).select_related('member', 'assigned_to')
+        if date_from_obj:
+            qs = qs.filter(date_completed__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(date_completed__date__lte=date_to_obj)
+        for c in qs.order_by('-date_completed'):
+            delta = (c.date_due - c.date_completed.date()).days
+            on_time = delta >= 0
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip() or '—',
+                    c.assigned_to.get_full_name() if c.assigned_to else '—',
+                    c.date_due.strftime('%m/%d/%y'),
+                    c.date_completed.strftime('%m/%d/%y'),
+                    f'+{delta}d' if delta >= 0 else f'{delta}d',
+                    'On Time' if on_time else 'Late',
+                ],
+                'highlight': '' if on_time else 'danger',
             })
 
     # ── Step D: Submitted for Review ─────────────────────────────────────

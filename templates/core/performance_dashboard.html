@@ -69,10 +69,10 @@
             </div>
         </div>
 
-        <!-- 3. On-Time Delivery % -->
+        <!-- 3. On-Time Delivery % (clickable → detail) -->
         <div class="col-6 col-md-3 col-xl">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if on_time_pct is not None %}{% if on_time_pct >= 95 %}#198754{% elif on_time_pct >= 80 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                 style="border-top: 4px solid {% if on_time_pct is not None %}{% if on_time_pct >= 95 %}#198754{% elif on_time_pct >= 80 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold
                         {% if on_time_pct is not None %}
@@ -86,6 +86,7 @@
                     <div class="text-muted mt-1" style="font-size:0.75rem;">
                         {% if on_time_total > 0 %}{{ on_time_count }} of {{ on_time_total }} on time{% else %}No data{% endif %}
                     </div>
+                    <a href="{% url 'performance_detail' 'on-time-delivery' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View On-Time Delivery detail"></a>
                 </div>
             </div>
         </div>
