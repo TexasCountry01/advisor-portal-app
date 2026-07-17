@@ -3146,7 +3146,7 @@ def get_performance_metrics(date_from=None, date_to=None, tech_user=None):
     cycle_agg = cycle_qs.annotate(
         cycle=F('date_completed') - F('date_submitted')
     ).aggregate(avg=Avg('cycle'))
-    avg_cycle_days = round(cycle_agg['avg'].days, 1) if cycle_agg['avg'] else None
+    avg_cycle_days = round(cycle_agg['avg'].total_seconds() / 86400, 1) if cycle_agg['avg'] else None
 
     # 6. Readiness Window — avg days BEFORE due date the tech finished (positive = early)
     readiness_qs = completed_qs.filter(date_due__isnull=False, date_completed__isnull=False)
@@ -3339,6 +3339,7 @@ def performance_detail(request, metric_slug):
                     c.date_completed.strftime('%m/%d/%y'),
                     f'{delta}d',
                 ],
+                'highlight': 'warning' if delta < 0 else '',
             })
 
     # ── ProFeds Errors ────────────────────────────────────────────────────
