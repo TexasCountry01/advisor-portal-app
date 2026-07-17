@@ -111,15 +111,16 @@
     <!-- Metric Tiles — Row 2 -->
     <div class="row g-3 mb-4">
 
-        <!-- 5. Production Cycle Time -->
+        <!-- 5. Production Cycle Time (clickable → detail) -->
         <div class="col-6 col-md-4">
-            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0d6efd !important;">
+            <div class="card border-0 shadow-sm h-100 text-center" style="border-top: 4px solid #0d6efd !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold text-primary">
                         {% if avg_cycle_days is not None %}{{ avg_cycle_days }}d{% else %}—{% endif %}
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Avg Production Cycle Time</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Member submission → Tech schedules release</div>
+                    <a href="{% url 'performance_detail' 'production-cycle-time' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Production Cycle Time detail"></a>
                 </div>
             </div>
         </div>

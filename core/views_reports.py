@@ -3247,6 +3247,7 @@ _DETAIL_TITLES = {
     'submitted-for-review':   'Submitted for Review',
     'on-time-delivery':       'On-Time Delivery',
     'profeds-errors':         'ProFeds Errors',
+    'production-cycle-time':  'Avg Production Cycle Time',
     # Added incrementally
 }
 
@@ -3305,6 +3306,39 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── Production Cycle Time ────────────────────────────────────────────
+    elif metric_slug == 'production-cycle-time':
+        headers = ['Case ID', 'Employee', 'Technician', 'Submitted', 'Finished', 'Cycle Time']
+        qs = _exclude_test_account_cases(
+            Case.objects.filter(
+                status='completed',
+                date_submitted__isnull=False,
+                date_completed__isnull=False,
+            )
+        ).select_related('member', 'assigned_to')
+        if date_from_obj:
+            qs = qs.filter(date_completed__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(date_completed__date__lte=date_to_obj)
+        cases_with_cycle = []
+        for c in qs:
+            delta = (c.date_completed.date() - c.date_submitted.date()).days
+            cases_with_cycle.append((delta, c))
+        # Sort longest cycle first
+        cases_with_cycle.sort(key=lambda x: x[0], reverse=True)
+        for delta, c in cases_with_cycle:
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip() or '—',
+                    c.assigned_to.get_full_name() if c.assigned_to else '—',
+                    c.date_submitted.strftime('%m/%d/%y'),
+                    c.date_completed.strftime('%m/%d/%y'),
+                    f'{delta}d',
+                ],
             })
 
     # ── ProFeds Errors ────────────────────────────────────────────────────
