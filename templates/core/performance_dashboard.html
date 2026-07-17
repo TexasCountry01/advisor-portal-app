@@ -125,10 +125,10 @@
             </div>
         </div>
 
-        <!-- 6. Readiness Window -->
+        <!-- 6. Readiness Window (clickable → detail) -->
         <div class="col-6 col-md-4">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if avg_readiness_days is not None %}{% if avg_readiness_days >= 1 %}#198754{% elif avg_readiness_days >= 0 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                 style="border-top: 4px solid {% if avg_readiness_days is not None %}{% if avg_readiness_days >= 1 %}#198754{% elif avg_readiness_days >= 0 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold
                         {% if avg_readiness_days is not None %}
@@ -142,6 +142,7 @@
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Avg Readiness Window</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Days finished before due date</div>
+                    <a href="{% url 'performance_detail' 'readiness-window' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Readiness Window detail"></a>
                 </div>
             </div>
         </div>

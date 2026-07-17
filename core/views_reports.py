@@ -3248,6 +3248,7 @@ _DETAIL_TITLES = {
     'on-time-delivery':       'On-Time Delivery',
     'profeds-errors':         'ProFeds Errors',
     'production-cycle-time':  'Avg Production Cycle Time',
+    'readiness-window':       'Avg Readiness Window',
     # Added incrementally
 }
 
@@ -3306,6 +3307,40 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── Readiness Window ────────────────────────────────────────────────
+    elif metric_slug == 'readiness-window':
+        headers = ['Case ID', 'Employee', 'Technician', 'Due Date', 'Finished', 'Days Early/Late']
+        qs = _exclude_test_account_cases(
+            Case.objects.filter(
+                status='completed',
+                date_due__isnull=False,
+                date_completed__isnull=False,
+            )
+        ).select_related('member', 'assigned_to')
+        if date_from_obj:
+            qs = qs.filter(date_completed__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(date_completed__date__lte=date_to_obj)
+        cases_with_readiness = []
+        for c in qs:
+            delta = (c.date_due - c.date_completed.date()).days
+            cases_with_readiness.append((delta, c))
+        # Sort: most late first (lowest delta first)
+        cases_with_readiness.sort(key=lambda x: x[0])
+        for delta, c in cases_with_readiness:
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip() or '—',
+                    c.assigned_to.get_full_name() if c.assigned_to else '—',
+                    c.date_due.strftime('%m/%d/%y'),
+                    c.date_completed.strftime('%m/%d/%y'),
+                    f'+{delta}d' if delta > 0 else f'{delta}d',
+                ],
+                'highlight': 'danger' if delta < 0 else ('warning' if delta == 0 else ''),
             })
 
     # ── Production Cycle Time ────────────────────────────────────────────
