@@ -30,7 +30,60 @@
         <i class="bi bi-info-circle text-muted me-1"></i>
         Showing weeks <strong>{{ window_start }}</strong> → <strong>{{ window_end }}</strong>.
         Numbers are computed live from current data and reflect the state of the database at time of viewing.
+        The CSV download also includes any former technicians who had activity during this period.
     </div>
+
+    <!-- Technician Filter -->
+    {% if all_active_techs|length > 1 %}
+    <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-light py-2 d-flex align-items-center justify-content-between"
+             style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#techFilter">
+            <span class="fw-semibold small"><i class="bi bi-funnel me-1"></i> Filter Technicians</span>
+            <small class="text-muted">
+                {% if techs_param %}{{ display_techs|length }} of {{ all_active_techs|length }} selected{% else %}All active techs shown{% endif %}
+            </small>
+        </div>
+        <div class="collapse {% if techs_param %}show{% endif %}" id="techFilter">
+            <div class="card-body py-3">
+                <form method="get" id="techFilterForm">
+                    <div class="d-flex flex-wrap gap-3 mb-3">
+                        {% for tech in all_active_techs %}
+                        <div class="form-check">
+                            <input class="form-check-input tech-checkbox" type="checkbox"
+                                   name="tech_cb" value="{{ tech.id }}" id="tech_{{ tech.id }}"
+                                   {% if tech.id in selected_ids_set %}checked{% endif %}>
+                            <label class="form-check-label small" for="tech_{{ tech.id }}">
+                                {{ tech.get_full_name }}
+                            </label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-sm btn-primary" id="applyFilter">Apply Filter</button>
+                        <a href="{% url 'performance_scorecard' %}" class="btn btn-sm btn-outline-secondary">Show All</a>
+                        <button type="button" class="btn btn-sm btn-link btn-sm text-muted" id="selectAll">Select All</button>
+                        <button type="button" class="btn btn-sm btn-link btn-sm text-muted" id="deselectAll">Deselect All</button>
+                    </div>
+                    <input type="hidden" name="techs" id="techsHidden">
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <script>
+    document.getElementById('techFilterForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const checked = [...document.querySelectorAll('.tech-checkbox:checked')].map(cb => cb.value);
+        if (checked.length === 0) { window.location = '{% url "performance_scorecard" %}'; return; }
+        document.getElementById('techsHidden').value = checked.join(',');
+        this.submit();
+    });
+    document.getElementById('selectAll')?.addEventListener('click', () =>
+        document.querySelectorAll('.tech-checkbox').forEach(cb => cb.checked = true));
+    document.getElementById('deselectAll')?.addEventListener('click', () =>
+        document.querySelectorAll('.tech-checkbox').forEach(cb => cb.checked = false));
+    </script>
 
     <!-- Scorecard Table -->
     <div class="card border-0 shadow-sm">

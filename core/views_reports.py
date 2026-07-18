@@ -4019,11 +4019,14 @@ def review_returns_corrections_report(request):
 
 # ── Performance Scorecard ─────────────────────────────────────────────────────
 
-def _build_scorecard_data():
+def _build_scorecard_data(selected_tech_ids=None, include_former=False):
     """
     Build the 13-week rolling Performance Scorecard data structure.
-    Returns week_labels (most-recent-first) and sections for template rendering.
-    Weeks are Mon–Sun ISO weeks.  Only active, non-test technicians are included.
+
+    selected_tech_ids : list of int – if provided, only show those active techs
+                        (used by the HTML filter).  None = show all active techs.
+    include_former    : bool – if True, also include inactive/former techs who
+                        had activity in the 13-week window (used by CSV export).
     """
     from datetime import date, timedelta
     from cases.models import CaseReviewHistory
@@ -4042,11 +4045,43 @@ def _build_scorecard_data():
     window_start = weeks[-1][0]
     window_end   = weeks[0][1]
 
-    # Active technicians only
-    active_techs = list(_exclude_super_dev_users(
+    # All active technicians (used for filter checkboxes + base list)
+    all_active_techs = list(_exclude_super_dev_users(
         User.objects.filter(role='technician', is_active=True)
     ).order_by('first_name', 'last_name'))
-    tech_ids = [t.id for t in active_techs]
+
+    if include_former:
+        # Find inactive/former techs with any activity in the window
+        active_ids = {t.id for t in all_active_techs}
+        activity_ids = (
+            set(Case.objects.filter(
+                status='completed',
+                assigned_to__isnull=False,
+                assigned_to__is_test_account=False,
+                date_completed__date__gte=window_start,
+                date_completed__date__lte=window_end,
+            ).values_list('assigned_to_id', flat=True))
+            | set(CaseReviewHistory.objects.filter(
+                review_action__in=['submitted_for_review', 'approved',
+                                   'revisions_requested', 'corrections_needed'],
+                original_technician__isnull=False,
+                original_technician__is_test_account=False,
+                reviewed_at__date__gte=window_start,
+                reviewed_at__date__lte=window_end,
+            ).values_list('original_technician_id', flat=True))
+        )
+        former_ids = activity_ids - active_ids
+        former_techs = list(_exclude_super_dev_users(
+            User.objects.filter(id__in=former_ids)
+        ).order_by('first_name', 'last_name')) if former_ids else []
+        display_techs = all_active_techs + former_techs
+    elif selected_tech_ids is not None:
+        sel = set(selected_tech_ids)
+        display_techs = [t for t in all_active_techs if t.id in sel]
+    else:
+        display_techs = all_active_techs
+
+    tech_ids = [t.id for t in display_techs]
 
     def week_idx(d):
         if d is None:
@@ -4056,24 +4091,24 @@ def _build_scorecard_data():
                 return i
         return None
 
-    # Accumulators: wd[week_index][key]['team'] / ['by_tech'][tid]
+    # Accumulators: wd[week_index][key]['team'] / ['bt'][tid]
     def new_week():
         bt = {tid: 0 for tid in tech_ids}
         return {
-            'gen':        {'team': 0, 'bt': dict(bt)},
-            'sfr':        {'team': 0, 'bt': dict(bt)},
-            'init_sub':   {'team': 0},
-            'err':        {'team': 0, 'bt': dict(bt)},
-            'ot_n':       {'team': 0, 'bt': dict(bt)},   # on-time numerator
-            'ot_d':       {'team': 0, 'bt': dict(bt)},   # on-time denominator
-            'acc_n':      {'team': 0, 'bt': dict(bt)},   # accuracy numerator (error-free)
-            'acc_d':      {'team': 0, 'bt': dict(bt)},   # accuracy denominator (completed)
-            'cyc_s':      {'team': 0, 'bt': dict(bt)},   # cycle sum (days)
-            'cyc_c':      {'team': 0, 'bt': dict(bt)},   # cycle count
-            'rdy_s':      {'team': 0, 'bt': dict(bt)},   # readiness sum (days)
-            'rdy_c':      {'team': 0, 'bt': dict(bt)},   # readiness count
-            'rev_a':      {'team': 0, 'bt': dict(bt)},   # review approved
-            'rev_t':      {'team': 0, 'bt': dict(bt)},   # review total outcomes
+            'gen':   {'team': 0, 'bt': dict(bt)},
+            'sfr':   {'team': 0, 'bt': dict(bt)},
+            'init_sub': {'team': 0},
+            'err':   {'team': 0, 'bt': dict(bt)},
+            'ot_n':  {'team': 0, 'bt': dict(bt)},
+            'ot_d':  {'team': 0, 'bt': dict(bt)},
+            'acc_n': {'team': 0, 'bt': dict(bt)},
+            'acc_d': {'team': 0, 'bt': dict(bt)},
+            'cyc_s': {'team': 0, 'bt': dict(bt)},
+            'cyc_c': {'team': 0, 'bt': dict(bt)},
+            'rdy_s': {'team': 0, 'bt': dict(bt)},
+            'rdy_c': {'team': 0, 'bt': dict(bt)},
+            'rev_a': {'team': 0, 'bt': dict(bt)},
+            'rev_t': {'team': 0, 'bt': dict(bt)},
         }
 
     wd = [new_week() for _ in range(13)]
@@ -4092,15 +4127,13 @@ def _build_scorecard_data():
         wi = week_idx(d)
         if wi is None:
             continue
-        tid = c['assigned_to_id']
-        is_tech = tid in tech_ids
+        tid      = c['assigned_to_id']
+        is_tech  = tid in tech_ids
 
-        # Reports Generated
         wd[wi]['gen']['team'] += 1
         if is_tech:
             wd[wi]['gen']['bt'][tid] += 1
 
-        # On-Time Delivery
         if c['date_due']:
             wd[wi]['ot_d']['team'] += 1
             if d <= c['date_due']:
@@ -4110,7 +4143,6 @@ def _build_scorecard_data():
                 if d <= c['date_due']:
                     wd[wi]['ot_n']['bt'][tid] += 1
 
-        # Report Accuracy
         wd[wi]['acc_d']['team'] += 1
         if not c['has_profeds_error']:
             wd[wi]['acc_n']['team'] += 1
@@ -4119,7 +4151,6 @@ def _build_scorecard_data():
             if not c['has_profeds_error']:
                 wd[wi]['acc_n']['bt'][tid] += 1
 
-        # Production Cycle Time
         if c['date_submitted']:
             ds   = c['date_submitted']
             ds   = ds.date() if hasattr(ds, 'date') else ds
@@ -4130,7 +4161,6 @@ def _build_scorecard_data():
                 wd[wi]['cyc_s']['bt'][tid] += days
                 wd[wi]['cyc_c']['bt'][tid] += 1
 
-        # Readiness Window
         if c['date_due']:
             rdy = (c['date_due'] - d).days
             wd[wi]['rdy_s']['team'] += rdy
@@ -4139,11 +4169,10 @@ def _build_scorecard_data():
                 wd[wi]['rdy_s']['bt'][tid] += rdy
                 wd[wi]['rdy_c']['bt'][tid] += 1
 
-    # ── Query 2: ProFeds errors (mod case date_submitted) ────────────────────
+    # ── Query 2: ProFeds errors ───────────────────────────────────────────────
     for c in _exclude_test_account_cases(
         Case.objects.filter(
-            has_profeds_error=True,
-            original_case__isnull=False,
+            has_profeds_error=True, original_case__isnull=False,
             date_submitted__isnull=False,
             date_submitted__date__gte=window_start,
             date_submitted__date__lte=window_end,
@@ -4159,11 +4188,10 @@ def _build_scorecard_data():
         if tid in tech_ids:
             wd[wi]['err']['bt'][tid] += 1
 
-    # ── Query 3: Initial submissions (by date_submitted) ─────────────────────
+    # ── Query 3: Initial submissions ─────────────────────────────────────────
     for c in _exclude_test_account_cases(
         Case.objects.exclude(status='draft').filter(
-            member__isnull=False,
-            date_submitted__isnull=False,
+            member__isnull=False, date_submitted__isnull=False,
             date_submitted__date__gte=window_start,
             date_submitted__date__lte=window_end,
         ).values('date_submitted')
@@ -4192,7 +4220,7 @@ def _build_scorecard_data():
         if tid in tech_ids:
             wd[wi]['sfr']['bt'][tid] += 1
 
-    # ── Query 5: Review outcomes (L1/L2 accuracy) ────────────────────────────
+    # ── Query 5: Review outcomes ──────────────────────────────────────────────
     for r in CaseReviewHistory.objects.filter(
         review_action__in=['approved', 'revisions_requested', 'corrections_needed'],
         original_technician__isnull=False,
@@ -4214,26 +4242,17 @@ def _build_scorecard_data():
             if r['review_action'] == 'approved':
                 wd[wi]['rev_a']['bt'][tid] += 1
 
-    # ── Helper display formatters ─────────────────────────────────────────────
+    # ── Display formatters ────────────────────────────────────────────────────
     def pct(n, d):
         return f"{round(n / d * 100)}%" if d > 0 else '—'
 
     def avg_d(s, c):
         return f"{round(s / c)}d" if c > 0 else '—'
 
-    # ── Build sections ────────────────────────────────────────────────────────
-    def team_vals(key, fmt=None):
-        if fmt == 'pct':
-            return [pct(wd[i][key + '_n']['team'], wd[i][key + '_d']['team']) for i in range(13)]
-        if fmt == 'avg':
-            return [avg_d(wd[i][key + '_s']['team'], wd[i][key + '_c']['team']) for i in range(13)]
+    def team_vals(key):
         return [str(wd[i][key]['team']) for i in range(13)]
 
-    def tech_vals(key, tid, fmt=None):
-        if fmt == 'pct':
-            return [pct(wd[i][key + '_n']['bt'].get(tid, 0), wd[i][key + '_d']['bt'].get(tid, 0)) for i in range(13)]
-        if fmt == 'avg':
-            return [avg_d(wd[i][key + '_s']['bt'].get(tid, 0), wd[i][key + '_c']['bt'].get(tid, 0)) for i in range(13)]
+    def tech_val_list(key, tid):
         return [str(wd[i][key]['bt'].get(tid, 0)) for i in range(13)]
 
     def make_section(title, t_vals, per_tech_rows):
@@ -4242,49 +4261,41 @@ def _build_scorecard_data():
             rows.append({'label': tech.get_full_name(), 'is_header': False, 'values': vals})
         return {'title': title, 'rows': rows}
 
+    # ── Build sections ────────────────────────────────────────────────────────
     sections = [
-        # 1. Initial Submissions (team only — advisor metric, not per-tech)
         {'title': 'Reports Submitted (Initial Submission)', 'rows': [
             {'label': 'Reports Submitted (Initial Submission)', 'is_header': True,
              'values': [str(wd[i]['init_sub']['team']) for i in range(13)]}
         ]},
-        # 2. Reports Generated
         make_section('Reports Generated',
             team_vals('gen'),
-            [(t, tech_vals('gen', t.id)) for t in active_techs]),
-        # 3. Submitted for Review
+            [(t, tech_val_list('gen', t.id)) for t in display_techs]),
         make_section('Reports Submitted for Review',
             team_vals('sfr'),
-            [(t, tech_vals('sfr', t.id)) for t in active_techs]),
-        # 4. L1/L2 Accuracy Rate
+            [(t, tech_val_list('sfr', t.id)) for t in display_techs]),
         make_section('Tech L1/L2 Accuracy Rate',
             [pct(wd[i]['rev_a']['team'], wd[i]['rev_t']['team']) for i in range(13)],
-            [(t, [pct(wd[i]['rev_a']['bt'].get(t.id, 0), wd[i]['rev_t']['bt'].get(t.id, 0)) for i in range(13)])
-             for t in active_techs]),
-        # 5. On-Time Delivery
+            [(t, [pct(wd[i]['rev_a']['bt'].get(t.id, 0), wd[i]['rev_t']['bt'].get(t.id, 0))
+                  for i in range(13)]) for t in display_techs]),
         make_section('Report On-Time Delivery',
             [pct(wd[i]['ot_n']['team'], wd[i]['ot_d']['team']) for i in range(13)],
-            [(t, [pct(wd[i]['ot_n']['bt'].get(t.id, 0), wd[i]['ot_d']['bt'].get(t.id, 0)) for i in range(13)])
-             for t in active_techs]),
-        # 6. ProFeds Errors
+            [(t, [pct(wd[i]['ot_n']['bt'].get(t.id, 0), wd[i]['ot_d']['bt'].get(t.id, 0))
+                  for i in range(13)]) for t in display_techs]),
         make_section('ProFeds Errors',
             team_vals('err'),
-            [(t, tech_vals('err', t.id)) for t in active_techs]),
-        # 7. Report Accuracy
+            [(t, tech_val_list('err', t.id)) for t in display_techs]),
         make_section('Report Accuracy',
             [pct(wd[i]['acc_n']['team'], wd[i]['acc_d']['team']) for i in range(13)],
-            [(t, [pct(wd[i]['acc_n']['bt'].get(t.id, 0), wd[i]['acc_d']['bt'].get(t.id, 0)) for i in range(13)])
-             for t in active_techs]),
-        # 8. Production Cycle Time
+            [(t, [pct(wd[i]['acc_n']['bt'].get(t.id, 0), wd[i]['acc_d']['bt'].get(t.id, 0))
+                  for i in range(13)]) for t in display_techs]),
         make_section('Production Cycle Time',
             [avg_d(wd[i]['cyc_s']['team'], wd[i]['cyc_c']['team']) for i in range(13)],
-            [(t, [avg_d(wd[i]['cyc_s']['bt'].get(t.id, 0), wd[i]['cyc_c']['bt'].get(t.id, 0)) for i in range(13)])
-             for t in active_techs]),
-        # 9. Readiness Window
+            [(t, [avg_d(wd[i]['cyc_s']['bt'].get(t.id, 0), wd[i]['cyc_c']['bt'].get(t.id, 0))
+                  for i in range(13)]) for t in display_techs]),
         make_section('Readiness Window',
             [avg_d(wd[i]['rdy_s']['team'], wd[i]['rdy_c']['team']) for i in range(13)],
-            [(t, [avg_d(wd[i]['rdy_s']['bt'].get(t.id, 0), wd[i]['rdy_c']['bt'].get(t.id, 0)) for i in range(13)])
-             for t in active_techs]),
+            [(t, [avg_d(wd[i]['rdy_s']['bt'].get(t.id, 0), wd[i]['rdy_c']['bt'].get(t.id, 0))
+                  for i in range(13)]) for t in display_techs]),
     ]
 
     week_labels = [
@@ -4293,11 +4304,12 @@ def _build_scorecard_data():
     ]
 
     return {
-        'week_labels':   week_labels,
-        'sections':      sections,
-        'window_start':  weeks[-1][0],
-        'window_end':    weeks[0][1],
-        'active_techs':  active_techs,
+        'week_labels':      week_labels,
+        'sections':         sections,
+        'window_start':     weeks[-1][0],
+        'window_end':       weeks[0][1],
+        'all_active_techs': all_active_techs,   # for filter checkboxes
+        'display_techs':    display_techs,       # techs actually shown
     }
 
 
@@ -4309,11 +4321,11 @@ def performance_scorecard(request):
         return redirect('home')
 
     import csv
-    data = _build_scorecard_data()
 
+    # CSV export includes former techs with activity
     if request.GET.get('export') == 'csv':
-        from django.utils import timezone as tz
-        today = tz.now().strftime('%Y%m%d')
+        data = _build_scorecard_data(include_former=True)
+        today = timezone.now().strftime('%Y%m%d')
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = f'attachment; filename="performance_scorecard_{today}.csv"'
         writer = csv.writer(response)
@@ -4325,9 +4337,28 @@ def performance_scorecard(request):
                 writer.writerow([row['label']] + row['values'])
         return response
 
+    # Parse optional tech filter from ?techs=id1,id2,...
+    techs_param = request.GET.get('techs', '').strip()
+    selected_tech_ids = None
+    if techs_param:
+        try:
+            selected_tech_ids = [int(x) for x in techs_param.split(',') if x.strip()]
+        except ValueError:
+            selected_tech_ids = None
+
+    data = _build_scorecard_data(selected_tech_ids=selected_tech_ids)
+
+    # IDs currently selected (for pre-checking checkboxes)
+    selected_ids_set = (
+        set(selected_tech_ids) if selected_tech_ids is not None
+        else {t.id for t in data['all_active_techs']}
+    )
+
     return render(request, 'core/performance_scorecard.html', {
         **data,
-        'generated_at': timezone.now(),
+        'generated_at':    timezone.now(),
+        'selected_ids_set': selected_ids_set,
+        'techs_param':     techs_param,
     })
 
 
