@@ -48,17 +48,20 @@ The mockup spreadsheet defines the layout:
 
 ---
 
-## "Numbers Don't Change" — Assessment
+## "Numbers Don't Change" — Requirement & Status
 
-The note at the top of the mockup ("I want to make sure numbers are populated and don't change!") is addressable without any special caching or snapshot infrastructure.
+**User requirement (2026-07-18):** "I want to make sure that numbers are populated in this reporting tool, and then don't change." Confirmed as a **formal HR evaluation requirement** — metric data is extracted and fed into an external HR tool for technician performance reviews.
 
-All source fields used (`date_completed`, `reviewed_at`, `date_submitted`) are write-once timestamps under normal operation. Once a week closes, recalculating its metrics against the live DB will always produce the same result. **Standard re-computation is sufficient.**
+**Current implementation status:** The scorecard recalculates live from the database on every page load. This is **insufficient for a formal evaluation tool.**
 
-The only edge cases where a historical number could shift:
-- An admin manually edits a case's date field (intentional, rare)
-- A case record is hard-deleted (not possible in normal workflow)
+**Why numbers can change under the current implementation:**
+- Benefits technicians and administrators can correct cases as part of the normal L1/L2/L3 review workflow
+- An admin correcting a `date_completed`, `date_due`, or `date_submitted` retroactively shifts a prior week's metrics
+- Corrections submitted after a week closes but before the data is extracted will silently change already-reviewed numbers
 
-No snapshot table is needed.
+**Decision required:** A data snapshot/lock strategy must be selected and implemented before this report is used for formal HR evaluation. Three options have been documented for user review in `docs/SCORECARD_LOCK_OPTIONS_USER.md`. Technical implementation detail is in `docs/SCORECARD_IMMUTABILITY_TECHNICAL.md`.
+
+**This feature (data locking) is NOT yet implemented.**
 
 ---
 
