@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+    @page {
+        size: letter landscape;
+        margin: 0.45in 0.4in 0.7in 0.4in;
+        @bottom-center {
+            content: "Page " counter(page) " of " counter(pages);
+            font-size: 7pt; color: #999;
+        }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 7.5pt; color: #222; line-height: 1.35; }
+
+    .doc-header { border-bottom: 2px solid #0d6efd; padding-bottom: 8px; margin-bottom: 10px; }
+    .doc-header h1 { font-size: 13pt; font-weight: 700; color: #0d6efd; margin-bottom: 2px; }
+    .doc-header .meta { font-size: 7.5pt; color: #666; }
+    .doc-header .meta span { margin-right: 18px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 7pt; table-layout: fixed; }
+    colgroup col:first-child { width: 18%; }
+    colgroup col { width: 6.3%; }
+
+    thead th {
+        background: #212529; color: #fff;
+        font-weight: 700; padding: 4px 3px;
+        border: 1px solid #444; text-align: center;
+        font-size: 6.5pt; white-space: nowrap; overflow: hidden;
+    }
+    thead th:first-child { text-align: left; }
+
+    tbody td {
+        padding: 3px 3px;
+        border: 1px solid #ddd;
+        text-align: center;
+        overflow: hidden;
+    }
+    tbody td:first-child { text-align: left; }
+
+    tr.section-row td { background: #f0f4f8; font-weight: 700; }
+    tr.tech-row td { background: #fff; color: #555; font-size: 6.5pt; }
+    tr.tech-row td:first-child { padding-left: 10px; }
+    tr.spacer-row td { background: #e9ecef; height: 4px; padding: 0; border: none; }
+
+    .muted { color: #aaa; }
+
+    .doc-footer { margin-top: 12px; padding-top: 6px; border-top: 1px solid #ddd; font-size: 6.5pt; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="doc-header">
+    <h1>&#128202; Performance Scorecard</h1>
+    <div class="meta">
+        <span><strong>Period:</strong> {{ window_start }} &ndash; {{ window_end }} (13 weeks, most recent first)</span>
+        <span><strong>Generated:</strong> {{ generated_at|date:"m/d/Y g:i A" }}</span>
+        <span><strong>By:</strong> {{ generated_by }}</span>
+    </div>
+</div>
+
+<table>
+    <colgroup>
+        <col>
+        {% for wl in week_labels %}<col>{% endfor %}
+    </colgroup>
+    <thead>
+        <tr>
+            <th>Metric / Technician</th>
+            {% for wl in week_labels %}<th>{{ wl }}</th>{% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for section in sections %}
+        {% for row in section.rows %}
+        {% if row.is_header %}
+        <tr class="section-row">
+            <td>{{ row.label }}</td>
+            {% for val in row.values %}
+            <td>{% if val == '—' %}<span class="muted">—</span>{% else %}{{ val }}{% endif %}</td>
+            {% endfor %}
+        </tr>
+        {% else %}
+        <tr class="tech-row">
+            <td>{{ row.label }}</td>
+            {% for val in row.values %}
+            <td>{% if val == '—' or val == '0' %}<span class="muted">{{ val }}</span>{% else %}{{ val }}{% endif %}</td>
+            {% endfor %}
+        </tr>
+        {% endif %}
+        {% endfor %}
+        <tr class="spacer-row"><td colspan="{{ week_labels|length|add:1 }}"></td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="doc-footer">
+    Active technicians only &mdash; Admin view &mdash; ProFeds Portal
+</div>
+
+</body>
+</html>

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Performance Scorecard - ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-7">
+            <h1><i class="bi bi-grid-3x3-gap-fill text-primary"></i> Performance Scorecard</h1>
+            <p class="text-muted mb-0">Rolling 13-week team performance — weeks run Monday to Sunday, most recent first</p>
+        </div>
+        <div class="col-md-5 text-end d-flex gap-2 justify-content-end align-items-start flex-wrap">
+            <a href="{% url 'performance_scorecard' %}?export=csv" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-filetype-csv"></i> Download CSV
+            </a>
+            <a href="{% url 'performance_scorecard_pdf' %}" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-file-pdf"></i> Download PDF
+            </a>
+            <a href="{% url 'performance_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Info bar -->
+    <div class="alert alert-light border mb-3 py-2" style="font-size:0.82rem;">
+        <i class="bi bi-info-circle text-muted me-1"></i>
+        Showing weeks <strong>{{ window_start }}</strong> → <strong>{{ window_end }}</strong>.
+        Numbers are computed live from current data and reflect the state of the database at time of viewing.
+    </div>
+
+    <!-- Scorecard Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm mb-0 scorecard-table" style="font-size:0.78rem; min-width:1100px;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th style="min-width:220px; position:sticky; left:0; background:#212529; z-index:2;">Metric / Technician</th>
+                            {% for wl in week_labels %}
+                            <th class="text-center" style="min-width:85px; white-space:nowrap;">{{ wl }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for section in sections %}
+                        {% for row in section.rows %}
+                        {% if row.is_header %}
+                        <tr style="background:#f0f4f8;">
+                            <td class="fw-bold" style="position:sticky; left:0; background:#f0f4f8; z-index:1; border-right:2px solid #dee2e6;">
+                                {{ row.label }}
+                            </td>
+                            {% for val in row.values %}
+                            <td class="text-center fw-semibold">{{ val }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td class="ps-4 text-muted" style="position:sticky; left:0; background:#fff; z-index:1; border-right:2px solid #dee2e6; font-size:0.75rem;">
+                                {{ row.label }}
+                            </td>
+                            {% for val in row.values %}
+                            <td class="text-center" style="{% if val == '—' or val == '0' %}color:#aaa;{% endif %}">{{ val }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endif %}
+                        {% endfor %}
+                        <!-- Spacer between sections -->
+                        <tr style="height:6px; background:#e9ecef;">
+                            <td colspan="{{ week_labels|length|add:1 }}" style="padding:0;"></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-muted mt-2" style="font-size:0.75rem;">
+        Generated {{ generated_at|date:"m/d/Y g:i A" }} &mdash; Active technicians only &mdash; Admin view
+    </div>
+
+</div>
+{% endblock %}

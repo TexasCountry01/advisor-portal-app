@@ -4015,3 +4015,344 @@ def review_returns_corrections_report(request):
         'date_to': date_to_str,
     }
     return render(request, 'core/review_returns_corrections_report.html', context)
+
+
+# ── Performance Scorecard ─────────────────────────────────────────────────────
+
+def _build_scorecard_data():
+    """
+    Build the 13-week rolling Performance Scorecard data structure.
+    Returns week_labels (most-recent-first) and sections for template rendering.
+    Weeks are Mon–Sun ISO weeks.  Only active, non-test technicians are included.
+    """
+    from datetime import date, timedelta
+    from cases.models import CaseReviewHistory
+
+    today = date.today()
+    monday_of_current_week = today - timedelta(days=today.weekday())
+    last_sunday = monday_of_current_week - timedelta(days=1)
+
+    # 13 complete weeks, index 0 = most recent
+    weeks = []
+    for i in range(13):
+        w_end   = last_sunday - timedelta(weeks=i)
+        w_start = w_end - timedelta(days=6)
+        weeks.append((w_start, w_end))
+
+    window_start = weeks[-1][0]
+    window_end   = weeks[0][1]
+
+    # Active technicians only
+    active_techs = list(_exclude_super_dev_users(
+        User.objects.filter(role='technician', is_active=True)
+    ).order_by('first_name', 'last_name'))
+    tech_ids = [t.id for t in active_techs]
+
+    def week_idx(d):
+        if d is None:
+            return None
+        for i, (ws, we) in enumerate(weeks):
+            if ws <= d <= we:
+                return i
+        return None
+
+    # Accumulators: wd[week_index][key]['team'] / ['by_tech'][tid]
+    def new_week():
+        bt = {tid: 0 for tid in tech_ids}
+        return {
+            'gen':        {'team': 0, 'bt': dict(bt)},
+            'sfr':        {'team': 0, 'bt': dict(bt)},
+            'init_sub':   {'team': 0},
+            'err':        {'team': 0, 'bt': dict(bt)},
+            'ot_n':       {'team': 0, 'bt': dict(bt)},   # on-time numerator
+            'ot_d':       {'team': 0, 'bt': dict(bt)},   # on-time denominator
+            'acc_n':      {'team': 0, 'bt': dict(bt)},   # accuracy numerator (error-free)
+            'acc_d':      {'team': 0, 'bt': dict(bt)},   # accuracy denominator (completed)
+            'cyc_s':      {'team': 0, 'bt': dict(bt)},   # cycle sum (days)
+            'cyc_c':      {'team': 0, 'bt': dict(bt)},   # cycle count
+            'rdy_s':      {'team': 0, 'bt': dict(bt)},   # readiness sum (days)
+            'rdy_c':      {'team': 0, 'bt': dict(bt)},   # readiness count
+            'rev_a':      {'team': 0, 'bt': dict(bt)},   # review approved
+            'rev_t':      {'team': 0, 'bt': dict(bt)},   # review total outcomes
+        }
+
+    wd = [new_week() for _ in range(13)]
+
+    # ── Query 1: Completed cases ──────────────────────────────────────────────
+    for c in _exclude_test_account_cases(
+        Case.objects.filter(
+            status='completed',
+            date_completed__isnull=False,
+            date_completed__date__gte=window_start,
+            date_completed__date__lte=window_end,
+        ).values('assigned_to_id', 'date_completed', 'date_submitted', 'date_due', 'has_profeds_error')
+    ):
+        dc = c['date_completed']
+        d  = dc.date() if hasattr(dc, 'date') else dc
+        wi = week_idx(d)
+        if wi is None:
+            continue
+        tid = c['assigned_to_id']
+        is_tech = tid in tech_ids
+
+        # Reports Generated
+        wd[wi]['gen']['team'] += 1
+        if is_tech:
+            wd[wi]['gen']['bt'][tid] += 1
+
+        # On-Time Delivery
+        if c['date_due']:
+            wd[wi]['ot_d']['team'] += 1
+            if d <= c['date_due']:
+                wd[wi]['ot_n']['team'] += 1
+            if is_tech:
+                wd[wi]['ot_d']['bt'][tid] += 1
+                if d <= c['date_due']:
+                    wd[wi]['ot_n']['bt'][tid] += 1
+
+        # Report Accuracy
+        wd[wi]['acc_d']['team'] += 1
+        if not c['has_profeds_error']:
+            wd[wi]['acc_n']['team'] += 1
+        if is_tech:
+            wd[wi]['acc_d']['bt'][tid] += 1
+            if not c['has_profeds_error']:
+                wd[wi]['acc_n']['bt'][tid] += 1
+
+        # Production Cycle Time
+        if c['date_submitted']:
+            ds   = c['date_submitted']
+            ds   = ds.date() if hasattr(ds, 'date') else ds
+            days = (d - ds).days
+            wd[wi]['cyc_s']['team'] += days
+            wd[wi]['cyc_c']['team'] += 1
+            if is_tech:
+                wd[wi]['cyc_s']['bt'][tid] += days
+                wd[wi]['cyc_c']['bt'][tid] += 1
+
+        # Readiness Window
+        if c['date_due']:
+            rdy = (c['date_due'] - d).days
+            wd[wi]['rdy_s']['team'] += rdy
+            wd[wi]['rdy_c']['team'] += 1
+            if is_tech:
+                wd[wi]['rdy_s']['bt'][tid] += rdy
+                wd[wi]['rdy_c']['bt'][tid] += 1
+
+    # ── Query 2: ProFeds errors (mod case date_submitted) ────────────────────
+    for c in _exclude_test_account_cases(
+        Case.objects.filter(
+            has_profeds_error=True,
+            original_case__isnull=False,
+            date_submitted__isnull=False,
+            date_submitted__date__gte=window_start,
+            date_submitted__date__lte=window_end,
+        ).values('assigned_to_id', 'date_submitted')
+    ):
+        ds = c['date_submitted']
+        ds = ds.date() if hasattr(ds, 'date') else ds
+        wi = week_idx(ds)
+        if wi is None:
+            continue
+        tid = c['assigned_to_id']
+        wd[wi]['err']['team'] += 1
+        if tid in tech_ids:
+            wd[wi]['err']['bt'][tid] += 1
+
+    # ── Query 3: Initial submissions (by date_submitted) ─────────────────────
+    for c in _exclude_test_account_cases(
+        Case.objects.exclude(status='draft').filter(
+            member__isnull=False,
+            date_submitted__isnull=False,
+            date_submitted__date__gte=window_start,
+            date_submitted__date__lte=window_end,
+        ).values('date_submitted')
+    ):
+        ds = c['date_submitted']
+        ds = ds.date() if hasattr(ds, 'date') else ds
+        wi = week_idx(ds)
+        if wi is not None:
+            wd[wi]['init_sub']['team'] += 1
+
+    # ── Query 4: Submitted for Review ────────────────────────────────────────
+    for r in CaseReviewHistory.objects.filter(
+        review_action='submitted_for_review',
+        original_technician__isnull=False,
+        original_technician__is_test_account=False,
+        reviewed_at__date__gte=window_start,
+        reviewed_at__date__lte=window_end,
+    ).values('original_technician_id', 'reviewed_at'):
+        d = r['reviewed_at']
+        d = d.date() if hasattr(d, 'date') else d
+        wi = week_idx(d)
+        if wi is None:
+            continue
+        tid = r['original_technician_id']
+        wd[wi]['sfr']['team'] += 1
+        if tid in tech_ids:
+            wd[wi]['sfr']['bt'][tid] += 1
+
+    # ── Query 5: Review outcomes (L1/L2 accuracy) ────────────────────────────
+    for r in CaseReviewHistory.objects.filter(
+        review_action__in=['approved', 'revisions_requested', 'corrections_needed'],
+        original_technician__isnull=False,
+        original_technician__is_test_account=False,
+        reviewed_at__date__gte=window_start,
+        reviewed_at__date__lte=window_end,
+    ).values('original_technician_id', 'reviewed_at', 'review_action'):
+        d = r['reviewed_at']
+        d = d.date() if hasattr(d, 'date') else d
+        wi = week_idx(d)
+        if wi is None:
+            continue
+        tid = r['original_technician_id']
+        wd[wi]['rev_t']['team'] += 1
+        if r['review_action'] == 'approved':
+            wd[wi]['rev_a']['team'] += 1
+        if tid in tech_ids:
+            wd[wi]['rev_t']['bt'][tid] += 1
+            if r['review_action'] == 'approved':
+                wd[wi]['rev_a']['bt'][tid] += 1
+
+    # ── Helper display formatters ─────────────────────────────────────────────
+    def pct(n, d):
+        return f"{round(n / d * 100)}%" if d > 0 else '—'
+
+    def avg_d(s, c):
+        return f"{round(s / c)}d" if c > 0 else '—'
+
+    # ── Build sections ────────────────────────────────────────────────────────
+    def team_vals(key, fmt=None):
+        if fmt == 'pct':
+            return [pct(wd[i][key + '_n']['team'], wd[i][key + '_d']['team']) for i in range(13)]
+        if fmt == 'avg':
+            return [avg_d(wd[i][key + '_s']['team'], wd[i][key + '_c']['team']) for i in range(13)]
+        return [str(wd[i][key]['team']) for i in range(13)]
+
+    def tech_vals(key, tid, fmt=None):
+        if fmt == 'pct':
+            return [pct(wd[i][key + '_n']['bt'].get(tid, 0), wd[i][key + '_d']['bt'].get(tid, 0)) for i in range(13)]
+        if fmt == 'avg':
+            return [avg_d(wd[i][key + '_s']['bt'].get(tid, 0), wd[i][key + '_c']['bt'].get(tid, 0)) for i in range(13)]
+        return [str(wd[i][key]['bt'].get(tid, 0)) for i in range(13)]
+
+    def make_section(title, t_vals, per_tech_rows):
+        rows = [{'label': title, 'is_header': True, 'values': t_vals}]
+        for tech, vals in per_tech_rows:
+            rows.append({'label': tech.get_full_name(), 'is_header': False, 'values': vals})
+        return {'title': title, 'rows': rows}
+
+    sections = [
+        # 1. Initial Submissions (team only — advisor metric, not per-tech)
+        {'title': 'Reports Submitted (Initial Submission)', 'rows': [
+            {'label': 'Reports Submitted (Initial Submission)', 'is_header': True,
+             'values': [str(wd[i]['init_sub']['team']) for i in range(13)]}
+        ]},
+        # 2. Reports Generated
+        make_section('Reports Generated',
+            team_vals('gen'),
+            [(t, tech_vals('gen', t.id)) for t in active_techs]),
+        # 3. Submitted for Review
+        make_section('Reports Submitted for Review',
+            team_vals('sfr'),
+            [(t, tech_vals('sfr', t.id)) for t in active_techs]),
+        # 4. L1/L2 Accuracy Rate
+        make_section('Tech L1/L2 Accuracy Rate',
+            [pct(wd[i]['rev_a']['team'], wd[i]['rev_t']['team']) for i in range(13)],
+            [(t, [pct(wd[i]['rev_a']['bt'].get(t.id, 0), wd[i]['rev_t']['bt'].get(t.id, 0)) for i in range(13)])
+             for t in active_techs]),
+        # 5. On-Time Delivery
+        make_section('Report On-Time Delivery',
+            [pct(wd[i]['ot_n']['team'], wd[i]['ot_d']['team']) for i in range(13)],
+            [(t, [pct(wd[i]['ot_n']['bt'].get(t.id, 0), wd[i]['ot_d']['bt'].get(t.id, 0)) for i in range(13)])
+             for t in active_techs]),
+        # 6. ProFeds Errors
+        make_section('ProFeds Errors',
+            team_vals('err'),
+            [(t, tech_vals('err', t.id)) for t in active_techs]),
+        # 7. Report Accuracy
+        make_section('Report Accuracy',
+            [pct(wd[i]['acc_n']['team'], wd[i]['acc_d']['team']) for i in range(13)],
+            [(t, [pct(wd[i]['acc_n']['bt'].get(t.id, 0), wd[i]['acc_d']['bt'].get(t.id, 0)) for i in range(13)])
+             for t in active_techs]),
+        # 8. Production Cycle Time
+        make_section('Production Cycle Time',
+            [avg_d(wd[i]['cyc_s']['team'], wd[i]['cyc_c']['team']) for i in range(13)],
+            [(t, [avg_d(wd[i]['cyc_s']['bt'].get(t.id, 0), wd[i]['cyc_c']['bt'].get(t.id, 0)) for i in range(13)])
+             for t in active_techs]),
+        # 9. Readiness Window
+        make_section('Readiness Window',
+            [avg_d(wd[i]['rdy_s']['team'], wd[i]['rdy_c']['team']) for i in range(13)],
+            [(t, [avg_d(wd[i]['rdy_s']['bt'].get(t.id, 0), wd[i]['rdy_c']['bt'].get(t.id, 0)) for i in range(13)])
+             for t in active_techs]),
+    ]
+
+    week_labels = [
+        f"{ws.strftime('%b')} {ws.day} \u2013 {we.strftime('%b')} {we.day}"
+        for ws, we in weeks
+    ]
+
+    return {
+        'week_labels':   week_labels,
+        'sections':      sections,
+        'window_start':  weeks[-1][0],
+        'window_end':    weeks[0][1],
+        'active_techs':  active_techs,
+    }
+
+
+@login_required
+def performance_scorecard(request):
+    """Rolling 13-week Performance Scorecard — admin only."""
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied.')
+        return redirect('home')
+
+    import csv
+    data = _build_scorecard_data()
+
+    if request.GET.get('export') == 'csv':
+        from django.utils import timezone as tz
+        today = tz.now().strftime('%Y%m%d')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="performance_scorecard_{today}.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['REPORTING PERIOD (MOST RECENT WEEK SHOWN FIRST)'])
+        writer.writerow(['TITLE'] + data['week_labels'])
+        for section in data['sections']:
+            writer.writerow([])
+            for row in section['rows']:
+                writer.writerow([row['label']] + row['values'])
+        return response
+
+    return render(request, 'core/performance_scorecard.html', {
+        **data,
+        'generated_at': timezone.now(),
+    })
+
+
+@login_required
+def performance_scorecard_pdf(request):
+    """PDF download of the Performance Scorecard — admin only."""
+    if not is_admin(request.user):
+        return HttpResponse('Access denied.', status=403)
+
+    from weasyprint import HTML
+    from io import BytesIO
+    from django.template.loader import render_to_string
+
+    data = _build_scorecard_data()
+    context = {
+        **data,
+        'generated_at':  timezone.now(),
+        'generated_by':  request.user.get_full_name() or request.user.username,
+    }
+    html_string = render_to_string('core/performance_scorecard_pdf.html', context)
+    pdf_buffer  = BytesIO()
+    HTML(string=html_string, base_url=request.build_absolute_uri('/')).write_pdf(pdf_buffer)
+    pdf_buffer.seek(0)
+
+    filename = f"Performance_Scorecard_{timezone.now().strftime('%Y%m%d')}.pdf"
+    response  = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
