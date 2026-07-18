@@ -148,9 +148,10 @@
         </div>
 
         <!-- 7. Report Accuracy -->
+        <!-- 7. Report Accuracy (clickable → detail) -->
         <div class="col-6 col-md-4">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if accuracy_pct is not None %}{% if accuracy_pct >= 99 %}#198754{% elif accuracy_pct >= 95 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                 style="border-top: 4px solid {% if accuracy_pct is not None %}{% if accuracy_pct >= 99 %}#198754{% elif accuracy_pct >= 95 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold
                         {% if accuracy_pct is not None %}
@@ -164,6 +165,7 @@
                     <div class="text-muted mt-1" style="font-size:0.75rem;">
                         {% if accuracy_total > 0 %}{{ accuracy_error_free }} of {{ accuracy_total }} error-free{% else %}No data{% endif %}
                     </div>
+                    <a href="{% url 'performance_detail' 'report-accuracy' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Report Accuracy detail"></a>
                 </div>
             </div>
         </div>

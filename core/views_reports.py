@@ -3249,6 +3249,7 @@ _DETAIL_TITLES = {
     'profeds-errors':         'ProFeds Errors',
     'production-cycle-time':  'Avg Production Cycle Time',
     'readiness-window':       'Avg Readiness Window',
+    'report-accuracy':        'Report Accuracy',
     # Added incrementally
 }
 
@@ -3307,6 +3308,31 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── Report Accuracy ───────────────────────────────────────────────────
+    elif metric_slug == 'report-accuracy':
+        headers = ['Case ID', 'Employee', 'Technician', 'Finished', 'ProFeds Error']
+        qs = _exclude_test_account_cases(
+            Case.objects.filter(status='completed')
+        ).select_related('member', 'assigned_to')
+        if date_from_obj:
+            qs = qs.filter(date_completed__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(date_completed__date__lte=date_to_obj)
+        # Sort: errors first, then error-free
+        for c in qs.order_by('-has_profeds_error', '-date_completed'):
+            has_error = c.has_profeds_error
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip() or '—',
+                    c.assigned_to.get_full_name() if c.assigned_to else '—',
+                    c.date_completed.strftime('%m/%d/%y') if c.date_completed else '—',
+                    'Yes' if has_error else 'No',
+                ],
+                'highlight': 'danger' if has_error else '',
             })
 
     # ── Readiness Window ────────────────────────────────────────────────
