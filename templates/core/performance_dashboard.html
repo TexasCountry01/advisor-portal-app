@@ -205,16 +205,17 @@
             </div>
         </div>
 
-        <!-- 10. Level 1/2 Accuracy Rate -->
+        <!-- 10. Level 1/2 Accuracy Rate (clickable → detail) -->
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if team_returned > 0 %}#ffc107{% else %}#198754{% endif %} !important;">
+                 style="border-top: 4px solid {% if team_returned > 0 %}#ffc107{% else %}#198754{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold {% if team_returned > 0 %}text-warning{% else %}text-success{% endif %}">
                         {{ team_returned }}
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Level 1/2 Accuracy Rate</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">Cases returned by L3 for revision</div>
+                    <a href="{% url 'performance_detail' 'l1l2-accuracy-rate' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Level 1/2 Accuracy Rate detail"></a>
                 </div>
             </div>
         </div>

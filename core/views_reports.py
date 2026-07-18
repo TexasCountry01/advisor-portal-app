@@ -3251,6 +3251,7 @@ _DETAIL_TITLES = {
     'readiness-window':       'Avg Readiness Window',
     'report-accuracy':        'Report Accuracy',
     'l1l2-review-accuracy':   'L1/L2 Review Accuracy',
+    'l1l2-accuracy-rate':     'Level 1/2 Accuracy Rate',
     # Added incrementally
 }
 
@@ -3309,6 +3310,33 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── Level 1/2 Accuracy Rate ────────────────────────────────────────────
+    elif metric_slug == 'l1l2-accuracy-rate':
+        from cases.models import CaseReviewHistory
+        headers = ['Case ID', 'Employee', 'Technician', 'Reviewer', 'Returned On']
+        qs = CaseReviewHistory.objects.filter(
+            review_action='revisions_requested',
+            original_technician__isnull=False,
+            original_technician__is_test_account=False,
+        ).select_related('case', 'original_technician', 'reviewed_by')
+        if date_from_obj:
+            qs = qs.filter(reviewed_at__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(reviewed_at__date__lte=date_to_obj)
+        for r in qs.order_by('-reviewed_at'):
+            c = r.case
+            rows.append({
+                'case_pk': c.pk,
+                'cells': [
+                    c.external_case_id,
+                    f'{c.employee_first_name} {c.employee_last_name}'.strip() or '—',
+                    r.original_technician.get_full_name() if r.original_technician else '—',
+                    r.reviewed_by.get_full_name() if r.reviewed_by else '—',
+                    r.reviewed_at.strftime('%m/%d/%y'),
+                ],
+                'highlight': 'warning',
             })
 
     # ── L1/L2 Review Accuracy ──────────────────────────────────────────────
