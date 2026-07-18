@@ -187,10 +187,10 @@
             </div>
         </div>
 
-        <!-- 9. L1/L2 Review Accuracy -->
+        <!-- 9. L1/L2 Review Accuracy (clickable → detail) -->
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if team_accuracy_pct is not None %}{% if team_accuracy_pct >= 90 %}#198754{% elif team_accuracy_pct >= 75 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important;">
+                 style="border-top: 4px solid {% if team_accuracy_pct is not None %}{% if team_accuracy_pct >= 90 %}#198754{% elif team_accuracy_pct >= 75 %}#ffc107{% else %}#dc3545{% endif %}{% else %}#6c757d{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold
                         {% if team_accuracy_pct is not None %}
@@ -200,6 +200,7 @@
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">L1/L2 Review Accuracy</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">First-pass approval rate</div>
+                    <a href="{% url 'performance_detail' 'l1l2-review-accuracy' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View L1/L2 Review Accuracy detail"></a>
                 </div>
             </div>
         </div>

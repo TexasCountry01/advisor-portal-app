@@ -3250,6 +3250,7 @@ _DETAIL_TITLES = {
     'production-cycle-time':  'Avg Production Cycle Time',
     'readiness-window':       'Avg Readiness Window',
     'report-accuracy':        'Report Accuracy',
+    'l1l2-review-accuracy':   'L1/L2 Review Accuracy',
     # Added incrementally
 }
 
@@ -3308,6 +3309,42 @@ def performance_detail(request, metric_slug):
                     c.urgency.capitalize(),
                 ],
                 'highlight': 'danger' if c.urgency == 'rush' else '',
+            })
+
+    # ── L1/L2 Review Accuracy ──────────────────────────────────────────────
+    elif metric_slug == 'l1l2-review-accuracy':
+        from cases.models import CaseReviewHistory
+        OUTCOMES = ['approved', 'revisions_requested', 'corrections_needed']
+        OUTCOME_LABELS = {
+            'approved':            'Approved',
+            'revisions_requested': 'Revisions Requested',
+            'corrections_needed':  'Corrections Needed',
+        }
+        headers = ['Case ID', 'Technician', 'Reviewer', 'Review Date', 'Outcome']
+        qs = CaseReviewHistory.objects.filter(
+            review_action__in=OUTCOMES,
+            original_technician__isnull=False,
+            original_technician__is_test_account=False,
+        ).select_related('case', 'original_technician', 'reviewed_by')
+        if date_from_obj:
+            qs = qs.filter(reviewed_at__date__gte=date_from_obj)
+        if date_to_obj:
+            qs = qs.filter(reviewed_at__date__lte=date_to_obj)
+        # Non-approved outcomes first, then approved; within each group newest first
+        outcome_order = {'revisions_requested': 0, 'corrections_needed': 1, 'approved': 2}
+        records = sorted(qs, key=lambda r: (outcome_order[r.review_action], -r.reviewed_at.timestamp()))
+        for r in records:
+            action = r.review_action
+            rows.append({
+                'case_pk': r.case.pk,
+                'cells': [
+                    r.case.external_case_id,
+                    r.original_technician.get_full_name() if r.original_technician else '—',
+                    r.reviewed_by.get_full_name() if r.reviewed_by else '—',
+                    r.reviewed_at.strftime('%m/%d/%y'),
+                    OUTCOME_LABELS[action],
+                ],
+                'highlight': 'warning' if action == 'revisions_requested' else ('danger' if action == 'corrections_needed' else ''),
             })
 
     # ── Report Accuracy ───────────────────────────────────────────────────
