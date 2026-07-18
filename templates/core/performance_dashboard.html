@@ -220,10 +220,10 @@
             </div>
         </div>
 
-        <!-- 11. Corrected by L3 -->
+        <!-- 11. Corrected by L3 (clickable → detail) -->
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm h-100 text-center"
-                 style="border-top: 4px solid {% if team_corrected_by_l3 > 0 %}#6f42c1{% else %}#198754{% endif %} !important;">
+                 style="border-top: 4px solid {% if team_corrected_by_l3 > 0 %}#6f42c1{% else %}#198754{% endif %} !important; position:relative; cursor:pointer;">
                 <div class="card-body py-4">
                     <div class="display-5 fw-bold {% if team_corrected_by_l3 > 0 %}text-muted{% else %}text-success{% endif %}"
                          style="{% if team_corrected_by_l3 > 0 %}color:#6f42c1 !important;{% endif %}">
@@ -231,6 +231,7 @@
                     </div>
                     <div class="fw-semibold mt-1" style="font-size:0.85rem;">Corrected by L3</div>
                     <div class="text-muted mt-1" style="font-size:0.75rem;">L3 fixed without returning</div>
+                    <a href="{% url 'performance_detail' 'corrected-by-l3' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="stretched-link" aria-label="View Corrected by L3 detail"></a>
                 </div>
             </div>
         </div>
