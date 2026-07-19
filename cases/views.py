@@ -153,8 +153,7 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     if quick_filter == 'on_hold':
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
-        has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-        return queryset.filter(Q(has_member_updates=True) | has_unread)
+        return queryset.filter(has_member_updates=True)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -204,9 +203,9 @@ def _build_staff_quick_tiles(queryset, user):
             Q(date_due__lt=today) & ~inactive, then=1
         ), default=0, output_field=IntegerField())),
     )
-    # Alerts requires Exists subquery â€” one separate COUNT
-    has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-    counts['alerts'] = queryset.filter(Q(has_member_updates=True) | has_unread).count()
+    # Alerts counts cases with unprocessed member updates -- global flag, same for all staff.
+    # Cleared globally when any staff opens the case; clearing by the case owner clears it for everyone.
+    counts['alerts'] = queryset.filter(has_member_updates=True).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
