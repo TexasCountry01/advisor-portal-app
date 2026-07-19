@@ -153,6 +153,8 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     if quick_filter == 'on_hold':
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
+        if user.role == 'technician':
+            return queryset.filter(has_member_updates=True, assigned_to=user)
         return queryset.filter(has_member_updates=True)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'draft'])
@@ -205,7 +207,12 @@ def _build_staff_quick_tiles(queryset, user):
     )
     # Alerts counts cases with unprocessed member updates -- global flag, same for all staff.
     # Cleared globally when any staff opens the case; clearing by the case owner clears it for everyone.
-    counts['alerts'] = queryset.filter(has_member_updates=True).count()
+    # Technicians always see only their own cases' alerts regardless of which dashboard filter is active.
+    # Admins and managers see the full queryset scope (visibility across all cases).
+    if user.role == 'technician':
+        counts['alerts'] = queryset.filter(has_member_updates=True, assigned_to=user).count()
+    else:
+        counts['alerts'] = queryset.filter(has_member_updates=True).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
