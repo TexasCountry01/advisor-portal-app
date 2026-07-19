@@ -88,6 +88,9 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# Remove docs/ — reference documents are not needed on the server
+ssh $testServerUser@$testServerHost "rm -rf $projectPath/docs"
+
 Write-Host "OK - Git pull completed" -ForegroundColor Green
 Write-Host ""
 

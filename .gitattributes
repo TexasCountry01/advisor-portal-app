@@ -1,0 +1,5 @@
+# Files marked export-ignore are excluded from git archive exports
+# and are removed from server deployments after git pull.
+# See deploy_to_production.ps1 and deploy_to_test_server.ps1 for the cleanup step.
+
+docs/    export-ignore
