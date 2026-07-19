@@ -6,55 +6,87 @@
 
 ## The Complete Case Timeline
 
-```mermaid
-flowchart TD
-    A([🧑 Member submits case]) -->|"date_submitted\nauto-recorded by system"| B
+```
+STANDARD PATH (no L3 review, immediate release)
+─────────────────────────────────────────────────────────────────────────────
 
-    B[Case sits in queue\nStatus: submitted] --> C
+  Member submits case
+        │
+        │  ► date_submitted  (auto-recorded the moment member clicks Submit)
+        ▼
+  Case in queue — Status: submitted
+        │
+  Tech accepts/takes the case
+        │
+        │  ► date_accepted  (auto-recorded the moment tech accepts)
+        ▼
+  Tech works the case — Status: accepted
+        │
+  Tech clicks "Release Case" on Pre-Completion Review
+        │
+        │  ► date_completed  (auto-recorded — this is when the TECH IS DONE,
+        │                      NOT when the advisor sees the report)
+        ▼
+  Report immediately visible to advisor — Status: completed
+        │
+        │  ► actual_release_date  (auto-recorded — same moment as date_completed
+        │                          for immediate release)
+        ▼
+  Email notification sent to advisor
+        │
+        │  ► actual_email_sent_date  (auto-recorded by email service after
+        │                              confirming successful delivery)
+        ▼
+  Advisor notified ✓
 
-    C([🔧 Tech accepts / takes case]) -->|"date_accepted\nauto-recorded by system"| D
 
-    D[Tech works the case\nStatus: accepted] --> E
+─────────────────────────────────────────────────────────────────────────────
+WITH L3 REVIEW  (L1 tech submits case for senior tech approval)
+─────────────────────────────────────────────────────────────────────────────
 
-    E{Does case require\nL3 review?}
+  Tech works the case — Status: accepted
+        │
+  L1 Tech clicks "Submit for Review"
+        │
+        │  ► CaseReviewHistory record created
+        │    .reviewed_at  (auto-recorded — this is the "submitted for review" date)
+        │    .review_action = "submitted_for_review"
+        ▼
+  Awaiting L3 review — Status: pending_review
+        │
+        ├── L3 requests revisions ──► Tech revises ──► Submit for Review again
+        │                                               (new CaseReviewHistory record)
+        │
+        └── L3 approves ──► Tech clicks "Release Case"
+                                  │
+                                  │  ► date_completed  (tech done)
+                                  ▼
+                            Continue to release path above
 
-    E -->|No| H
-    E -->|Yes| F
 
-    F([🔧 L1 Tech clicks\nSubmit for Review]) -->|"CaseReviewHistory.reviewed_at\nauto-recorded by system"| G
+─────────────────────────────────────────────────────────────────────────────
+WITH SCHEDULED RELEASE  (tech holds the report for a future date)
+─────────────────────────────────────────────────────────────────────────────
 
-    G[Awaiting L3 review\nStatus: pending_review] --> G2
-
-    G2{L3 decision}
-    G2 -->|Revisions needed| D
-    G2 -->|Approved| H
-
-    H([🔧 Tech clicks Release Case\non Pre-Completion Review page]) -->|"date_completed\nauto-recorded by system"| I
-
-    I{Release now or\nschedule for later?}
-
-    I -->|Release now| J
-    I -->|Schedule for later| K
-
-    J[Report visible to advisor\nStatus: completed] -->|"actual_release_date\nauto-recorded by system"| L
-
-    K[Report held, not yet visible\nStatus: completed] -->|"scheduled_release_date\nset to future date/time chosen by tech"| K2
-
-    K2([⏰ Cron job runs\nwhen scheduled time arrives]) -->|"actual_release_date\nauto-recorded by cron"| L
-
-    L[Report visible to advisor] -->|"scheduled_email_date\nalready set; email queued"| M
-
-    M([📧 Email service sends\nnotification to advisor]) -->|"actual_email_sent_date\nauto-recorded by email service"| N
-
-    N([✅ Advisor notified])
-
-    style A fill:#d4e6f1,stroke:#2980b9
-    style C fill:#d5f5e3,stroke:#27ae60
-    style F fill:#fdebd0,stroke:#e67e22
-    style H fill:#d5f5e3,stroke:#27ae60
-    style K2 fill:#e8daef,stroke:#8e44ad
-    style M fill:#e8daef,stroke:#8e44ad
-    style N fill:#d5f5e3,stroke:#27ae60
+  Tech clicks "Release Case" and picks a future date/time
+        │
+        │  ► date_completed         (tech done NOW)
+        │  ► scheduled_release_date  (future date/time chosen by tech)
+        │  ► scheduled_email_date    (same future date/time — email queued)
+        ▼
+  Report held, NOT yet visible — Status: completed (but unreleased)
+        │
+  ⏰  Cron job runs automatically when scheduled time arrives
+        │
+        │  ► actual_release_date  (auto-recorded by cron job)
+        ▼
+  Report now visible to advisor
+        │
+  Email service sends notification
+        │
+        │  ► actual_email_sent_date  (auto-recorded after confirmed delivery)
+        ▼
+  Advisor notified ✓
 ```
 
 ---
