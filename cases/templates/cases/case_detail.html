@@ -54,6 +54,8 @@
                     {% endif %}
                 {% elif case.status == 'cancelled' %}
                     <span class="badge bg-dark fs-5" title="Case has been canceled">Canceled</span>
+                {% elif case.status == 'declined' %}
+                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined by ProFeds</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -74,6 +76,8 @@
                     <span class="badge bg-success fs-5" title="Case completed and ready for download">Completed</span>
                 {% elif case.status == 'cancelled' %}
                     <span class="badge bg-dark fs-5" title="Case has been canceled">Canceled</span>
+                {% elif case.status == 'declined' %}
+                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined by ProFeds</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -94,6 +98,8 @@
                     <span class="badge bg-success fs-5" title="Case completed and ready for download">Completed</span>
                 {% elif case.status == 'cancelled' %}
                     <span class="badge bg-dark fs-5" title="Case has been canceled">Canceled</span>
+                {% elif case.status == 'declined' %}
+                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined by ProFeds</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -104,7 +110,7 @@
                 <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
-                {% if case.status != 'draft' and case.status != 'completed' and case.status != 'hold' and case.status != 'cancelled' %}
+                {% if case.status != 'draft' and case.status != 'completed' and case.status != 'hold' and case.status != 'cancelled' and case.status != 'declined' %}
                 <a href="{% url 'cases:edit_case' case.id %}" class="btn btn-outline-warning">
                     <i class="bi bi-pencil"></i> Edit Case
                 </a>
@@ -1802,6 +1808,11 @@
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
+                                    {% if case.urgency == 'rush' %}
+                                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
+                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard
+                                    </button>
+                                    {% endif %}
                                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
                                         <i class="bi bi-x-octagon"></i> Decline This Case
                                     </button>
@@ -1820,6 +1831,11 @@
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
+                                    {% if case.urgency == 'rush' %}
+                                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
+                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard
+                                    </button>
+                                    {% endif %}
                                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
                                         <i class="bi bi-x-octagon"></i> Decline This Case
                                     </button>
@@ -4164,13 +4180,46 @@ function submitDeclineCase() {
         } else {
             alert('Error: ' + (data.error || 'Could not decline case.'));
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-x-octagon"></i> Decline Case';
+            btn.innerHTML = '<i class="bi bi-x-octagon"></i> Decline &amp; Close Case';
         }
     })
     .catch(err => {
         console.error('Decline error:', err);
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-x-octagon"></i> Decline Case';
+        btn.innerHTML = '<i class="bi bi-x-octagon"></i> Decline &amp; Close Case';
+    });
+}
+
+function submitDowngradeRush() {
+    const note = document.getElementById('downgradeNote').value.trim();
+    const btn = document.getElementById('confirmDowngradeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+
+    fetch('{% url "cases:downgrade_rush_to_standard" case.id %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]')?.value || ''
+        },
+        credentials: 'same-origin',
+        body: JSON.stringify({ note: note })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('downgradeRushModal')).hide();
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Could not downgrade rush.'));
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-down-circle"></i> Downgrade to Standard';
+        }
+    })
+    .catch(err => {
+        console.error('Downgrade rush error:', err);
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-arrow-down-circle"></i> Downgrade to Standard';
     });
 }
 </script>
@@ -4635,7 +4684,8 @@ function acceptAndPutOnHold() {
             <div class="modal-body">
                 <div class="alert alert-warning mb-3">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <strong>This action cannot be undone.</strong> The case will be cancelled and the member will be notified with your reason.
+                    <strong>This will permanently remove the case from the queue.</strong> The member will be notified with your reason.
+                    {% if case.urgency == 'rush' %}<br><br><strong>Note:</strong> If you can handle this case but not on a rush timeline, use <em>"Decline Rush — Keep as Standard"</em> instead.{% endif %}
                 </div>
                 <div class="mb-3">
                     <label for="declineReason" class="form-label">Reason for Declining <span class="text-danger">*</span></label>
@@ -4646,7 +4696,36 @@ function acceptAndPutOnHold() {
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeclineBtn" onclick="submitDeclineCase()">
-                    <i class="bi bi-x-octagon"></i> Decline Case
+                    <i class="bi bi-x-octagon"></i> Decline &amp; Close Case
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Downgrade Rush to Standard Modal -->
+<div class="modal fade" id="downgradeRushModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title"><i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info mb-3">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>The case stays in the queue.</strong> Urgency will change from <strong>Rush</strong> to <strong>Normal</strong> and the due date will be recalculated to the standard 7-day turnaround. The member will be notified automatically.
+                </div>
+                <div class="mb-3">
+                    <label for="downgradeNote" class="form-label">Optional note to member</label>
+                    <textarea class="form-control" id="downgradeNote" rows="3" placeholder="e.g., We are currently at full capacity and cannot accommodate rush requests at this time."></textarea>
+                    <div class="form-text">If provided, this note will be included in the member notification.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" id="confirmDowngradeBtn" onclick="submitDowngradeRush()">
+                    <i class="bi bi-arrow-down-circle"></i> Downgrade to Standard
                 </button>
             </div>
         </div>

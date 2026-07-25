@@ -2410,7 +2410,7 @@ def get_system_health_data(date_from=None, date_to=None):
 
     # Zero-document cases (non-cancelled, non-draft)
     zero_doc_cases = (
-        Case.objects.exclude(status__in=['cancelled', 'draft'])
+        Case.objects.exclude(status__in=['cancelled', 'declined', 'draft'])
         .annotate(doc_count=Count('documents'))
         .filter(doc_count=0)
         .count()

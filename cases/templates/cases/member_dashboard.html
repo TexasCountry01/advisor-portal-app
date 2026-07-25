@@ -204,6 +204,10 @@
                             <input class="form-check-input" type="checkbox" name="status" value="cancelled" id="status_cancelled" {% if 'cancelled' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_cancelled">Canceled</label>
                         </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="status" value="declined" id="status_declined" {% if 'declined' in status_filter %}checked{% endif %}>
+                            <label class="form-check-label" for="status_declined">Declined by ProFeds</label>
+                        </div>
                     </div>
                 </div>
                 <div class="col-md-2">
@@ -353,10 +357,12 @@
                                     {% endif %}
                                 {% elif case.status == 'cancelled' %}
                                     <span class="badge bg-dark" title="Case canceled">Canceled</span>
+                                {% elif case.status == 'declined' %}
+                                    <span class="badge bg-danger" title="Case declined by ProFeds">Declined by ProFeds</span>
                                 {% endif %}
                             </td>
                             <td class="column-credit {% if 'credit' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.credit_value and case.status != 'cancelled' %}
+                                {% if case.credit_value and case.status != 'cancelled' and case.status != 'declined' %}
                                     {{ case.credit_value }}
                                 {% else %}
                                     —

@@ -144,7 +144,7 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     if quick_filter == 'submitted':
         return queryset.filter(status='submitted')
     if quick_filter == 'pending':
-        return queryset.exclude(status__in=['completed', 'cancelled', 'draft'])
+        return queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'scheduled':
         return queryset.filter(
             status='completed',
@@ -160,14 +160,14 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
             return queryset.filter(has_member_updates=True, assigned_to=user)
         return queryset.filter(has_member_updates=True)
     if quick_filter == 'due_today':
-        return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'draft'])
+        return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
-        return queryset.filter(date_due=tomorrow).exclude(status__in=['completed', 'cancelled', 'draft'])
+        return queryset.filter(date_due=tomorrow).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_next_7d':
         next_7d = today + timedelta(days=7)
-        return queryset.filter(date_due__gte=today, date_due__lte=next_7d).exclude(status__in=['completed', 'cancelled', 'draft'])
+        return queryset.filter(date_due__gte=today, date_due__lte=next_7d).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'past_due':
-        return queryset.filter(date_due__lt=today).exclude(status__in=['completed', 'cancelled', 'draft'])
+        return queryset.filter(date_due__lt=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
 
     return queryset
 
@@ -182,7 +182,7 @@ def _build_staff_quick_tiles(queryset, user):
     today = timezone.localtime(timezone.now()).date()
     tomorrow = today + timedelta(days=1)
     next_7d = today + timedelta(days=7)
-    inactive = Q(status__in=['completed', 'cancelled', 'draft'])
+    inactive = Q(status__in=['completed', 'cancelled', 'declined', 'draft'])
 
     counts = queryset.aggregate(
         submitted=Sum(DbCase(When(status='submitted', then=1), default=0, output_field=IntegerField())),
@@ -234,7 +234,7 @@ def _apply_member_quick_filter(queryset, quick_filter, user):
             actual_release_date__gte=ready_since
         )
     if quick_filter == 'pending':
-        return queryset.exclude(status__in=['cancelled', 'draft']).exclude(
+        return queryset.exclude(status__in=['cancelled', 'declined', 'draft']).exclude(
             status='completed', actual_release_date__isnull=False
         )
     if quick_filter == 'on_hold':
@@ -274,7 +274,7 @@ def _build_member_quick_tiles(queryset, user):
             then=1
         ), default=0, output_field=IntegerField())),
         pending=Sum(DbCase(When(
-            ~Q(status__in=['cancelled', 'draft']) &
+            ~Q(status__in=['cancelled', 'declined', 'draft']) &
             ~Q(status='completed', actual_release_date__isnull=False),
             then=1
         ), default=0, output_field=IntegerField())),
@@ -2441,6 +2441,116 @@ def resume_case_from_hold(request, case_id):
 
 
 @login_required
+def downgrade_rush_to_standard(request, case_id):
+    """
+    Downgrade a rush case to normal (standard 7-day) urgency without cancelling it.
+    Used when ProFeds cannot honour the rush timeline but CAN process the case.
+    Notifies the advisor of the new due date and records the action in the audit trail.
+    """
+    from django.http import JsonResponse
+    from core.models import AuditLog
+    from cases.utils_holidays import calculate_due_date
+
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+
+    if user.role not in ['administrator', 'manager', 'technician']:
+        return JsonResponse({'success': False, 'error': 'Staff only.'}, status=403)
+
+    if case.urgency != 'rush':
+        return JsonResponse({'success': False, 'error': 'This case is not marked as rush.'}, status=400)
+
+    if case.status in ['completed', 'cancelled', 'declined', 'draft']:
+        return JsonResponse({'success': False, 'error': 'Cannot modify urgency on a closed case.'}, status=400)
+
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
+    try:
+        body_data = json.loads(request.body) if request.body else {}
+        note = body_data.get('note', '').strip()
+
+        from core.models import SystemSettings
+        sys_settings = SystemSettings.get_settings()
+        submitted_date = case.date_submitted.date() if case.date_submitted else timezone.localtime(timezone.now()).date()
+        new_due_date, _ = calculate_due_date(submitted_date, base_days=sys_settings.default_case_due_days)
+
+        old_due_date = case.date_due
+        case.urgency = 'normal'
+        case.date_due = new_due_date
+        case.save(update_fields=['urgency', 'date_due'])
+
+        AuditLog.objects.create(
+            case=case,
+            user=user,
+            action_type='case_rush_downgraded',
+            description=(
+                f'Rush urgency downgraded to Standard by {user.get_full_name() or user.username}. '
+                f'New due date: {new_due_date.strftime("%m/%d/%Y")}.'
+                + (f' Note: {note}' if note else '')
+            ),
+            metadata={
+                'downgraded_by': user.username,
+                'old_due_date': str(old_due_date),
+                'new_due_date': str(new_due_date),
+                'note': note,
+            }
+        )
+
+        # In-app notification for advisor
+        if case.member:
+            employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+            _create_case_notification_if_allowed(
+                case=case,
+                member=case.member,
+                notification_type='case_on_hold',   # reuse hold type for advisor alert
+                title=f'Update: Your case for {employee_name}',
+                message=(
+                    f'We are unable to process this case on a rush timeline. '
+                    f'Your case has been moved to standard processing with a new due date of '
+                    f'{new_due_date.strftime("%m/%d/%Y")}.'
+                    + (f' Note from ProFeds: {note}' if note else '')
+                ),
+                hold_reason='Rush request declined — standard 7-day turnaround applies.',
+                is_read=False,
+                created_at=timezone.now()
+            )
+
+            # Email the advisor
+            from cases.services.email_service import send_email_notification, get_case_recipient_emails
+            recipients = get_case_recipient_emails(case)
+            for email in recipients:
+                send_email_notification(
+                    subject=f'Update on Your Case: {employee_name} — Rush Request Declined',
+                    template_name='case_declined.html',
+                    context={
+                        'member_name': case.member.get_full_name() or case.member.username,
+                        'employee_name': employee_name,
+                        'case_id': case.external_case_id,
+                        'decline_reason': (
+                            f'We are unable to process this case on a rush timeline. '
+                            f'Your case will be processed under the standard 7-day turnaround. '
+                            f'New expected completion date: {new_due_date.strftime("%B %d, %Y")}.'
+                            + (f'\n\nNote from Benefits Team: {note}' if note else '')
+                        ),
+                    },
+                    recipient_email=email,
+                    case=case,
+                    user=user,
+                )
+
+        return JsonResponse({
+            'success': True,
+            'new_due_date': new_due_date.strftime('%m/%d/%Y'),
+            'message': f'Rush downgraded to Standard. New due date: {new_due_date.strftime("%m/%d/%Y")}.',
+        })
+
+    except Exception as e:
+        logger.error(f'Error downgrading rush for case {case_id}: {e}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
 def decline_case(request, case_id):
     """
     Decline a case on behalf of ProFeds staff (Admin, Manager, or Technician).
@@ -2483,15 +2593,15 @@ def decline_case(request, case_id):
         if not reason:
             return JsonResponse({'success': False, 'error': 'Please provide a reason for declining the case.'}, status=400)
 
-        # Update case status
-        case.status = 'cancelled'
+        # Update case status to 'declined' (distinct from member-initiated 'cancelled')
+        case.status = 'declined'
         case.save(update_fields=['status'])
 
         # Audit log
         AuditLog.objects.create(
             case=case,
             user=user,
-            action_type='case_cancelled',
+            action_type='case_declined',
             description=f'Case declined by {user.get_full_name() or user.username}: {reason}',
             metadata={
                 'declined_by_staff': True,
