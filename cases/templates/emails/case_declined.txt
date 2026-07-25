@@ -1,6 +1,6 @@
 Hi {{ member_first_name }},
 
-We regret to inform you that we are unable to process the report for {{ employee_name }} (Case ID: {{ case_id }}).
+We regret to inform you that we are unable to process the report for {{ employee_name }}.
 
 Reason:
 {{ decline_reason }}
