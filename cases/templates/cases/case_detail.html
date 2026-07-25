@@ -1296,7 +1296,7 @@
                                         {% elif event.action_type == 'case_declined' %}
                                             {% if event.metadata.decline_reason %}{{ event.metadata.decline_reason|truncatewords:12 }}{% endif %}
                                         {% else %}
-                                            —
+                                            ï¿½
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -1423,6 +1423,14 @@
 
                         <!-- Buttons -->
                         <div class="d-grid gap-2">
+                            {% if case.urgency == 'rush' %}
+                            <div class="alert alert-warning py-2 px-3 mb-1" style="font-size:0.82rem;">
+                                <i class="bi bi-lightning-charge-fill"></i> <strong>Rush Request</strong> â€” Accepting this case confirms the rush timeline. If you cannot accommodate the rush, use the button below instead.
+                            </div>
+                            <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
+                                <i class="bi bi-clock-history"></i> Accept â€” Rush Not Available (Apply Standard Timeline)
+                            </button>
+                            {% endif %}
                             <button type="button" class="btn btn-outline-success btn-sm" id="acceptCaseBtn">
                                 <i class="bi bi-check-circle"></i> Accept Case
                             </button>
@@ -1831,11 +1839,6 @@
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
-                                    {% if case.urgency == 'rush' %}
-                                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
-                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard
-                                    </button>
-                                    {% endif %}
                                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
                                         <i class="bi bi-x-octagon"></i> Decline This Case
                                     </button>
@@ -1854,11 +1857,6 @@
                                     <button type="button" class="btn btn-outline-warning" onclick="showPutOnHoldModal()">
                                         <i class="bi bi-pause-circle"></i> Put on Hold
                                     </button>
-                                    {% if case.urgency == 'rush' %}
-                                    <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
-                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard
-                                    </button>
-                                    {% endif %}
                                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
                                         <i class="bi bi-x-octagon"></i> Decline This Case
                                     </button>
@@ -3143,7 +3141,7 @@ function deleteNote(noteId, caseId) {
                     <input class="form-check-input" type="radio" name="releaseOption" id="shortDelay" value="delay">
                     <label class="form-check-label" for="shortDelay">
                         <strong><i class="bi bi-clock text-primary"></i> Short Delay (releases today)</strong><br>
-                        <small class="text-muted">Useful when finishing close to a due date — releases later today</small>
+                        <small class="text-muted">Useful when finishing close to a due date ï¿½ releases later today</small>
                     </label>
                 </div>
                 <div id="shortDelayGroup" style="display:none; padding: 12px 16px 14px; background: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 6px 6px; margin-bottom: 8px;">
@@ -3971,7 +3969,7 @@ tinymce.init({
                     const estimatedTop = window.innerHeight - pos.bottom - 400;
                     const estimatedLeft = window.innerWidth - pos.right - (notesWindow.offsetWidth || 500);
                     if (estimatedTop < 0 || estimatedLeft < -100 || pos.bottom < 0 || pos.right < 0) {
-                        // Bad position (e.g. dragged off screen) — clear and use default
+                        // Bad position (e.g. dragged off screen) ï¿½ clear and use default
                         localStorage.removeItem('notesWindowPos');
                     } else {
                         notesWindow.style.bottom = pos.bottom + 'px';
@@ -3984,7 +3982,7 @@ tinymce.init({
                 }
             }
             
-            // Notes window always starts hidden — user opens it manually.
+            // Notes window always starts hidden ï¿½ user opens it manually.
             // Notes content is preserved server-side regardless of window state.
             notesWindow.style.display = 'none';
             document.getElementById('minimizeNotesButton').style.display = 'block';
@@ -4000,7 +3998,7 @@ tinymce.init({
     }
 });
 
-// Floating Notes Window Management — drag uses Pointer Capture API so TinyMCE iframe can never steal events
+// Floating Notes Window Management ï¿½ drag uses Pointer Capture API so TinyMCE iframe can never steal events
 function setupFloatingWindowDrag() {
     const header = document.querySelector('.floating-window-header');
     const notesWindow = document.getElementById('floatingNotesWindow');
@@ -4010,7 +4008,7 @@ function setupFloatingWindowDrag() {
 
     header.addEventListener('pointerdown', function(e) {
         if (e.button !== 0) return;
-        // Don't intercept clicks on buttons — let their onclick handlers fire normally
+        // Don't intercept clicks on buttons ï¿½ let their onclick handlers fire normally
         if (e.target.closest('button')) return;
         const rect = notesWindow.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
@@ -4048,7 +4046,7 @@ function setupFloatingWindowDrag() {
     });
 }
 
-// Set up drag as soon as DOM is ready — independent of TinyMCE initialization
+// Set up drag as soon as DOM is ready ï¿½ independent of TinyMCE initialization
 document.addEventListener('DOMContentLoaded', function() {
     setupFloatingWindowDrag();
 });
@@ -4713,11 +4711,11 @@ function acceptAndPutOnHold() {
                 <div class="alert alert-warning mb-3">
                     <i class="bi bi-exclamation-triangle"></i>
                     <strong>This will permanently remove the case from the queue.</strong> The member will be notified with your reason.
-                    {% if case.urgency == 'rush' %}<br><br><strong>Note:</strong> If you can handle this case but not on a rush timeline, use <em>"Decline Rush — Keep as Standard"</em> instead.{% endif %}
+                    {% if case.urgency == 'rush' and case.status == 'submitted' %}<br><br><strong>Note:</strong> If you can handle this case but not on a rush timeline, use <em>&ldquo;Accept &mdash; Rush Not Available&rdquo;</em> instead.{% endif %}
                 </div>
                 <div class="mb-3">
                     <label for="declineReason" class="form-label">Reason for Declining <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="declineReason" rows="3" placeholder="e.g., NAF employee — ProFeds does not handle NAF cases." required></textarea>
+                    <textarea class="form-control" id="declineReason" rows="3" placeholder="e.g., NAF employee ï¿½ ProFeds does not handle NAF cases." required></textarea>
                     <div class="form-text">This message will be sent to the member.</div>
                 </div>
             </div>
@@ -4746,8 +4744,8 @@ function acceptAndPutOnHold() {
                 </div>
                 <div class="mb-3">
                     <label for="downgradeNote" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="downgradeNote" rows="3" placeholder="e.g., We are currently at full capacity and cannot accommodate rush requests at this time." required></textarea>
-                    <div class="form-text">Required. This will be visible to the advisor in the case chat and notification email.</div>
+                    <textarea class="form-control" id="downgradeNote" rows="4" required>Due to current volume, we are unable to accommodate this rush request. We have adjusted the due date to 7 days from the date of submission, but will work hard to complete it prior to that date.</textarea>
+                    <div class="form-text">Required. This will be visible to the advisor in the case chat and notification email. You may edit the text above.</div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -5271,7 +5269,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 {% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed,hold' %}
-<!-- ===== Notes Library Panel (plain fixed div — no Bootstrap focus trap) ===== -->
+<!-- ===== Notes Library Panel (plain fixed div ï¿½ no Bootstrap focus trap) ===== -->
 <div id="refLibraryPanel" style="
     display: none;
     position: fixed;
@@ -5298,7 +5296,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="padding: 8px 10px; flex-shrink: 0; border-bottom: 1px solid #dee2e6;">
       <div style="display:flex; gap:4px; align-items:center;">
         <input type="text" id="refLibSearch" class="form-control form-control-sm"
-               placeholder="Search clauses (e.g. VERA, TSP, FEHB…)" autocomplete="off" style="flex:1 1 0%; min-width:0; width:auto;">
+               placeholder="Search clauses (e.g. VERA, TSP, FEHBï¿½)" autocomplete="off" style="flex:1 1 0%; min-width:0; width:auto;">
         <button type="button" id="refSearchClearBtn" onclick="refClearSearch()"
                 style="display:none; background:none; border:none; font-size:16px; color:#999; cursor:pointer; padding:0 2px;" title="Clear search">&times;</button>
         <button type="button" id="refBrowseAllBtn" onclick="refToggleBrowse()"
@@ -5321,7 +5319,7 @@ document.addEventListener('DOMContentLoaded', function() {
 (function() {
   let refSearchTimer = null;
 
-  // Clause data cache — keyed by clause id (string).
+  // Clause data cache ï¿½ keyed by clause id (string).
   // Avoids storing HTML bodies inside HTML attributes (which the HTML parser corrupts).
   const refClauseMap = {};
 
@@ -5470,7 +5468,7 @@ document.addEventListener('DOMContentLoaded', function() {
         html += `</div>`;
       } else {
         html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
-                   <em>No searches yet — type above to search.</em>
+                   <em>No searches yet ï¿½ type above to search.</em>
                  </div>`;
       }
 
@@ -5524,7 +5522,7 @@ document.addEventListener('DOMContentLoaded', function() {
         featuredHtml += buildClauseListHtml(data.results);
         slot.outerHTML = featuredHtml;
       })
-      .catch(() => { /* Common Notes unavailable — static content already shown */ });
+      .catch(() => { /* Common Notes unavailable ï¿½ static content already shown */ });
   }
 
   // -- Browse full document ----------------------------------------------
@@ -5577,7 +5575,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderFullDoc(results) {
     // Guard: user may have started typing while the browse fetch was in-flight;
-    // in that case refBrowseMode was reset to false — don't overwrite search results.
+    // in that case refBrowseMode was reset to false ï¿½ don't overwrite search results.
     if (!refBrowseMode) return;
 
     const resultsEl = document.getElementById('refLibResults');
@@ -5665,7 +5663,7 @@ document.addEventListener('DOMContentLoaded', function() {
          </button>
        </span>`;
 
-    // Focus the search box — user types their query next
+    // Focus the search box ï¿½ user types their query next
     const input = document.getElementById('refLibSearch');
     const q = input ? input.value.trim() : '';
     if (input) input.focus();
@@ -5726,7 +5724,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('refBrowseAllBtn');
         if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse';
       }
-      // Keep refScopeCategory — typing while scoped keeps the scope
+      // Keep refScopeCategory ï¿½ typing while scoped keeps the scope
 
       if (q.length < 2) {
         refScopeCategory = null;
@@ -5761,7 +5759,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function doRefSearch(q) {
     addRecentSearch(q);
     const resultsEl = document.getElementById('refLibResults');
-    resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Searching…</div>';
+    resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Searchingï¿½</div>';
 
     let url = `/references/api/search/?q=${encodeURIComponent(q)}`;
     if (refScopeCategory) url += `&category=${encodeURIComponent(refScopeCategory)}`;
@@ -5783,12 +5781,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let html = '';
     results.forEach(r => {
       const breadcrumb = r.subcategory
-        ? `${escHtml(r.category)} › ${escHtml(r.subcategory)}`
+        ? `${escHtml(r.category)} ï¿½ ${escHtml(r.subcategory)}`
         : escHtml(r.category);
       const featuredBadge = r.is_featured
         ? '<i class="bi bi-star-fill text-warning" style="font-size:10px; margin-right:3px;" title="Common Note"></i>'
         : '';
-      // Use <span style="display:block"> NOT <div> — browsers strip block elements out of <button>,
+      // Use <span style="display:block"> NOT <div> ï¿½ browsers strip block elements out of <button>,
       // making the button zero-size and unclickable.
       html += `<button type="button" class="list-group-item list-group-item-action py-2 px-3"
                  style="font-size:12px; text-align:left; border-bottom:1px solid #f0f0f0; line-height:1.3;"
@@ -5811,7 +5809,7 @@ document.addEventListener('DOMContentLoaded', function() {
     html += buildClauseListHtml(results);
     html += '</div>';
     el.innerHTML = html;
-    // no attachClauseClickHandlers needed — delegation handles it
+    // no attachClauseClickHandlers needed ï¿½ delegation handles it
   }
 
   function attachClauseClickHandlers() {
@@ -5836,7 +5834,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const loadingDiv = document.createElement('div');
       loadingDiv.id = 'refInlinePreview';
       loadingDiv.style.cssText = 'padding:8px 12px; font-size:12px; color:#666; background:#f8f9fa; border-top:2px solid #285FBF;';
-      loadingDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading…';
+      loadingDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Loadingï¿½';
       triggerBtn.insertAdjacentElement('afterend', loadingDiv);
       triggerBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       fetch(`/references/api/clause/${clause.id}/`)
@@ -5857,7 +5855,7 @@ document.addEventListener('DOMContentLoaded', function() {
     previewClause = clause;
     previewTrigger = triggerBtn;
 
-    // Build the inline preview element — inserted directly after the clicked row
+    // Build the inline preview element ï¿½ inserted directly after the clicked row
     const preview = document.createElement('div');
     preview.id = 'refInlinePreview';
     preview.style.cssText = 'border-top:2px solid #285FBF; border-bottom:1px solid #dee2e6; background:#f8f9fa;';
@@ -5866,7 +5864,7 @@ document.addEventListener('DOMContentLoaded', function() {
     bodyDiv.style.cssText = 'padding:8px 12px 4px; font-size:12px; color:#333; line-height:1.6;';
     bodyDiv.innerHTML = clause.body || '<em class="text-muted">No content</em>';
 
-    // Action buttons — sticky so Insert is always reachable even for very long clauses
+    // Action buttons ï¿½ sticky so Insert is always reachable even for very long clauses
     const actionsDiv = document.createElement('div');
     actionsDiv.style.cssText = 'display:flex; gap:6px; padding:6px 12px 8px; border-top:1px solid #dee2e6; background:#f8f9fa; position:sticky; bottom:0; z-index:1;';
 
@@ -5912,11 +5910,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const status = document.getElementById('refLibStatus');
     if (!editor) {
       status.style.color = '#dc3545';
-      status.textContent = '? Notes editor not ready — please wait a moment and try again.';
+      status.textContent = '? Notes editor not ready ï¿½ please wait a moment and try again.';
       return;
     }
 
-    // clause.body is now HTML — insert directly
+    // clause.body is now HTML ï¿½ insert directly
     editor.execCommand('mceInsertContent', false, clause.body);
 
     // Track in recently used
@@ -5945,7 +5943,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function addToRecent(clause) {
     let recent = getRecent();
-    // Remove duplicate and stale (no body) entries — self-heals localStorage over time
+    // Remove duplicate and stale (no body) entries ï¿½ self-heals localStorage over time
     recent = recent.filter(r => r.id !== clause.id && r.body);
     recent.unshift({
       id: clause.id,
@@ -5962,7 +5960,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function getRecent() {
     try {
       const entries = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-      // Keep all valid entries — stale ones without body get lazily loaded via fallback fetch
+      // Keep all valid entries ï¿½ stale ones without body get lazily loaded via fallback fetch
       return entries.filter(r => r && r.id);
     }
     catch(e) { return []; }
