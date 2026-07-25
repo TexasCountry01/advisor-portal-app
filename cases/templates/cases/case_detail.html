@@ -1,4 +1,4 @@
-﻿{% extends 'base.html' %}
+{% extends 'base.html' %}
 {% load file_filters %}
 
 {% block title %}Case {{ case.employee_first_name }} {{ case.employee_last_name }}{% endblock %}
@@ -55,7 +55,7 @@
                 {% elif case.status == 'cancelled' %}
                     <span class="badge bg-dark fs-5" title="Case has been canceled">Canceled</span>
                 {% elif case.status == 'declined' %}
-                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined by ProFeds</span>
+                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -77,7 +77,7 @@
                 {% elif case.status == 'cancelled' %}
                     <span class="badge bg-dark fs-5" title="Case has been canceled">Canceled</span>
                 {% elif case.status == 'declined' %}
-                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined by ProFeds</span>
+                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -99,7 +99,7 @@
                 {% elif case.status == 'cancelled' %}
                     <span class="badge bg-dark fs-5" title="Case has been canceled">Canceled</span>
                 {% elif case.status == 'declined' %}
-                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined by ProFeds</span>
+                    <span class="badge bg-danger fs-5" title="Case declined by ProFeds">Declined</span>
                 {% else %}
                     <span class="badge bg-secondary fs-5">{{ case.get_status_display }}</span>
                 {% endif %}
@@ -1262,7 +1262,7 @@
                             </thead>
                             <tbody>
                                 {% for event in case_event_logs %}
-                                {% if event.action_type == 'case_submitted' or event.action_type == 'case_resubmitted' or event.action_type == 'case_held' or event.action_type == 'member_document_uploaded' or event.action_type == 'case_completed' and case.actual_release_date %}
+                                {% if event.action_type == 'case_submitted' or event.action_type == 'case_resubmitted' or event.action_type == 'case_held' or event.action_type == 'member_document_uploaded' or event.action_type == 'case_rush_downgraded' or event.action_type == 'case_declined' or event.action_type == 'case_completed' and case.actual_release_date %}
                                 <tr>
                                     <td class="text-muted">
                                         {{ event.timestamp|date:"m/d/Y" }}<br>
@@ -1279,6 +1279,10 @@
                                             <span class="badge bg-success"><i class="bi bi-check2-all me-1"></i>Completed</span>
                                         {% elif event.action_type == 'member_document_uploaded' %}
                                             <span class="badge bg-info"><i class="bi bi-file-earmark-arrow-up me-1"></i>Document Uploaded</span>
+                                        {% elif event.action_type == 'case_rush_downgraded' %}
+                                            <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Rush Not Available</span>
+                                        {% elif event.action_type == 'case_declined' %}
+                                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Declined</span>
                                         {% endif %}
                                     </td>
                                     <td class="text-muted">
@@ -1286,8 +1290,13 @@
                                             {{ event.metadata.reason|truncatewords:10 }}
                                         {% elif event.action_type == 'member_document_uploaded' and event.metadata.filename %}
                                             {{ event.metadata.filename|truncatewords:5 }}
+                                        {% elif event.action_type == 'case_rush_downgraded' %}
+                                            New due date: {{ event.metadata.new_due_date }}
+                                            {% if event.metadata.note %}<br><small>{{ event.metadata.note|truncatewords:12 }}</small>{% endif %}
+                                        {% elif event.action_type == 'case_declined' %}
+                                            {% if event.metadata.decline_reason %}{{ event.metadata.decline_reason|truncatewords:12 }}{% endif %}
                                         {% else %}
-                                            —
+                                            �
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -1613,6 +1622,10 @@
                                                 <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Rejected</span>
                                             {% elif event.action_type == 'case_cancelled' %}
                                                 <span class="badge bg-dark"><i class="bi bi-slash-circle me-1"></i>Canceled</span>
+                                            {% elif event.action_type == 'case_rush_downgraded' %}
+                                                <span class="badge bg-warning text-dark"><i class="bi bi-clock-history me-1"></i>Rush Not Available</span>
+                                            {% elif event.action_type == 'case_declined' %}
+                                                <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Declined</span>
                                             {% elif event.action_type == 'case_ownership_taken' %}
                                                 <span class="badge bg-primary"><i class="bi bi-person-fill me-1"></i>Ownership Claimed</span>
                                             {% elif event.action_type == 'admin_ownership' %}
@@ -1668,6 +1681,16 @@
                                                 {% if event.metadata.rejection_notes %}<br><small>{{ event.metadata.rejection_notes|truncatewords:12 }}</small>{% endif %}
                                             {% elif event.action_type == 'case_cancelled' %}
                                                 Via member request
+                                            {% elif event.action_type == 'case_rush_downgraded' %}
+                                                New due date: {{ event.metadata.new_due_date }}
+                                                {% if event.metadata.note %}<br><small>{{ event.metadata.note|truncatewords:15 }}</small>{% endif %}
+                                            {% elif event.action_type == 'case_declined' %}
+                                                {% if event.metadata.decline_reason %}{{ event.metadata.decline_reason|truncatewords:15 }}{% endif %}
+                                            {% elif event.action_type == 'case_rush_downgraded' %}
+                                                New due date: {{ event.metadata.new_due_date }}
+                                                {% if event.metadata.note %}<br><small>{{ event.metadata.note|truncatewords:15 }}</small>{% endif %}
+                                            {% elif event.action_type == 'case_declined' %}
+                                                {% if event.metadata.decline_reason %}{{ event.metadata.decline_reason|truncatewords:15 }}{% endif %}
                                             {% elif event.action_type == 'error_flag_disputed' %}
                                                 {% if event.metadata.justification %}{{ event.metadata.justification|truncatewords:15 }}{% endif %}
                                             {% elif event.action_type == 'case_submitted_for_review' %}
@@ -1810,7 +1833,7 @@
                                     </button>
                                     {% if case.urgency == 'rush' %}
                                     <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
-                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard
+                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush � Keep as Standard
                                     </button>
                                     {% endif %}
                                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
@@ -1833,7 +1856,7 @@
                                     </button>
                                     {% if case.urgency == 'rush' %}
                                     <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
-                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard
+                                        <i class="bi bi-arrow-down-circle"></i> Decline Rush � Keep as Standard
                                     </button>
                                     {% endif %}
                                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#declineCaseModal">
@@ -2232,7 +2255,7 @@ function confirmCaseCompletion() {
         // Warn (but do not block) if the scheduled date is after the case due date
         if (caseDueDate && releaseDate > caseDueDate) {
             const dueDateFormatted = new Date(caseDueDate + 'T00:00:00').toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'});
-            const proceed = confirm('⚠ Warning: The selected release date is after the case due date (' + dueDateFormatted + '). This case will be released LATE.\n\nProceed anyway?');
+            const proceed = confirm('? Warning: The selected release date is after the case due date (' + dueDateFormatted + '). This case will be released LATE.\n\nProceed anyway?');
             if (!proceed) return;
         }
 
@@ -2454,7 +2477,7 @@ function submitChangeReleaseDate() {
         // Warn (but do not block) if date is after due date
         if (caseDueDate && newDate > caseDueDate) {
             const dueDateFormatted = new Date(caseDueDate + 'T00:00:00').toLocaleDateString('en-US', {month: '2-digit', day: '2-digit', year: 'numeric'});
-            const proceed = confirm('⚠ Warning: The selected release date is after the case due date (' + dueDateFormatted + '). The case will be released LATE.\n\nProceed anyway?');
+            const proceed = confirm('? Warning: The selected release date is after the case due date (' + dueDateFormatted + '). The case will be released LATE.\n\nProceed anyway?');
             if (!proceed) return;
         }
 
@@ -3120,7 +3143,7 @@ function deleteNote(noteId, caseId) {
                     <input class="form-check-input" type="radio" name="releaseOption" id="shortDelay" value="delay">
                     <label class="form-check-label" for="shortDelay">
                         <strong><i class="bi bi-clock text-primary"></i> Short Delay (releases today)</strong><br>
-                        <small class="text-muted">Useful when finishing close to a due date — releases later today</small>
+                        <small class="text-muted">Useful when finishing close to a due date � releases later today</small>
                     </label>
                 </div>
                 <div id="shortDelayGroup" style="display:none; padding: 12px 16px 14px; background: #f8f9fa; border: 1px solid #dee2e6; border-top: none; border-radius: 0 0 6px 6px; margin-bottom: 8px;">
@@ -3948,7 +3971,7 @@ tinymce.init({
                     const estimatedTop = window.innerHeight - pos.bottom - 400;
                     const estimatedLeft = window.innerWidth - pos.right - (notesWindow.offsetWidth || 500);
                     if (estimatedTop < 0 || estimatedLeft < -100 || pos.bottom < 0 || pos.right < 0) {
-                        // Bad position (e.g. dragged off screen) — clear and use default
+                        // Bad position (e.g. dragged off screen) � clear and use default
                         localStorage.removeItem('notesWindowPos');
                     } else {
                         notesWindow.style.bottom = pos.bottom + 'px';
@@ -3961,7 +3984,7 @@ tinymce.init({
                 }
             }
             
-            // Notes window always starts hidden — user opens it manually.
+            // Notes window always starts hidden � user opens it manually.
             // Notes content is preserved server-side regardless of window state.
             notesWindow.style.display = 'none';
             document.getElementById('minimizeNotesButton').style.display = 'block';
@@ -3977,7 +4000,7 @@ tinymce.init({
     }
 });
 
-// Floating Notes Window Management — drag uses Pointer Capture API so TinyMCE iframe can never steal events
+// Floating Notes Window Management � drag uses Pointer Capture API so TinyMCE iframe can never steal events
 function setupFloatingWindowDrag() {
     const header = document.querySelector('.floating-window-header');
     const notesWindow = document.getElementById('floatingNotesWindow');
@@ -3987,7 +4010,7 @@ function setupFloatingWindowDrag() {
 
     header.addEventListener('pointerdown', function(e) {
         if (e.button !== 0) return;
-        // Don't intercept clicks on buttons — let their onclick handlers fire normally
+        // Don't intercept clicks on buttons � let their onclick handlers fire normally
         if (e.target.closest('button')) return;
         const rect = notesWindow.getBoundingClientRect();
         offsetX = e.clientX - rect.left;
@@ -4025,7 +4048,7 @@ function setupFloatingWindowDrag() {
     });
 }
 
-// Set up drag as soon as DOM is ready — independent of TinyMCE initialization
+// Set up drag as soon as DOM is ready � independent of TinyMCE initialization
 document.addEventListener('DOMContentLoaded', function() {
     setupFloatingWindowDrag();
 });
@@ -4192,6 +4215,11 @@ function submitDeclineCase() {
 
 function submitDowngradeRush() {
     const note = document.getElementById('downgradeNote').value.trim();
+    if (!note) {
+        alert('A reason is required before applying the standard timeline.');
+        document.getElementById('downgradeNote').focus();
+        return;
+    }
     const btn = document.getElementById('confirmDowngradeBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
@@ -4211,15 +4239,15 @@ function submitDowngradeRush() {
             bootstrap.Modal.getInstance(document.getElementById('downgradeRushModal')).hide();
             location.reload();
         } else {
-            alert('Error: ' + (data.error || 'Could not downgrade rush.'));
+            alert('Error: ' + (data.error || 'Could not apply standard timeline.'));
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-arrow-down-circle"></i> Downgrade to Standard';
+            btn.innerHTML = '<i class="bi bi-clock-history"></i> Apply Standard Timeline';
         }
     })
     .catch(err => {
-        console.error('Downgrade rush error:', err);
+        console.error('Rush not available error:', err);
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-arrow-down-circle"></i> Downgrade to Standard';
+        btn.innerHTML = '<i class="bi bi-clock-history"></i> Apply Standard Timeline';
     });
 }
 </script>
@@ -4359,7 +4387,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const docsAllChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
             const overrideReason = techOverrideReason.value.trim();
             
-            // Validation - check in this order: docs → tier → credit → tech compatibility
+            // Validation - check in this order: docs ? tier ? credit ? tech compatibility
             
             // 1. Check if all documents are confirmed (first)
             if (!docsAllChecked && !notes.trim()) {
@@ -4685,11 +4713,11 @@ function acceptAndPutOnHold() {
                 <div class="alert alert-warning mb-3">
                     <i class="bi bi-exclamation-triangle"></i>
                     <strong>This will permanently remove the case from the queue.</strong> The member will be notified with your reason.
-                    {% if case.urgency == 'rush' %}<br><br><strong>Note:</strong> If you can handle this case but not on a rush timeline, use <em>"Decline Rush — Keep as Standard"</em> instead.{% endif %}
+                    {% if case.urgency == 'rush' %}<br><br><strong>Note:</strong> If you can handle this case but not on a rush timeline, use <em>"Decline Rush � Keep as Standard"</em> instead.{% endif %}
                 </div>
                 <div class="mb-3">
                     <label for="declineReason" class="form-label">Reason for Declining <span class="text-danger">*</span></label>
-                    <textarea class="form-control" id="declineReason" rows="3" placeholder="e.g., NAF employee — ProFeds does not handle NAF cases." required></textarea>
+                    <textarea class="form-control" id="declineReason" rows="3" placeholder="e.g., NAF employee � ProFeds does not handle NAF cases." required></textarea>
                     <div class="form-text">This message will be sent to the member.</div>
                 </div>
             </div>
@@ -4708,7 +4736,7 @@ function acceptAndPutOnHold() {
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-warning text-dark">
-                <h5 class="modal-title"><i class="bi bi-arrow-down-circle"></i> Decline Rush — Keep as Standard</h5>
+                <h5 class="modal-title"><i class="bi bi-clock-history"></i> Rush Timeline Not Available</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -4717,15 +4745,15 @@ function acceptAndPutOnHold() {
                     <strong>The case stays in the queue.</strong> Urgency will change from <strong>Rush</strong> to <strong>Normal</strong> and the due date will be recalculated to the standard 7-day turnaround. The member will be notified automatically.
                 </div>
                 <div class="mb-3">
-                    <label for="downgradeNote" class="form-label">Optional note to member</label>
-                    <textarea class="form-control" id="downgradeNote" rows="3" placeholder="e.g., We are currently at full capacity and cannot accommodate rush requests at this time."></textarea>
-                    <div class="form-text">If provided, this note will be included in the member notification.</div>
+                    <label for="downgradeNote" class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+                    <textarea class="form-control" id="downgradeNote" rows="3" placeholder="e.g., We are currently at full capacity and cannot accommodate rush requests at this time." required></textarea>
+                    <div class="form-text">Required. This will be visible to the advisor in the case chat and notification email.</div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-warning" id="confirmDowngradeBtn" onclick="submitDowngradeRush()">
-                    <i class="bi bi-arrow-down-circle"></i> Downgrade to Standard
+                    <i class="bi bi-clock-history"></i> Apply Standard Timeline
                 </button>
             </div>
         </div>
@@ -5243,7 +5271,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 {% if user.role in 'technician,administrator,manager' and case.status in 'accepted,pending_review,completed,hold' %}
-<!-- ===== Notes Library Panel (plain fixed div — no Bootstrap focus trap) ===== -->
+<!-- ===== Notes Library Panel (plain fixed div � no Bootstrap focus trap) ===== -->
 <div id="refLibraryPanel" style="
     display: none;
     position: fixed;
@@ -5270,7 +5298,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="padding: 8px 10px; flex-shrink: 0; border-bottom: 1px solid #dee2e6;">
       <div style="display:flex; gap:4px; align-items:center;">
         <input type="text" id="refLibSearch" class="form-control form-control-sm"
-               placeholder="Search clauses (e.g. VERA, TSP, FEHB…)" autocomplete="off" style="flex:1 1 0%; min-width:0; width:auto;">
+               placeholder="Search clauses (e.g. VERA, TSP, FEHB�)" autocomplete="off" style="flex:1 1 0%; min-width:0; width:auto;">
         <button type="button" id="refSearchClearBtn" onclick="refClearSearch()"
                 style="display:none; background:none; border:none; font-size:16px; color:#999; cursor:pointer; padding:0 2px;" title="Clear search">&times;</button>
         <button type="button" id="refBrowseAllBtn" onclick="refToggleBrowse()"
@@ -5293,7 +5321,7 @@ document.addEventListener('DOMContentLoaded', function() {
 (function() {
   let refSearchTimer = null;
 
-  // Clause data cache — keyed by clause id (string).
+  // Clause data cache � keyed by clause id (string).
   // Avoids storing HTML bodies inside HTML attributes (which the HTML parser corrupts).
   const refClauseMap = {};
 
@@ -5305,7 +5333,7 @@ document.addEventListener('DOMContentLoaded', function() {
   const RECENT_KEY = 'refLib_recent_v2';
   const RECENT_MAX = 25;
 
-  // ── User-specific recent searches (server-backed) ─────────────────────
+  // -- User-specific recent searches (server-backed) ---------------------
   // Preloaded from /references/api/user-searches/ at DOMContentLoaded.
   // Falls back to [] if the fetch fails (no localStorage dependency).
   let refCachedSearches = [];
@@ -5336,7 +5364,7 @@ document.addEventListener('DOMContentLoaded', function() {
     refShowDefaultContent();
   };
 
-  // ── Single delegated click handler for all clause buttons ─────────────
+  // -- Single delegated click handler for all clause buttons -------------
   // Attached once at init; works regardless of when/how innerHTML is updated.
   document.addEventListener('DOMContentLoaded', function() {
     // Pre-load user's saved searches from server
@@ -5369,7 +5397,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // ── Panel open/close ──────────────────────────────────────────────────
+  // -- Panel open/close --------------------------------------------------
   function shiftFloatingElements(open) {
     const notesWin = document.getElementById('floatingNotesWindow');
     const btnBar   = document.getElementById('fixedButtonBar');
@@ -5396,18 +5424,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  // ── Default panel content (recent searches + recently inserted + browse + common notes) ─
+  // -- Default panel content (recent searches + recently inserted + browse + common notes) -
   function refShowDefaultContent() {
     const resultsEl = document.getElementById('refLibResults');
     const recent = getRecent();
     const recentSearches = getRecentSearches();
     storeInMap(recent);
 
-    // ── Render static sections immediately (no fetch needed) ─────────
+    // -- Render static sections immediately (no fetch needed) ---------
     function buildStaticHtml(featuredHtml) {
       let html = '<div class="list-group list-group-flush">';
 
-      // ── Browse All call-to-action ────────────────────────────────
+      // -- Browse All call-to-action --------------------------------
       html += `<div style="padding:8px 10px 6px; border-bottom:1px solid #e9ecef;">
                  <button type="button" onclick="refToggleBrowse()"
                          style="width:100%; padding:6px 10px; border:1px solid #285FBF;
@@ -5417,7 +5445,7 @@ document.addEventListener('DOMContentLoaded', function() {
                  </button>
                </div>`;
 
-      // ── Recent Searches ──────────────────────────────────────────
+      // -- Recent Searches ------------------------------------------
       html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
                            background:#e9ecef; color:#495057; display:flex;
                            justify-content:space-between; align-items:center;
@@ -5442,11 +5470,11 @@ document.addEventListener('DOMContentLoaded', function() {
         html += `</div>`;
       } else {
         html += `<div style="font-size:11px; color:#aaa; padding:6px 10px 8px; pointer-events:none;">
-                   <em>No searches yet — type above to search.</em>
+                   <em>No searches yet � type above to search.</em>
                  </div>`;
       }
 
-      // ── Recently Inserted ────────────────────────────────────────
+      // -- Recently Inserted ----------------------------------------
       html += `<div style="font-size:11px; font-weight:600; padding:6px 10px 4px;
                            background:#e9ecef; color:#495057; display:flex;
                            justify-content:space-between; align-items:center;
@@ -5468,7 +5496,7 @@ document.addEventListener('DOMContentLoaded', function() {
                  </div>`;
       }
 
-      // ── Common Notes (injected async) ────────────────────────────
+      // -- Common Notes (injected async) ----------------------------
       if (featuredHtml) {
         html += featuredHtml;
       } else {
@@ -5496,12 +5524,12 @@ document.addEventListener('DOMContentLoaded', function() {
         featuredHtml += buildClauseListHtml(data.results);
         slot.outerHTML = featuredHtml;
       })
-      .catch(() => { /* Common Notes unavailable — static content already shown */ });
+      .catch(() => { /* Common Notes unavailable � static content already shown */ });
   }
 
-  // ── Browse full document ──────────────────────────────────────────────
+  // -- Browse full document ----------------------------------------------
   let refBrowseMode = false;
-  let refScopeCategory = null; // set when user clicks 🔍 on a category header
+  let refScopeCategory = null; // set when user clicks ?? on a category header
 
   window.refToggleBrowse = function() {
     if (refBrowseMode) {
@@ -5549,7 +5577,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function renderFullDoc(results) {
     // Guard: user may have started typing while the browse fetch was in-flight;
-    // in that case refBrowseMode was reset to false — don't overwrite search results.
+    // in that case refBrowseMode was reset to false � don't overwrite search results.
     if (!refBrowseMode) return;
 
     const resultsEl = document.getElementById('refLibResults');
@@ -5615,7 +5643,7 @@ document.addEventListener('DOMContentLoaded', function() {
     status.textContent = `\u{1F4D6} ${results.length} clauses \u2014 click \u201cSearch here\u201d on any section, or type to search all`;
   }
 
-  // ── Scoped search ─────────────────────────────────────────────────────
+  // -- Scoped search -----------------------------------------------------
   window.refScopeToCategory = function(cat) {
     refScopeCategory = cat;
     refBrowseMode = false;
@@ -5637,7 +5665,7 @@ document.addEventListener('DOMContentLoaded', function() {
          </button>
        </span>`;
 
-    // Focus the search box — user types their query next
+    // Focus the search box � user types their query next
     const input = document.getElementById('refLibSearch');
     const q = input ? input.value.trim() : '';
     if (input) input.focus();
@@ -5677,7 +5705,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  // ── Search ────────────────────────────────────────────────────────────
+  // -- Search ------------------------------------------------------------
   document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('refLibSearch');
     if (!searchInput) return;
@@ -5698,7 +5726,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const btn = document.getElementById('refBrowseAllBtn');
         if (btn) btn.innerHTML = '<i class="bi bi-book"></i> Browse';
       }
-      // Keep refScopeCategory — typing while scoped keeps the scope
+      // Keep refScopeCategory � typing while scoped keeps the scope
 
       if (q.length < 2) {
         refScopeCategory = null;
@@ -5733,7 +5761,7 @@ document.addEventListener('DOMContentLoaded', function() {
   function doRefSearch(q) {
     addRecentSearch(q);
     const resultsEl = document.getElementById('refLibResults');
-    resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Searching…</div>';
+    resultsEl.innerHTML = '<div class="text-muted small p-2"><i class="bi bi-hourglass-split"></i> Searching�</div>';
 
     let url = `/references/api/search/?q=${encodeURIComponent(q)}`;
     if (refScopeCategory) url += `&category=${encodeURIComponent(refScopeCategory)}`;
@@ -5746,7 +5774,7 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  // ── Render results ────────────────────────────────────────────────────
+  // -- Render results ----------------------------------------------------
   function buildClauseListHtml(results) {
     // Store full clause objects so click handlers can retrieve them by ID
     // (avoids embedding HTML bodies in HTML attributes, which the HTML parser corrupts)
@@ -5755,12 +5783,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let html = '';
     results.forEach(r => {
       const breadcrumb = r.subcategory
-        ? `${escHtml(r.category)} › ${escHtml(r.subcategory)}`
+        ? `${escHtml(r.category)} � ${escHtml(r.subcategory)}`
         : escHtml(r.category);
       const featuredBadge = r.is_featured
         ? '<i class="bi bi-star-fill text-warning" style="font-size:10px; margin-right:3px;" title="Common Note"></i>'
         : '';
-      // Use <span style="display:block"> NOT <div> — browsers strip block elements out of <button>,
+      // Use <span style="display:block"> NOT <div> � browsers strip block elements out of <button>,
       // making the button zero-size and unclickable.
       html += `<button type="button" class="list-group-item list-group-item-action py-2 px-3"
                  style="font-size:12px; text-align:left; border-bottom:1px solid #f0f0f0; line-height:1.3;"
@@ -5783,7 +5811,7 @@ document.addEventListener('DOMContentLoaded', function() {
     html += buildClauseListHtml(results);
     html += '</div>';
     el.innerHTML = html;
-    // no attachClauseClickHandlers needed — delegation handles it
+    // no attachClauseClickHandlers needed � delegation handles it
   }
 
   function attachClauseClickHandlers() {
@@ -5791,7 +5819,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Kept so any remaining call sites don't throw.
   }
 
-  // ── Preview pane (bottom of panel) ───────────────────────────────────
+  // -- Preview pane (bottom of panel) -----------------------------------
   let previewClause = null;
   let previewTrigger = null;
 
@@ -5808,7 +5836,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const loadingDiv = document.createElement('div');
       loadingDiv.id = 'refInlinePreview';
       loadingDiv.style.cssText = 'padding:8px 12px; font-size:12px; color:#666; background:#f8f9fa; border-top:2px solid #285FBF;';
-      loadingDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading…';
+      loadingDiv.innerHTML = '<i class="bi bi-hourglass-split"></i> Loading�';
       triggerBtn.insertAdjacentElement('afterend', loadingDiv);
       triggerBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       fetch(`/references/api/clause/${clause.id}/`)
@@ -5829,7 +5857,7 @@ document.addEventListener('DOMContentLoaded', function() {
     previewClause = clause;
     previewTrigger = triggerBtn;
 
-    // Build the inline preview element — inserted directly after the clicked row
+    // Build the inline preview element � inserted directly after the clicked row
     const preview = document.createElement('div');
     preview.id = 'refInlinePreview';
     preview.style.cssText = 'border-top:2px solid #285FBF; border-bottom:1px solid #dee2e6; background:#f8f9fa;';
@@ -5838,7 +5866,7 @@ document.addEventListener('DOMContentLoaded', function() {
     bodyDiv.style.cssText = 'padding:8px 12px 4px; font-size:12px; color:#333; line-height:1.6;';
     bodyDiv.innerHTML = clause.body || '<em class="text-muted">No content</em>';
 
-    // Action buttons — sticky so Insert is always reachable even for very long clauses
+    // Action buttons � sticky so Insert is always reachable even for very long clauses
     const actionsDiv = document.createElement('div');
     actionsDiv.style.cssText = 'display:flex; gap:6px; padding:6px 12px 8px; border-top:1px solid #dee2e6; background:#f8f9fa; position:sticky; bottom:0; z-index:1;';
 
@@ -5884,11 +5912,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const status = document.getElementById('refLibStatus');
     if (!editor) {
       status.style.color = '#dc3545';
-      status.textContent = '⚠ Notes editor not ready — please wait a moment and try again.';
+      status.textContent = '? Notes editor not ready � please wait a moment and try again.';
       return;
     }
 
-    // clause.body is now HTML — insert directly
+    // clause.body is now HTML � insert directly
     editor.execCommand('mceInsertContent', false, clause.body);
 
     // Track in recently used
@@ -5902,14 +5930,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (btnEl) btnEl.classList.add('active');
     status.style.color = '#198754';
-    status.textContent = `✓ Inserted: ${clause.title}`;
+    status.textContent = `? Inserted: ${clause.title}`;
     setTimeout(() => {
       status.style.color = '';
       status.textContent = 'Click a clause to preview, then insert into notes.';
     }, 3000);
   }
 
-  // ── Recently Used (localStorage) ──────────────────────────────────────
+  // -- Recently Used (localStorage) --------------------------------------
   window.clearRecent = function() {
     try { localStorage.removeItem(RECENT_KEY); } catch(e) {}
     refShowDefaultContent();
@@ -5917,7 +5945,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function addToRecent(clause) {
     let recent = getRecent();
-    // Remove duplicate and stale (no body) entries — self-heals localStorage over time
+    // Remove duplicate and stale (no body) entries � self-heals localStorage over time
     recent = recent.filter(r => r.id !== clause.id && r.body);
     recent.unshift({
       id: clause.id,
@@ -5934,13 +5962,13 @@ document.addEventListener('DOMContentLoaded', function() {
   function getRecent() {
     try {
       const entries = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
-      // Keep all valid entries — stale ones without body get lazily loaded via fallback fetch
+      // Keep all valid entries � stale ones without body get lazily loaded via fallback fetch
       return entries.filter(r => r && r.id);
     }
     catch(e) { return []; }
   }
 
-  // ── Utilities ─────────────────────────────────────────────────────────
+  // -- Utilities ---------------------------------------------------------
   function escHtml(str) {
     const d = document.createElement('div');
     d.textContent = str || '';

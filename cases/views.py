@@ -2497,21 +2497,38 @@ def downgrade_rush_to_standard(request, case_id):
             }
         )
 
+        # Post a system message to the Case Chat — visible to both advisor and tech
+        from cases.models import CaseMessage
+        chat_msg = CaseMessage.objects.create(
+            case=case,
+            author=user,
+            message=(
+                f'Rush processing is not available for this case. '
+                f'Your case will be processed on the standard timeline with a new due date of '
+                f'{new_due_date.strftime("%m/%d/%Y")}.'
+                + (f'\n\nReason: {note}' if note else '')
+            )
+        )
+        if case.member:
+            UnreadMessage.objects.get_or_create(
+                message=chat_msg, user=case.member, defaults={'case': case}
+            )
+
         # In-app notification for advisor
         if case.member:
             employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
             _create_case_notification_if_allowed(
                 case=case,
                 member=case.member,
-                notification_type='case_on_hold',   # reuse hold type for advisor alert
+                notification_type='case_on_hold',
                 title=f'Update: Your case for {employee_name}',
                 message=(
-                    f'We are unable to process this case on a rush timeline. '
+                    f'Rush processing is not available for this case. '
                     f'Your case has been moved to standard processing with a new due date of '
                     f'{new_due_date.strftime("%m/%d/%Y")}.'
                     + (f' Note from ProFeds: {note}' if note else '')
                 ),
-                hold_reason='Rush request declined — standard 7-day turnaround applies.',
+                hold_reason='Rush processing not available — standard 7-day turnaround applies.',
                 is_read=False,
                 created_at=timezone.now()
             )
@@ -2521,18 +2538,15 @@ def downgrade_rush_to_standard(request, case_id):
             recipients = get_case_recipient_emails(case)
             for email in recipients:
                 send_email_notification(
-                    subject=f'Update on Your Case: {employee_name} — Rush Request Declined',
-                    template_name='case_declined.html',
+                    subject=f'Update on Your Case for {employee_name} — Processing Timeline Change',
+                    template_name='case_rush_not_accepted.html',
                     context={
                         'member_name': case.member.get_full_name() or case.member.username,
+                        'member_first_name': case.member.first_name or case.member.username,
                         'employee_name': employee_name,
                         'case_id': case.external_case_id,
-                        'decline_reason': (
-                            f'We are unable to process this case on a rush timeline. '
-                            f'Your case will be processed under the standard 7-day turnaround. '
-                            f'New expected completion date: {new_due_date.strftime("%B %d, %Y")}.'
-                            + (f'\n\nNote from Benefits Team: {note}' if note else '')
-                        ),
+                        'new_due_date': new_due_date.strftime('%B %d, %Y'),
+                        'note': note,
                     },
                     recipient_email=email,
                     case=case,
@@ -2635,6 +2649,17 @@ def decline_case(request, case_id):
                     'decline_reason': reason,
                     'sub_action': 'notification_created'
                 }
+            )
+
+            # Post a system message to the Case Chat — visible to both advisor and tech
+            from cases.models import CaseMessage
+            chat_msg = CaseMessage.objects.create(
+                case=case,
+                author=user,
+                message=f'This case has been declined by ProFeds.\n\nReason: {reason}'
+            )
+            UnreadMessage.objects.get_or_create(
+                message=chat_msg, user=case.member, defaults={'case': case}
             )
 
             # Send decline email
