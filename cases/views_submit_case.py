@@ -67,7 +67,7 @@ def submit_case(request):
     from core.models import SystemSettings, Holiday
     sys_settings = SystemSettings.get_settings()
     base_days = sys_settings.default_case_due_days
-    today = timezone.now().date()
+    today = timezone.localtime(timezone.now()).date()
 
     # Auto-sync federal holidays for current + next year if not yet in DB
     if not Holiday.objects.filter(date__year=today.year).exists():
@@ -307,7 +307,7 @@ def api_calculate_rushed_fee(request):
         from core.models import SystemSettings
         sys_settings = SystemSettings.get_settings()
         base_days = sys_settings.rush_case_threshold_days
-        rush_threshold_date = timezone.now().date() + timedelta(days=base_days)
+        rush_threshold_date = timezone.localtime(timezone.now()).date() + timedelta(days=base_days)
 
         is_rushed = due_date < rush_threshold_date
 

@@ -869,7 +869,7 @@ def pipeline_health_report(request):
         messages.error(request, 'Access denied. Administrators and Managers only.')
         return redirect('home')
 
-    today = timezone.now().date()
+    today = timezone.localtime(timezone.now()).date()
 
     # ── Queue: submitted but not yet accepted ──────────────────────────────
     queue_qs = Case.objects.filter(status='submitted').order_by('date_submitted').select_related('assigned_to', 'member')
@@ -1507,7 +1507,7 @@ def get_member_activity_data(date_from=None, date_to=None):
     )
 
     # Inactive submitters: submitted before but not in the last 30 days
-    ref_date = date_to if date_to else timezone.now().date()
+    ref_date = date_to if date_to else timezone.localtime(timezone.now()).date()
     cutoff_date = ref_date - timedelta(days=30)
     member_counts_list = list(member_counts)
     inactive_submitters = []
@@ -2198,7 +2198,7 @@ def get_advisor_engagement_data(date_from=None, date_to=None):
             freq_buckets['21+ cases'] += 1
 
     # 30-day dormancy list: submitted at some point but not in the last 30 days
-    ref_date = date_to if date_to else timezone.now().date()
+    ref_date = date_to if date_to else timezone.localtime(timezone.now()).date()
     dormancy_cutoff = ref_date - timedelta(days=30)
     all_last_sub = (
         Case.objects.filter(member__isnull=False)
@@ -3188,8 +3188,8 @@ def performance_dashboard(request):
 
     # Default: last 7 days
     if not date_from and not date_to:
-        date_to = timezone.now().date().strftime('%Y-%m-%d')
-        date_from = (timezone.now().date() - timedelta(days=7)).strftime('%Y-%m-%d')
+        date_to = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+        date_from = (timezone.localtime(timezone.now()).date() - timedelta(days=7)).strftime('%Y-%m-%d')
 
     metrics = get_performance_metrics(date_from or None, date_to or None)
 
@@ -3273,8 +3273,8 @@ def performance_detail(request, metric_slug):
     date_from = request.GET.get('date_from', '').strip()
     date_to   = request.GET.get('date_to',   '').strip()
     if not date_from and not date_to:
-        date_to   = timezone.now().date().strftime('%Y-%m-%d')
-        date_from = (timezone.now().date() - timedelta(days=7)).strftime('%Y-%m-%d')
+        date_to   = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+        date_from = (timezone.localtime(timezone.now()).date() - timedelta(days=7)).strftime('%Y-%m-%d')
 
     from datetime import datetime as _dt
     date_from_obj = _dt.strptime(date_from, '%Y-%m-%d').date() if date_from else None
@@ -3746,8 +3746,8 @@ def advisor_submission_report(request):
 
     # Default: last 30 days
     if not date_from_str and not date_to_str:
-        date_to_str = timezone.now().date().strftime('%Y-%m-%d')
-        date_from_str = (timezone.now().date() - timedelta(days=30)).strftime('%Y-%m-%d')
+        date_to_str = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=30)).strftime('%Y-%m-%d')
 
     try:
         date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
@@ -3831,8 +3831,8 @@ def review_accuracy_report(request):
     date_to_str = request.GET.get('date_to', '').strip()
 
     if not date_from_str and not date_to_str:
-        date_to_str = timezone.now().date().strftime('%Y-%m-%d')
-        date_from_str = (timezone.now().date() - timedelta(days=30)).strftime('%Y-%m-%d')
+        date_to_str = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=30)).strftime('%Y-%m-%d')
 
     try:
         date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
@@ -3933,8 +3933,8 @@ def review_returns_corrections_report(request):
     date_to_str = request.GET.get('date_to', '').strip()
 
     if not date_from_str and not date_to_str:
-        date_to_str = timezone.now().date().strftime('%Y-%m-%d')
-        date_from_str = (timezone.now().date() - timedelta(days=30)).strftime('%Y-%m-%d')
+        date_to_str = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=30)).strftime('%Y-%m-%d')
 
     try:
         date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None

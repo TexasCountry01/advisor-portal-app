@@ -138,7 +138,7 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     """Apply tile-style quick filters for technician/manager/admin dashboards."""
     from django.db.models import Exists, OuterRef
 
-    today = timezone.now().date()
+    today = timezone.localtime(timezone.now()).date()
     tomorrow = today + timedelta(days=1)
 
     if quick_filter == 'submitted':
@@ -179,7 +179,7 @@ def _build_staff_quick_tiles(queryset, user):
     """
     from django.db.models import Sum, Case as DbCase, When, IntegerField, Exists, OuterRef
 
-    today = timezone.now().date()
+    today = timezone.localtime(timezone.now()).date()
     tomorrow = today + timedelta(days=1)
     next_7d = today + timedelta(days=7)
     inactive = Q(status__in=['completed', 'cancelled', 'draft'])
@@ -300,7 +300,7 @@ def form_preview(request):
     context = {
         'workshop_code': 'DEV001',
         'member_name': 'Preview User',
-        'today': timezone.now().date(),
+        'today': timezone.localtime(timezone.now()).date(),
     }
     return render(request, 'cases/fact_finder_form.html', context)
 
@@ -433,7 +433,7 @@ def member_dashboard(request):
             cases = cases.filter(date_submitted__date__lte=date_to)
     elif date_range:
         from datetime import timedelta
-        today = timezone.now().date()
+        today = timezone.localtime(timezone.now()).date()
         if date_range == 'today':
             cases = cases.filter(date_submitted__date=today)
         elif date_range == 'week':
@@ -682,7 +682,7 @@ def technician_dashboard(request):
             cases = cases.filter(date_submitted__date__lte=date_to)
     elif date_range:
         from datetime import timedelta
-        today = timezone.now().date()
+        today = timezone.localtime(timezone.now()).date()
         if date_range == 'today':
             cases = cases.filter(date_submitted__date=today)
         elif date_range == 'week':
@@ -890,7 +890,7 @@ def admin_dashboard(request):
             cases = cases.filter(date_submitted__date__lte=date_to)
     elif date_range:
         from datetime import timedelta
-        today = timezone.now().date()
+        today = timezone.localtime(timezone.now()).date()
         if date_range == 'today':
             cases = cases.filter(date_submitted__date=today)
         elif date_range == 'week':
@@ -1100,7 +1100,7 @@ def manager_dashboard(request):
             cases = cases.filter(date_submitted__date__lte=date_to)
     elif date_range:
         from datetime import timedelta
-        today = timezone.now().date()
+        today = timezone.localtime(timezone.now()).date()
         if date_range == 'today':
             cases = cases.filter(date_submitted__date=today)
         elif date_range == 'week':
