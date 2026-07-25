@@ -53,7 +53,7 @@ class Case(models.Model):
         ('needs_resubmission', 'Needs Resubmission'),
         ('completed', 'Completed'),
         ('cancelled', 'Cancelled'),
-        ('declined', 'Declined by ProFeds'),
+        ('declined', 'Declined'),
     ]
     
     REJECTION_REASON_CHOICES = [
