@@ -112,23 +112,26 @@ def _exclude_super_dev_users(queryset):
 
 def build_filter_params(request):
     """
-    Build a query string with all current filter parameters.
-    Used to preserve filters when sorting or paginating.
+    Build a URL-encoded query string with all current filter parameters.
+    Used to preserve filters when paginating. Returns a string like
+    'quick_filter=scheduled&quick_tech=all' safe to embed directly in hrefs.
     """
-    params = {}
-    
+    from urllib.parse import urlencode
+    params = []
+
     # Preserve status filters (multiple values)
-    status_list = request.GET.getlist('status')
-    if status_list:
-        params['status'] = status_list
-    
+    for status in request.GET.getlist('status'):
+        params.append(('status', status))
+
     # Preserve other filters
-    for param in ['urgency', 'tier', 'member', 'technician', 'date_range', 'date_from', 'date_to', 'search', 'quick_filter', 'quick_tech', 'view', 'assigned']:
+    for param in ['urgency', 'tier', 'member', 'technician', 'date_range',
+                  'date_from', 'date_to', 'search', 'quick_filter', 'quick_tech',
+                  'view', 'assigned']:
         value = request.GET.get(param)
         if value:
-            params[param] = value
-    
-    return params
+            params.append((param, value))
+
+    return urlencode(params)
 
 
 def _apply_staff_quick_filter(queryset, quick_filter, user):
