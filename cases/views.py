@@ -6501,6 +6501,7 @@ DASHBOARD_COLUMN_CONFIG = {
             {'id': 'assigned_to', 'label': 'Assigned To'},
             {'id': 'date_scheduled', 'label': 'Date Scheduled'},
             {'id': 'tier', 'label': 'Tier'},
+            {'id': 'credits', 'label': 'Credits'},
             {'id': 'reviewed_by', 'label': 'Reviewed By'},
             {'id': 'on_time', 'label': 'On-Time/Late'},
             {'id': 'date_completed', 'label': 'Date Finalized'},

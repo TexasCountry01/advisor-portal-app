@@ -441,6 +441,7 @@
                             <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
                             <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}" title="Click to sort by Assigned To">Assigned To</a></th>
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}" title="Click to sort by Tier">Tier</a></th>
+                            <th data-column-id="credits" {% if 'credits' not in visible_columns %}class="column-hidden"{% endif %}>Credits</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -555,6 +556,9 @@
                                 {% else %}
                                     —
                                 {% endif %}
+                            </td>
+                            <td data-column-id="credits" class="{% if 'credits' not in visible_columns %}column-hidden{% endif %}">
+                                {{ case.credit_value|default:"—" }}
                             </td>
                             <td data-column-id="actions" style="min-width: 120px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
