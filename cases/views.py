@@ -1840,6 +1840,8 @@ def case_detail(request, pk):
             'case_review_corrected',
             'case_rejected',
             'case_cancelled',
+            'case_declined',
+            'case_rush_downgraded',
             'case_ownership_taken',
             'admin_ownership',
             'case_submitted_for_review',
