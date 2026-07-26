@@ -2460,6 +2460,189 @@ def downgrade_rush_to_standard(request, case_id):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
 
+
+@login_required
+@require_http_methods(["POST"])
+def accept_and_refuse_rush(request, case_id):
+    """
+    Combined action: accept a submitted rush case AND downgrade urgency to standard in one step.
+    Validates the same Initial Case Review checklist as accept_case, then applies both changes.
+    """
+    import json
+    from django.http import JsonResponse
+    from core.models import AuditLog
+    from cases.utils_holidays import calculate_due_date
+
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+
+    if user.role not in ['administrator', 'manager', 'technician']:
+        return JsonResponse({'success': False, 'error': 'Staff only.'}, status=403)
+
+    if case.status != 'submitted':
+        return JsonResponse({'success': False, 'error': 'Only submitted cases can be accepted.'}, status=400)
+
+    if case.urgency != 'rush':
+        return JsonResponse({'success': False, 'error': 'This case is not marked as rush.'}, status=400)
+
+    try:
+        body_data = json.loads(request.body) if request.body else {}
+        note          = body_data.get('note', '').strip()
+        tier          = body_data.get('tier', '').strip()
+        credit_value  = body_data.get('credit_value', '').strip()
+        assigned_to_id = body_data.get('assigned_to')
+        leave_unassigned = body_data.get('leave_unassigned', False)
+        acceptance_notes = (body_data.get('acceptance_notes') or '').strip()
+        docs_verified = body_data.get('docs_verified', 'no')
+        tech_override_reason = (body_data.get('tech_override_reason') or '').strip()
+
+        if not note:
+            return JsonResponse({'success': False, 'error': 'A reason is required.'}, status=400)
+        if not tier:
+            return JsonResponse({'success': False, 'error': 'Tier must be selected before accepting.'}, status=400)
+        if not credit_value:
+            return JsonResponse({'success': False, 'error': 'Credit value must be selected before accepting.'}, status=400)
+
+        # Validate assigned tech level vs tier
+        assigned_tech = None
+        if assigned_to_id:
+            try:
+                assigned_tech = User.objects.get(id=assigned_to_id, role__in=['technician', 'administrator'])
+            except User.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Invalid technician selected.'}, status=400)
+
+            if assigned_tech.role != 'administrator':
+                tech_level_num = {'level_1': 1, 'level_2': 2, 'level_3': 3}.get(assigned_tech.user_level, 0)
+                if tech_level_num < int(tier):
+                    if user.role != 'administrator':
+                        return JsonResponse({'success': False,
+                            'error': f'{assigned_tech.get_full_name()} level does not meet Tier {tier} requirement.'}, status=400)
+                    if not tech_override_reason:
+                        return JsonResponse({'success': False, 'error': 'Override reason required.'}, status=400)
+
+        # ── Step 1: Accept the case ───────────────────────────────────────────
+        case.status     = 'accepted'
+        case.tier       = f'tier_{tier}' if not tier.startswith('tier_') else tier
+        case.date_accepted = timezone.now()
+        case.accepted_by = user
+
+        if credit_value:
+            try:
+                from decimal import Decimal
+                from cases.services.credit_service import set_case_credit
+                set_case_credit(case, Decimal(credit_value), user, 'acceptance',
+                                f'Set to {credit_value} during accept & refuse rush')
+            except (ValueError, TypeError):
+                pass
+
+        if leave_unassigned:
+            case.assigned_to = None
+        elif assigned_tech:
+            case.assigned_to = assigned_tech
+        else:
+            case.assigned_to = None
+
+        # ── Step 2: Downgrade rush urgency ────────────────────────────────────
+        from core.models import SystemSettings
+        sys_settings = SystemSettings.get_settings()
+        submitted_date = case.date_submitted.date() if case.date_submitted else timezone.localtime(timezone.now()).date()
+        new_due_date, _ = calculate_due_date(submitted_date, base_days=sys_settings.default_case_due_days)
+
+        old_due_date  = case.date_due
+        case.urgency  = 'normal'
+        case.date_due = new_due_date
+        case.save()
+
+        employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
+
+        # Audit — acceptance
+        AuditLog.objects.create(
+            case=case, user=user, action_type='case_accepted',
+            description=(f'Case accepted as Tier {tier} with rush refused — '
+                         f'{case.external_case_id} ({employee_name})'),
+            metadata={
+                'tier': tier,
+                'credit_value': credit_value,
+                'assigned_to': assigned_tech.username if assigned_tech else None,
+                'docs_verified': docs_verified,
+                'acceptance_notes': acceptance_notes,
+                'tech_override_reason': tech_override_reason or None,
+            }
+        )
+
+        # Audit — rush downgrade
+        AuditLog.objects.create(
+            case=case, user=user, action_type='case_rush_downgraded',
+            description=(f'Rush refused at acceptance by {user.get_full_name() or user.username}. '
+                         f'New due date: {new_due_date.strftime("%m/%d/%Y")}. Note: {note}'),
+            metadata={
+                'downgraded_by': user.username,
+                'old_due_date': str(old_due_date),
+                'new_due_date': str(new_due_date),
+                'note': note,
+            }
+        )
+
+        # Post system message to Case Chat
+        from cases.models import CaseMessage
+        chat_msg = CaseMessage.objects.create(
+            case=case,
+            author=user,
+            message=(
+                f'Rush processing is not available for this case. '
+                f'Your case will be processed on the standard timeline with a new due date of '
+                f'{new_due_date.strftime("%m/%d/%Y")}.'
+                + (f'\n\nReason: {note}' if note else '')
+            )
+        )
+        if case.member:
+            UnreadMessage.objects.get_or_create(
+                message=chat_msg, user=case.member, defaults={'case': case}
+            )
+
+        # In-app notification + email to advisor
+        if case.member:
+            _create_case_notification_if_allowed(
+                case=case, member=case.member,
+                notification_type='case_on_hold',
+                title=f'Update: Your case for {employee_name}',
+                message=(
+                    f'Rush processing is not available for this case. '
+                    f'Your case has been moved to standard processing with a new due date of '
+                    f'{new_due_date.strftime("%m/%d/%Y")}.'
+                    + (f' Note from ProFeds: {note}' if note else '')
+                ),
+                hold_reason='Rush processing not available — standard 7-day turnaround applies.',
+                is_read=False, created_at=timezone.now()
+            )
+
+            from cases.services.email_service import send_email_notification, get_case_recipient_emails
+            recipients = get_case_recipient_emails(case)
+            for email in recipients:
+                send_email_notification(
+                    subject=f'Update on Your Case for {employee_name} — Processing Timeline Change',
+                    template_name='case_rush_not_accepted.html',
+                    context={
+                        'member_name': case.member.get_full_name() or case.member.username,
+                        'member_first_name': case.member.first_name or case.member.username,
+                        'employee_name': employee_name,
+                        'new_due_date': new_due_date.strftime('%B %d, %Y'),
+                        'note': note,
+                    },
+                    recipient_email=email, case=case, user=user,
+                )
+
+        return JsonResponse({
+            'success': True,
+            'new_due_date': new_due_date.strftime('%m/%d/%Y'),
+            'message': f'Case accepted with standard timeline. New due date: {new_due_date.strftime("%m/%d/%Y")}.',
+        })
+
+    except Exception as e:
+        logger.error(f'Error in accept_and_refuse_rush for case {case_id}: {e}', exc_info=True)
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'}, status=405)
+
     try:
         body_data = json.loads(request.body) if request.body else {}
         note = body_data.get('note', '').strip()

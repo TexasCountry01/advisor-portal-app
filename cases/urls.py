@@ -68,6 +68,7 @@ urlpatterns = [
     path('<int:case_id>/resume-from-hold/', views.resume_case_from_hold, name='resume_from_hold'),
     path('<int:case_id>/decline/', views.decline_case, name='decline_case'),
     path('<int:case_id>/downgrade-rush/', views.downgrade_rush_to_standard, name='downgrade_rush_to_standard'),
+    path('<int:case_id>/accept-and-refuse-rush/', views.accept_and_refuse_rush, name='accept_and_refuse_rush'),
     path('<int:case_id>/clear-profeds-error/', views.clear_profeds_error, name='clear_profeds_error'),
     
     # Notification Management Views - Option 3 Premium Features

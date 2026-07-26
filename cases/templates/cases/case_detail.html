@@ -1425,9 +1425,9 @@
                         <div class="d-grid gap-2">
                             {% if case.urgency == 'rush' %}
                             <div class="alert alert-warning py-2 px-3 mb-1" style="font-size:0.82rem;">
-                                <i class="bi bi-lightning-charge-fill"></i> <strong>Rush Request</strong> — Accepting this case confirms the rush timeline. If you cannot accommodate the rush, use the button below instead.
+                                <i class="bi bi-lightning-charge-fill"></i> <strong>Rush Request</strong> — Accepting this case confirms the rush timeline. If you cannot accommodate the rush, complete the form above and use the button below instead.
                             </div>
-                            <button type="button" class="btn btn-outline-warning btn-sm" data-bs-toggle="modal" data-bs-target="#downgradeRushModal">
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="validateThenOpenRushModal()">
                                 <i class="bi bi-clock-history"></i> Accept &amp; Refuse Rush
                             </button>
                             {% endif %}
@@ -4211,6 +4211,31 @@ function submitDeclineCase() {
     });
 }
 
+function validateThenOpenRushModal() {
+    // Run same validation as Accept Case before opening the rush modal
+    const assignTierSelect = document.getElementById('assignTier');
+    const assignTechSelect = document.getElementById('assignTechInit');
+    const creditValueSelect = document.getElementById('assignCreditValue');
+    const acceptanceNotes = document.getElementById('acceptanceNotes');
+    const docCheckboxes = ['doc_fact_finder', 'doc_pay_stub', 'doc_social_security', 'doc_tsp_statement'];
+    const docsAllChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
+
+    if (!docsAllChecked && !acceptanceNotes?.value.trim()) {
+        alert('Please check all documents or add a note explaining why you\'re accepting without them.');
+        return;
+    }
+    if (!assignTierSelect?.value) {
+        alert('Please select a tier level before refusing the rush.');
+        return;
+    }
+    if (!creditValueSelect?.value) {
+        alert('Please select a credit value before refusing the rush.');
+        return;
+    }
+    // All good — open the modal
+    new bootstrap.Modal(document.getElementById('downgradeRushModal')).show();
+}
+
 function submitDowngradeRush() {
     const note = document.getElementById('downgradeNote').value.trim();
     if (!note) {
@@ -4222,14 +4247,39 @@ function submitDowngradeRush() {
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
 
-    fetch('{% url "cases:downgrade_rush_to_standard" case.id %}', {
+    // Collect acceptance form data (if the Initial Case Review form is present)
+    const assignTierSelect  = document.getElementById('assignTier');
+    const assignTechSelect  = document.getElementById('assignTechInit');
+    const creditValueSelect = document.getElementById('assignCreditValue');
+    const acceptanceNotes   = document.getElementById('acceptanceNotes');
+    const techOverrideReason = document.getElementById('techOverrideReason');
+    const docCheckboxes = ['doc_fact_finder', 'doc_pay_stub', 'doc_social_security', 'doc_tsp_statement'];
+    const docsAllChecked = docCheckboxes.every(id => document.getElementById(id)?.checked);
+
+    const hasChecklist = !!assignTierSelect;  // true when Initial Case Review form is present (submitted status)
+    const endpoint = hasChecklist
+        ? '{% url "cases:accept_and_refuse_rush" case.id %}'
+        : '{% url "cases:downgrade_rush_to_standard" case.id %}';
+
+    const payload = { note };
+    if (hasChecklist) {
+        payload.tier           = assignTierSelect?.value || '';
+        payload.credit_value   = creditValueSelect?.value || '';
+        payload.assigned_to    = assignTechSelect?.value || null;
+        payload.leave_unassigned = !assignTechSelect?.value;
+        payload.acceptance_notes = acceptanceNotes?.value || '';
+        payload.docs_verified  = docsAllChecked ? 'yes' : 'no';
+        payload.tech_override_reason = techOverrideReason?.value || '';
+    }
+
+    fetch(endpoint, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': document.querySelector('[name="csrfmiddlewaretoken"]')?.value || ''
         },
         credentials: 'same-origin',
-        body: JSON.stringify({ note: note })
+        body: JSON.stringify(payload)
     })
     .then(response => response.json())
     .then(data => {
