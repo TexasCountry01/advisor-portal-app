@@ -1,4 +1,4 @@
-﻿from django.conf import settings
+from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -40,7 +40,7 @@ def _create_case_notification_if_allowed(*, case, member, notification_type, **k
     if member and not getattr(member, 'portal_notifications_enabled', True):
         logger.info(
             f'Portal notification suppressed for {member.username} '
-            f'(type={notification_type}) â€” user disabled in-app alerts'
+            f'(type={notification_type}) — user disabled in-app alerts'
         )
         return None
 
@@ -281,7 +281,7 @@ def _build_member_quick_tiles(queryset, user):
         on_hold=Sum(DbCase(When(status='hold', then=1), default=0, output_field=IntegerField())),
         drafts=Sum(DbCase(When(status='draft', then=1), default=0, output_field=IntegerField())),
     )
-    # Alerts requires Exists subqueries â€” one separate COUNT
+    # Alerts requires Exists subqueries — one separate COUNT
     has_unread_msg = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
     has_unread_notif = Exists(
         CaseNotification.objects.filter(
@@ -323,7 +323,7 @@ def member_dashboard(request):
         return redirect('home')
     
     # ====================================================================
-    # DELEGATE DETECTION â€” determine if user is a delegate for anyone
+    # DELEGATE DETECTION — determine if user is a delegate for anyone
     # ====================================================================
     delegate_assignments = MemberDelegate.objects.filter(
         delegate=user
@@ -349,7 +349,7 @@ def member_dashboard(request):
     if active_view == 'all' and not is_delegate:
         active_view = 'my_cases'
     if active_view == 'my_cases' and is_pure_delegate:
-        # Pure delegates can't switch to my_cases â€” they have no cases
+        # Pure delegates can't switch to my_cases — they have no cases
         active_view = 'delegate'
     
     # ====================================================================
@@ -485,7 +485,7 @@ def member_dashboard(request):
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_cases = list(page_obj.object_list)
 
-    # Batch unread counts for current page only (2 queries instead of 2Ã—N)
+    # Batch unread counts for current page only (2 queries instead of 2×N)
     from cases.models import CaseNotification
     from django.db.models import Count as _Count
     notif_enabled_member_ids = set(
@@ -647,7 +647,7 @@ def technician_dashboard(request):
         cases = cases.filter(assigned_to=user)
 
     # Apply quick technician filter from top buttons.
-    # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
+    # Exception: submitted cases have no assigned_to yet � skip for Need to Accept queue.
     if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
@@ -701,7 +701,7 @@ def technician_dashboard(request):
     # Build tile counts before applying the active quick tile filter.
     tile_scope_cases = cases
 
-    # If an explicit status_filter is selected, skip the quick_filter — the status
+    # If an explicit status_filter is selected, skip the quick_filter � the status
     # checkbox is the authoritative filter and overriding it with a tile filter
     # (e.g., pending excludes declined) would produce confusing empty results.
     if quick_filter and not status_filters:
@@ -870,7 +870,7 @@ def admin_dashboard(request):
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
 
-    # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
+    # Exception: submitted cases have no assigned_to yet � skip for Need to Accept queue.
     if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
@@ -1080,7 +1080,7 @@ def manager_dashboard(request):
     if technician_filter:
         cases = cases.filter(assigned_to_id=technician_filter)
 
-    # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
+    # Exception: submitted cases have no assigned_to yet � skip for Need to Accept queue.
     if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
@@ -1468,7 +1468,7 @@ def accept_case(request, pk):
             
             # Create comprehensive audit log entry
             member_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
-            description = f"Case accepted as Tier {tier} â€” {case.external_case_id} ({member_name})"
+            description = f"Case accepted as Tier {tier} — {case.external_case_id} ({member_name})"
             if case.assigned_to:
                 description += f", assigned to {case.assigned_to.get_full_name() or case.assigned_to.username}"
             if tech_override_reason:
@@ -1557,7 +1557,7 @@ def accept_case(request, pk):
                 })
             
             # Send notification to assigned technician (if any and different from accepter)
-            # DISABLED per email policy â€” technicians do not receive email notifications
+            # DISABLED per email policy — technicians do not receive email notifications
             # Only send if case was actually assigned to someone
             if False and case.assigned_to and case.assigned_to != user:
                 try:
@@ -1587,7 +1587,7 @@ def accept_case(request, pk):
                     print(f"Error sending tech notification: {str(e)}")
             
             # Send notification to member
-            # DISABLED per email policy â€” members only receive HOLD, CHAT, READY emails
+            # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
             try:
                 from django.core.mail import send_mail
                 from django.template.loader import render_to_string
@@ -2037,7 +2037,7 @@ def change_release_date(request, case_id):
                     user=user,
                     action_type='other',
                     case=case,
-                    description=f'Release rescheduled: {delay_hours}h delay from now â†’ {release_date_str} (was {old_release_date})',
+                    description=f'Release rescheduled: {delay_hours}h delay from now → {release_date_str} (was {old_release_date})',
                     metadata={'old_release_date': str(old_release_date), 'new_release_date': str(release_dt_utc), 'delay_hours': delay_hours}
                 )
 
@@ -2527,7 +2527,7 @@ def accept_and_refuse_rush(request, case_id):
                     if not tech_override_reason:
                         return JsonResponse({'success': False, 'error': 'Override reason required.'}, status=400)
 
-        # ── Step 1: Accept the case ───────────────────────────────────────────
+        # -- Step 1: Accept the case -------------------------------------------
         case.status     = 'accepted'
         case.tier       = f'tier_{tier}' if not tier.startswith('tier_') else tier
         case.date_accepted = timezone.now()
@@ -2549,7 +2549,7 @@ def accept_and_refuse_rush(request, case_id):
         else:
             case.assigned_to = None
 
-        # ── Step 2: Downgrade rush urgency ────────────────────────────────────
+        # -- Step 2: Downgrade rush urgency ------------------------------------
         from core.models import SystemSettings
         sys_settings = SystemSettings.get_settings()
         submitted_date = case.date_submitted.date() if case.date_submitted else timezone.localtime(timezone.now()).date()
@@ -2562,10 +2562,10 @@ def accept_and_refuse_rush(request, case_id):
 
         employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
 
-        # Audit — acceptance
+        # Audit � acceptance
         AuditLog.objects.create(
             case=case, user=user, action_type='case_accepted',
-            description=(f'Case accepted as Tier {tier} with rush refused — '
+            description=(f'Case accepted as Tier {tier} with rush refused � '
                          f'{case.external_case_id} ({employee_name})'),
             metadata={
                 'tier': tier,
@@ -2577,7 +2577,7 @@ def accept_and_refuse_rush(request, case_id):
             }
         )
 
-        # Audit — rush downgrade
+        # Audit � rush downgrade
         AuditLog.objects.create(
             case=case, user=user, action_type='case_rush_downgraded',
             description=(f'Rush refused at acceptance by {user.get_full_name() or user.username}. '
@@ -2619,7 +2619,7 @@ def accept_and_refuse_rush(request, case_id):
                     f'{new_due_date.strftime("%m/%d/%Y")}.'
                     + (f' Note from ProFeds: {note}' if note else '')
                 ),
-                hold_reason='Rush processing not available — standard 7-day turnaround applies.',
+                hold_reason='Rush processing not available � standard 7-day turnaround applies.',
                 is_read=False, created_at=timezone.now()
             )
 
@@ -2627,7 +2627,7 @@ def accept_and_refuse_rush(request, case_id):
             recipients = get_case_recipient_emails(case)
             for email in recipients:
                 send_email_notification(
-                    subject=f'Update on Your Case for {employee_name} — Processing Timeline Change',
+                    subject=f'UPDATE: The case for {employee_name} has a revised due date!',
                     template_name='case_rush_not_accepted.html',
                     context={
                         'member_name': case.member.get_full_name() or case.member.username,
@@ -2635,6 +2635,7 @@ def accept_and_refuse_rush(request, case_id):
                         'employee_name': employee_name,
                         'new_due_date': new_due_date.strftime('%B %d, %Y'),
                         'note': note,
+                        'case_detail_url': f"{getattr(__import__('django.conf', fromlist=['settings']).settings, 'SITE_URL', 'https://portal.profeds.com')}/cases/{case.id}/",
                     },
                     recipient_email=email, case=case, user=user,
                 )
@@ -2681,7 +2682,7 @@ def accept_and_refuse_rush(request, case_id):
             }
         )
 
-        # Post a system message to the Case Chat — visible to both advisor and tech
+        # Post a system message to the Case Chat � visible to both advisor and tech
         from cases.models import CaseMessage
         chat_msg = CaseMessage.objects.create(
             case=case,
@@ -2712,7 +2713,7 @@ def accept_and_refuse_rush(request, case_id):
                     f'{new_due_date.strftime("%m/%d/%Y")}.'
                     + (f' Note from ProFeds: {note}' if note else '')
                 ),
-                hold_reason='Rush processing not available — standard 7-day turnaround applies.',
+                hold_reason='Rush processing not available � standard 7-day turnaround applies.',
                 is_read=False,
                 created_at=timezone.now()
             )
@@ -2722,15 +2723,15 @@ def accept_and_refuse_rush(request, case_id):
             recipients = get_case_recipient_emails(case)
             for email in recipients:
                 send_email_notification(
-                    subject=f'Update on Your Case for {employee_name} — Processing Timeline Change',
+                    subject=f'UPDATE: The case for {employee_name} has a revised due date!',
                     template_name='case_rush_not_accepted.html',
                     context={
                         'member_name': case.member.get_full_name() or case.member.username,
                         'member_first_name': case.member.first_name or case.member.username,
                         'employee_name': employee_name,
-                        'case_id': case.external_case_id,
                         'new_due_date': new_due_date.strftime('%B %d, %Y'),
                         'note': note,
+                        'case_detail_url': f"{getattr(__import__('django.conf', fromlist=['settings']).settings, 'SITE_URL', 'https://portal.profeds.com')}/cases/{case.id}/",
                     },
                     recipient_email=email,
                     case=case,
@@ -2836,7 +2837,7 @@ def decline_case(request, case_id):
                 }
             )
 
-            # Post a system message to the Case Chat — visible to both advisor and tech
+            # Post a system message to the Case Chat � visible to both advisor and tech
             from cases.models import CaseMessage
             chat_msg = CaseMessage.objects.create(
                 case=case,
@@ -2957,7 +2958,7 @@ def admin_take_ownership(request, case_id):
         
         previous_owner_name = previous_owner.get_full_name() if previous_owner else 'Unassigned'
         member_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
-        description = f"Admin took ownership of {case.external_case_id} â€” {member_name} (was: {previous_owner_name})"
+        description = f"Admin took ownership of {case.external_case_id} — {member_name} (was: {previous_owner_name})"
         
         AuditLog.log_activity(
             user=user,
@@ -3163,7 +3164,7 @@ def reassign_case(request, case_id):
         messages.error(request, 'Permission denied')
         return redirect('cases:case_detail', pk=case_id)
     
-    # Status check â€” only accepted, hold, or pending_review cases can be reassigned
+    # Status check — only accepted, hold, or pending_review cases can be reassigned
     if case.status not in ['accepted', 'hold', 'pending_review']:
         error_msg = f'Only cases in Accepted, On Hold, or Pending Review status can be reassigned. Current status: {case.get_status_display()}'
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -3212,7 +3213,7 @@ def reassign_case(request, case_id):
                     StaffNotification.objects.create(
                         user=new_technician,
                         notification_type='case_assigned',
-                        title=f'{case.employee_first_name} {case.employee_last_name} â€” Case Assigned to You',
+                        title=f'{case.employee_first_name} {case.employee_last_name} — Case Assigned to You',
                         message=f'{case.employee_first_name} {case.employee_last_name} case has been reassigned to you by {user.get_full_name() or user.username}. Reason: {reason}',
                         case=case,
                         is_read=False
@@ -3428,7 +3429,7 @@ def take_case_ownership(request, case_id):
             
             old_assignee_name = old_assignee.get_full_name() if old_assignee else 'Unassigned'
             member_name = f"{case.employee_first_name} {case.employee_last_name}".strip()
-            description = f"Claimed ownership of {case.external_case_id} â€” {member_name} (was: {old_assignee_name})"
+            description = f"Claimed ownership of {case.external_case_id} — {member_name} (was: {old_assignee_name})"
             
             AuditLog.log_activity(
                 user=user,
@@ -3770,7 +3771,7 @@ def upload_technician_document(request, case_id):
                     StaffNotification.objects.create(
                         user=case.assigned_to,
                         notification_type='member_document_uploaded',
-                        title=f'New Document â€” {case.employee_first_name} {case.employee_last_name}',
+                        title=f'New Document — {case.employee_first_name} {case.employee_last_name}',
                         message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) for {case.employee_first_name} {case.employee_last_name}.',
                         case=case,
                         is_read=False
@@ -4041,7 +4042,7 @@ def mark_case_completed(request, case_id):
                 user=request.user,
                 action_type='case_completed',
                 case=case,
-                description=f'Case marked as {case.status} â€” {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}) - {release_msg}',
+                description=f'Case marked as {case.status} — {case.external_case_id} ({case.employee_first_name} {case.employee_last_name}) - {release_msg}',
                 metadata=completion_metadata,
                 ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip(),
             )
@@ -4411,7 +4412,7 @@ def upload_member_document_to_completed_case(request, case_id):
                     StaffNotification.objects.create(
                         user=case.assigned_to,
                         notification_type='member_document_uploaded',
-                        title=f'New Document â€” {case.employee_first_name} {case.employee_last_name}',
+                        title=f'New Document — {case.employee_first_name} {case.employee_last_name}',
                         message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) for {case.employee_first_name} {case.employee_last_name}',
                         case=case,
                         is_read=False
@@ -4921,7 +4922,7 @@ def reject_case(request, pk):
         )
         
         # Send rejection email to member
-        # DISABLED per email policy â€” members only receive HOLD, CHAT, READY emails
+        # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
         from django.core.mail import send_mail
         from django.template.loader import render_to_string
         from django.conf import settings
@@ -4955,7 +4956,7 @@ def reject_case(request, pk):
             logger.info(f'Case {case.external_case_id} rejected by {user.username}. '
                        f'Reason: {rejection_reason}. Email skipped (notifications disabled)')
         
-        messages.success(request, f'âœ“ Case {case.external_case_id} moved to "Needs Resubmission". '
+        messages.success(request, f'✓ Case {case.external_case_id} moved to "Needs Resubmission". '
                         f'Notification sent to {case.member.get_full_name()}.')
         return redirect('case_detail', pk=case.id)
         
@@ -5082,14 +5083,14 @@ def add_case_message(request, pk):
                         user=case.assigned_to,
                         case=case,
                         notification_type='case_chat_message',
-                        title=f'New message â€” {case.employee_first_name} {case.employee_last_name}',
+                        title=f'New message — {case.employee_first_name} {case.employee_last_name}',
                         message=f'{user.get_full_name() or user.username}: {preview}',
                         is_read=False
                     )
                 except Exception as e:
                     logger.error(f'Error creating StaffNotification for chat message: {str(e)}')
             else:
-                # Case is unassigned â€” create UnreadMessage for all techs and admins
+                # Case is unassigned — create UnreadMessage for all techs and admins
                 # so the chat shows as a red unread bubble for whoever picks it up
                 from accounts.models import User as UserModel
                 staff_users = UserModel.objects.filter(role__in=['technician', 'administrator'], is_active=True)
@@ -5104,7 +5105,7 @@ def add_case_message(request, pk):
                         logger.error(f'Error creating UnreadMessage for staff {staff_user.username}: {str(e)}')
                 logger.info(f'Member {user.username} message on unassigned case {case.external_case_id} - Created UnreadMessage for {staff_users.count()} staff users')
             
-            # NOTE: Do NOT set has_member_updates here â€” that flag is only for
+            # NOTE: Do NOT set has_member_updates here — that flag is only for
             # document uploads / resubmissions. Chat messages use UnreadMessage
             # which drives the red unread bubble on the View button.
         else:
@@ -5156,7 +5157,7 @@ def add_case_message(request, pk):
                     logger.error(traceback.format_exc())
                 
                 # ============================================================
-                # SEND EMAIL TO MEMBER â€” Tech Comment Notification
+                # SEND EMAIL TO MEMBER — Tech Comment Notification
                 # ============================================================
                 try:
                     from cases.services.email_service import should_send_emails
@@ -5189,7 +5190,7 @@ def add_case_message(request, pk):
                         text_message = render_to_string('emails/tech_comment_notification.txt', email_context)
                         html_message = render_to_string('emails/tech_comment_notification.html', email_context)
                         
-                        # Get all recipients (member + delegates) â€” respects case_chat preference
+                        # Get all recipients (member + delegates) — respects case_chat preference
                         from cases.services.email_service import get_case_recipient_emails
                         chat_recipients = get_case_recipient_emails(case, notification_type='case_chat')
                         
@@ -5491,7 +5492,7 @@ def request_modification(request, pk):
         from cases.services.case_id_generator import generate_case_id
         from datetime import date
         
-        # ProFeds error â†’ 3-day turnaround (not rush â€” ProFeds absorbs the cost, no Rush badge shown)
+        # ProFeds error → 3-day turnaround (not rush — ProFeds absorbs the cost, no Rush badge shown)
         if is_profeds_error:
             mod_due_date = date.today() + timedelta(days=3)
             mod_urgency = 'normal'
@@ -5556,7 +5557,7 @@ def request_modification(request, pk):
             logger.warning(f'ProFeds error flagged on case {case.external_case_id} (assigned to: {case.assigned_to}). Modification: {new_case.external_case_id}')
         
         # Store the modification request in the original case's messages
-        error_flag_text = "\n\nâš ï¸ **MEMBER FLAGGED AS PROFEDS ERROR**" if is_profeds_error else ""
+        error_flag_text = "\n\n⚠️ **MEMBER FLAGGED AS PROFEDS ERROR**" if is_profeds_error else ""
         modification_message = f"**MODIFICATION REQUESTED BY MEMBER**\n\nReason: {reason}\n\nNew case created: {new_case.external_case_id}{error_flag_text}"
         msg = CaseMessage.objects.create(
             case=case,
@@ -5706,7 +5707,7 @@ def upload_image_for_notes(request):
             compressed_size = len(compressed_io.getvalue()) / (1024 * 1024)
             compression_ratio = (1 - (len(compressed_io.getvalue()) / uploaded_file.size)) * 100
             
-            logger.info(f'Image uploaded & compressed by {user.username}: {filename} - Original: {original_size_mb:.2f}MB â†’ Compressed: {compressed_size:.2f}MB ({compression_ratio:.1f}% reduction)')
+            logger.info(f'Image uploaded & compressed by {user.username}: {filename} - Original: {original_size_mb:.2f}MB → Compressed: {compressed_size:.2f}MB ({compression_ratio:.1f}% reduction)')
             
             return JsonResponse({
                 'location': url,
@@ -6178,7 +6179,7 @@ def edit_case_details(request, pk):
             logger.info(f'Case {case.external_case_id} details edited by {user.username}. Changes: {changes}')
             
             # Send optional notification email
-            # DISABLED per email policy â€” members only receive HOLD, CHAT, READY emails
+            # DISABLED per email policy — members only receive HOLD, CHAT, READY emails
             if False and send_notification and case.member:
                 try:
                     from cases.services.email_service import should_send_emails
@@ -6191,15 +6192,15 @@ def edit_case_details(request, pk):
                         # Build change summary
                         change_list = []
                         if 'employee_first_name' in changes:
-                            change_list.append(f"Employee First Name: '{old_values['employee_first_name']}' â†’ '{new_values['employee_first_name']}'")
+                            change_list.append(f"Employee First Name: '{old_values['employee_first_name']}' → '{new_values['employee_first_name']}'")
                         if 'employee_last_name' in changes:
-                            change_list.append(f"Employee Last Name: '{old_values['employee_last_name']}' â†’ '{new_values['employee_last_name']}'")
+                            change_list.append(f"Employee Last Name: '{old_values['employee_last_name']}' → '{new_values['employee_last_name']}'")
                         if 'date_due' in changes:
-                            change_list.append(f"Due Date: {old_values['date_due']} â†’ {new_values['date_due']}")
+                            change_list.append(f"Due Date: {old_values['date_due']} → {new_values['date_due']}")
                         if 'assigned_to' in changes:
-                            change_list.append(f"Assigned To: {old_values['assigned_to']} â†’ {new_values['assigned_to']}")
+                            change_list.append(f"Assigned To: {old_values['assigned_to']} → {new_values['assigned_to']}")
                         
-                        change_summary = '\n'.join([f"  â€¢ {item}" for item in change_list])
+                        change_summary = '\n'.join([f"  • {item}" for item in change_list])
                         
                         message = f"""Dear {case.member.first_name},
 
@@ -6673,7 +6674,7 @@ def _review_error(request, case_id, error_msg, status_code=400):
 @login_required
 @require_http_methods(["POST"])
 def approve_case_review(request, case_id):
-    """Approve a case pending quality review â€” records approval then redirects to completion review."""
+    """Approve a case pending quality review — records approval then redirects to completion review."""
     from cases.models import CaseReviewHistory
     
     user = request.user
@@ -6938,7 +6939,7 @@ def correct_case_review(request, case_id):
             user=user,
             action_type='case_review_corrected',
             case=case,
-            description=f'Case corrected by {user.get_full_name() or user.username} â€” proceeding to completion review',
+            description=f'Case corrected by {user.get_full_name() or user.username} — proceeding to completion review',
             changes={'status': {'from': 'pending_review', 'to': 'accepted'}},
             metadata={
                 'correction_notes': correction_notes,
@@ -7020,7 +7021,7 @@ def submit_for_review(request, case_id):
                 action = 'submitted_for_review'
             
             if tech_notes:
-                review_notes += f' â€” Notes: {tech_notes}'
+                review_notes += f' — Notes: {tech_notes}'
             
             CaseReviewHistory.objects.create(
                 case=case,
@@ -7065,7 +7066,7 @@ def submit_for_review(request, case_id):
             from cases.models import CaseNote
             note_text = f'[Review Submitted] Case submitted for quality review by {user.get_full_name() or user.username}'
             if reviewer:
-                note_text += f' â€” Reviewer: {reviewer.get_full_name() or reviewer.username}'
+                note_text += f' — Reviewer: {reviewer.get_full_name() or reviewer.username}'
             if tech_notes:
                 note_text += f'\nNotes: {tech_notes}'
             CaseNote.objects.create(case=case, author=user, note=note_text, is_internal=True)
@@ -7132,7 +7133,7 @@ def request_review(request, case_id):
     if not notes:
         return JsonResponse({'success': False, 'error': 'Please provide notes explaining what you need reviewed.'}, status=400)
 
-    # Resolve reviewer (optional â€“ None means "any senior")
+    # Resolve reviewer (optional – None means "any senior")
     reviewer = None
     if reviewer_id:
         reviewer = User.objects.filter(pk=reviewer_id).first()
@@ -7238,7 +7239,7 @@ def respond_to_review_request(request, review_request_id):
     if action in ('pushed_back', 'escalated') and not response_notes:
         return JsonResponse({'success': False, 'error': 'Notes are required when pushing back or escalating.'}, status=400)
 
-    # Handle escalation â€” create a new chained request
+    # Handle escalation — create a new chained request
     escalate_to_id = body.get('escalate_to_id')
     if action == 'escalated':
         escalate_to = None
@@ -7427,10 +7428,10 @@ def get_eligible_reviewers(request):
     """Return list of eligible reviewers (higher-level techs + admins) for the reviewer dropdown.
     
     Reviewers must be at a higher level than the submitter:
-    - L1 submitter â†’ L2, L3 techs + admins
-    - L2 submitter â†’ L3 techs + admins
-    - L3 submitter â†’ admins only
-    - Admin submitter â†’ other admins
+    - L1 submitter → L2, L3 techs + admins
+    - L2 submitter → L3 techs + admins
+    - L3 submitter → admins only
+    - Admin submitter → other admins
     """
     user = request.user
     if user.role not in ('technician', 'administrator', 'manager'):
@@ -7458,7 +7459,7 @@ def get_eligible_reviewers(request):
             is_active=True,
         ).exclude(pk=user.pk)
     else:
-        # Admin/manager submitting â€” show other admins
+        # Admin/manager submitting — show other admins
         eligible = User.objects.filter(
             role='administrator',
             is_active=True,
@@ -7887,9 +7888,9 @@ def api_technician_status(request):
     Return online-status for all active technicians/administrators.
     Accessible to: technician, administrator, manager roles only.
     Status thresholds:
-        active  â€” last_active within 5 minutes
-        away    â€” last_active 5-30 minutes ago
-        offline â€” last_active > 30 minutes ago or never
+        active  — last_active within 5 minutes
+        away    — last_active 5-30 minutes ago
+        offline — last_active > 30 minutes ago or never
     """
     if request.user.role not in ('technician', 'administrator', 'manager'):
         return JsonResponse({'error': 'Forbidden'}, status=403)
@@ -8214,7 +8215,7 @@ def approve_case_change_request(request, request_id):
             
             case.save()
             
-            logger.info(f'Tech {user.id} approved extension: {old_due_date} â†’ {change_req.requested_due_date}')
+            logger.info(f'Tech {user.id} approved extension: {old_due_date} → {change_req.requested_due_date}')
         
         elif change_req.request_type == 'cancellation':
             # Change case status to cancelled (new status)
@@ -8417,7 +8418,7 @@ def upload_member_documents(request, case_id):
                 StaffNotification.objects.create(
                     user=case.assigned_to,
                     notification_type='member_document_uploaded',
-                    title=f'New Document â€” {case.employee_first_name} {case.employee_last_name}',
+                    title=f'New Document — {case.employee_first_name} {case.employee_last_name}',
                     message=f'Member {user.get_full_name() or user.username} uploaded {uploaded_count} document(s) for {case.employee_first_name} {case.employee_last_name}.',
                     case=case,
                     is_read=False
@@ -8436,7 +8437,7 @@ def upload_member_documents(request, case_id):
         
         return JsonResponse({
             'success': True,
-            'message': f'âœ“ {uploaded_count} document(s) uploaded successfully',
+            'message': f'✓ {uploaded_count} document(s) uploaded successfully',
             'document_count': document_count,
             'document_id': last_doc_id
         })

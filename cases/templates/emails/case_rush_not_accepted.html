@@ -22,34 +22,32 @@
                         <td style="padding: 30px 30px 20px 30px;">
                             <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Hi {{ member_first_name }},</p>
 
-                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">We have received your case for <strong>{{ employee_name }}</strong> and are happy to process it. However, we are unable to accommodate the rush timeline you requested.</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">We have received your case for <strong>{{ employee_name }}</strong> and are happy to process it.</p>
 
-                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Your case has been moved to our <strong>standard processing timeline</strong>. The new expected completion date is:</p>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Rushed requests are handled on a case-by-case basis, and we do our best to accommodate ProFeds Members when possible.</p>
 
-                            <div style="background-color: #eaf0fb; border-left: 4px solid #072A84; padding: 15px; margin: 20px 0; border-radius: 3px; font-size: 16px; font-weight: bold; color: #072A84;">
-                                {{ new_due_date }}
-                            </div>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">Due to current volume, we are unable to accommodate this rush request. We have adjusted the due date to 7 days from the date of submission, but will work hard to complete it prior to that date. No further action is required on your part.</p>
+
+                            <p style="margin: 0 0 8px 0; font-size: 15px; color: #333333;">The new expected completion date is: <strong>{{ new_due_date }}</strong></p>
 
                             {% if note %}
-                            <div style="background-color: #f8f9fa; border-left: 4px solid #6c757d; padding: 15px; margin: 20px 0; border-radius: 3px; font-size: 14px;">
-                                <strong style="display: block; margin-bottom: 6px; color: #333333;">Note from Benefits Team:</strong>
-                                {{ note }}
-                            </div>
+                            <p style="margin: 0 0 16px 0; font-size: 14px; color: #555555; font-style: italic;">Note from Benefits Team: {{ note }}</p>
                             {% endif %}
 
-                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">No action is required on your part. If you have questions, please use the chat box on your case details page to reach the Benefits Team directly.</p>
+                            <p style="margin: 16px 0 8px 0; font-size: 15px; color: #333333;">To view the case:</p>
 
                             {% if case_detail_url %}
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 10px auto;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 10px auto 20px auto;">
                                 <tr>
                                     <td align="center" bgcolor="#072A84" style="background-color: #072A84; border-radius: 5px;">
-                                        <a href="{{ case_detail_url }}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none;">VIEW CASE</a>
+                                        <a href="{{ case_detail_url }}" target="_blank" style="display: inline-block; padding: 14px 32px; font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none;">CLICK HERE</a>
                                     </td>
                                 </tr>
                             </table>
                             {% endif %}
 
-                            <br>
+                            <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;">If you have any questions, feel free to use the chat box on the case details page to communicate directly with the Benefits Team.</p>
+
                             <p style="margin: 0 0 4px 0; font-size: 15px; color: #333333;">Thank you for your understanding,</p>
                             <p style="margin: 0 0 16px 0; font-size: 15px; color: #333333;"><strong>The ProFeds Benefits Team</strong></p>
                         </td>
