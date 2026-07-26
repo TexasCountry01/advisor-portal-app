@@ -606,10 +606,12 @@ def technician_dashboard(request):
         default_view = saved_preference.preference_value.get('view', 'all')
     
     # Get all cases (technicians see all, not just assigned)
-    # BUT exclude draft cases unless assigned to them
+    # Include all non-draft statuses so declined/cancelled cases remain searchable
+    # via the Status filter checkboxes even if unassigned.
     from django.db.models import Q
     cases = Case.objects.filter(
-        Q(status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'completed']) |  # Non-draft cases
+        Q(status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review',
+                      'completed', 'cancelled', 'declined', 'needs_resubmission']) |
         Q(assigned_to=user)  # OR cases assigned to this technician (even if draft)
     ).prefetch_related(
         'documents'
