@@ -565,6 +565,8 @@
                             {% if user.role == 'member' %}
                                 {% if case.status == 'completed' or case.status == 'released' %}
                                     {{ case.credit_value|default:"Not assigned" }}
+                                {% elif case.status == 'declined' %}
+                                    0.0
                                 {% else %}
                                     <span class="text-muted">Not visible until case released</span>
                                 {% endif %}
