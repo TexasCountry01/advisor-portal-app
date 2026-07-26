@@ -565,14 +565,14 @@
                             {% if user.role == 'member' %}
                                 {% if case.status == 'completed' or case.status == 'released' %}
                                     {{ case.credit_value|default:"Not assigned" }}
-                                {% elif case.status == 'declined' %}
+                                {% elif case.status == 'declined' or case.status == 'cancelled' %}
                                     0.0
                                 {% else %}
                                     <span class="text-muted">Not visible until case released</span>
                                 {% endif %}
                             {% else %}
                                 <div class="d-flex align-items-center gap-2">
-                                    <span id="creditDisplay">{% if case.status == 'declined' %}0.0{% else %}{{ case.credit_value|default:"Not assigned" }}{% endif %}</span>
+                                    <span id="creditDisplay">{% if case.status == 'declined' or case.status == 'cancelled' %}0.0{% else %}{{ case.credit_value|default:"Not assigned" }}{% endif %}</span>
                                     {% if case.status == 'accepted' or case.status == 'pending_review' or case.status == 'completed' %}
                                         {% if user.role == 'technician' or user.role == 'administrator' or user.role == 'manager' %}
                                             <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#creditAdjustModal">
