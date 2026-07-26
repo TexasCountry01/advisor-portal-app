@@ -701,7 +701,10 @@ def technician_dashboard(request):
     # Build tile counts before applying the active quick tile filter.
     tile_scope_cases = cases
 
-    if quick_filter:
+    # If an explicit status_filter is selected, skip the quick_filter — the status
+    # checkbox is the authoritative filter and overriding it with a tile filter
+    # (e.g., pending excludes declined) would produce confusing empty results.
+    if quick_filter and not status_filters:
         cases = _apply_staff_quick_filter(cases, quick_filter, user)
     
     # Handle sorting
