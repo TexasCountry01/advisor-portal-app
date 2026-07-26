@@ -2624,6 +2624,8 @@ def accept_and_refuse_rush(request, case_id):
             )
 
             from cases.services.email_service import send_email_notification, get_case_recipient_emails
+            from django.conf import settings as _dj_settings
+            _site_url = getattr(_dj_settings, 'SITE_URL', 'https://portal.profeds.com')
             recipients = get_case_recipient_emails(case)
             for email in recipients:
                 send_email_notification(
@@ -2635,7 +2637,8 @@ def accept_and_refuse_rush(request, case_id):
                         'employee_name': employee_name,
                         'new_due_date': new_due_date.strftime('%B %d, %Y'),
                         'note': note,
-                        'case_detail_url': f"{getattr(__import__('django.conf', fromlist=['settings']).settings, 'SITE_URL', 'https://portal.profeds.com')}/cases/{case.id}/",
+                        'case_detail_url': f'{_site_url}/cases/{case.id}/',
+                        'logo_url': f'{_site_url}/static/images/RevisedCoverPageLogo.png',
                     },
                     recipient_email=email, case=case, user=user,
                 )
@@ -2720,6 +2723,8 @@ def accept_and_refuse_rush(request, case_id):
 
             # Email the advisor
             from cases.services.email_service import send_email_notification, get_case_recipient_emails
+            from django.conf import settings as _dj_settings
+            _site_url = getattr(_dj_settings, 'SITE_URL', 'https://portal.profeds.com')
             recipients = get_case_recipient_emails(case)
             for email in recipients:
                 send_email_notification(
@@ -2731,7 +2736,8 @@ def accept_and_refuse_rush(request, case_id):
                         'employee_name': employee_name,
                         'new_due_date': new_due_date.strftime('%B %d, %Y'),
                         'note': note,
-                        'case_detail_url': f"{getattr(__import__('django.conf', fromlist=['settings']).settings, 'SITE_URL', 'https://portal.profeds.com')}/cases/{case.id}/",
+                        'case_detail_url': f'{_site_url}/cases/{case.id}/',
+                        'logo_url': f'{_site_url}/static/images/RevisedCoverPageLogo.png',
                     },
                     recipient_email=email,
                     case=case,
