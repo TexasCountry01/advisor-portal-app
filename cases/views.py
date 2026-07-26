@@ -2793,7 +2793,8 @@ def decline_case(request, case_id):
 
         # Update case status to 'declined' (distinct from member-initiated 'cancelled')
         case.status = 'declined'
-        case.save(update_fields=['status'])
+        case.urgency = 'normal'  # Clear rush urgency on terminal cases
+        case.save(update_fields=['status', 'urgency'])
 
         # Audit log
         AuditLog.objects.create(
@@ -8044,7 +8045,8 @@ def create_case_change_request(request, case_id):
         # Handle cancellation immediately (no approval needed)
         if request_type == 'cancellation':
             case.status = 'cancelled'
-            case.save(update_fields=['status'])
+            case.urgency = 'normal'  # Clear rush urgency on terminal cases
+            case.save(update_fields=['status', 'urgency'])
             
             # Notify the assigned technician
             if case.assigned_to:
@@ -8217,6 +8219,7 @@ def approve_case_change_request(request, request_id):
         elif change_req.request_type == 'cancellation':
             # Change case status to cancelled (new status)
             case.status = 'cancelled'
+            case.urgency = 'normal'  # Clear rush urgency on terminal cases
             case.save()
             
             # Log cancellation to audit trail
