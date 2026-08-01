@@ -223,7 +223,7 @@
                                     <div class="timeline-content">
                                         <h6 class="mb-1">
                                             <span class="badge bg-info">{{ history.get_review_action_display }}</span>
-                                            by {{ history.reviewed_by.username if history.reviewed_by else 'Unknown' }}
+                                            by {% if history.reviewed_by %}{{ history.reviewed_by.username }}{% else %}Unknown{% endif %}
                                         </h6>
                                         {% if history.review_notes %}
                                             <p class="mb-1">{{ history.review_notes }}</p>
@@ -445,5 +445,4 @@
         z-index: 1000;
     }
 </style>
-{% endblock %}
 {% endblock %}
