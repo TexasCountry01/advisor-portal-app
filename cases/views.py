@@ -8267,12 +8267,14 @@ def create_case_change_request(request, case_id):
         
         # Handle cancellation immediately (no approval needed)
         if request_type == 'cancellation':
+            previous_assigned_to = case.assigned_to
             case.status = 'cancelled'
             case.urgency = 'normal'  # Clear rush urgency on terminal cases
-            case.save(update_fields=['status', 'urgency'])
+            case.assigned_to = None
+            case.save(update_fields=['status', 'urgency', 'assigned_to'])
             
             # Notify the assigned technician
-            if case.assigned_to:
+            if previous_assigned_to:
                 from cases.models import CaseNotification
                 CaseNotification.objects.create(
                     case=case,
@@ -8285,7 +8287,7 @@ def create_case_change_request(request, case_id):
                 try:
                     from core.models import StaffNotification
                     StaffNotification.objects.create(
-                        user=case.assigned_to,
+                        user=previous_assigned_to,
                         case=case,
                         notification_type='member_change_request',
                         title=f'Case Canceled by Member',
@@ -8303,7 +8305,7 @@ def create_case_change_request(request, case_id):
                     )
                     UnreadMessage.objects.get_or_create(
                         message=msg,
-                        user=case.assigned_to,
+                        user=previous_assigned_to,
                         defaults={'case': case}
                     )
                 except Exception as e:
@@ -8441,6 +8443,7 @@ def approve_case_change_request(request, request_id):
         
         elif change_req.request_type == 'cancellation':
             # Change case status to cancelled (new status)
+            case.assigned_to = None
             case.status = 'cancelled'
             case.urgency = 'normal'  # Clear rush urgency on terminal cases
             case.save()
