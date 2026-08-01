@@ -3300,11 +3300,13 @@ def submit_case_final(request, case_id):
                     'error': f'Only draft cases can be submitted. This case is {case.get_status_display()}'
                 }, status=400)
             
-            # OPTION 2: Check if urgency has changed since draft was created
-            # Calculate current urgency based on today's date
-            from datetime import timedelta, date
-            today = date.today()
+            # Re-evaluate urgency and due-date validity at submit time.
+            # Drafts can sit for a long time; a stale due date must be refreshed.
+            from datetime import timedelta
+            today = timezone.localtime(timezone.now()).date()
             default_due_date = today + timedelta(days=7)
+
+            requires_due_date_refresh = (not case.date_due) or (case.date_due < today)
             
             # Calculate what the urgency should be based on current date
             current_urgency = 'rush' if case.date_due < default_due_date else 'normal'
@@ -3322,6 +3324,7 @@ def submit_case_final(request, case_id):
                     'urgency_changed': urgency_changed,
                     'stored_urgency': stored_urgency,
                     'current_urgency': current_urgency,
+                    'requires_due_date_refresh': requires_due_date_refresh,
                     'no_documents': not has_documents,
                     'message': 'This case is now marked as RUSH. Your due date is within 7 days. Continue?'
                 })
@@ -3331,6 +3334,13 @@ def submit_case_final(request, case_id):
                 return JsonResponse({
                     'success': False,
                     'error': 'Please attach at least one document before submitting your case.'
+                }, status=400)
+
+            # Server-side enforcement: draft due date must be current/future.
+            if requires_due_date_refresh:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Please edit this draft and select a new due date before submitting.'
                 }, status=400)
             
             # Update case urgency to current value

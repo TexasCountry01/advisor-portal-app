@@ -5257,6 +5257,11 @@ function submitDraftFromDetail(caseId) {
             alert('Please attach at least one document (Federal Fact Finder form and supporting documents) before submitting your case.');
             return;
         }
+        if (checkData.requires_due_date_refresh) {
+            alert('This draft has an outdated due date. Please edit the case and select a new due date before submitting.');
+            window.location.href = `/cases/${caseId}/edit/`;
+            return;
+        }
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
         if (checkData.urgency_changed) {
             document.getElementById('rushEditCaseLink').href = `/cases/${caseId}/edit/`;
