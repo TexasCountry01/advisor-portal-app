@@ -778,6 +778,19 @@ document.addEventListener('DOMContentLoaded', function() {
             relative_urls: false,
             remove_script_host: false,
             content_style: 'body { font-size: 11px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
+            // Push content to textarea + fallback on every edit so submit
+            // never depends on a single pre-submit triggerSave() call.
+            setup: function(editor) {
+                function pushContent() {
+                    var html = editor.getContent();
+                    var textarea = document.getElementById('technical_notes_template');
+                    var fallback = document.getElementById('technical_notes_template_fallback');
+                    if (textarea) textarea.value = html;
+                    if (fallback) fallback.value = html;
+                }
+                editor.on('change keyup NodeChange', pushContent);
+                editor.on('init', pushContent);
+            },
         });
     }
     
@@ -812,14 +825,24 @@ document.addEventListener('DOMContentLoaded', function() {
         fallback.value = raw ? raw.value : '';
     }
 
-    // Always sync ALL TinyMCE instances into their textareas before the form POSTs.
-    // This runs regardless of which tab is active or whether the setup callback fired.
+    // Final safety sync immediately before POST.
+    // Uses explicit getContent() so it works even if triggerSave() races.
     form.addEventListener('submit', function() {
-        syncTemplateFallback();
         if (typeof tinymce !== 'undefined') {
-            tinymce.triggerSave();
+            var editor = tinymce.get('technical_notes_template');
+            if (editor) {
+                var html = editor.getContent();
+                var textarea = document.getElementById('technical_notes_template');
+                var fallback = document.getElementById('technical_notes_template_fallback');
+                if (textarea) textarea.value = html;
+                if (fallback) fallback.value = html;
+            } else {
+                // Editor not active — fallback to textarea-to-hidden copy
+                syncTemplateFallback();
+            }
+        } else {
+            syncTemplateFallback();
         }
-        syncTemplateFallback();
     });
     var initialState = new FormData(form);
     
