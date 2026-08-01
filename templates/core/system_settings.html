@@ -279,6 +279,7 @@
                                     <input class="form-check-input" type="checkbox"
                                            id="enable_scheduled_releases"
                                            name="enable_scheduled_releases"
+                                         form="settingsForm"
                                            {% if settings.enable_scheduled_releases %}checked{% endif %}>
                                     <label class="form-check-label fw-bold" for="enable_scheduled_releases" style="cursor:pointer;">
                                         Allow Delayed Releases
@@ -302,7 +303,8 @@
                                             </span>
                                         </label>
                                         <select class="form-select form-select-sm" id="default_completion_delay_hours"
-                                                name="default_completion_delay_hours">
+                                            name="default_completion_delay_hours"
+                                            form="settingsForm">
                                             <option value="0" {% if settings.default_completion_delay_hours == 0 %}selected{% endif %}>Immediately</option>
                                             <option value="1" {% if settings.default_completion_delay_hours == 1 %}selected{% endif %}>1 Hour</option>
                                             <option value="2" {% if settings.default_completion_delay_hours == 2 %}selected{% endif %}>2 Hours</option>
@@ -319,6 +321,7 @@
                                         <input class="form-check-input" type="checkbox"
                                                id="batch_release_enabled"
                                                name="batch_release_enabled"
+                                                 form="settingsForm"
                                                {% if settings.batch_release_enabled %}checked{% endif %}>
                                         <label class="form-check-label fw-bold" for="batch_release_enabled" style="cursor:pointer;">
                                             Daily Auto-Release
@@ -333,6 +336,7 @@
                                         <label for="batch_release_time" class="form-label small mb-1">Processing Time (UTC)</label>
                                         <input type="time" class="form-control form-control-sm" id="batch_release_time"
                                                name="batch_release_time"
+                                                 form="settingsForm"
                                                value="{{ settings.batch_release_time }}"
                                                style="max-width: 140px;">
                                         <div class="text-muted" style="font-size: 0.75rem;">12:00 UTC = 6:00 AM CST</div>
@@ -361,6 +365,7 @@
                                     <input class="form-check-input" type="checkbox"
                                            id="email_notifications_enabled"
                                            name="email_notifications_enabled"
+                                         form="settingsForm"
                                            {% if settings.email_notifications_enabled %}checked{% endif %}>
                                     <label class="form-check-label fw-bold" for="email_notifications_enabled" style="cursor:pointer;">
                                         Enable Email Notifications
@@ -384,6 +389,7 @@
                                         </label>
                                         <input type="email" class="form-control form-control-sm" id="reply_email_address"
                                                name="reply_email_address"
+                                                 form="settingsForm"
                                                value="{{ settings.reply_email_address }}"
                                                placeholder="reports@profeds.com">
                                     </div>
@@ -406,9 +412,9 @@
                 </div><!-- end row -->
 
                 <!-- Hidden fields -->
-                <input type="hidden" name="enable_delayed_email_notifications" value="{{ settings.enable_delayed_email_notifications|yesno:'on,' }}">
-                <input type="hidden" name="default_email_delay_hours" value="{{ settings.default_email_delay_hours }}">
-                <input type="hidden" name="batch_email_enabled" value="{{ settings.batch_email_enabled|yesno:'on,' }}">
+                <input type="hidden" name="enable_delayed_email_notifications" form="settingsForm" value="{{ settings.enable_delayed_email_notifications|yesno:'on,' }}">
+                <input type="hidden" name="default_email_delay_hours" form="settingsForm" value="{{ settings.default_email_delay_hours }}">
+                <input type="hidden" name="batch_email_enabled" form="settingsForm" value="{{ settings.batch_email_enabled|yesno:'on,' }}">
 
                 <script>
                 (function() {
@@ -462,6 +468,7 @@
                                        type="checkbox" 
                                        id="benefits_software_api_enabled" 
                                        name="benefits_software_api_enabled"
+                                        form="settingsForm"
                                        {% if settings.benefits_software_api_enabled %}checked{% endif %}>
                                 <label class="form-check-label" for="benefits_software_api_enabled">
                                     Enable Benefits-Software API Integration
@@ -480,6 +487,7 @@
                                    class="form-control" 
                                    id="benefits_software_api_url" 
                                    name="benefits_software_api_url"
+                                form="settingsForm"
                                    value="{{ settings.benefits_software_api_url }}"
                                    placeholder="https://api.benefits-software.com/v1">
                             <small class="text-muted">Base URL for Benefits-Software API</small>
@@ -493,6 +501,7 @@
                                    class="form-control" 
                                    id="benefits_software_api_key" 
                                    name="benefits_software_api_key"
+                                form="settingsForm"
                                    value="{{ settings.benefits_software_api_key }}"
                                    placeholder="Enter API key (hidden for security)">
                             <small class="text-muted">Secure authentication credential for API requests</small>
@@ -527,6 +536,7 @@
                             </label>
                             <textarea id="technical_notes_template" 
                                       name="technical_notes_template" 
+                                      form="settingsForm"
                                       class="form-control"
                                       rows="20"
                                       style="min-height: 400px;">{{ settings.technical_notes_template }}</textarea>
@@ -561,7 +571,7 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <label for="feedback_email_1" class="form-label fw-semibold mb-0">Notification Email 1</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="feedback_email_1_enabled" name="feedback_email_1_enabled" {% if settings.feedback_email_1_enabled %}checked{% endif %}>
+                                        <input class="form-check-input" type="checkbox" role="switch" id="feedback_email_1_enabled" name="feedback_email_1_enabled" form="settingsForm" {% if settings.feedback_email_1_enabled %}checked{% endif %}>
                                         <label class="form-check-label" for="feedback_email_1_enabled">
                                             <span class="badge {% if settings.feedback_email_1_enabled %}bg-success{% else %}bg-secondary{% endif %}" id="feedback_email_1_badge">
                                                 {% if settings.feedback_email_1_enabled %}Active{% else %}Inactive{% endif %}
@@ -569,7 +579,7 @@
                                         </label>
                                     </div>
                                 </div>
-                                <input type="email" class="form-control" id="feedback_email_1" name="feedback_email_1" value="{{ settings.feedback_email_1 }}" placeholder="e.g. admin@profeds.com">
+                                <input type="email" class="form-control" id="feedback_email_1" name="feedback_email_1" form="settingsForm" value="{{ settings.feedback_email_1 }}" placeholder="e.g. admin@profeds.com">
                             </div>
                         </div>
 
@@ -579,7 +589,7 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <label for="feedback_email_2" class="form-label fw-semibold mb-0">Notification Email 2</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" role="switch" id="feedback_email_2_enabled" name="feedback_email_2_enabled" {% if settings.feedback_email_2_enabled %}checked{% endif %}>
+                                        <input class="form-check-input" type="checkbox" role="switch" id="feedback_email_2_enabled" name="feedback_email_2_enabled" form="settingsForm" {% if settings.feedback_email_2_enabled %}checked{% endif %}>
                                         <label class="form-check-label" for="feedback_email_2_enabled">
                                             <span class="badge {% if settings.feedback_email_2_enabled %}bg-success{% else %}bg-secondary{% endif %}" id="feedback_email_2_badge">
                                                 {% if settings.feedback_email_2_enabled %}Active{% else %}Inactive{% endif %}
@@ -587,7 +597,7 @@
                                         </label>
                                     </div>
                                 </div>
-                                <input type="email" class="form-control" id="feedback_email_2" name="feedback_email_2" value="{{ settings.feedback_email_2 }}" placeholder="e.g. manager@profeds.com">
+                                <input type="email" class="form-control" id="feedback_email_2" name="feedback_email_2" form="settingsForm" value="{{ settings.feedback_email_2 }}" placeholder="e.g. manager@profeds.com">
                             </div>
                         </div>
 
@@ -614,6 +624,7 @@
                                    class="form-control"
                                    id="super_dev_email"
                                    name="super_dev_email"
+                                form="settingsForm"
                                    value="{{ settings.super_dev_email }}"
                                    placeholder="name@example.com">
                             <small class="text-muted">
