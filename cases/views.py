@@ -5296,10 +5296,16 @@ def get_case_messages(request, pk):
             # Convert timestamps to CST (Central Time Zone)
             created_at_cst = msg.created_at.astimezone(cst_tz) if msg.created_at.tzinfo else pytz.UTC.localize(msg.created_at).astimezone(cst_tz)
             updated_at_cst = msg.updated_at.astimezone(cst_tz) if msg.updated_at.tzinfo else pytz.UTC.localize(msg.updated_at).astimezone(cst_tz)
+
+            # Keep sender labels identical across Tech and Member views.
+            if msg.author.role == 'member':
+                author_display = 'EmployerFirst Portal'
+            else:
+                author_display = 'ProFeds Portal'
             
             messages_data.append({
                 'id': msg.id,
-                'author': msg.author.get_full_name() or msg.author.username,
+                'author': author_display,
                 'author_id': msg.author.id,
                 'author_role': msg.author.role,
                 'message': msg.message,
