@@ -534,6 +534,11 @@
                             <label for="technical_notes_template" class="form-label">
                                 Template Content <span class="badge bg-info ms-2">Rich Text</span>
                             </label>
+                            <input type="hidden"
+                                   id="technical_notes_template_fallback"
+                                   name="technical_notes_template_fallback"
+                                   form="settingsForm"
+                                   value="">
                             <textarea id="technical_notes_template" 
                                       name="technical_notes_template" 
                                       form="settingsForm"
@@ -793,12 +798,28 @@ document.addEventListener('DOMContentLoaded', function() {
     var stickyBar = document.getElementById('sticky-save-bar');
     var formDirty = false;
 
+    function syncTemplateFallback() {
+        var fallback = document.getElementById('technical_notes_template_fallback');
+        if (!fallback) return;
+        if (typeof tinymce !== 'undefined') {
+            var editor = tinymce.get('technical_notes_template');
+            if (editor) {
+                fallback.value = editor.getContent();
+                return;
+            }
+        }
+        var raw = document.getElementById('technical_notes_template');
+        fallback.value = raw ? raw.value : '';
+    }
+
     // Always sync ALL TinyMCE instances into their textareas before the form POSTs.
     // This runs regardless of which tab is active or whether the setup callback fired.
     form.addEventListener('submit', function() {
+        syncTemplateFallback();
         if (typeof tinymce !== 'undefined') {
             tinymce.triggerSave();
         }
+        syncTemplateFallback();
     });
     var initialState = new FormData(form);
     

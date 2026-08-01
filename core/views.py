@@ -222,7 +222,13 @@ def system_settings(request):
             settings.benefits_software_api_enabled = request.POST.get('benefits_software_api_enabled') == 'on'
 
             # Technical Notes Template
-            settings.technical_notes_template = request.POST.get('technical_notes_template', '')
+            # Prefer TinyMCE textarea payload; fallback hidden field protects against
+            # edge cases where nested form markup causes missing textarea POST data.
+            posted_template = request.POST.get('technical_notes_template', None)
+            if posted_template is None:
+                posted_template = request.POST.get('technical_notes_template_fallback', None)
+            if posted_template is not None:
+                settings.technical_notes_template = posted_template
 
             # Feedback Notification Emails
             settings.feedback_email_1 = request.POST.get('feedback_email_1', '').strip()
