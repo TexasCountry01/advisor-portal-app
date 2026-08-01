@@ -569,10 +569,10 @@
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Date Submitted:</strong><br>
-                            {% if case.created_at %}
-                                {{ case.created_at|date:"m/d/Y" }}
+                            {% if case.date_submitted and case.status != 'draft' %}
+                                {{ case.date_submitted|date:"m/d/Y" }}
                             {% else %}
-                                <span class="text-muted">Not set</span>
+                                <span class="text-muted">Not submitted yet</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
