@@ -113,7 +113,9 @@ Write-Host "[4/4] Restarting Gunicorn..." -ForegroundColor Yellow
 # Kill existing gunicorn master via pidfile (avoids pkill -f which self-kills the SSH bash
 # because the command string itself contains 'gunicorn').
 # Removes stale socket and pidfile before starting fresh daemon.
-ssh $prodServerUser@$prodServerHost "kill `$(cat /tmp/gunicorn.pid 2>/dev/null) 2>/dev/null; sleep 3; cd $projectPath && rm -f gunicorn.sock /tmp/gunicorn.pid && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+# Use a quoted heredoc-style single string to avoid PowerShell interpreting 2>/dev/null
+$restartCmd = "pkill -f gunicorn; sleep 3; cd $projectPath && rm -f gunicorn.sock /tmp/gunicorn.pid && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+ssh $prodServerUser@$prodServerHost $restartCmd
 
 Start-Sleep -Seconds 6
 
