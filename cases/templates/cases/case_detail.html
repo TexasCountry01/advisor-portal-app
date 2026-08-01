@@ -154,8 +154,8 @@
                 </button>
                 {% endif %}
                 
-                {# Show Take Ownership button only for accepted cases that aren't assigned to this tech #}
-                {% if case.status in 'accepted,hold' %}
+                {# Show ownership/reassign controls for accepted, hold, and completed cases #}
+                {% if case.status in 'accepted,hold,completed' %}
                     {% if case.assigned_to and case.assigned_to.id == user.id %}
                         {# You own this case #}
                         <span class="badge bg-success">
@@ -165,7 +165,7 @@
                             <i class="bi bi-arrow-repeat"></i> Reassign
                         </button>
                     {% else %}
-                        {# Case is accepted but unassigned or assigned to someone else #}
+                        {# Case is accepted/hold/completed but unassigned or assigned to someone else #}
                         <button type="button" class="btn btn-outline-success" onclick="takeOwnership({{ case.id }})">
                             <i class="bi bi-hand-thumbs-up"></i> Take Ownership
                         </button>
@@ -186,7 +186,7 @@
                     <i class="bi bi-pencil-square"></i> Create Mod
                 </button>
                 {% endif %}
-                {% if case.status in 'accepted,hold,pending_review' %}
+                {% if case.status in 'accepted,hold,pending_review,completed' %}
                     <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
                         <i class="bi bi-arrow-repeat"></i> Reassign
                     </button>
@@ -200,7 +200,7 @@
                     <i class="bi bi-pencil-square"></i> Create Mod
                 </button>
                 {% endif %}
-                {% if case.status in 'accepted,hold,pending_review' %}
+                {% if case.status in 'accepted,hold,pending_review,completed' %}
                     <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
                         <i class="bi bi-arrow-repeat"></i> Reassign
                     </button>

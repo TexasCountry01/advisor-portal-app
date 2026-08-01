@@ -3155,7 +3155,7 @@ def reassign_case(request, case_id):
     Reassign a case to a different technician/administrator.
     
     REQUIREMENTS:
-    - Case must be in 'accepted', 'hold', or 'pending_review' status
+    - Case must be in 'accepted', 'hold', 'pending_review', or 'completed' status
     - Technicians can only reassign cases they own
     - Managers and administrators can reassign any qualifying case
     - Full audit trail via case_audit_service.reassign_case()
@@ -3177,9 +3177,10 @@ def reassign_case(request, case_id):
         messages.error(request, 'Permission denied')
         return redirect('cases:case_detail', pk=case_id)
     
-    # Status check — only accepted, hold, or pending_review cases can be reassigned
-    if case.status not in ['accepted', 'hold', 'pending_review']:
-        error_msg = f'Only cases in Accepted, On Hold, or Pending Review status can be reassigned. Current status: {case.get_status_display()}'
+    # Status check — allow reassignment for active workflow cases and completed cases.
+    # Completed reassignment is useful for post-release follow-up collaboration.
+    if case.status not in ['accepted', 'hold', 'pending_review', 'completed']:
+        error_msg = f'Only cases in Accepted, On Hold, Pending Review, or Completed status can be reassigned. Current status: {case.get_status_display()}'
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': False, 'error': error_msg}, status=400)
         messages.error(request, error_msg)
