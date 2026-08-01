@@ -3043,8 +3043,8 @@ def edit_case(request, pk):
         # Get form data
         urgency = request.POST.get('urgency', case.urgency)
         num_reports = request.POST.get('num_reports_requested', case.num_reports_requested)
-        # Only allow due date changes on draft cases
-        if case.status == 'draft':
+        # Allow due date changes on draft and submitted cases
+        if case.status in ['draft', 'submitted']:
             due_date_str = request.POST.get('date_due', '')
             if due_date_str:
                 try:
@@ -3055,7 +3055,7 @@ def edit_case(request, pk):
             else:
                 due_date = case.date_due
         else:
-            due_date = case.date_due  # Preserve existing due date for non-draft cases
+            due_date = case.date_due  # Preserve existing due date for non-editable statuses
         special_notes_new = request.POST.get('special_notes', '')  # New notes only
         employee_first_name = request.POST.get('employee_first_name', case.employee_first_name)
         employee_last_name = request.POST.get('employee_last_name', case.employee_last_name)
@@ -3071,6 +3071,18 @@ def edit_case(request, pk):
         # Validate urgency
         if urgency not in ['normal', 'rush']:
             urgency = case.urgency
+
+        # If due date is editable in this status, enforce urgency from due date.
+        # This keeps urgency label in sync when advisor moves due date in/out of rush window.
+        if case.status in ['draft', 'submitted'] and due_date:
+            from datetime import timedelta
+            try:
+                threshold_days = int(SystemSettings.get_settings().rush_case_threshold_days or 7)
+            except Exception:
+                threshold_days = 7
+            threshold_days = max(threshold_days, 1)
+            today = timezone.localtime(timezone.now()).date()
+            urgency = 'rush' if due_date < (today + timedelta(days=threshold_days)) else 'normal'
         
         # Track changes
         if urgency != case.urgency:

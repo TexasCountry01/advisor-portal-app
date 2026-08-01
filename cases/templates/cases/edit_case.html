@@ -50,16 +50,16 @@
 
                         <!-- Due Date -->
                         <div class="mb-3">
-                            <label for="date_due" class="form-label">Due Date {% if case.status == 'draft' %}<span class="text-danger">*</span>{% endif %}</label>
-                            {% if case.status == 'draft' %}
+                            <label for="date_due" class="form-label">Due Date {% if case.status == 'draft' or case.status == 'submitted' %}<span class="text-danger">*</span>{% endif %}</label>
+                            {% if case.status == 'draft' or case.status == 'submitted' %}
                             <input type="date" id="date_due" name="date_due" class="form-control" 
                                    value="{{ case.date_due|date:'Y-m-d' }}" required onchange="updateUrgencyFromDueDate()">
-                            <small class="form-text text-muted">Date when this case should be completed. Dates less than 7 days from now will be automatically marked as "rushed" with a $20 fee.</small>
+                            <small class="form-text text-muted">Date when this case should be completed. Dates less than 7 days from now are automatically marked as "Rush"; longer windows are "Normal".</small>
                             {% else %}
                             <input type="text" class="form-control" value="{{ case.date_due|date:'m/d/Y' }}" disabled>
-                            <small class="form-text text-muted">Due date cannot be changed after submission. Contact your technician if you need an extension.</small>
+                            <small class="form-text text-muted">Due date cannot be changed in this status. Contact your technician if you need an extension.</small>
                             {% endif %}
-                            {% if case.status == 'draft' %}
+                            {% if case.status == 'draft' or case.status == 'submitted' %}
                             <!-- Rushed Status Alert -->
                             <div id="rushAlertContainerEdit" style="max-height: 0; overflow: hidden; margin-top: 15px; transition: max-height 0.3s ease-out;">
                                 <div class="alert alert-danger alert-permanent" id="rushAlertEdit" style="border: 3px solid #C00000; font-size: 1.1em; margin: 0;">
@@ -180,13 +180,13 @@
                     <ul class="small">
                         <li>Case ID</li>
                         <li>Employee information</li>
-                        <li>After case is submitted</li>
+                        <li>Due date after the case is accepted by ProFeds</li>
                     </ul>
 
                     <hr>
 
                     <div class="alert alert-info" role="alert">
-                        <small>Once you submit this case, the benefits team will begin processing it. You will not be able to make changes after submission.</small>
+                        <small>You can still adjust due date and notes while status is Submitted. Once the case is accepted for processing, due date changes are locked.</small>
                     </div>
                 </div>
             </div>
@@ -195,7 +195,7 @@
 </div>
 
 <script>
-    {% if case.status == 'draft' %}
+    {% if case.status == 'draft' or case.status == 'submitted' %}
     function updateUrgencyFromDueDate() {
         const dueDateInput = document.getElementById('date_due').value;
         const urgencyInput = document.getElementById('urgency');
