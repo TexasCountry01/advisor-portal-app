@@ -662,11 +662,11 @@ def technician_dashboard(request):
         except User.DoesNotExist:
             pass  # Filter not applied if technician doesn't exist
     
-    # Apply multi-status filter (override: always include cases with unread notifications)
+    # Apply multi-status filter strictly.
+    # Do not OR in unread-chat cases here, otherwise selecting a status like
+    # "cancelled" can incorrectly include cases from other statuses.
     if status_filters:
-        from django.db.models import Exists, OuterRef
-        has_unread = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-        cases = cases.filter(Q(status__in=status_filters) | has_unread)
+        cases = cases.filter(status__in=status_filters)
     
     if urgency_filter:
         cases = cases.filter(urgency=urgency_filter)
