@@ -1200,7 +1200,7 @@
                     <form id="message-form" class="mt-3" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="form-group">
-                            <textarea class="form-control" name="message" rows="3" placeholder="Add a message..."></textarea>
+                            <textarea class="form-control" id="chat-message-textarea" name="message" rows="3" placeholder="Add a message... (tip: paste links as [link text](https://example.com))"></textarea>
                         </div>
                         <div id="image-preview-container" class="mt-2" style="display:none;">
                             <div class="d-inline-block position-relative">
@@ -2857,7 +2857,7 @@ function displayMessages(messages) {
                             <small class="text-muted d-block mt-1">${msg.created_at}</small>
                         </div>
                     </div>
-                    ${msg.message ? `<p class="mt-3 mb-0">${escapeHtml(msg.message)}</p>` : ''}
+                    ${msg.message ? `<p class="mt-3 mb-0">${renderMessage(msg.message)}</p>` : ''}
                     ${msg.image_url ? `<div class="mt-2"><a href="${msg.image_url}" target="_blank" rel="noopener"><img src="${msg.image_url}" alt="Attachment" style="max-width:100%; max-height:300px; border-radius:6px; border:1px solid #ddd; cursor:pointer;"></a></div>` : ''}
                 </div>
             </div>
@@ -2874,6 +2874,18 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// Render a chat message: escape HTML, then safely convert [text](url) markdown links.
+// Only http/https URLs are allowed. All other content is plain-escaped text.
+function renderMessage(text) {
+    // 1. Escape all HTML first (prevents XSS)
+    const escaped = escapeHtml(text);
+    // 2. Convert [link text](https://...) markdown to <a> tags
+    return escaped.replace(
+        /\[([^\]]{1,300})\]\((https?:\/\/[^\s\)]{1,1000})\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
 }
 
 // Image attachment preview
@@ -2903,10 +2915,28 @@ function clearImageAttachment() {
     if (container) container.style.display = 'none';
 }
 
-// Clipboard paste support for chat images
+// Clipboard paste support for chat images + draft persistence
 document.addEventListener('DOMContentLoaded', function() {
     const chatTextarea = document.querySelector('#message-form textarea[name="message"]');
+    const DRAFT_KEY = 'chat_draft_case_{{ case.id }}';
+
     if (chatTextarea) {
+        // Restore saved draft
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        if (savedDraft) {
+            chatTextarea.value = savedDraft;
+        }
+
+        // Save draft on every keystroke
+        chatTextarea.addEventListener('input', function() {
+            if (this.value.trim()) {
+                localStorage.setItem(DRAFT_KEY, this.value);
+            } else {
+                localStorage.removeItem(DRAFT_KEY);
+            }
+        });
+
+        // Image paste handling
         chatTextarea.addEventListener('paste', function(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let i = 0; i < items.length; i++) {
@@ -2949,6 +2979,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.success) {
                     messageForm.reset();
+                    localStorage.removeItem('chat_draft_case_{{ case.id }}');
                     clearImageAttachment();
                     loadMessages();
                 } else {
