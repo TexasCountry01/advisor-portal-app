@@ -617,7 +617,12 @@ def technician_dashboard(request):
     ).order_by('-date_submitted')
     
     # Apply filters
-    status_filters = request.GET.getlist('status')  # Get list of selected statuses
+    # Normalize status filters to known values only.
+    allowed_statuses = {
+        'submitted', 'accepted', 'pending_review', 'hold',
+        'completed', 'cancelled', 'declined', 'resubmitted', 'needs_resubmission'
+    }
+    status_filters = [s for s in request.GET.getlist('status') if s in allowed_statuses]
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
     date_range = request.GET.get('date_range')

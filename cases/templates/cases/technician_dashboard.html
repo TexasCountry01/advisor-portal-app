@@ -245,32 +245,24 @@
                                 <label class="form-check-label" for="status_submitted">
                                     Submitted
                                 </label>
-                                            flex: 0 0 88px;
-                                            width: 88px;
-                                            padding: 5px 4px 6px;
-                                            border-radius: 6px;
+                            </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="status" value="accepted" 
-                                            display: flex;
-                                            flex-direction: column;
-                                            align-items: center;
-                                            justify-content: center;
-                                            cursor: pointer;
-                                            transition: opacity .15s;
-                                <input class="form-check-input" type="checkbox" name="status" value="pending_review" 
-                                        #view-stats-container .stat-mini:hover { opacity: .85; }
-                                       id="status_pending" {% if 'pending_review' in status_filters %}checked{% endif %}>
-                                            font-size: 1.55rem;
-                                            font-weight: 700;
-                                            line-height: 1.15;
+                                       id="status_accepted" {% if 'accepted' in status_filters %}checked{% endif %}>
+                                <label class="form-check-label" for="status_accepted">
+                                    Accepted
                                 </label>
                             </div>
-                                            font-size: 0.7rem;
-                                            opacity: .93;
-                                            line-height: 1.25;
-                                            margin-top: 2px;
-                                            white-space: normal;
-                                            max-width: 80px;
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="pending_review" 
+                                       id="status_pending" {% if 'pending_review' in status_filters %}checked{% endif %}>
+                                <label class="form-check-label" for="status_pending">
+                                    Pending Review
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="status" value="hold"
+                                       id="status_hold" {% if 'hold' in status_filters %}checked{% endif %}>
                                 <label class="form-check-label" for="status_hold">
                                     On Hold
                                 </label>
