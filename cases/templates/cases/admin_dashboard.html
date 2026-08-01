@@ -822,12 +822,12 @@ function refreshBadgeCounts() {
                     if (unreadCount > 0) {
                         if (badge) {
                             badge.textContent = unreadCount;
-                            badge.title = `You have ${unreadCount} unread message(s)`;
+                            badge.title = `${unreadCount} unread message(s) on this case`;
                         } else {
                             badge = document.createElement('span');
                             badge.className = 'badge bg-danger ms-1 unread-badge';
                             badge.dataset.caseId = caseId;
-                            badge.title = `You have ${unreadCount} unread message(s)`;
+                            badge.title = `${unreadCount} unread message(s) on this case`;
                             badge.textContent = unreadCount;
                             viewLink.appendChild(badge);
                         }

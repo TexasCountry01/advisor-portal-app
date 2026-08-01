@@ -507,6 +507,9 @@
                             <td data-column-id="actions" class="column-actions {% if 'actions' not in visible_columns %}column-hidden{% endif %}" style="min-width: 120px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
+                                    {% if case.unread_message_count > 0 %}
+                                    <span class="badge bg-danger ms-1 unread-badge" data-case-id="{{ case.pk }}" title="There are {{ case.unread_message_count }} unread message(s) on this case">{{ case.unread_message_count }}</span>
+                                    {% endif %}
                                 </a>
                                 <!-- COMMENTED OUT: PDF Button - 01/11/2026
                                      Reason: PDF viewer moved to Case Details page. Users can access PDF from there.

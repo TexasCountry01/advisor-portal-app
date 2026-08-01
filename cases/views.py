@@ -157,10 +157,8 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
         from django.db.models import Exists, OuterRef
-        _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-        if user.role == 'technician':
-            return queryset.filter(Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me)
-        return queryset.filter(has_member_updates=True)
+        _has_unread_any = Exists(UnreadMessage.objects.filter(case=OuterRef('pk')))
+        return queryset.filter(Q(has_member_updates=True) | _has_unread_any)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -210,19 +208,11 @@ def _build_staff_quick_tiles(queryset, user):
             Q(date_due__lt=today) & ~inactive, then=1
         ), default=0, output_field=IntegerField())),
     )
-    # Alerts tile counts:
-    # - For techs: cases they OWN with has_member_updates=True, PLUS any case where
-    #   they personally have an unread chat message (UnreadMessage). This keeps the
-    #   count personal — Becky does not see Tiffany's member update alerts.
-    # - For admins/managers: all cases with has_member_updates (team-wide view).
+    # Alerts tile counts are now consistent across staff dashboards:
+    # any case with member lifecycle updates OR unread case-chat messages.
     from django.db.models import Exists, OuterRef
-    _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-    if user.role == 'technician':
-        counts['alerts'] = queryset.filter(
-            Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me
-        ).count()
-    else:
-        counts['alerts'] = queryset.filter(has_member_updates=True).count()
+    _has_unread_any = Exists(UnreadMessage.objects.filter(case=OuterRef('pk')))
+    counts['alerts'] = queryset.filter(Q(has_member_updates=True) | _has_unread_any).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
@@ -761,7 +751,7 @@ def technician_dashboard(request):
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(case_id__in=[c.pk for c in page_cases], user=user)
+            .filter(case_id__in=[c.pk for c in page_cases])
             .values('case_id').annotate(cnt=_Count('id'))
     }
     for case in page_cases:
@@ -986,7 +976,7 @@ def admin_dashboard(request):
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
         quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
-    
+
     # Get active technicians for quick-filter buttons
     quick_technicians = _get_active_technicians()
 
@@ -998,7 +988,7 @@ def admin_dashboard(request):
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(case_id__in=[c.pk for c in page_cases], user=user)
+            .filter(case_id__in=[c.pk for c in page_cases])
             .values('case_id').annotate(cnt=_Count('id'))
     }
     for case in page_cases:
@@ -1204,6 +1194,17 @@ def manager_dashboard(request):
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
         quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
+
+    # Case-level unread chat counts for manager row badges
+    from django.db.models import Count as _Count
+    _manager_unread_map = {
+        row['case_id']: row['cnt']
+        for row in UnreadMessage.objects
+            .filter(case_id__in=list(cases.values_list('pk', flat=True)))
+            .values('case_id').annotate(cnt=_Count('id'))
+    }
+    for case in cases:
+        case.unread_message_count = _manager_unread_map.get(case.pk, 0)
     
     # Get active technicians for quick-filter buttons
     quick_technicians = _get_active_technicians()
@@ -1666,7 +1667,7 @@ def case_detail(request, pk):
     
     if not can_view and user.role == 'technician':
         # Technicians can view submitted cases and cases assigned to them
-        if case.status in ['submitted', 'accepted', 'hold', 'pending_review', 'completed'] or case.assigned_to == user:
+        if case.status in ['submitted', 'accepted', 'hold', 'pending_review', 'completed', 'cancelled', 'declined'] or case.assigned_to == user:
             can_view = True
         # Technicians can edit cases they own
         if case.assigned_to == user:
@@ -5389,13 +5390,21 @@ def get_unread_message_count(request):
     try:
         from cases.models import CaseNotification
         
-        # Get count of unread chat messages per case
-        unread_by_case = UnreadMessage.objects.filter(
-            user=user
-        ).values('case').annotate(
-            count=models.Count('id')
-        ).order_by('-count')
-        
+        # Get count of unread chat messages per case.
+        # Staff roles (tech/admin/manager) use case-wide counts so all staff see
+        # the same red badge regardless of who the individual UnreadMessage rows
+        # were created for.  Members keep personal (per-user) counts.
+        if user.role in ['technician', 'administrator', 'manager']:
+            unread_by_case = UnreadMessage.objects.values('case').annotate(
+                count=models.Count('id')
+            ).order_by('-count')
+        else:
+            unread_by_case = UnreadMessage.objects.filter(
+                user=user
+            ).values('case').annotate(
+                count=models.Count('id')
+            ).order_by('-count')
+
         # Build lookup of chat unreads per case
         chat_unread_lookup = {item['case']: item['count'] for item in unread_by_case}
         
