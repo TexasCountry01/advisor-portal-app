@@ -762,13 +762,6 @@ document.addEventListener('DOMContentLoaded', function() {
             relative_urls: false,
             remove_script_host: false,
             content_style: 'body { font-size: 11px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
-            setup: function(editor) {
-                // Before form submit, sync TinyMCE content to textarea
-                const form = document.getElementById('settingsForm');
-                form.addEventListener('submit', function() {
-                    editor.save();
-                });
-            }
         });
     }
     
@@ -788,6 +781,14 @@ document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('settingsForm');
     var stickyBar = document.getElementById('sticky-save-bar');
     var formDirty = false;
+
+    // Always sync ALL TinyMCE instances into their textareas before the form POSTs.
+    // This runs regardless of which tab is active or whether the setup callback fired.
+    form.addEventListener('submit', function() {
+        if (typeof tinymce !== 'undefined') {
+            tinymce.triggerSave();
+        }
+    });
     var initialState = new FormData(form);
     
     // Serialize FormData for comparison
