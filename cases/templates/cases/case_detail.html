@@ -2951,9 +2951,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Image paste handling
+        // Paste handling: images + HTML link → markdown conversion
         chatTextarea.addEventListener('paste', function(e) {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            const clipboardData = e.clipboardData || e.originalEvent.clipboardData;
+            const items = clipboardData.items;
+
+            // Image paste: route to file input, skip normal paste
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf('image') !== -1) {
                     const file = items[i].getAsFile();
@@ -2966,7 +2969,32 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.getElementById('chat-image-input').files = dataTransfer.files;
                     previewChatImage(document.getElementById('chat-image-input'));
                     e.preventDefault();
-                    break;
+                    return;
+                }
+            }
+
+            // HTML link paste: convert <a href="...">text</a> → [text](url)
+            const html = clipboardData.getData('text/html');
+            if (html) {
+                const temp = document.createElement('div');
+                temp.innerHTML = html;
+                const anchors = temp.querySelectorAll('a[href]');
+                if (anchors.length > 0) {
+                    anchors.forEach(function(a) {
+                        const href = a.getAttribute('href');
+                        const text = a.textContent.trim();
+                        if (href && text) {
+                            a.replaceWith('[' + text + '](' + href + ')');
+                        }
+                    });
+                    const converted = temp.textContent;
+                    e.preventDefault();
+                    const start = chatTextarea.selectionStart;
+                    const end = chatTextarea.selectionEnd;
+                    const current = chatTextarea.value;
+                    chatTextarea.value = current.substring(0, start) + converted + current.substring(end);
+                    chatTextarea.selectionStart = chatTextarea.selectionEnd = start + converted.length;
+                    chatTextarea.dispatchEvent(new Event('input')); // update draft
                 }
             }
         });
