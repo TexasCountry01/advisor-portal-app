@@ -157,8 +157,14 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
         from django.db.models import Exists, OuterRef
-        _has_unread_any = Exists(UnreadMessage.objects.filter(case=OuterRef('pk')))
-        return queryset.filter(Q(has_member_updates=True) | _has_unread_any)
+        # Only count cases where staff has unread messages.
+        # Member-side unreads (staff replies not yet read by the member) are not
+        # actionable for staff and would inflate the count.
+        _staff_roles = ['technician', 'administrator', 'manager']
+        _has_staff_unread = Exists(UnreadMessage.objects.filter(
+            case=OuterRef('pk'), user__role__in=_staff_roles
+        ))
+        return queryset.filter(Q(has_member_updates=True) | _has_staff_unread)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -208,11 +214,14 @@ def _build_staff_quick_tiles(queryset, user):
             Q(date_due__lt=today) & ~inactive, then=1
         ), default=0, output_field=IntegerField())),
     )
-    # Alerts tile counts are now consistent across staff dashboards:
-    # any case with member lifecycle updates OR unread case-chat messages.
+    # Alerts tile: cases where staff has unread messages OR member lifecycle updates.
+    # Scoped to staff roles only — member-side unreads are not actionable for staff.
     from django.db.models import Exists, OuterRef
-    _has_unread_any = Exists(UnreadMessage.objects.filter(case=OuterRef('pk')))
-    counts['alerts'] = queryset.filter(Q(has_member_updates=True) | _has_unread_any).count()
+    _staff_roles = ['technician', 'administrator', 'manager']
+    _has_staff_unread = Exists(UnreadMessage.objects.filter(
+        case=OuterRef('pk'), user__role__in=_staff_roles
+    ))
+    counts['alerts'] = queryset.filter(Q(has_member_updates=True) | _has_staff_unread).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
