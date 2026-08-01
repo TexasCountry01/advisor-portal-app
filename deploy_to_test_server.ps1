@@ -107,24 +107,26 @@ Write-Host "OK - Migrations completed" -ForegroundColor Green
 Write-Host ""
 
 Write-Host "[5/5] Restarting Gunicorn..." -ForegroundColor Yellow
-# Kill existing gunicorn master via pidfile (avoids pkill -f which self-kills the SSH bash
-# because the command string itself contains 'gunicorn').
-ssh $testServerUser@$testServerHost "kill `$(cat /tmp/gunicorn.pid 2>/dev/null) 2>/dev/null; sleep 3; cd $projectPath && rm -f gunicorn.sock /tmp/gunicorn.pid && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+ssh $testServerUser@$testServerHost "sudo -n systemctl restart gunicorn && sudo -n systemctl restart nginx"
 
-Start-Sleep -Seconds 6
-
-# Verify gunicorn is running
-Write-Host "Verifying Gunicorn process..." -ForegroundColor Yellow
-$processCount = ssh $testServerUser@$testServerHost "ps aux | grep gunicorn | grep -v grep | wc -l"
-Write-Host "Found $processCount gunicorn processes" -ForegroundColor Cyan
-
-if ([int]$processCount -lt 2) {
-    Write-Host "ERROR: Gunicorn did not start. Printing log:" -ForegroundColor Red
-    ssh $testServerUser@$testServerHost "cat /tmp/gunicorn.log"
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "ERROR: Failed to restart gunicorn/nginx via systemd!" -ForegroundColor Red
     exit 1
 }
 
-Write-Host "OK - Gunicorn running" -ForegroundColor Green
+# Verify services are running
+Write-Host "Verifying Gunicorn and Nginx services..." -ForegroundColor Yellow
+$gunicornStatus = ssh $testServerUser@$testServerHost "systemctl is-active gunicorn"
+$nginxStatus = ssh $testServerUser@$testServerHost "systemctl is-active nginx"
+
+if ($gunicornStatus.Trim() -ne "active" -or $nginxStatus.Trim() -ne "active") {
+    Write-Host "ERROR: One or more services are not active." -ForegroundColor Red
+    Write-Host "Gunicorn: $gunicornStatus" -ForegroundColor Red
+    Write-Host "Nginx: $nginxStatus" -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "OK - Gunicorn and Nginx are active" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
