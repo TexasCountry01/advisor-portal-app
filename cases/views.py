@@ -5631,6 +5631,186 @@ def request_modification(request, pk):
 
 
 @login_required
+@require_http_methods(["POST"])
+def create_modification_staff(request, pk):
+    """
+    Staff creates a modification case on behalf of the advisor for a completed case.
+    Requires a justification and optionally flags the modification as a ProFeds error.
+    """
+    case = get_object_or_404(Case, pk=pk)
+    user = request.user
+
+    # Permission check: staff only
+    if user.role not in ['technician', 'manager', 'administrator']:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+
+    # Case must be completed and released
+    if case.status != 'completed' or not case.actual_release_date:
+        return JsonResponse({'error': 'Can only create modification for completed cases'}, status=400)
+
+    # Avoid duplicate rapid-fire submissions
+    from datetime import timedelta, date
+    from django.utils import timezone as tz
+    recent_mod = Case.objects.filter(
+        original_case=case,
+        date_submitted__gte=tz.now() - timedelta(seconds=60)
+    ).exists()
+    if recent_mod:
+        return JsonResponse({'error': 'A modification was already created for this case. Please wait.'}, status=400)
+
+    try:
+        justification = request.POST.get('justification', '').strip()
+        is_profeds_error = request.POST.get('is_profeds_error', 'false').lower() == 'true'
+
+        if not justification:
+            return JsonResponse({'error': 'Justification is required'}, status=400)
+
+        from cases.services.case_id_generator import generate_case_id
+        from core.models import AuditLog, StaffNotification
+        from accounts.models import User as AccountUser
+
+        # ProFeds error -> 3-day turnaround; otherwise 7-day
+        if is_profeds_error:
+            mod_due_date = date.today() + timedelta(days=3)
+            mod_urgency = 'normal'
+        else:
+            mod_due_date = date.today() + timedelta(days=7)
+            mod_urgency = 'normal'
+
+        new_case = Case.objects.create(
+            external_case_id=generate_case_id(case.workshop_code),
+            workshop_code=case.workshop_code,
+            member=case.member,
+            created_by=user,
+            employee_first_name=case.employee_first_name,
+            employee_last_name=case.employee_last_name,
+            client_email=case.client_email,
+            num_reports_requested=case.num_reports_requested,
+            urgency=mod_urgency,
+            date_due=mod_due_date,
+            status='submitted',
+            original_case=case,
+            tier=case.tier,
+            date_submitted=tz.now(),
+            assigned_to=case.assigned_to,
+            has_profeds_error=is_profeds_error,
+            resubmission_notes=justification,
+        )
+
+        AuditLog.log_activity(
+            user=user,
+            action_type='case_submitted',
+            case=new_case,
+            description=(
+                f'Staff-created modification case submitted for '
+                f'{case.employee_first_name} {case.employee_last_name} '
+                f'(original case: {case.external_case_id})'
+            ),
+            metadata={
+                'is_modification': True,
+                'created_by_staff': True,
+                'staff_username': user.username,
+                'original_case_id': case.id,
+                'original_case_number': case.external_case_id,
+                'urgency': mod_urgency,
+                'is_profeds_error': is_profeds_error,
+                'justification': justification,
+                'assigned_to': case.assigned_to.username if case.assigned_to else None,
+            }
+        )
+
+        if is_profeds_error:
+            case.has_profeds_error = True
+            case.error_modification_count += 1
+            case.save(update_fields=['has_profeds_error', 'error_modification_count'])
+            AuditLog.objects.create(
+                user=user,
+                case=case,
+                action_type='case_updated',
+                description=(
+                    f'Staff flagged modification as ProFeds error. '
+                    f'Modification case: {new_case.external_case_id}. '
+                    f'Created by: {user.get_full_name() or user.username}.'
+                ),
+                metadata={
+                    'created_by_staff': True,
+                    'staff_username': user.username,
+                    'justification': justification,
+                    'is_profeds_error': True,
+                    'modification_case_id': new_case.id,
+                    'modification_case_number': new_case.external_case_id,
+                }
+            )
+
+        # Messages on original and new case
+        error_flag_text = "\n\n⚠️ **FLAGGED AS PROFEDS ERROR**" if is_profeds_error else ""
+        original_msg = CaseMessage.objects.create(
+            case=case,
+            author=user,
+            message=(
+                f"**MODIFICATION CREATED BY PRO FEDS STAFF**\n\n"
+                f"Justification: {justification}\n\n"
+                f"New case created: {new_case.external_case_id}{error_flag_text}"
+            )
+        )
+        CaseMessage.objects.create(
+            case=new_case,
+            author=user,
+            message=(
+                f"**MODIFICATION REQUEST JUSTIFICATION (STAFF-CREATED)**\n\n"
+                f"{justification}{error_flag_text}"
+            )
+        )
+
+        # Notify assigned tech if present
+        if case.assigned_to:
+            UnreadMessage.objects.get_or_create(
+                message=original_msg,
+                user=case.assigned_to,
+                case=case
+            )
+            if is_profeds_error:
+                StaffNotification.objects.create(
+                    user=case.assigned_to,
+                    case=case,
+                    notification_type='case_modification_error',
+                    title=f'ProFeds Error: {case.employee_first_name} {case.employee_last_name}',
+                    message=(
+                        f'{user.get_full_name() or user.username} created a modification '
+                        f'for {case.employee_first_name} {case.employee_last_name} and '
+                        f'flagged it as ProFeds error. New case: {new_case.external_case_id}'
+                    )
+                )
+
+                staff_users = AccountUser.objects.filter(role__in=['manager', 'administrator']).exclude(pk=case.assigned_to_id)
+                for staff_user in staff_users:
+                    StaffNotification.objects.create(
+                        user=staff_user,
+                        case=case,
+                        notification_type='case_modification_error',
+                        title=f'ProFeds Error Alert: {case.employee_first_name} {case.employee_last_name}',
+                        message=(
+                            f'{user.get_full_name() or user.username} created a modification '
+                            f'for {case.employee_first_name} {case.employee_last_name} '
+                            f'(Tech: {case.assigned_to.get_full_name()}) and flagged it as '
+                            f'ProFeds error. New case: {new_case.external_case_id}'
+                        )
+                    )
+
+        return JsonResponse({
+            'success': True,
+            'new_case_id': new_case.external_case_id,
+            'new_case_pk': new_case.pk,
+            'employee_name': f'{new_case.employee_first_name} {new_case.employee_last_name}'.strip(),
+            'message': f'New case created for {new_case.employee_first_name} {new_case.employee_last_name} and linked to original case'
+        })
+
+    except Exception as e:
+        logger.error(f'Error creating staff modification: {str(e)}', exc_info=True)
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
 def upload_image_for_notes(request):
 
     """
