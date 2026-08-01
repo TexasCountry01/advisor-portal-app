@@ -47,11 +47,11 @@
         <div class="d-flex align-items-center justify-content-between">
             <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('pending-review-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
                 <i class="bi bi-hourglass-split"></i> {{ my_cases_pending_review|length }} Case{{ my_cases_pending_review|length|pluralize }} Pending Review
-                <i class="bi bi-chevron-up" style="margin-left: 8px;"></i>
+                <i class="bi bi-chevron-down" style="margin-left: 8px;"></i>
             </h5>
             <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
         </div>
-        <div id="pending-review-content" class="mt-2">
+        <div id="pending-review-content" class="mt-2 d-none">
             <p class="mb-2 small text-muted">Your case{{ my_cases_pending_review|length|pluralize }} {{ my_cases_pending_review|length|pluralize:"is,are" }} awaiting quality review:</p>
             <ul class="mb-0">
                 {% for c in my_cases_pending_review %}
@@ -71,11 +71,11 @@
         <div class="d-flex align-items-center justify-content-between">
             <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('revisions-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
                 <i class="bi bi-exclamation-triangle-fill"></i> {{ my_cases_needing_revision|length }} Case{{ my_cases_needing_revision|length|pluralize }} Need{{ my_cases_needing_revision|length|pluralize:"s," }} Revisions
-                <i class="bi bi-chevron-up" style="margin-left: 8px;"></i>
+                <i class="bi bi-chevron-down" style="margin-left: 8px;"></i>
             </h5>
             <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
         </div>
-        <div id="revisions-content" class="mt-2">
+        <div id="revisions-content" class="mt-2 d-none">
             <p class="mb-2 small text-muted">Revisions have been requested on your case{{ my_cases_needing_revision|length|pluralize }}:</p>
             <ul class="mb-0">
                 {% for c in my_cases_needing_revision %}
@@ -96,11 +96,11 @@
         <div class="d-flex align-items-center justify-content-between">
             <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('awaiting-review-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
                 <i class="bi bi-clipboard-check"></i> {{ cases_awaiting_my_review|length }} Case{{ cases_awaiting_my_review|length|pluralize }} Awaiting Your Review
-                <i class="bi bi-chevron-up" style="margin-left: 8px;"></i>
+                <i class="bi bi-chevron-down" style="margin-left: 8px;"></i>
             </h5>
             <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
         </div>
-        <div id="awaiting-review-content" class="mt-2">
+        <div id="awaiting-review-content" class="mt-2 d-none">
             <p class="mb-2 small text-muted">The following case{{ cases_awaiting_my_review|length|pluralize }} {{ cases_awaiting_my_review|length|pluralize:"is,are" }} pending quality review:</p>
             <ul class="mb-0">
                 {% for c in cases_awaiting_my_review %}
