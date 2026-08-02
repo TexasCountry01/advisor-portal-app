@@ -222,19 +222,12 @@ def system_settings(request):
             settings.benefits_software_api_enabled = request.POST.get('benefits_software_api_enabled') == 'on'
 
             # Technical Notes Template
-            # Use whichever field arrived in the POST — prefer the main textarea;
-            # fall back to the hidden sync field. Both are populated by JS before submit.
-            # An empty string is a valid save (user deliberately cleared the template).
+            # The hidden input (name="technical_notes_template") is the sole POST field.
+            # The textarea has no name; TinyMCE's JS polling keeps the hidden input current.
             if 'technical_notes_template' in request.POST:
-                posted_template = request.POST['technical_notes_template']
-            elif 'technical_notes_template_fallback' in request.POST:
-                posted_template = request.POST['technical_notes_template_fallback']
-            else:
-                posted_template = None
-            if posted_template is not None:
-                settings.technical_notes_template = posted_template
+                settings.technical_notes_template = request.POST['technical_notes_template']
                 logger.info(
-                    f'technical_notes_template saved: length={len(posted_template)}, '
+                    f'technical_notes_template saved: length={len(settings.technical_notes_template)}, '
                     f'user={request.user.username}'
                 )
 

@@ -535,14 +535,15 @@
                             <label for="technical_notes_template" class="form-label">
                                 Template Content <span class="badge bg-info ms-2">Rich Text</span>
                             </label>
+                            <!-- This hidden input is the ONLY field POSTed for the template.
+                                 The textarea below has no name so TinyMCE cannot interfere with
+                                 form submission.  JS keeps this field current via polling. -->
                             <input type="hidden"
-                                   id="technical_notes_template_fallback"
-                                   name="technical_notes_template_fallback"
+                                   id="technical_notes_template_hidden"
+                                   name="technical_notes_template"
                                    form="settingsForm"
-                                   value="">
-                            <textarea id="technical_notes_template" 
-                                      name="technical_notes_template" 
-                                      form="settingsForm"
+                                   value="{{ settings.technical_notes_template|escape }}">
+                            <textarea id="technical_notes_template"
                                       class="form-control"
                                       rows="20"
                                       style="min-height: 400px;">{{ settings.technical_notes_template }}</textarea>
@@ -785,16 +786,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 function pushContent(evt) {
                     var html = editor.getContent();
-                    var textarea = document.getElementById('technical_notes_template');
-                    var fallback = document.getElementById('technical_notes_template_fallback');
-                    if (textarea) textarea.value = html;
-                    if (fallback) fallback.value = html;
+                    var hidden = document.getElementById('technical_notes_template_hidden');
+                    if (hidden) hidden.value = html;
                     lastPolledContent = html;
-                    console.log('[TMCEDebug] pushContent fired | event=' + (evt && evt.type || 'poll') + ' | html_length=' + html.length + ' | first_href=' + (html.match(/href=["']([^"']*)["']/i) || ['','none'])[1]);
+                    console.log('[TMCEDebug] pushContent | event=' + (evt && evt.type || 'poll') + ' | length=' + html.length);
                 }
 
-                // Polling sync every 500ms — catches async link insertions that
-                // fire events before the DOM change is actually committed.
+                // Polling sync every 500ms — catches async link insertions.
                 editor.on('init', function() {
                     console.log('[TMCEDebug] editor init complete');
                     lastPolledContent = editor.getContent();
@@ -802,15 +800,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     setInterval(function() {
                         var current = editor.getContent();
                         if (current !== lastPolledContent) {
-                            console.log('[TMCEDebug] POLL detected change | old_length=' + lastPolledContent.length + ' | new_length=' + current.length);
+                            console.log('[TMCEDebug] POLL change detected | old=' + lastPolledContent.length + ' new=' + current.length);
                             pushContent({type: 'poll'});
                         }
                     }, 500);
                 });
 
-                // Keep immediate event sync for keystrokes / regular edits.
                 editor.on('change keyup NodeChange', pushContent);
-                // Deferred for ExecCommand/CloseWindow (async link insertions).
                 editor.on('ExecCommand CloseWindow', function(evt) {
                     setTimeout(function() { pushContent(evt); }, 300);
                 });
@@ -849,36 +845,28 @@ document.addEventListener('DOMContentLoaded', function() {
         fallback.value = raw ? raw.value : '';
     }
 
-    // Final safety sync immediately before POST.
-    // triggerSave() is TinyMCE's official API that pushes all editor content
-    // to the underlying textareas. getContent() then reads the now-synced value.
+    // Seed the hidden field with the textarea's initial DB content so the
+    // original template is always POSTed even if TinyMCE hasn't initialised yet.
+    (function() {
+        var ta = document.getElementById('technical_notes_template');
+        var hi = document.getElementById('technical_notes_template_hidden');
+        if (ta && hi && !hi.value) { hi.value = ta.value; }
+    })();
+
+    // Final sync immediately before POST — wrapped in try/catch so a JS error
+    // can never block form submission.
     form.addEventListener('submit', function() {
-        console.log('[TMCEDebug] ===== FORM SUBMIT FIRED =====');
-        var activeTab = document.getElementById('active_tab');
-        console.log('[TMCEDebug] active_tab=' + (activeTab ? activeTab.value : 'missing'));
-        if (typeof tinymce !== 'undefined') {
-            tinymce.triggerSave(); // official sync — writes editor HTML to all textareas
-            var editor = tinymce.get('technical_notes_template');
-            console.log('[TMCEDebug] tinymce loaded | editor=' + (editor ? 'FOUND' : 'NOT FOUND (tab not opened)'));
-            if (editor) {
-                editor.save(); // explicit save to textarea
+        try {
+            var editor = (typeof tinymce !== 'undefined') ? tinymce.get('technical_notes_template') : null;
+            var hidden = document.getElementById('technical_notes_template_hidden');
+            if (editor && hidden) {
                 var html = editor.getContent();
-                var textarea = document.getElementById('technical_notes_template');
-                var fallback = document.getElementById('technical_notes_template_fallback');
-                if (textarea) textarea.value = html;
-                if (fallback) fallback.value = html;
-                var linkMatch = html.match(/href=["']([^"']*)["']/i);
-                console.log('[TMCEDebug] synced from editor | html_length=' + html.length + ' | first_href=' + (linkMatch ? linkMatch[1] : 'none found'));
-            } else {
-                var rawTA = document.getElementById('technical_notes_template');
-                console.log('[TMCEDebug] editor not active | raw textarea length=' + (rawTA ? rawTA.value.length : 'N/A'));
-                syncTemplateFallback();
+                hidden.value = html;
+                console.log('[TMCEDebug] SUBMIT synced | length=' + html.length);
             }
-        } else {
-            console.log('[TMCEDebug] tinymce NOT loaded on this page');
-            syncTemplateFallback();
+        } catch(e) {
+            console.error('[TMCEDebug] submit sync error (form will still POST):', e);
         }
-        console.log('[TMCEDebug] ===== SUBMIT HANDLER COMPLETE — form will now POST =====');
     });
     var initialState = new FormData(form);
     
