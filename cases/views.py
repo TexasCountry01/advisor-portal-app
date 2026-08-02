@@ -134,8 +134,10 @@ def build_filter_params(request):
     return urlencode(params)
 
 
-def _apply_staff_quick_filter(queryset, quick_filter, user):
-    """Apply tile-style quick filters for technician/manager/admin dashboards."""
+def _apply_staff_quick_filter(queryset, quick_filter, user, alert_user=None):
+    """Apply tile-style quick filters for technician/manager/admin dashboards.
+    alert_user: same semantics as _build_staff_quick_tiles.
+    """
     from django.db.models import Exists, OuterRef
 
     today = timezone.localtime(timezone.now()).date()
@@ -157,10 +159,15 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
         from django.db.models import Exists, OuterRef
-        # Scope to the current user — alert clears when they open the case.
-        _has_staff_unread = Exists(UnreadMessage.objects.filter(
-            case=OuterRef('pk'), user=user
-        ))
+        if alert_user is not None:
+            _has_staff_unread = Exists(UnreadMessage.objects.filter(
+                case=OuterRef('pk'), user=alert_user
+            ))
+        else:
+            _staff_roles = ['technician', 'administrator', 'manager']
+            _has_staff_unread = Exists(UnreadMessage.objects.filter(
+                case=OuterRef('pk'), user__role__in=_staff_roles
+            ))
         return queryset.filter(Q(has_member_updates=True) | _has_staff_unread)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
@@ -175,10 +182,12 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     return queryset
 
 
-def _build_staff_quick_tiles(queryset, user):
+def _build_staff_quick_tiles(queryset, user, alert_user=None):
     """Build tile counts for technician/manager/admin dashboards.
     Uses a single SQL aggregate instead of 10 separate COUNT queries.
     The 'alerts' tile requires an Exists subquery and is kept as one extra COUNT.
+    alert_user: if given, alerts are scoped to that user's unreads.
+                if None, alerts include any staff-role unread (for All-Techs admin view).
     """
     from django.db.models import Sum, Case as DbCase, When, IntegerField, Exists, OuterRef
 
@@ -211,12 +220,19 @@ def _build_staff_quick_tiles(queryset, user):
             Q(date_due__lt=today) & ~inactive, then=1
         ), default=0, output_field=IntegerField())),
     )
-    # Alerts tile: cases where THIS user has unread messages OR member lifecycle updates.
-    # Scoped to user=user so the count drops when they open the case.
+    # Alerts tile: cases where the alert_user has unread messages OR member lifecycle updates.
+    # alert_user=None (All-Techs view) → any staff-role unread counts.
+    # alert_user=<specific tech> → scoped to that tech, clears when they open the case.
     from django.db.models import Exists, OuterRef
-    _has_staff_unread = Exists(UnreadMessage.objects.filter(
-        case=OuterRef('pk'), user=user
-    ))
+    if alert_user is not None:
+        _has_staff_unread = Exists(UnreadMessage.objects.filter(
+            case=OuterRef('pk'), user=alert_user
+        ))
+    else:
+        _staff_roles = ['technician', 'administrator', 'manager']
+        _has_staff_unread = Exists(UnreadMessage.objects.filter(
+            case=OuterRef('pk'), user__role__in=_staff_roles
+        ))
     counts['alerts'] = queryset.filter(Q(has_member_updates=True) | _has_staff_unread).count()
     return {k: (v or 0) for k, v in counts.items()}
 
@@ -740,12 +756,8 @@ def technician_dashboard(request):
         search_query,
     ])
     if quick_filter and not has_detailed_filters:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user)
-    
-    # Handle sorting
+        cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
     allowed_sorts = [
-        'external_case_id', '-external_case_id',
-        'workshop_code', '-workshop_code',
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
         'date_submitted', '-date_submitted',
@@ -775,15 +787,19 @@ def technician_dashboard(request):
         rush=Sum(DbCase(When(urgency='rush', then=1), default=0, output_field=IntegerField())),
     )
     stats = {k: (v or 0) for k, v in _s.items()}
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    # Determine alert_user: the tech whose unreads to count.
+    # For a tech's own dashboard (no quick_tech), use themselves.
+    _alert_user = user  # tech viewing own dashboard
+    if quick_tech and quick_tech != 'all':
+        try:
+            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
+        except User.DoesNotExist:
+            pass
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=_alert_user)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
         quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
-    
-    # Single batch query for unread message counts on current page only
-    from django.db.models import Count as _Count
-    paginator = Paginator(cases, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_cases = list(page_obj.object_list)
     _unread_map = {
@@ -947,7 +963,7 @@ def admin_dashboard(request):
 
     tile_scope_cases = cases
     if quick_filter:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
     
     # Handle sorting
     allowed_sorts = [
@@ -1009,7 +1025,14 @@ def admin_dashboard(request):
     stats['total_members'] = active_members
     stats['total_technicians'] = active_technicians
     stats['requiring_review'] = stats['pending_review']
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    # Determine alert_user: specific tech's unreads when filtered, else any staff (None).
+    _alert_user = None  # admin All-Techs view: any staff unread counts
+    if quick_tech and quick_tech != 'all':
+        try:
+            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
+        except User.DoesNotExist:
+            pass
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=_alert_user)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
@@ -1157,7 +1180,7 @@ def manager_dashboard(request):
 
     tile_scope_cases = cases
     if quick_filter:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
     
     # Handle sorting
     allowed_sorts = [
@@ -1227,13 +1250,18 @@ def manager_dashboard(request):
         'completed_pct': completed_pct,
         'hold_pct': hold_pct,
     }
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    # Determine alert_user: specific tech's unreads when filtered, else any staff (None).
+    _alert_user = None  # manager All-Techs view: any staff unread counts
+    if quick_tech and quick_tech != 'all':
+        try:
+            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
+        except User.DoesNotExist:
+            pass
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=_alert_user)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
         quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
-
-    # Case-level unread chat counts for manager row badges
     from django.db.models import Count as _Count
     _manager_unread_map = {
         row['case_id']: row['cnt']
