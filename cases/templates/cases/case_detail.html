@@ -4119,9 +4119,11 @@ tinymce.init({
         
         // Auto-save on content change (including paste, toolbar edits, and link dialog saves)
         // ExecCommand catches link/image inserts; CloseWindow catches dialog dismiss.
-        editor.on('change keyup paste input undo redo SetContent ExecCommand CloseWindow', function() {
+        editor.on('change keyup paste input undo redo SetContent ExecCommand CloseWindow', function(evt) {
             clearTimeout(notesAutoSaveTimeout);
+            console.log('[NotesDebug] change event | type=' + evt.type + ' | scheduling autosave in 1s');
             notesAutoSaveTimeout = setTimeout(function() {
+                console.log('[NotesDebug] autosave timer fired | triggering saveReportNotes');
                 saveReportNotes(editor);
             }, 1000); // Save 1 second after user stops typing
         });
@@ -4238,6 +4240,8 @@ function updateTechNotesPreview(notesContent) {
 
 function saveReportNotes(editor, silent = true) {
     const notesContent = editor.getContent();
+    var linkMatch = notesContent.match(/href=["']([^"']*)["']/i);
+    console.log('[NotesDebug] saveReportNotes | content_length=' + notesContent.length + ' | first_href=' + (linkMatch ? linkMatch[1] : 'none') + ' | silent=' + silent);
 
     // Keep preview in sync immediately, even before server response.
     updateTechNotesPreview(notesContent);
@@ -4256,6 +4260,7 @@ function saveReportNotes(editor, silent = true) {
     })
     .then(async response => {
         const contentType = response.headers.get('content-type') || '';
+        console.log('[NotesDebug] save-report-notes response | status=' + response.status + ' | ok=' + response.ok);
         let data = null;
 
         if (contentType.includes('application/json')) {
