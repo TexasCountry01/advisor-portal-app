@@ -168,7 +168,9 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, alert_user=None):
             _has_staff_unread = Exists(UnreadMessage.objects.filter(
                 case=OuterRef('pk'), user__role__in=_staff_roles
             ))
-        return queryset.filter(Q(has_member_updates=True) | _has_staff_unread)
+        return queryset.exclude(
+            status__in=['completed', 'cancelled', 'declined', 'draft']
+        ).filter(Q(has_member_updates=True) | _has_staff_unread)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -233,7 +235,9 @@ def _build_staff_quick_tiles(queryset, user, alert_user=None):
         _has_staff_unread = Exists(UnreadMessage.objects.filter(
             case=OuterRef('pk'), user__role__in=_staff_roles
         ))
-    counts['alerts'] = queryset.filter(Q(has_member_updates=True) | _has_staff_unread).count()
+    counts['alerts'] = queryset.exclude(
+        status__in=['completed', 'cancelled', 'declined', 'draft']
+    ).filter(Q(has_member_updates=True) | _has_staff_unread).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
