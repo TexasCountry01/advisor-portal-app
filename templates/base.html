@@ -665,5 +665,81 @@
     })();
     </script>
     {% endif %}
+
+    <!-- TinyMCE dialog drag-to-move (applies to all pages that use TinyMCE) -->
+    <script>
+    (function () {
+        function makeDraggable(dialog) {
+            if (dialog._draggableInit) return;
+            dialog._draggableInit = true;
+
+            var header = dialog.querySelector('.tox-dialog__header');
+            if (!header) return;
+
+            // After the browser has rendered the flex-centred position, pin the
+            // dialog with fixed coords so dragging doesn't fight the centering.
+            function pinDialog() {
+                if (dialog.style.position === 'fixed') return;
+                var r = dialog.getBoundingClientRect();
+                var wrap = dialog.closest('.tox-dialog-wrap');
+                if (wrap) {
+                    wrap.style.alignItems = 'flex-start';
+                    wrap.style.justifyContent = 'flex-start';
+                }
+                dialog.style.position = 'fixed';
+                dialog.style.left = r.left + 'px';
+                dialog.style.top  = r.top  + 'px';
+                dialog.style.margin = '0';
+            }
+            requestAnimationFrame(function () { requestAnimationFrame(pinDialog); });
+
+            header.style.cursor = 'grab';
+
+            var ox = 0, oy = 0, active = false;
+
+            function onMove(e) {
+                if (!active) return;
+                dialog.style.left = (e.clientX - ox) + 'px';
+                dialog.style.top  = (e.clientY - oy) + 'px';
+            }
+            function onUp() {
+                active = false;
+                header.style.cursor = 'grab';
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+            }
+
+            header.addEventListener('mousedown', function (e) {
+                if (e.button !== 0 || e.target.closest('button,a')) return;
+                e.preventDefault();
+                pinDialog();
+                var r = dialog.getBoundingClientRect();
+                ox = e.clientX - r.left;
+                oy = e.clientY - r.top;
+                active = true;
+                header.style.cursor = 'grabbing';
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        }
+
+        var observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (m) {
+                m.addedNodes.forEach(function (node) {
+                    if (node.nodeType !== 1) return;
+                    if (node.matches && node.matches('.tox-dialog')) {
+                        makeDraggable(node);
+                    } else if (node.querySelectorAll) {
+                        node.querySelectorAll('.tox-dialog').forEach(makeDraggable);
+                    }
+                });
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    })();
+    </script>
 </body>
 </html>
