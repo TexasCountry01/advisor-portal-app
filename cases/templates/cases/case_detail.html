@@ -5264,6 +5264,10 @@ function submitDraftFromDetail(caseId) {
         }
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '{{ csrf_token }}';
         if (checkData.urgency_changed) {
+            const rushModalBody = document.querySelector('#rushAlertModal .modal-body');
+            if (rushModalBody && checkData.rush_threshold_days) {
+                rushModalBody.innerHTML = `<p>This case is now marked as <strong>RUSH</strong>. Your due date is within ${checkData.rush_threshold_days} days.</p><p>You can proceed with submission or <strong>edit your case</strong> to revise the due date.</p>`;
+            }
             document.getElementById('rushEditCaseLink').href = `/cases/${caseId}/edit/`;
             document.getElementById('confirmRushSubmitBtn').onclick = function() {
                 bootstrap.Modal.getInstance(document.getElementById('rushAlertModal')).hide();

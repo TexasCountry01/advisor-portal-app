@@ -3346,12 +3346,18 @@ def submit_case_final(request, case_id):
             # Drafts can sit for a long time; a stale due date must be refreshed.
             from datetime import timedelta
             today = timezone.localtime(timezone.now()).date()
-            default_due_date = today + timedelta(days=7)
+            try:
+                threshold_days = int(SystemSettings.get_settings().rush_case_threshold_days or 7)
+            except Exception:
+                threshold_days = 7
+            threshold_days = max(threshold_days, 1)
+            rush_threshold_date = today + timedelta(days=threshold_days)
 
             requires_due_date_refresh = (not case.date_due) or (case.date_due < today)
             
-            # Calculate what the urgency should be based on current date
-            current_urgency = 'rush' if case.date_due < default_due_date else 'normal'
+            # Calculate what the urgency should be based on current date.
+            # Missing due dates are handled by the refresh requirement above.
+            current_urgency = 'rush' if case.date_due and case.date_due < rush_threshold_date else 'normal'
             stored_urgency = case.urgency
             
             # Check if urgency changed from normal to rush
@@ -3366,9 +3372,10 @@ def submit_case_final(request, case_id):
                     'urgency_changed': urgency_changed,
                     'stored_urgency': stored_urgency,
                     'current_urgency': current_urgency,
+                    'rush_threshold_days': threshold_days,
                     'requires_due_date_refresh': requires_due_date_refresh,
                     'no_documents': not has_documents,
-                    'message': 'This case is now marked as RUSH. Your due date is within 7 days. Continue?'
+                    'message': f'This case is now marked as RUSH. Your due date is within {threshold_days} days. Continue?'
                 })
             
             # Server-side document check
