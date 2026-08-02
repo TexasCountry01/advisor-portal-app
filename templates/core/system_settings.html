@@ -536,13 +536,13 @@
                                 Template Content <span class="badge bg-info ms-2">Rich Text</span>
                             </label>
                             <!-- This hidden input is the ONLY field POSTed for the template.
-                                 The textarea below has no name so TinyMCE cannot interfere with
-                                 form submission.  JS keeps this field current via polling. -->
+                                 JS seeds and keeps it current; the textarea has no name so TinyMCE
+                                 cannot interfere with form submission. -->
                             <input type="hidden"
                                    id="technical_notes_template_hidden"
                                    name="technical_notes_template"
                                    form="settingsForm"
-                                   value="{{ settings.technical_notes_template|escape }}">
+                                   value="">
                             <textarea id="technical_notes_template"
                                       class="form-control"
                                       rows="20"
@@ -845,28 +845,28 @@ document.addEventListener('DOMContentLoaded', function() {
         fallback.value = raw ? raw.value : '';
     }
 
-    // Seed the hidden field with the textarea's initial DB content so the
-    // original template is always POSTed even if TinyMCE hasn't initialised yet.
-    (function() {
-        var ta = document.getElementById('technical_notes_template');
-        var hi = document.getElementById('technical_notes_template_hidden');
-        if (ta && hi && !hi.value) { hi.value = ta.value; }
-    })();
+    // Seed hidden field from textarea on DOM ready (textarea has the correct DB content).
+    // Must run BEFORE TinyMCE initialises and hides the textarea.
+    var _ta = document.getElementById('technical_notes_template');
+    var _hi = document.getElementById('technical_notes_template_hidden');
+    if (_ta && _hi) { _hi.value = _ta.value; }
 
-    // Final sync immediately before POST — wrapped in try/catch so a JS error
-    // can never block form submission.
-    form.addEventListener('submit', function() {
+    // Final sync before POST: stop the normal submit, write TinyMCE content to
+    // the hidden field, then re-submit via the native method so no event fires twice.
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
         try {
-            var editor = (typeof tinymce !== 'undefined') ? tinymce.get('technical_notes_template') : null;
-            var hidden = document.getElementById('technical_notes_template_hidden');
-            if (editor && hidden) {
-                var html = editor.getContent();
-                hidden.value = html;
-                console.log('[TMCEDebug] SUBMIT synced | length=' + html.length);
+            var ed = (typeof tinymce !== 'undefined') ? tinymce.get('technical_notes_template') : null;
+            var hi = document.getElementById('technical_notes_template_hidden');
+            if (ed && hi) {
+                hi.value = ed.getContent();
+                console.log('[TMCEDebug] submit: set hidden length=' + hi.value.length);
             }
-        } catch(e) {
-            console.error('[TMCEDebug] submit sync error (form will still POST):', e);
+        } catch(err) {
+            console.error('[TMCEDebug] submit sync error:', err);
         }
+        // Native submit bypasses all JS event listeners — no recursion.
+        HTMLFormElement.prototype.submit.call(form);
     });
     var initialState = new FormData(form);
     

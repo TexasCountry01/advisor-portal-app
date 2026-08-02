@@ -224,6 +224,8 @@ def system_settings(request):
             # Technical Notes Template
             # The hidden input (name="technical_notes_template") is the sole POST field.
             # The textarea has no name; TinyMCE's JS polling keeps the hidden input current.
+            _tpl = request.POST.get('technical_notes_template', '__MISSING__')
+            print(f'[system_settings POST] technical_notes_template present={"technical_notes_template" in request.POST}, length={len(_tpl) if _tpl != "__MISSING__" else 0}', flush=True)
             if 'technical_notes_template' in request.POST:
                 settings.technical_notes_template = request.POST['technical_notes_template']
                 logger.info(
