@@ -789,7 +789,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (textarea) textarea.value = html;
                     if (fallback) fallback.value = html;
                 }
-                editor.on('change keyup NodeChange ExecCommand', pushContent);
+                // CloseWindow fires after any TinyMCE dialog (e.g. link dialog) fully closes
+                // and the change has been applied — more reliable than ExecCommand alone.
+                editor.on('change keyup NodeChange ExecCommand CloseWindow', pushContent);
                 editor.on('init', pushContent);
             },
         });
@@ -827,9 +829,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Final safety sync immediately before POST.
-    // Uses explicit getContent() so it works even if triggerSave() races.
+    // triggerSave() is TinyMCE's official API that pushes all editor content
+    // to the underlying textareas. getContent() then reads the now-synced value.
     form.addEventListener('submit', function() {
         if (typeof tinymce !== 'undefined') {
+            tinymce.triggerSave(); // official sync — writes editor HTML to all textareas
             var editor = tinymce.get('technical_notes_template');
             if (editor) {
                 var html = editor.getContent();

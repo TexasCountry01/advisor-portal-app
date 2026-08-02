@@ -4117,8 +4117,9 @@ tinymce.init({
             document.getElementById('minimizeNotesButton').style.display = 'block';
         });
         
-        // Auto-save on content change (including paste and toolbar edits)
-        editor.on('change keyup paste input undo redo SetContent', function() {
+        // Auto-save on content change (including paste, toolbar edits, and link dialog saves)
+        // ExecCommand catches link/image inserts; CloseWindow catches dialog dismiss.
+        editor.on('change keyup paste input undo redo SetContent ExecCommand CloseWindow', function() {
             clearTimeout(notesAutoSaveTimeout);
             notesAutoSaveTimeout = setTimeout(function() {
                 saveReportNotes(editor);

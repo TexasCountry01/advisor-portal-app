@@ -193,16 +193,16 @@ def system_settings(request):
         # --- Standard settings save ---
         try:
             # Credits
-            settings.available_credits = request.POST.get('available_credits', '0.0,0.5,1.0,1.5,2.0,2.5,3.0')
+            settings.available_credits = request.POST.get('available_credits', '0.0,0.5,1.0,1.5,2.0,2.5,3.0') or '0.0,0.5,1.0,1.5,2.0,2.5,3.0'
 
-            # Default Case Settings
-            settings.default_case_due_days = int(request.POST.get('default_case_due_days', 7))
-            settings.rush_case_threshold_days = int(request.POST.get('rush_case_threshold_days', 7))
+            # Default Case Settings — use `or` so an empty POST value falls back to the safe default
+            settings.default_case_due_days = int(request.POST.get('default_case_due_days') or 7)
+            settings.rush_case_threshold_days = int(request.POST.get('rush_case_threshold_days') or 7)
 
             # Release Settings
             settings.enable_scheduled_releases = request.POST.get('enable_scheduled_releases') == 'on'
-            settings.default_completion_delay_hours = int(request.POST.get('default_completion_delay_hours', 0))
-            batch_time_str = request.POST.get('batch_release_time', '09:00').strip()
+            settings.default_completion_delay_hours = int(request.POST.get('default_completion_delay_hours') or 0)
+            batch_time_str = (request.POST.get('batch_release_time') or '09:00').strip()
             if batch_time_str:
                 from datetime import time as dt_time
                 parts = batch_time_str.split(':')
@@ -212,9 +212,9 @@ def system_settings(request):
             # Email Settings
             settings.email_notifications_enabled = request.POST.get('email_notifications_enabled') == 'on'
             settings.enable_delayed_email_notifications = request.POST.get('enable_delayed_email_notifications') == 'on'
-            settings.default_email_delay_hours = int(request.POST.get('default_email_delay_hours', 0))
+            settings.default_email_delay_hours = int(request.POST.get('default_email_delay_hours') or 0)
             settings.batch_email_enabled = request.POST.get('batch_email_enabled') == 'on'
-            settings.reply_email_address = request.POST.get('reply_email_address', 'reports@profeds.com')
+            settings.reply_email_address = request.POST.get('reply_email_address') or 'reports@profeds.com'
 
             # API Configuration
             settings.benefits_software_api_url = request.POST.get('benefits_software_api_url', '')
@@ -222,12 +222,15 @@ def system_settings(request):
             settings.benefits_software_api_enabled = request.POST.get('benefits_software_api_enabled') == 'on'
 
             # Technical Notes Template
-            # Primary: textarea value (synced by TinyMCE setup/submit handler).
-            # Fallback: hidden field (also synced by setup/submit handler).
-            # Accept empty string as valid (user may deliberately clear template).
-            posted_template = request.POST.get('technical_notes_template', None)
-            if not posted_template:
-                posted_template = request.POST.get('technical_notes_template_fallback', None)
+            # Use whichever field arrived in the POST — prefer the main textarea;
+            # fall back to the hidden sync field. Both are populated by JS before submit.
+            # An empty string is a valid save (user deliberately cleared the template).
+            if 'technical_notes_template' in request.POST:
+                posted_template = request.POST['technical_notes_template']
+            elif 'technical_notes_template_fallback' in request.POST:
+                posted_template = request.POST['technical_notes_template_fallback']
+            else:
+                posted_template = None
             if posted_template is not None:
                 settings.technical_notes_template = posted_template
                 logger.info(
@@ -250,7 +253,8 @@ def system_settings(request):
             messages.success(request, 'System settings updated successfully!')
             active_tab = request.POST.get('active_tab', 'credits')
             return redirect(reverse('system_settings') + f'?tab={active_tab}')
-        except (ValueError, Exception) as e:
+        except Exception as e:
+            logger.exception('system_settings POST failed')
             messages.error(request, f'Error updating settings: {str(e)}')
 
     # Gather holidays for current + next year to display in admin UI
