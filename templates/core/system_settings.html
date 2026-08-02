@@ -337,7 +337,7 @@
                                         <input type="time" class="form-control form-control-sm" id="batch_release_time"
                                                name="batch_release_time"
                                                  form="settingsForm"
-                                               value="{{ settings.batch_release_time }}"
+                                               value="{% if settings.batch_release_time %}{{ settings.batch_release_time|time:'H:i' }}{% endif %}"
                                                style="max-width: 140px;">
                                         <div class="text-muted" style="font-size: 0.75rem;">12:00 UTC = 6:00 AM CST</div>
                                     </div>
@@ -417,7 +417,8 @@
                 <input type="hidden" name="batch_email_enabled" form="settingsForm" value="{{ settings.batch_email_enabled|yesno:'on,' }}">
 
                 <script>
-                (function() {
+                // Must run after DOMContentLoaded so Bootstrap is available
+                document.addEventListener('DOMContentLoaded', function() {
                     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                     tooltipTriggerList.forEach(function(el) { new bootstrap.Tooltip(el); });
 
@@ -447,7 +448,7 @@
                     }
                     emailToggle.addEventListener('change', syncEmail);
                     syncEmail();
-                })();
+                });
                 </script>
             </div>
 
@@ -788,7 +789,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (textarea) textarea.value = html;
                     if (fallback) fallback.value = html;
                 }
-                editor.on('change keyup NodeChange', pushContent);
+                editor.on('change keyup NodeChange ExecCommand', pushContent);
                 editor.on('init', pushContent);
             },
         });
