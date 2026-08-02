@@ -963,6 +963,7 @@ def admin_dashboard(request):
         )
 
     tile_scope_cases = cases
+    _alert_user = None  # define before _apply_staff_quick_filter
     if quick_filter:
         cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
     
@@ -1181,6 +1182,7 @@ def manager_dashboard(request):
         )
 
     tile_scope_cases = cases
+    _alert_user = None  # define before _apply_staff_quick_filter
     if quick_filter:
         cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
     
