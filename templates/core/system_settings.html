@@ -27,7 +27,7 @@
         {% endfor %}
     {% endif %}
 
-    <form method="post" id="settingsForm">
+    <form method="post" id="settingsForm" novalidate>
         {% csrf_token %}
         <input type="hidden" name="active_tab" id="active_tab" value="credits">
 
