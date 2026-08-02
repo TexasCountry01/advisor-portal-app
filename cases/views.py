@@ -1026,14 +1026,15 @@ def admin_dashboard(request):
     stats['total_members'] = active_members
     stats['total_technicians'] = active_technicians
     stats['requiring_review'] = stats['pending_review']
-    # Determine alert_user: specific tech's unreads when filtered, else any staff (None).
-    _alert_user = None  # admin All-Techs view: any staff unread counts
+    # Determine alert_user for the quick-filter CLICK path (clicking the Alerts tile).
+    # For tile COUNTS, always use None so we show "any staff unread on those cases".
+    _alert_user = None
     if quick_tech and quick_tech != 'all':
         try:
             _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
         except User.DoesNotExist:
             pass
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=_alert_user)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=None)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
@@ -1251,14 +1252,15 @@ def manager_dashboard(request):
         'completed_pct': completed_pct,
         'hold_pct': hold_pct,
     }
-    # Determine alert_user: specific tech's unreads when filtered, else any staff (None).
-    _alert_user = None  # manager All-Techs view: any staff unread counts
+    # Determine alert_user for the quick-filter CLICK path (clicking the Alerts tile).
+    # For tile COUNTS, always use None so we show "any staff unread on those cases".
+    _alert_user = None
     if quick_tech and quick_tech != 'all':
         try:
             _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
         except User.DoesNotExist:
             pass
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=_alert_user)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=None)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
