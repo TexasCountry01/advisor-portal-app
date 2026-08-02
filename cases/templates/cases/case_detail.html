@@ -4003,6 +4003,7 @@ tinymce.init({
     paste_retain_style_values: 'all',
     paste_webkit_styles: 'all',
     license_key: 'gpl',
+    z_index: 10001,  // float above the notes window (z-index: 9999)
     images_upload_handler: function(blobInfo, progress) {
         const editor = tinymce.activeEditor;
         return new Promise((resolve, reject) => {
