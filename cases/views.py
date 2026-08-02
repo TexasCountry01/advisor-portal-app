@@ -653,16 +653,35 @@ def technician_dashboard(request):
         'date_range', 'date_from', 'date_to', 'search', 'assigned', 'sort', 'page'
     ])
 
+    # Terminal statuses (declined/cancelled) are always unassigned after our workflow
+    # fix that clears assigned_to on cancellation/decline. If the user has explicitly
+    # selected these statuses in the filter panel, bypass assignment constraints so
+    # those cases are not silently excluded by 'mine' or quick_tech filters.
+    _terminal_statuses = {'declined', 'cancelled'}
+    _terminal_selected = [s for s in status_filters if s in _terminal_statuses]
+
     # Apply "My Cases" filter
     if assigned_filter == 'mine':
-        cases = cases.filter(assigned_to=user)
+        if _terminal_selected:
+            # Include user's assigned cases OR explicitly selected terminal-status cases
+            cases = cases.filter(
+                Q(assigned_to=user) | Q(status__in=_terminal_selected)
+            )
+        else:
+            cases = cases.filter(assigned_to=user)
 
     # Apply quick technician filter from top buttons.
-    # Exception: submitted cases have no assigned_to yet � skip for Need to Accept queue.
+    # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
     if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
-            cases = cases.filter(assigned_to=tech_user)
+            if _terminal_selected:
+                # Include this tech's assigned cases OR explicitly selected terminal-status cases
+                cases = cases.filter(
+                    Q(assigned_to=tech_user) | Q(status__in=_terminal_selected)
+                )
+            else:
+                cases = cases.filter(assigned_to=tech_user)
         except User.DoesNotExist:
             pass  # Filter not applied if technician doesn't exist
     
