@@ -220,7 +220,10 @@ class Case(models.Model):
     )
     
     # Field 13: Date Submitted
-    date_submitted = models.DateTimeField(auto_now_add=True)
+    # NOT auto_now_add — drafts must start with date_submitted=None and only
+    # receive a timestamp when actually submitted.  The submit paths in
+    # views.py / views_pdf_template.py set this explicitly.
+    date_submitted = models.DateTimeField(null=True, blank=True)
     
     # Field 14: Date Accepted
     date_accepted = models.DateTimeField(null=True, blank=True)
