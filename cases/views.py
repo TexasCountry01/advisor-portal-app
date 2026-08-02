@@ -157,12 +157,9 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
         from django.db.models import Exists, OuterRef
-        # Only count cases where staff has unread messages.
-        # Member-side unreads (staff replies not yet read by the member) are not
-        # actionable for staff and would inflate the count.
-        _staff_roles = ['technician', 'administrator', 'manager']
+        # Scope to the current user — alert clears when they open the case.
         _has_staff_unread = Exists(UnreadMessage.objects.filter(
-            case=OuterRef('pk'), user__role__in=_staff_roles
+            case=OuterRef('pk'), user=user
         ))
         return queryset.filter(Q(has_member_updates=True) | _has_staff_unread)
     if quick_filter == 'due_today':
@@ -214,12 +211,11 @@ def _build_staff_quick_tiles(queryset, user):
             Q(date_due__lt=today) & ~inactive, then=1
         ), default=0, output_field=IntegerField())),
     )
-    # Alerts tile: cases where staff has unread messages OR member lifecycle updates.
-    # Scoped to staff roles only — member-side unreads are not actionable for staff.
+    # Alerts tile: cases where THIS user has unread messages OR member lifecycle updates.
+    # Scoped to user=user so the count drops when they open the case.
     from django.db.models import Exists, OuterRef
-    _staff_roles = ['technician', 'administrator', 'manager']
     _has_staff_unread = Exists(UnreadMessage.objects.filter(
-        case=OuterRef('pk'), user__role__in=_staff_roles
+        case=OuterRef('pk'), user=user
     ))
     counts['alerts'] = queryset.filter(Q(has_member_updates=True) | _has_staff_unread).count()
     return {k: (v or 0) for k, v in counts.items()}
