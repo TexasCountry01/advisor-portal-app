@@ -1215,7 +1215,24 @@
                     <form id="message-form" class="mt-3" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="form-group">
-                            <textarea class="form-control" id="chat-message-textarea" name="message" rows="3" placeholder="Add a message... (tip: paste links as [link text](https://example.com))"></textarea>
+                            <textarea class="form-control" id="chat-message-textarea" name="message" rows="3" placeholder="Add a message..."></textarea>
+                        </div>
+                        <!-- Insert Link inline UI (hidden until button clicked) -->
+                        <div id="chat-link-ui" class="d-none mt-2 p-2 border rounded bg-light">
+                            <div class="row g-2 align-items-end">
+                                <div class="col">
+                                    <label class="form-label form-label-sm mb-1">Link text (what people click)</label>
+                                    <input type="text" id="chat-link-text" class="form-control form-control-sm" placeholder="e.g. CLICK HERE">
+                                </div>
+                                <div class="col">
+                                    <label class="form-label form-label-sm mb-1">URL</label>
+                                    <input type="url" id="chat-link-url" class="form-control form-control-sm" placeholder="https://">
+                                </div>
+                                <div class="col-auto">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="insertChatLink()">Insert</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="document.getElementById('chat-link-ui').classList.add('d-none')">Cancel</button>
+                                </div>
+                            </div>
                         </div>
                         <div id="image-preview-container" class="mt-2" style="display:none;">
                             <div class="d-inline-block position-relative">
@@ -1228,6 +1245,9 @@
                         <div class="d-flex align-items-center gap-2 mt-2">
                             <button type="submit" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-chat-left-plus"></i> Send Message
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" title="Insert a clickable link" onclick="document.getElementById('chat-link-ui').classList.toggle('d-none'); document.getElementById('chat-link-text').focus();">
+                                <i class="bi bi-link-45deg"></i> Insert Link
                             </button>
                             <label class="btn btn-sm btn-outline-secondary mb-0" for="chat-image-input" title="Attach a screenshot">
                                 <i class="bi bi-image"></i> Attach Image
@@ -2903,6 +2923,26 @@ function renderMessage(text) {
     );
 }
 
+// Insert a [text](url) link at the cursor position in the chat textarea
+function insertChatLink() {
+    const text = document.getElementById('chat-link-text').value.trim();
+    const url  = document.getElementById('chat-link-url').value.trim();
+    if (!text || !url) { alert('Please enter both link text and a URL.'); return; }
+    if (!/^https?:\/\//i.test(url)) { alert('URL must start with http:// or https://'); return; }
+    const ta = document.getElementById('chat-message-textarea');
+    const start = ta.selectionStart;
+    const end   = ta.selectionEnd;
+    const insert = '[' + text + '](' + url + ')';
+    ta.value = ta.value.substring(0, start) + insert + ta.value.substring(end);
+    ta.selectionStart = ta.selectionEnd = start + insert.length;
+    ta.focus();
+    ta.dispatchEvent(new Event('input'));
+    // Reset and hide the UI
+    document.getElementById('chat-link-text').value = '';
+    document.getElementById('chat-link-url').value  = '';
+    document.getElementById('chat-link-ui').classList.add('d-none');
+}
+
 // Image attachment preview
 function previewChatImage(input) {
     const container = document.getElementById('image-preview-container');
@@ -2981,9 +3021,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const anchors = temp.querySelectorAll('a[href]');
                 if (anchors.length > 0) {
                     anchors.forEach(function(a) {
-                        const href = a.getAttribute('href');
+                        var href = a.getAttribute('href') || '';
                         const text = a.textContent.trim();
-                        if (href && text) {
+                        // Unwrap Google Docs/Sheets redirect URLs
+                        if (href.startsWith('https://www.google.com/url?')) {
+                            try {
+                                const qParam = new URL(href).searchParams.get('q');
+                                if (qParam) href = qParam;
+                            } catch(err) {}
+                        }
+                        // Only convert http/https links with non-empty display text
+                        if (text && /^https?:\/\//.test(href)) {
                             a.replaceWith('[' + text + '](' + href + ')');
                         }
                     });
