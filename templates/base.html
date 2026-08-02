@@ -676,34 +676,21 @@
             var header = dialog.querySelector('.tox-dialog__header');
             if (!header) return;
 
-            // After the browser has rendered the flex-centred position, pin the
-            // dialog with fixed coords so dragging doesn't fight the centering.
-            function pinDialog() {
-                if (dialog.style.position === 'fixed') return;
-                var r = dialog.getBoundingClientRect();
-                var wrap = dialog.closest('.tox-dialog-wrap');
-                if (wrap) {
-                    wrap.style.alignItems = 'flex-start';
-                    wrap.style.justifyContent = 'flex-start';
-                }
-                dialog.style.position = 'fixed';
-                dialog.style.left = r.left + 'px';
-                dialog.style.top  = r.top  + 'px';
-                dialog.style.margin = '0';
-            }
-            requestAnimationFrame(function () { requestAnimationFrame(pinDialog); });
-
             header.style.cursor = 'grab';
 
-            var ox = 0, oy = 0, active = false;
+            // Per-dialog accumulated translation (starts centered, zero offset).
+            var tx = 0, ty = 0;
+            var startX, startY, startTx, startTy;
 
             function onMove(e) {
-                if (!active) return;
-                dialog.style.left = (e.clientX - ox) + 'px';
-                dialog.style.top  = (e.clientY - oy) + 'px';
+                var dx = e.clientX - startX;
+                var dy = e.clientY - startY;
+                dialog.style.transform = 'translate(' + (startTx + dx) + 'px,' + (startTy + dy) + 'px)';
             }
             function onUp() {
-                active = false;
+                // Persist the translation so the next drag continues from here.
+                var m = dialog.style.transform.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+                if (m) { tx = parseFloat(m[1]); ty = parseFloat(m[2]); }
                 header.style.cursor = 'grab';
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup', onUp);
@@ -712,11 +699,8 @@
             header.addEventListener('mousedown', function (e) {
                 if (e.button !== 0 || e.target.closest('button,a')) return;
                 e.preventDefault();
-                pinDialog();
-                var r = dialog.getBoundingClientRect();
-                ox = e.clientX - r.left;
-                oy = e.clientY - r.top;
-                active = true;
+                startX = e.clientX; startY = e.clientY;
+                startTx = tx; startTy = ty;
                 header.style.cursor = 'grabbing';
                 document.addEventListener('mousemove', onMove);
                 document.addEventListener('mouseup', onUp);
