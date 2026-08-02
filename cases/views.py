@@ -156,14 +156,20 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     if quick_filter == 'on_hold':
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
-        # Exclude terminal-status cases — alerts are only for active work.
+        # Active cases only — alerts are never for terminal-status cases.
         active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
-        _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-        if user.role == 'technician':
-            # Tech: their own assigned cases with member updates + their personal unreads
-            return active_qs.filter(Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me)
-        # Admin/manager: team-wide member updates only (no chat-message inflation)
-        return active_qs.filter(Q(has_member_updates=True) | _has_unread_for_me)
+        # Scope to ACTIVE STAFF unreads only:
+        #   - user__is_active=True   → excludes stale test accounts
+        #   - role__in=staff_roles   → excludes member-side unreads (UnreadMessage
+        #     created when a staff member sends a message to a member).
+        # This keeps the count consistent with the View [N] badge on the case list.
+        _staff_roles = ['technician', 'administrator', 'manager']
+        _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
+            case=OuterRef('pk'),
+            user__role__in=_staff_roles,
+            user__is_active=True,
+        ))
+        return active_qs.filter(Q(has_member_updates=True) | _has_active_staff_unread)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -218,16 +224,31 @@ def _build_staff_quick_tiles(queryset, user):
     # Alerts clear reliably: has_member_updates resets when any tech opens the case;
     # UnreadMessage deleted when that user opens the case.
     from django.db.models import Exists, OuterRef
+    # Alerts tile: active cases where any real, active staff member has an unread
+    # chat message (member sent staff a message not yet read) OR the member has
+    # triggered a lifecycle update (uploaded docs, resubmitted).
+    #
+    # Scope rules:
+    #   - user__is_active=True   → excludes stale/deactivated test accounts whose
+    #     old UnreadMessage rows would inflate the count (the bug 8ea3c73 tried
+    #     to fix but overcorrected).
+    #   - role__in=staff_roles   → excludes member-side UnreadMessage records
+    #     (created when staff sends a message the member hasn't read — those are
+    #     not actionable for staff).
+    #   - exclude terminal statuses → completed/cancelled/declined/draft cases
+    #     should never appear as active alerts.
+    #
+    # This produces a count consistent with the View [N] badge on the case list.
+    _staff_roles = ['technician', 'administrator', 'manager']
     active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
-    _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-    if user.role == 'technician':
-        counts['alerts'] = active_qs.filter(
-            Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me
-        ).count()
-    else:
-        counts['alerts'] = active_qs.filter(
-            Q(has_member_updates=True) | _has_unread_for_me
-        ).count()
+    _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
+        case=OuterRef('pk'),
+        user__role__in=_staff_roles,
+        user__is_active=True,
+    ))
+    counts['alerts'] = active_qs.filter(
+        Q(has_member_updates=True) | _has_active_staff_unread
+    ).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
