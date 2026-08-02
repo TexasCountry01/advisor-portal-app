@@ -666,7 +666,14 @@
     </script>
     {% endif %}
 
-    <!-- TinyMCE dialog drag-to-move (applies to all pages that use TinyMCE) -->
+    <!-- TinyMCE dialog drag-to-move + left-side positioning -->
+    <style>
+    /* Open TinyMCE dialogs on the left so they don't overlap the floating notes window */
+    .tox-dialog-wrap {
+        justify-content: flex-start !important;
+        padding-left: 24px !important;
+    }
+    </style>
     <script>
     (function () {
         function makeDraggable(dialog) {
