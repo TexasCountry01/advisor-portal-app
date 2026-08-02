@@ -743,6 +743,15 @@ def technician_dashboard(request):
     # Build tile counts before applying the active quick tile filter.
     tile_scope_cases = cases
 
+    # Determine alert_user: the tech whose unreads to count for the Alerts tile.
+    # Must be set BEFORE _apply_staff_quick_filter which also uses it.
+    _alert_user = user  # tech viewing own dashboard
+    if quick_tech and quick_tech != 'all':
+        try:
+            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
+        except User.DoesNotExist:
+            pass
+
     # Filter-panel inputs are authoritative. If users type a search or set
     # detailed filters, do not keep constraining results by a previously active
     # quick tile (e.g., pending), which can hide valid matches.
@@ -787,14 +796,6 @@ def technician_dashboard(request):
         rush=Sum(DbCase(When(urgency='rush', then=1), default=0, output_field=IntegerField())),
     )
     stats = {k: (v or 0) for k, v in _s.items()}
-    # Determine alert_user: the tech whose unreads to count.
-    # For a tech's own dashboard (no quick_tech), use themselves.
-    _alert_user = user  # tech viewing own dashboard
-    if quick_tech and quick_tech != 'all':
-        try:
-            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
-        except User.DoesNotExist:
-            pass
     quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=_alert_user)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
