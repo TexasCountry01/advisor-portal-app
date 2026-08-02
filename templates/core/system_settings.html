@@ -781,24 +781,38 @@ document.addEventListener('DOMContentLoaded', function() {
             remove_script_host: false,
             content_style: 'body { font-size: 11px; font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; }',
             setup: function(editor) {
+                var lastPolledContent = '';
+
                 function pushContent(evt) {
                     var html = editor.getContent();
                     var textarea = document.getElementById('technical_notes_template');
                     var fallback = document.getElementById('technical_notes_template_fallback');
                     if (textarea) textarea.value = html;
                     if (fallback) fallback.value = html;
-                    console.log('[TMCEDebug] pushContent fired | event=' + (evt && evt.type || 'init') + ' | html_length=' + html.length + ' | textarea_synced=' + (textarea ? textarea.value.length : 'N/A') + ' | fallback_synced=' + (fallback ? fallback.value.length : 'N/A'));
+                    lastPolledContent = html;
+                    console.log('[TMCEDebug] pushContent fired | event=' + (evt && evt.type || 'poll') + ' | html_length=' + html.length + ' | first_href=' + (html.match(/href=["']([^"']*)["']/i) || ['','none'])[1]);
                 }
-                // ExecCommand / CloseWindow can fire BEFORE the link dialog's async
-                // insertion completes in TinyMCE 6.  Defer 100 ms so the DOM update
-                // settles before we serialize via getContent().
-                editor.on('ExecCommand CloseWindow', function(evt) {
-                    setTimeout(function() { pushContent(evt); }, 100);
-                });
-                editor.on('change keyup NodeChange', pushContent);
-                editor.on('init', function(evt) {
+
+                // Polling sync every 500ms — catches async link insertions that
+                // fire events before the DOM change is actually committed.
+                editor.on('init', function() {
                     console.log('[TMCEDebug] editor init complete');
-                    pushContent(evt);
+                    lastPolledContent = editor.getContent();
+                    pushContent({type: 'init'});
+                    setInterval(function() {
+                        var current = editor.getContent();
+                        if (current !== lastPolledContent) {
+                            console.log('[TMCEDebug] POLL detected change | old_length=' + lastPolledContent.length + ' | new_length=' + current.length);
+                            pushContent({type: 'poll'});
+                        }
+                    }, 500);
+                });
+
+                // Keep immediate event sync for keystrokes / regular edits.
+                editor.on('change keyup NodeChange', pushContent);
+                // Deferred for ExecCommand/CloseWindow (async link insertions).
+                editor.on('ExecCommand CloseWindow', function(evt) {
+                    setTimeout(function() { pushContent(evt); }, 300);
                 });
             },
         });
@@ -847,17 +861,15 @@ document.addEventListener('DOMContentLoaded', function() {
             var editor = tinymce.get('technical_notes_template');
             console.log('[TMCEDebug] tinymce loaded | editor=' + (editor ? 'FOUND' : 'NOT FOUND (tab not opened)'));
             if (editor) {
+                editor.save(); // explicit save to textarea
                 var html = editor.getContent();
                 var textarea = document.getElementById('technical_notes_template');
                 var fallback = document.getElementById('technical_notes_template_fallback');
                 if (textarea) textarea.value = html;
                 if (fallback) fallback.value = html;
-                console.log('[TMCEDebug] synced from editor | html_length=' + html.length + ' | textarea_val_length=' + (textarea ? textarea.value.length : 'N/A') + ' | fallback_val_length=' + (fallback ? fallback.value.length : 'N/A'));
-                // Log first link href found in the content so we can confirm URL is present
                 var linkMatch = html.match(/href=["']([^"']*)["']/i);
-                console.log('[TMCEDebug] first href in content: ' + (linkMatch ? linkMatch[1] : 'none found'));
+                console.log('[TMCEDebug] synced from editor | html_length=' + html.length + ' | first_href=' + (linkMatch ? linkMatch[1] : 'none found'));
             } else {
-                // Editor not active — fallback to textarea-to-hidden copy
                 var rawTA = document.getElementById('technical_notes_template');
                 console.log('[TMCEDebug] editor not active | raw textarea length=' + (rawTA ? rawTA.value.length : 'N/A'));
                 syncTemplateFallback();
