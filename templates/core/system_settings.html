@@ -29,6 +29,8 @@
 
     <form method="post" id="settingsForm" novalidate>
         {% csrf_token %}
+        <!-- Marker that distinguishes this form from nested holiday sub-forms -->
+        <input type="hidden" name="settings_save" value="1">
         <input type="hidden" name="active_tab" id="active_tab" value="credits">
 
         <!-- Nav Tabs -->

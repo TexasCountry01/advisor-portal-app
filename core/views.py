@@ -147,9 +147,13 @@ def system_settings(request):
 
     if request.method == 'POST':
         action = request.POST.get('holiday_action', '')
+        # settings_save is only present in the main settingsForm POST.
+        # Holiday sub-forms are nested inside settingsForm (HTML quirk) and their
+        # holiday_action hidden inputs leak into the settings POST.  Guard against this.
+        is_settings_save = 'settings_save' in request.POST
 
-        # --- Holiday CRUD actions ---
-        if action == 'toggle_holiday':
+        # --- Holiday CRUD actions (only when NOT the main settings save) ---
+        if action == 'toggle_holiday' and not is_settings_save:
             try:
                 h = Holiday.objects.get(pk=int(request.POST.get('holiday_id')))
                 h.active = not h.active
@@ -160,7 +164,7 @@ def system_settings(request):
             active_tab = request.POST.get('active_tab', 'case-settings')
             return redirect(reverse('system_settings') + f'?tab={active_tab}')
 
-        if action == 'add_holiday':
+        if action == 'add_holiday' and not is_settings_save:
             try:
                 new_date_str = request.POST.get('new_holiday_date', '').strip()
                 new_name = request.POST.get('new_holiday_name', '').strip()
@@ -180,7 +184,7 @@ def system_settings(request):
             active_tab = request.POST.get('active_tab', 'case-settings')
             return redirect(reverse('system_settings') + f'?tab={active_tab}')
 
-        if action == 'delete_holiday':
+        if action == 'delete_holiday' and not is_settings_save:
             try:
                 h = Holiday.objects.get(pk=int(request.POST.get('holiday_id')), is_custom=True)
                 h.delete()
