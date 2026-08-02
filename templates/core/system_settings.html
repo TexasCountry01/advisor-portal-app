@@ -789,9 +789,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (fallback) fallback.value = html;
                     console.log('[TMCEDebug] pushContent fired | event=' + (evt && evt.type || 'init') + ' | html_length=' + html.length + ' | textarea_synced=' + (textarea ? textarea.value.length : 'N/A') + ' | fallback_synced=' + (fallback ? fallback.value.length : 'N/A'));
                 }
-                // CloseWindow fires after any TinyMCE dialog (e.g. link dialog) fully closes
-                // and the change has been applied — more reliable than ExecCommand alone.
-                editor.on('change keyup NodeChange ExecCommand CloseWindow', pushContent);
+                // ExecCommand / CloseWindow can fire BEFORE the link dialog's async
+                // insertion completes in TinyMCE 6.  Defer 100 ms so the DOM update
+                // settles before we serialize via getContent().
+                editor.on('ExecCommand CloseWindow', function(evt) {
+                    setTimeout(function() { pushContent(evt); }, 100);
+                });
+                editor.on('change keyup NodeChange', pushContent);
                 editor.on('init', function(evt) {
                     console.log('[TMCEDebug] editor init complete');
                     pushContent(evt);

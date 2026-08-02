@@ -4118,8 +4118,17 @@ tinymce.init({
         });
         
         // Auto-save on content change (including paste, toolbar edits, and link dialog saves)
-        // ExecCommand catches link/image inserts; CloseWindow catches dialog dismiss.
-        editor.on('change keyup paste input undo redo SetContent ExecCommand CloseWindow', function(evt) {
+        // ExecCommand / CloseWindow deferred 100 ms — TinyMCE 6 link dialog inserts
+        // asynchronously so we must let the DOM settle before calling getContent().
+        editor.on('ExecCommand CloseWindow', function(evt) {
+            clearTimeout(notesAutoSaveTimeout);
+            console.log('[NotesDebug] deferred event | type=' + evt.type + ' | scheduling autosave in 1.1s');
+            notesAutoSaveTimeout = setTimeout(function() {
+                console.log('[NotesDebug] autosave timer fired (deferred) | triggering saveReportNotes');
+                saveReportNotes(editor);
+            }, 1100);
+        });
+        editor.on('change keyup paste input undo redo SetContent', function(evt) {
             clearTimeout(notesAutoSaveTimeout);
             console.log('[NotesDebug] change event | type=' + evt.type + ' | scheduling autosave in 1s');
             notesAutoSaveTimeout = setTimeout(function() {
