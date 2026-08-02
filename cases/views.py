@@ -134,10 +134,8 @@ def build_filter_params(request):
     return urlencode(params)
 
 
-def _apply_staff_quick_filter(queryset, quick_filter, user, alert_user=None):
-    """Apply tile-style quick filters for technician/manager/admin dashboards.
-    alert_user: same semantics as _build_staff_quick_tiles.
-    """
+def _apply_staff_quick_filter(queryset, quick_filter, user):
+    """Apply tile-style quick filters for technician/manager/admin dashboards."""
     from django.db.models import Exists, OuterRef
 
     today = timezone.localtime(timezone.now()).date()
@@ -158,19 +156,14 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, alert_user=None):
     if quick_filter == 'on_hold':
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
-        from django.db.models import Exists, OuterRef
-        if alert_user is not None:
-            _has_staff_unread = Exists(UnreadMessage.objects.filter(
-                case=OuterRef('pk'), user=alert_user
-            ))
-        else:
-            _staff_roles = ['technician', 'administrator', 'manager']
-            _has_staff_unread = Exists(UnreadMessage.objects.filter(
-                case=OuterRef('pk'), user__role__in=_staff_roles
-            ))
-        return queryset.exclude(
-            status__in=['completed', 'cancelled', 'declined', 'draft']
-        ).filter(Q(has_member_updates=True) | _has_staff_unread)
+        # Exclude terminal-status cases — alerts are only for active work.
+        active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
+        _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+        if user.role == 'technician':
+            # Tech: their own assigned cases with member updates + their personal unreads
+            return active_qs.filter(Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me)
+        # Admin/manager: team-wide member updates only (no chat-message inflation)
+        return active_qs.filter(Q(has_member_updates=True) | _has_unread_for_me)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -184,12 +177,9 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, alert_user=None):
     return queryset
 
 
-def _build_staff_quick_tiles(queryset, user, alert_user=None):
+def _build_staff_quick_tiles(queryset, user):
     """Build tile counts for technician/manager/admin dashboards.
     Uses a single SQL aggregate instead of 10 separate COUNT queries.
-    The 'alerts' tile requires an Exists subquery and is kept as one extra COUNT.
-    alert_user: if given, alerts are scoped to that user's unreads.
-                if None, alerts include any staff-role unread (for All-Techs admin view).
     """
     from django.db.models import Sum, Case as DbCase, When, IntegerField, Exists, OuterRef
 
@@ -222,22 +212,22 @@ def _build_staff_quick_tiles(queryset, user, alert_user=None):
             Q(date_due__lt=today) & ~inactive, then=1
         ), default=0, output_field=IntegerField())),
     )
-    # Alerts tile: cases where the alert_user has unread messages OR member lifecycle updates.
-    # alert_user=None (All-Techs view) → any staff-role unread counts.
-    # alert_user=<specific tech> → scoped to that tech, clears when they open the case.
+    # Alerts tile: active cases only (exclude terminal statuses).
+    # Tech: their own assigned cases with member updates + their personal unreads.
+    # Admin/manager: team-wide member updates + their personal unreads.
+    # Alerts clear reliably: has_member_updates resets when any tech opens the case;
+    # UnreadMessage deleted when that user opens the case.
     from django.db.models import Exists, OuterRef
-    if alert_user is not None:
-        _has_staff_unread = Exists(UnreadMessage.objects.filter(
-            case=OuterRef('pk'), user=alert_user
-        ))
+    active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
+    _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+    if user.role == 'technician':
+        counts['alerts'] = active_qs.filter(
+            Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me
+        ).count()
     else:
-        _staff_roles = ['technician', 'administrator', 'manager']
-        _has_staff_unread = Exists(UnreadMessage.objects.filter(
-            case=OuterRef('pk'), user__role__in=_staff_roles
-        ))
-    counts['alerts'] = queryset.exclude(
-        status__in=['completed', 'cancelled', 'declined', 'draft']
-    ).filter(Q(has_member_updates=True) | _has_staff_unread).count()
+        counts['alerts'] = active_qs.filter(
+            Q(has_member_updates=True) | _has_unread_for_me
+        ).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
@@ -747,15 +737,6 @@ def technician_dashboard(request):
     # Build tile counts before applying the active quick tile filter.
     tile_scope_cases = cases
 
-    # Determine alert_user: the tech whose unreads to count for the Alerts tile.
-    # Must be set BEFORE _apply_staff_quick_filter which also uses it.
-    _alert_user = user  # tech viewing own dashboard
-    if quick_tech and quick_tech != 'all':
-        try:
-            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
-        except User.DoesNotExist:
-            pass
-
     # Filter-panel inputs are authoritative. If users type a search or set
     # detailed filters, do not keep constraining results by a previously active
     # quick tile (e.g., pending), which can hide valid matches.
@@ -769,7 +750,7 @@ def technician_dashboard(request):
         search_query,
     ])
     if quick_filter and not has_detailed_filters:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user)
     allowed_sorts = [
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
@@ -800,7 +781,7 @@ def technician_dashboard(request):
         rush=Sum(DbCase(When(urgency='rush', then=1), default=0, output_field=IntegerField())),
     )
     stats = {k: (v or 0) for k, v in _s.items()}
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=_alert_user)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
@@ -967,9 +948,8 @@ def admin_dashboard(request):
         )
 
     tile_scope_cases = cases
-    _alert_user = None  # define before _apply_staff_quick_filter
     if quick_filter:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user)
     
     # Handle sorting
     allowed_sorts = [
@@ -1031,15 +1011,7 @@ def admin_dashboard(request):
     stats['total_members'] = active_members
     stats['total_technicians'] = active_technicians
     stats['requiring_review'] = stats['pending_review']
-    # Determine alert_user for the quick-filter CLICK path (clicking the Alerts tile).
-    # For tile COUNTS, always use None so we show "any staff unread on those cases".
-    _alert_user = None
-    if quick_tech and quick_tech != 'all':
-        try:
-            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
-        except User.DoesNotExist:
-            pass
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=None)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
@@ -1186,9 +1158,8 @@ def manager_dashboard(request):
         )
 
     tile_scope_cases = cases
-    _alert_user = None  # define before _apply_staff_quick_filter
     if quick_filter:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user, alert_user=_alert_user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user)
     
     # Handle sorting
     allowed_sorts = [
@@ -1258,15 +1229,7 @@ def manager_dashboard(request):
         'completed_pct': completed_pct,
         'hold_pct': hold_pct,
     }
-    # Determine alert_user for the quick-filter CLICK path (clicking the Alerts tile).
-    # For tile COUNTS, always use None so we show "any staff unread on those cases".
-    _alert_user = None
-    if quick_tech and quick_tech != 'all':
-        try:
-            _alert_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
-        except User.DoesNotExist:
-            pass
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, alert_user=None)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
