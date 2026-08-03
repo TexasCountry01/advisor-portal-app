@@ -92,6 +92,9 @@ if ($LASTEXITCODE -ne 0) {
 # Remove docs/ — reference documents are not needed on the server
 ssh $prodServerUser@$prodServerHost "rm -rf $projectPath/docs"
 
+# Remove validation/test-only scripts from production host.
+ssh $prodServerUser@$prodServerHost "rm -rf $projectPath/_temp_scripts && rm -f $projectPath/scripts/*pass_fail*.py"
+
 Write-Host "OK - Git pull completed" -ForegroundColor Green
 Write-Host ""
 

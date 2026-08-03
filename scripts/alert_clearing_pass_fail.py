@@ -10,6 +10,7 @@ What this checks:
 Usage:
   python scripts/alert_clearing_pass_fail.py
   python scripts/alert_clearing_pass_fail.py --username some.tech
+    python scripts/alert_clearing_pass_fail.py --mode case --username some.tech --case-id 123
 """
 
 from __future__ import annotations
@@ -46,8 +47,19 @@ def fmt_result(r: CheckResult) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate staff alert parity and clearing behavior.")
     parser.add_argument(
+        "--mode",
+        choices=["auto", "case"],
+        default="auto",
+        help="auto=scan users and run best-effort checks; case=validate one explicit technician/case",
+    )
+    parser.add_argument(
         "--username",
         help="Optional technician username to validate a specific technician.",
+    )
+    parser.add_argument(
+        "--case-id",
+        type=int,
+        help="Case ID for explicit case-mode clearing validation.",
     )
     args = parser.parse_args()
 
@@ -64,68 +76,142 @@ def main() -> int:
 
     results: list[CheckResult] = []
 
-    # Pick technician(s)
-    tech_qs = User.objects.filter(role="technician", is_active=True).order_by("id")
-    if args.username:
-        tech_qs = tech_qs.filter(username__iexact=args.username)
-
-    techs = list(tech_qs)
-    if not techs:
-        results.append(CheckResult("Technician selection", False, "No active technician found for given filter"))
-    else:
-        for tech in techs:
-            scope = Case.objects.exclude(status="draft").filter(assigned_to=tech)
-
-            tile_alerts = _build_staff_quick_tiles(scope, tech).get("alerts", 0)
-            filter_alerts = _apply_staff_quick_filter(scope, "alerts", tech).count()
-            parity_ok = tile_alerts == filter_alerts
+    if args.mode == "case":
+        if not args.username or not args.case_id:
             results.append(
                 CheckResult(
-                    f"Technician parity ({tech.username})",
-                    parity_ok,
-                    f"tile={tile_alerts}, filter={filter_alerts}",
+                    "Case mode input",
+                    False,
+                    "--mode case requires both --username and --case-id",
                 )
             )
-
-            # Clearing simulation candidate: alert case for this tech with personal unread
-            # and no member-update flag (so unread is the trigger we can test deterministically).
-            alert_cases = _apply_staff_quick_filter(scope, "alerts", tech)
-            candidate = (
-                alert_cases.filter(has_member_updates=False)
-                .filter(
-                    id__in=UnreadMessage.objects.filter(user=tech).values_list("case_id", flat=True)
+        else:
+            tech = User.objects.filter(role="technician", is_active=True, username__iexact=args.username).first()
+            if not tech:
+                results.append(CheckResult("Technician selection", False, f"No active technician: {args.username}"))
+            else:
+                scope = Case.objects.exclude(status="draft").filter(assigned_to=tech)
+                tile_alerts = _build_staff_quick_tiles(scope, tech).get("alerts", 0)
+                filter_alerts = _apply_staff_quick_filter(scope, "alerts", tech).count()
+                results.append(
+                    CheckResult(
+                        f"Technician parity ({tech.username})",
+                        tile_alerts == filter_alerts,
+                        f"tile={tile_alerts}, filter={filter_alerts}",
+                    )
                 )
-                .exclude(status__in=inactive_statuses)
-                .order_by("id")
-                .first()
-            )
 
-            if not candidate:
+                case = Case.objects.filter(pk=args.case_id).first()
+                if not case:
+                    results.append(CheckResult("Case lookup", False, f"Case not found: {args.case_id}"))
+                elif case.assigned_to_id != tech.id:
+                    results.append(
+                        CheckResult(
+                            "Case ownership",
+                            False,
+                            f"Case {case.id} assigned_to={getattr(case.assigned_to, 'username', None)} not {tech.username}",
+                        )
+                    )
+                elif case.status in inactive_statuses:
+                    results.append(CheckResult("Case status", False, f"Case {case.id} has inactive status {case.status}"))
+                elif case.has_member_updates:
+                    results.append(
+                        CheckResult(
+                            "Case trigger type",
+                            False,
+                            f"Case {case.id} has has_member_updates=True; use a personal-unread-only case for clearing check",
+                        )
+                    )
+                elif not UnreadMessage.objects.filter(case=case, user=tech).exists():
+                    results.append(
+                        CheckResult(
+                            "Unread prerequisite",
+                            False,
+                            f"Case {case.id} has no unread message for {tech.username}",
+                        )
+                    )
+                else:
+                    with transaction.atomic():
+                        before = _apply_staff_quick_filter(scope, "alerts", tech).count()
+                        before_has_case = _apply_staff_quick_filter(scope, "alerts", tech).filter(pk=case.pk).exists()
+                        deleted, _ = UnreadMessage.objects.filter(case=case, user=tech).delete()
+                        after = _apply_staff_quick_filter(scope, "alerts", tech).count()
+                        after_has_case = _apply_staff_quick_filter(scope, "alerts", tech).filter(pk=case.pk).exists()
+
+                        # Roll back: non-destructive validation.
+                        transaction.set_rollback(True)
+
+                    clearing_ok = before_has_case and deleted > 0 and after == max(before - 1, 0) and not after_has_case
+                    results.append(
+                        CheckResult(
+                            f"Case clearing simulation ({tech.username}, case={case.id})",
+                            clearing_ok,
+                            f"deleted_unreads={deleted}, before={before}, after={after}, before_has_case={before_has_case}, after_has_case={after_has_case}",
+                        )
+                    )
+    else:
+        # Pick technician(s)
+        tech_qs = User.objects.filter(role="technician", is_active=True).order_by("id")
+        if args.username:
+            tech_qs = tech_qs.filter(username__iexact=args.username)
+
+        techs = list(tech_qs)
+        if not techs:
+            results.append(CheckResult("Technician selection", False, "No active technician found for given filter"))
+        else:
+            for tech in techs:
+                scope = Case.objects.exclude(status="draft").filter(assigned_to=tech)
+
+                tile_alerts = _build_staff_quick_tiles(scope, tech).get("alerts", 0)
+                filter_alerts = _apply_staff_quick_filter(scope, "alerts", tech).count()
+                parity_ok = tile_alerts == filter_alerts
+                results.append(
+                    CheckResult(
+                        f"Technician parity ({tech.username})",
+                        parity_ok,
+                        f"tile={tile_alerts}, filter={filter_alerts}",
+                    )
+                )
+
+                # Clearing simulation candidate: alert case for this tech with personal unread
+                # and no member-update flag (so unread is the trigger we can test deterministically).
+                alert_cases = _apply_staff_quick_filter(scope, "alerts", tech)
+                candidate = (
+                    alert_cases.filter(has_member_updates=False)
+                    .filter(
+                        id__in=UnreadMessage.objects.filter(user=tech).values_list("case_id", flat=True)
+                    )
+                    .exclude(status__in=inactive_statuses)
+                    .order_by("id")
+                    .first()
+                )
+
+                if not candidate:
+                    results.append(
+                        CheckResult(
+                            f"Technician clearing simulation ({tech.username})",
+                            True,
+                            "SKIP: no candidate case with personal unread-only trigger",
+                        )
+                    )
+                    continue
+
+                with transaction.atomic():
+                    before = _apply_staff_quick_filter(scope, "alerts", tech).count()
+                    deleted, _ = UnreadMessage.objects.filter(case=candidate, user=tech).delete()
+                    after = _apply_staff_quick_filter(scope, "alerts", tech).count()
+
+                    # Roll back: non-destructive validation.
+                    transaction.set_rollback(True)
+
+                clearing_ok = deleted > 0 and after == max(before - 1, 0)
                 results.append(
                     CheckResult(
                         f"Technician clearing simulation ({tech.username})",
-                        True,
-                        "SKIP: no candidate case with personal unread-only trigger",
+                        clearing_ok,
+                        f"candidate_case={candidate.id}, deleted_unreads={deleted}, before={before}, after={after}",
                     )
                 )
-                continue
-
-            with transaction.atomic():
-                before = _apply_staff_quick_filter(scope, "alerts", tech).count()
-                deleted, _ = UnreadMessage.objects.filter(case=candidate, user=tech).delete()
-                after = _apply_staff_quick_filter(scope, "alerts", tech).count()
-
-                # Roll back: non-destructive validation.
-                transaction.set_rollback(True)
-
-            clearing_ok = deleted > 0 and after == max(before - 1, 0)
-            results.append(
-                CheckResult(
-                    f"Technician clearing simulation ({tech.username})",
-                    clearing_ok,
-                    f"candidate_case={candidate.id}, deleted_unreads={deleted}, before={before}, after={after}",
-                )
-            )
 
     # Admin parity (team-level)
     admin = User.objects.filter(role="administrator", is_active=True).order_by("id").first()
