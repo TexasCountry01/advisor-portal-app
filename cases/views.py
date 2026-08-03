@@ -803,7 +803,7 @@ def technician_dashboard(request):
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(case_id__in=[c.pk for c in page_cases])
+            .filter(case_id__in=[c.pk for c in page_cases], user=user)
             .values('case_id').annotate(cnt=_Count('id'))
     }
     for case in page_cases:
