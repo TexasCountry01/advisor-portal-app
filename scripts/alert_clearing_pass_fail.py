@@ -16,10 +16,15 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from dataclasses import dataclass
 
 
 def bootstrap_django() -> None:
+    # Ensure repo root is importable when running from scripts/.
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
     import django
 
