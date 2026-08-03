@@ -807,6 +807,7 @@ def technician_dashboard(request):
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
         quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
+    paginator = Paginator(cases, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_cases = list(page_obj.object_list)
     _unread_map = {
