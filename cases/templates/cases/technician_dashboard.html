@@ -128,13 +128,13 @@
                 #view-stats-container .stat-mini {
                     background: linear-gradient(135deg, #285FBF 0%, #1E4D9E 100%);
                     color: white;
-                    flex: 0 0 76px;
-                    width: 76px;
-                    min-height: 60px;
-                    padding: 5px 3px 6px;
+                    flex: 0 0 88px;
+                    width: 88px;
+                    padding: 5px 4px 6px;
                     border-radius: 6px;
                     text-align: center;
                     flex-shrink: 0;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                     display: flex;
                     flex-direction: column;
                     align-items: center;
@@ -143,17 +143,17 @@
                     transition: opacity .15s;
                 }
                 #view-stats-container .stat-mini-value {
-                    font-size: 22px;
+                    font-size: 1.55rem;
                     font-weight: 700;
                     line-height: 1.15;
                 }
                 #view-stats-container .stat-mini-label {
-                    font-size: 10px;
+                    font-size: 0.7rem;
                     opacity: 0.93;
-                    line-height: 1.2;
+                    line-height: 1.25;
                     margin-top: 2px;
                     white-space: normal;
-                    max-width: 72px;
+                    max-width: 80px;
                 }
                 #view-stats-container .tile-link {
                     text-decoration: none;
@@ -221,7 +221,7 @@
 
                 <!-- Row 2: Clickable Fast-Filter Tiles -->
                 <div class="row mb-2">
-                    <div class="col d-flex gap-2 align-items-stretch" style="flex-wrap: nowrap; justify-content: flex-end; overflow-x: auto;">
+                    <div class="col d-flex gap-2 align-items-stretch" style="flex-wrap: nowrap; justify-content: flex-end;">
                         <a class="tile-link {% if quick_filter == 'submitted' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=submitted"><div class="stat-mini" style="background:#676777;"><div class="stat-mini-value">{{ quick_tiles.submitted }}</div><div class="stat-mini-label">Need to<br>Accept</div></div></a>
                         <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=pending"><div class="stat-mini" style="background:#285fbf;"><div class="stat-mini-value">{{ quick_tiles.pending }}</div><div class="stat-mini-label">Pending<br>Completion</div></div></a>
                         <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=on_hold"><div class="stat-mini" style="background:#eda618;"><div class="stat-mini-value">{{ quick_tiles.on_hold }}</div><div class="stat-mini-label">On<br>Hold</div></div></a>
