@@ -134,7 +134,7 @@ def build_filter_params(request):
     return urlencode(params)
 
 
-def _apply_staff_quick_filter(queryset, quick_filter, user):
+def _apply_staff_quick_filter(queryset, quick_filter, user, quick_tech='all'):
     """Apply tile-style quick filters for technician/manager/admin dashboards."""
     from django.db.models import Exists, OuterRef
 
@@ -158,11 +158,34 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     if quick_filter == 'alerts':
         # Active cases only — alerts are never for terminal-status cases.
         active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
-        # Technician dashboard should show actionable alerts for the current
-        # technician only; admin/manager keep team-level staff unread visibility.
+        # Technician dashboard uses quick-tech scope:
+        # - All Techs: team-wide alerts
+        # - Specific tech: that technician's actionable alerts
         if user.role == 'technician':
-            _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
-            return active_qs.filter(Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me)
+            if quick_tech and quick_tech != 'all':
+                try:
+                    scoped_user = User.objects.get(
+                        username__iexact=quick_tech,
+                        role__in=['technician', 'administrator'],
+                        is_active=True,
+                    )
+                    _has_unread_for_scoped_user = Exists(
+                        UnreadMessage.objects.filter(case=OuterRef('pk'), user=scoped_user)
+                    )
+                    return active_qs.filter(
+                        Q(has_member_updates=True, assigned_to=scoped_user) |
+                        _has_unread_for_scoped_user
+                    )
+                except User.DoesNotExist:
+                    pass
+
+            _staff_roles = ['technician', 'administrator', 'manager']
+            _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
+                case=OuterRef('pk'),
+                user__role__in=_staff_roles,
+                user__is_active=True,
+            ))
+            return active_qs.filter(Q(has_member_updates=True) | _has_active_staff_unread)
 
         _staff_roles = ['technician', 'administrator', 'manager']
         _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
@@ -184,7 +207,7 @@ def _apply_staff_quick_filter(queryset, quick_filter, user):
     return queryset
 
 
-def _build_staff_quick_tiles(queryset, user):
+def _build_staff_quick_tiles(queryset, user, quick_tech='all'):
     """Build tile counts for technician/manager/admin dashboards.
     Uses a single SQL aggregate instead of 10 separate COUNT queries.
     """
@@ -220,13 +243,38 @@ def _build_staff_quick_tiles(queryset, user):
         ), default=0, output_field=IntegerField())),
     )
     # Alerts tile: active cases only (exclude terminal statuses).
-    # Technician: actionable alerts for self only.
+    # Technician uses quick-tech scope:
+    # - All Techs: team-wide alerts
+    # - Specific tech: that technician's actionable alerts
     # Admin/manager: team-wide member updates + active staff unread messages.
     active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if user.role == 'technician':
-        _has_unread_for_me = Exists(UnreadMessage.objects.filter(case=OuterRef('pk'), user=user))
+        if quick_tech and quick_tech != 'all':
+            try:
+                scoped_user = User.objects.get(
+                    username__iexact=quick_tech,
+                    role__in=['technician', 'administrator'],
+                    is_active=True,
+                )
+                _has_unread_for_scoped_user = Exists(
+                    UnreadMessage.objects.filter(case=OuterRef('pk'), user=scoped_user)
+                )
+                counts['alerts'] = active_qs.filter(
+                    Q(has_member_updates=True, assigned_to=scoped_user) |
+                    _has_unread_for_scoped_user
+                ).count()
+                return {k: (v or 0) for k, v in counts.items()}
+            except User.DoesNotExist:
+                pass
+
+        _staff_roles = ['technician', 'administrator', 'manager']
+        _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
+            case=OuterRef('pk'),
+            user__role__in=_staff_roles,
+            user__is_active=True,
+        ))
         counts['alerts'] = active_qs.filter(
-            Q(has_member_updates=True, assigned_to=user) | _has_unread_for_me
+            Q(has_member_updates=True) | _has_active_staff_unread
         ).count()
         return {k: (v or 0) for k, v in counts.items()}
 
@@ -761,7 +809,7 @@ def technician_dashboard(request):
         search_query,
     ])
     if quick_filter and not has_detailed_filters:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user, quick_tech)
     allowed_sorts = [
         'employee_first_name', '-employee_first_name',
         'employee_last_name', '-employee_last_name',
@@ -792,7 +840,7 @@ def technician_dashboard(request):
         rush=Sum(DbCase(When(urgency='rush', then=1), default=0, output_field=IntegerField())),
     )
     stats = {k: (v or 0) for k, v in _s.items()}
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, quick_tech)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
@@ -800,10 +848,15 @@ def technician_dashboard(request):
     paginator = Paginator(cases, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_cases = list(page_obj.object_list)
+    _staff_roles = ['technician', 'administrator', 'manager']
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(case_id__in=[c.pk for c in page_cases], user=user)
+            .filter(
+                case_id__in=[c.pk for c in page_cases],
+                user__role__in=_staff_roles,
+                user__is_active=True,
+            )
             .values('case_id').annotate(cnt=_Count('id'))
     }
     for case in page_cases:
@@ -961,7 +1014,7 @@ def admin_dashboard(request):
 
     tile_scope_cases = cases
     if quick_filter:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user, quick_tech)
     
     # Handle sorting
     allowed_sorts = [
@@ -1023,7 +1076,7 @@ def admin_dashboard(request):
     stats['total_members'] = active_members
     stats['total_technicians'] = active_technicians
     stats['requiring_review'] = stats['pending_review']
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, quick_tech)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
@@ -1171,7 +1224,7 @@ def manager_dashboard(request):
 
     tile_scope_cases = cases
     if quick_filter:
-        cases = _apply_staff_quick_filter(cases, quick_filter, user)
+        cases = _apply_staff_quick_filter(cases, quick_filter, user, quick_tech)
     
     # Handle sorting
     allowed_sorts = [
@@ -1241,7 +1294,7 @@ def manager_dashboard(request):
         'completed_pct': completed_pct,
         'hold_pct': hold_pct,
     }
-    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user)
+    quick_tiles = _build_staff_quick_tiles(tile_scope_cases, user, quick_tech)
     # "Need to Accept" reflects the global unassigned queue, not a per-tech count.
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
