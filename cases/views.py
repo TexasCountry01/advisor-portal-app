@@ -5513,7 +5513,10 @@ def get_unread_message_count(request):
         # the same red badge regardless of who the individual UnreadMessage rows
         # were created for.  Members keep personal (per-user) counts.
         if user.role in ['technician', 'administrator', 'manager']:
-            unread_by_case = UnreadMessage.objects.values('case').annotate(
+            unread_by_case = UnreadMessage.objects.filter(
+                user__role__in=['technician', 'administrator', 'manager'],
+                user__is_active=True,
+            ).values('case').annotate(
                 count=models.Count('id')
             ).order_by('-count')
         else:
