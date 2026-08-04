@@ -32,9 +32,10 @@
         <div id="view-stats-container" class="card-body">
             <style>
                 #view-stats-container .stat-mini {
-                    flex: 0 0 88px;
-                    width: 88px;
-                    padding: 5px 4px 6px;
+                    flex: 0 0 76px;
+                    width: 76px;
+                    min-height: 60px;
+                    padding: 5px 3px 6px;
                     border-radius: 6px;
                     color: white;
                     text-align: center;
@@ -47,17 +48,17 @@
                 }
                 #view-stats-container .stat-mini:hover { opacity: .85; }
                 #view-stats-container .stat-mini-value {
-                    font-size: 1.55rem;
+                    font-size: 22px;
                     font-weight: 700;
                     line-height: 1.15;
                 }
                 #view-stats-container .stat-mini-label {
-                    font-size: 0.7rem;
+                    font-size: 10px;
                     opacity: .93;
-                    line-height: 1.25;
+                    line-height: 1.2;
                     margin-top: 2px;
                     white-space: normal;
-                    max-width: 80px;
+                    max-width: 72px;
                 }
                 #view-stats-container .tile-link {
                     text-decoration: none;
@@ -114,7 +115,7 @@
 
             <!-- Clickable Fast-Filter Tiles -->
             <div class="row mb-2">
-                <div class="col d-flex gap-2 align-items-stretch" style="flex-wrap: nowrap; justify-content: flex-end;">
+                <div class="col d-flex gap-2 align-items-stretch" style="flex-wrap: nowrap; justify-content: flex-end; overflow-x: auto;">
                     <a class="tile-link {% if quick_filter == 'submitted' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=submitted"><div class="stat-mini" style="background:#676777;"><div class="stat-mini-value">{{ quick_tiles.submitted }}</div><div class="stat-mini-label">Need to<br>Accept</div></div></a>
                     <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=pending"><div class="stat-mini" style="background:#285fbf;"><div class="stat-mini-value">{{ quick_tiles.pending }}</div><div class="stat-mini-label">Pending<br>Completion</div></div></a>
                     <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=on_hold"><div class="stat-mini" style="background:#eda618;"><div class="stat-mini-value">{{ quick_tiles.on_hold }}</div><div class="stat-mini-label">On<br>Hold</div></div></a>
