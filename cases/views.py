@@ -854,6 +854,7 @@ def technician_dashboard(request):
         for row in UnreadMessage.objects
             .filter(
                 case_id__in=[c.pk for c in page_cases],
+                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
                 user__role__in=_staff_roles,
                 user__is_active=True,
             )
@@ -1090,10 +1091,16 @@ def admin_dashboard(request):
     paginator = Paginator(cases, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_cases = list(page_obj.object_list)
+    _staff_roles = ['technician', 'administrator', 'manager']
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(case_id__in=[c.pk for c in page_cases])
+            .filter(
+                case_id__in=[c.pk for c in page_cases],
+                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
+                user__role__in=_staff_roles,
+                user__is_active=True,
+            )
             .values('case_id').annotate(cnt=_Count('id'))
     }
     for case in page_cases:
@@ -1300,10 +1307,16 @@ def manager_dashboard(request):
     if quick_tech and quick_tech != 'all':
         quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
     from django.db.models import Count as _Count
+    _staff_roles = ['technician', 'administrator', 'manager']
     _manager_unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(case_id__in=list(cases.values_list('pk', flat=True)))
+            .filter(
+                case_id__in=list(cases.values_list('pk', flat=True)),
+                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
+                user__role__in=_staff_roles,
+                user__is_active=True,
+            )
             .values('case_id').annotate(cnt=_Count('id'))
     }
     for case in cases:
@@ -5504,6 +5517,7 @@ def get_unread_message_count(request):
     Used to display notification badges on dashboards.
     """
     user = request.user
+    _inactive_statuses = ['completed', 'cancelled', 'declined', 'draft']
     
     try:
         from cases.models import CaseNotification
@@ -5516,6 +5530,7 @@ def get_unread_message_count(request):
             unread_by_case = UnreadMessage.objects.filter(
                 user__role__in=['technician', 'administrator', 'manager'],
                 user__is_active=True,
+                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
             ).values('case').annotate(
                 count=models.Count('id')
             ).order_by('-count')
@@ -5576,6 +5591,8 @@ def get_unread_message_count(request):
         updated_cases = Case.objects.filter(
             has_member_updates=True
         ).exclude(id__in=all_case_ids)
+        if user.role in ['technician', 'administrator', 'manager']:
+            updated_cases = updated_cases.exclude(status__in=_inactive_statuses)
         for case in updated_cases:
             unread_cases.append({
                 'case_id': case.id,
