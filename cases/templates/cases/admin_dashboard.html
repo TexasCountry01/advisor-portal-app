@@ -450,7 +450,11 @@
                                 {% endif %}
                             </td>
                             <td data-column-id="credits" class="{% if 'credits' not in visible_columns %}column-hidden{% endif %}">
-                                {{ case.credit_value|default:"—" }}
+                                {% if 'cancel' in case.status|lower or 'declin' in case.status|lower %}
+                                    0.0
+                                {% else %}
+                                    {{ case.credit_value|default:"—" }}
+                                {% endif %}
                             </td>
                             <td data-column-id="reviewed_by" class="column-reviewed_by {% if 'reviewed_by' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.reviewed_by %}

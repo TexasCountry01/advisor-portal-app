@@ -570,7 +570,7 @@
                                 {% endif %}
                             </td>
                             <td data-column-id="credits" class="{% if 'credits' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.status == 'cancelled' or case.status == 'declined' %}
+                                {% if 'cancel' in case.status|lower or 'declin' in case.status|lower %}
                                     0.0
                                 {% else %}
                                     {{ case.credit_value|default:"—" }}
