@@ -3411,6 +3411,56 @@ def reassign_case(request, case_id):
 
 
 @login_required
+@require_http_methods(["POST"])
+def change_case_tier(request, case_id):
+    """Allow the assigned technician to change the tier after acceptance.
+
+    The change is limited to the assigned technician and to accepted/hold cases.
+    Every change requires a reason and is written to the audit trail.
+    """
+    from django.http import JsonResponse
+    from cases.services.case_audit_service import change_case_tier as change_case_tier_service
+
+    user = request.user
+    case = get_object_or_404(Case, id=case_id)
+
+    try:
+        body = json.loads(request.body) if request.body else {}
+    except json.JSONDecodeError:
+        body = {}
+
+    new_tier = (body.get('tier') or '').strip()
+    reason = (body.get('reason') or '').strip()
+
+    if user.role != 'technician':
+        return JsonResponse({'success': False, 'error': 'Only the assigned technician can change Tier.'}, status=403)
+
+    if case.assigned_to_id != user.id:
+        return JsonResponse({'success': False, 'error': 'You can only change Tier on cases assigned to you.'}, status=403)
+
+    if case.status not in ['accepted', 'hold']:
+        return JsonResponse({'success': False, 'error': f'Tier can only be changed after acceptance while the case is Accepted or On Hold. Current status: {case.get_status_display()}.'}, status=400)
+
+    if new_tier not in dict(Case.TIER_CHOICES):
+        return JsonResponse({'success': False, 'error': 'Please select a valid Tier.'}, status=400)
+
+    if not reason:
+        return JsonResponse({'success': False, 'error': 'A reason is required to change Tier.'}, status=400)
+
+    if case.tier == new_tier:
+        return JsonResponse({'success': False, 'error': 'This case is already set to that Tier.'}, status=400)
+
+    success = change_case_tier_service(case, user, new_tier, reason)
+    if success:
+        return JsonResponse({
+            'success': True,
+            'message': f'Tier changed to {case.get_tier_display()}.'
+        })
+
+    return JsonResponse({'success': False, 'error': 'Failed to change Tier. Please try again.'}, status=500)
+
+
+@login_required
 def submit_case_final(request, case_id):
     """Submit a draft case to transition it from draft to submitted status"""
     if request.method == 'POST':

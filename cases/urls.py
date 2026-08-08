@@ -33,6 +33,7 @@ urlpatterns = [
     path('<int:pk>/accept/', views.accept_case, name='accept_case'),
     path('<int:pk>/reject/', views.reject_case, name='reject_case'),
     path('<int:case_id>/reassign/', views.reassign_case, name='reassign_case'),
+    path('<int:case_id>/change-tier/', views.change_case_tier, name='change_case_tier'),
     path('<int:case_id>/admin-take-ownership/', views.admin_take_ownership, name='admin_take_ownership'),
     path('<int:case_id>/take-ownership/', views.take_case_ownership, name='take_case_ownership'),
     path('<int:case_id>/adjust-credit/', views.adjust_case_credit, name='adjust_case_credit'),
