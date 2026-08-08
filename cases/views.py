@@ -868,6 +868,9 @@ def technician_dashboard(request):
         role__in=['technician', 'administrator']
     )).order_by('last_name', 'first_name')
 
+    members = _exclude_super_dev_users(User.objects.filter(role='member', is_active=True)).order_by('username')
+    workshop_codes = Case.objects.exclude(status='draft').values_list('workshop_code', flat=True).distinct().order_by('workshop_code')
+
     # Get active technicians for quick-filter buttons
     quick_technicians = _get_active_technicians()
 
@@ -875,9 +878,13 @@ def technician_dashboard(request):
         'cases': page_obj,
         'page_obj': page_obj,
         'stats': stats,
+        'members': members,
         'status_filters': status_filters,  # List of selected statuses
         'urgency_filter': urgency_filter,
         'tier_filter': tier_filter,
+        'workshop_code_filter': workshop_code_filter,
+        'member_filter': member_filter,
+        'workshop_codes': workshop_codes,
         'date_range': date_range,
         'custom_date_from': custom_date_from,
         'custom_date_to': custom_date_to,
@@ -1166,6 +1173,7 @@ def manager_dashboard(request):
     status_filter = request.GET.getlist('status')  # Use getlist for multiple values
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
+    workshop_code_filter = request.GET.get('workshop_code')
     member_filter = request.GET.get('member')
     technician_filter = request.GET.get('technician')
     date_range = request.GET.get('date_range')
@@ -1188,6 +1196,9 @@ def manager_dashboard(request):
     
     if tier_filter:
         cases = cases.filter(tier=tier_filter)
+
+    if workshop_code_filter:
+        cases = cases.filter(workshop_code=workshop_code_filter)
     
     if member_filter:
         cases = cases.filter(member_id=member_filter)
@@ -1263,6 +1274,7 @@ def manager_dashboard(request):
     # Get related data for filters
     members = _exclude_super_dev_users(User.objects.filter(role='member', is_active=True)).order_by('username')
     technicians = _exclude_super_dev_users(User.objects.filter(role='technician', is_active=True)).order_by('username')
+    workshop_codes = Case.objects.exclude(status='draft').values_list('workshop_code', flat=True).distinct().order_by('workshop_code')
     
     # Calculate comprehensive analytics statistics (exclude drafts - those are member-only)
     all_cases = Case.objects.exclude(status='draft')
@@ -1340,6 +1352,7 @@ def manager_dashboard(request):
         'status_filter': status_filter,
         'urgency_filter': urgency_filter,
         'tier_filter': tier_filter,
+        'workshop_code_filter': workshop_code_filter,
         'member_filter': member_filter,
         'technician_filter': technician_filter,
         'date_range': date_range,

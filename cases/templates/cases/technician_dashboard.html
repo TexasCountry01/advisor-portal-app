@@ -249,7 +249,7 @@
                 <div class="collapse" id="filter-row">
                 <div class="row g-3 mt-0" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
                     <div class="col-md-3">
-                        <label class="form-label"><strong>Status (Multiple)</strong></label>
+                        <label class="form-label">Status (Multiple)</label>
                         <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto; background-color: white;">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" name="status" value="submitted" 
@@ -304,7 +304,7 @@
                         <small class="text-muted d-block mt-1">Select multiple statuses</small>
                     </div>
                     <div class="col-md-2">
-                        <label for="urgency" class="form-label"><strong>Urgency</strong></label>
+                        <label for="urgency" class="form-label">Urgency</label>
                         <select name="urgency" id="urgency" class="form-select">
                             <option value="">All Urgencies</option>
                             <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Normal</option>
@@ -321,23 +321,41 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label for="date_range" class="form-label">Date Range</label>
-                        <select name="date_range" id="date_range" class="form-select">
-                            <option value="">All Time</option>
-                            <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
-                            <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
-                            <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
+                        <label for="member" class="form-label">Member</label>
+                        <select name="member" id="member" class="form-select">
+                            <option value="">All Members</option>
+                            {% for m in members %}
+                            <option value="{{ m.id }}" {% if member_filter == m.id|stringformat:"s" %}selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>
+                            {% endfor %}
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label for="date_from" class="form-label">From Date</label>
-                        <input type="date" name="date_from" id="date_from" class="form-control" 
-                               value="{{ custom_date_from|default:'' }}">
+                        <label for="workshop_code" class="form-label">Code</label>
+                        <select name="workshop_code" id="workshop_code" class="form-select">
+                            <option value="">All Codes</option>
+                            {% for code in workshop_codes %}
+                            <option value="{{ code }}" {% if workshop_code_filter == code %}selected{% endif %}>{{ code }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <div class="col-md-2">
-                        <label for="date_to" class="form-label">To Date</label>
-                        <input type="date" name="date_to" id="date_to" class="form-control" 
-                               value="{{ custom_date_to|default:'' }}">
+                    <div class="col-md-4">
+                        <label class="form-label">Date Range</label>
+                        <div class="row g-2">
+                            <div class="col-12 col-lg-4">
+                                <select name="date_range" id="date_range" class="form-select">
+                                    <option value="">All Time</option>
+                                    <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+                                    <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
+                                    <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-lg-4">
+                                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ custom_date_from|default:'' }}" placeholder="From Date">
+                            </div>
+                            <div class="col-6 col-lg-4">
+                                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ custom_date_to|default:'' }}" placeholder="To Date">
+                            </div>
+                        </div>
                     </div>
                     <div class="col-md-2">
                         <label for="sort" class="form-label">Sort By</label>
@@ -354,7 +372,7 @@
                             <option value="-tier" {% if sort_by == '-tier' %}selected{% endif %}>Tier (High to Low)</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
                         <label for="search" class="form-label">Search</label>
                         <input type="text" name="search" id="search" class="form-control" 
                                placeholder="Case ID, Employee..." 
