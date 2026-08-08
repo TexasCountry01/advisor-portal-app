@@ -699,6 +699,8 @@ def technician_dashboard(request):
     status_filters = [s for s in request.GET.getlist('status') if s in allowed_statuses]
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
+    workshop_code_filter = request.GET.get('workshop_code')
+    member_filter = request.GET.get('member')
     date_range = request.GET.get('date_range')
     custom_date_from = request.GET.get('date_from')
     custom_date_to = request.GET.get('date_to')
@@ -715,7 +717,7 @@ def technician_dashboard(request):
     # Detect whether any filter params are present (used by tile/filter logic below)
     _has_params = any(request.GET.get(p) for p in [
         'quick_filter', 'quick_tech', 'status', 'urgency', 'tier',
-        'date_range', 'date_from', 'date_to', 'search', 'assigned', 'sort', 'page'
+        'workshop_code', 'member', 'date_range', 'date_from', 'date_to', 'search', 'assigned', 'sort', 'page'
     ])
 
     # Terminal statuses (declined/cancelled) are always unassigned after our workflow
@@ -761,6 +763,12 @@ def technician_dashboard(request):
     
     if tier_filter:
         cases = cases.filter(tier=tier_filter)
+
+    if workshop_code_filter:
+        cases = cases.filter(workshop_code=workshop_code_filter)
+
+    if member_filter:
+        cases = cases.filter(member_id=member_filter)
     
     # Date range filter - custom dates take precedence
     if custom_date_from or custom_date_to:
@@ -803,6 +811,8 @@ def technician_dashboard(request):
         status_filters,
         urgency_filter,
         tier_filter,
+        workshop_code_filter,
+        member_filter,
         date_range,
         custom_date_from,
         custom_date_to,
