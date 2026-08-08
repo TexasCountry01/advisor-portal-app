@@ -459,7 +459,11 @@ def member_dashboard(request):
         ).order_by('-date_submitted')
     
     # Apply filters BEFORE adding unread count
-    status_filter = request.GET.getlist('status')  # Use getlist for multiple values
+    allowed_admin_statuses = {
+        'submitted', 'accepted', 'pending_review', 'hold',
+        'completed', 'cancelled', 'declined', 'needs_resubmission'
+    }
+    status_filter = [s for s in request.GET.getlist('status') if s in allowed_admin_statuses]
     urgency_filter = request.GET.get('urgency')
     date_range = request.GET.get('date_range')
     custom_date_from = request.GET.get('date_from')

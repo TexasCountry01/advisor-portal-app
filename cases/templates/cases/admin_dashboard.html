@@ -190,26 +190,6 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label for="workshop_code" class="form-label">Code</label>
-                    <select name="workshop_code" id="workshop_code" class="form-select">
-                        <option value="">All Codes</option>
-                        {% for code in workshop_codes %}
-                            <option value="{{ code }}" {% if workshop_code_filter == code %}selected{% endif %}>{{ code }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label for="member" class="form-label">Member</label>
-                    <select name="member" id="member" class="form-select">
-                        <option value="">All Members</option>
-                        {% for m in members %}
-                            <option value="{{ m.id }}" {% if member_filter == m.id|stringformat:"s" %}selected{% endif %}>
-                                {{ m.get_full_name|default:m.username }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
                     <label for="date_range" class="form-label">Date Range</label>
                     <select name="date_range" id="date_range" class="form-select">
                         <option value="">All Time</option>
@@ -227,6 +207,27 @@
                     <label for="date_to" class="form-label">To Date</label>
                     <input type="date" name="date_to" id="date_to" class="form-control" 
                            value="{{ custom_date_to|default:'' }}">
+                </div>
+                <div class="w-100 d-none d-md-block"></div>
+                <div class="col-md-2">
+                    <label for="member" class="form-label">Member</label>
+                    <select name="member" id="member" class="form-select">
+                        <option value="">All Members</option>
+                        {% for m in members %}
+                            <option value="{{ m.id }}" {% if member_filter == m.id|stringformat:"s" %}selected{% endif %}>
+                                {{ m.get_full_name|default:m.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="workshop_code" class="form-label">Code</label>
+                    <select name="workshop_code" id="workshop_code" class="form-select">
+                        <option value="">All Codes</option>
+                        {% for code in workshop_codes %}
+                            <option value="{{ code }}" {% if workshop_code_filter == code %}selected{% endif %}>{{ code }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <label for="technician" class="form-label">Technician</label>
