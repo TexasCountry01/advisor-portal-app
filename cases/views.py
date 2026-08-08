@@ -125,7 +125,7 @@ def build_filter_params(request):
 
     # Preserve other filters
     for param in ['urgency', 'tier', 'member', 'technician', 'date_range',
-                  'date_from', 'date_to', 'search', 'quick_filter', 'quick_tech',
+                  'date_from', 'date_to', 'search', 'workshop_code', 'quick_filter', 'quick_tech',
                   'view', 'assigned']:
         value = request.GET.get(param)
         if value:
@@ -944,6 +944,7 @@ def admin_dashboard(request):
     status_filter = request.GET.getlist('status')  # Use getlist for multiple values
     urgency_filter = request.GET.get('urgency')
     tier_filter = request.GET.get('tier')
+    workshop_code_filter = request.GET.get('workshop_code')
     member_filter = request.GET.get('member')
     technician_filter = request.GET.get('technician')
     date_range = request.GET.get('date_range')
@@ -966,6 +967,9 @@ def admin_dashboard(request):
     
     if tier_filter:
         cases = cases.filter(tier=tier_filter)
+
+    if workshop_code_filter:
+        cases = cases.filter(workshop_code=workshop_code_filter)
     
     if member_filter:
         cases = cases.filter(member_id=member_filter)
@@ -1041,6 +1045,7 @@ def admin_dashboard(request):
     # Get related data for filters
     members = _exclude_super_dev_users(User.objects.filter(role='member', is_active=True)).order_by('username')
     technicians = _exclude_super_dev_users(User.objects.filter(role='technician', is_active=True)).order_by('username')
+    workshop_codes = Case.objects.exclude(status='draft').values_list('workshop_code', flat=True).distinct().order_by('workshop_code')
     
     # Calculate comprehensive statistics (exclude drafts - those are member-only)
     all_cases = Case.objects.exclude(status='draft')
@@ -1115,6 +1120,7 @@ def admin_dashboard(request):
         'status_filter': status_filter,
         'urgency_filter': urgency_filter,
         'tier_filter': tier_filter,
+        'workshop_code_filter': workshop_code_filter,
         'member_filter': member_filter,
         'technician_filter': technician_filter,
         'date_range': date_range,
@@ -1330,6 +1336,7 @@ def manager_dashboard(request):
         'stats': stats,
         'members': members,
         'technicians': technicians,
+        'workshop_codes': workshop_codes,
         'status_filter': status_filter,
         'urgency_filter': urgency_filter,
         'tier_filter': tier_filter,
