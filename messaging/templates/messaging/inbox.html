@@ -105,11 +105,7 @@
                     {% endif %}
                     {% if is_staff %}
                     <br><small class="text-muted">From: {{ convo.started_by.first_name|default:convo.started_by.username }} {{ convo.started_by.last_name }}</small>
-                    {% if convo.started_by.workshop_code %}
-                    <br><small class="text-muted"><i class="bi bi-building"></i> Workshop: {{ convo.started_by.workshop_code }}</small>
-                    {% else %}
-                    <br><small class="text-muted"><i class="bi bi-building"></i> Workshop: Not set</small>
-                    {% endif %}
+                    <small class="text-muted"> ({{ convo.started_by.workshop_code|default:'Not set' }})</small>
                     {% endif %}
                 </div>
             </div>

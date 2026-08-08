@@ -21,11 +21,7 @@
             <small class="text-muted">
                 Started by {{ conversation.started_by.get_full_name|default:conversation.started_by.username }}
                 {% if is_staff %}
-                    {% if conversation.started_by.workshop_code %}
-                    &middot; Workshop: {{ conversation.started_by.workshop_code }}
-                    {% else %}
-                    &middot; Workshop: Not set
-                    {% endif %}
+                    ({{ conversation.started_by.workshop_code|default:'Not set' }})
                 {% endif %}
                 &middot; {{ conversation.created_at|date:"M d, Y g:i A" }}
                 {% if conversation.status == 'closed' %}
