@@ -286,6 +286,22 @@ def submit_case(request, case_id):
             return HttpResponse('Access denied', status=403)
     
     if request.method == 'POST':
+        # Only draft cases can be submitted.
+        if case.status != 'draft':
+            messages.error(request, f'Only draft cases can be submitted. This case is {case.get_status_display()}.')
+            return redirect('cases:case_detail', pk=case_id)
+
+        # Drafts with missing/past due dates must be refreshed before submission.
+        today = timezone.localtime(timezone.now()).date()
+        if not case.date_due or case.date_due < today:
+            messages.error(request, 'This draft has an outdated due date. Please edit the case and select a new due date before submitting.')
+            return redirect('cases:edit_case', pk=case_id)
+
+        # Require at least one document before submitting.
+        if case.documents.count() == 0:
+            messages.error(request, 'Please attach at least one document before submitting your case.')
+            return redirect('cases:case_detail', pk=case_id)
+
         # Update case status to submitted
         case.status = 'submitted'
         case.date_submitted = timezone.now()
@@ -310,6 +326,7 @@ def submit_case(request, case_id):
             metadata={
                 'urgency': case.urgency,
                 'document_count': case.documents.count(),
+                'submit_path': 'views_pdf_template.submit_case',
             }
         )
         
