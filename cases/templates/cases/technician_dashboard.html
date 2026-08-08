@@ -13,7 +13,21 @@
     <div class="row mb-4">
         <div class="col">
             <h2>Benefits Technician Dashboard</h2>
-            <p class="text-muted">View and manage all cases</p>
+            <p class="text-muted mb-1">
+                {% if assigned_filter == 'mine' %}
+                View and manage your assigned cases
+                {% else %}
+                View and manage all cases
+                {% endif %}
+            </p>
+            <small class="text-muted">
+                Scope:
+                {% if assigned_filter == 'mine' %}
+                My Cases
+                {% else %}
+                All Cases
+                {% endif %}
+            </small>
         </div>
         <div class="col-auto d-flex gap-2 align-items-center">
             <!-- Management Dropdown -->
@@ -211,9 +225,9 @@
                     <!-- Quick Tech Filters -->
                     <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
                         <div class="btn-group" role="group">
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == 'all' or not quick_tech %}active{% endif %}">All Techs</a>
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if assigned_filter != 'mine' and quick_tech == 'all' %}active{% endif %}">All Techs</a>
                             {% for tech in quick_technicians %}
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == tech.username %}active{% endif %}" data-tech-username="{{ tech.username }}">{{ tech.first_name|default:tech.username }} <span class="tech-status-dot status-{{ tech.status }}" title="{{ tech.label }}"></span></a>
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all&quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if assigned_filter != 'mine' and quick_tech == tech.username %}active{% endif %}" data-tech-username="{{ tech.username }}">{{ tech.first_name|default:tech.username }} <span class="tech-status-dot status-{{ tech.status }}" title="{{ tech.label }}"></span></a>
                             {% endfor %}
                         </div>
                     </div>
@@ -410,7 +424,7 @@
     <!-- Cases Table -->
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">All Cases (18 Fields)</h5>
+            <h5 class="mb-0">{% if assigned_filter == 'mine' %}My Cases{% else %}All Cases{% endif %} (18 Fields)</h5>
         </div>
         <div class="card-body">
             {% if cases %}
