@@ -1134,6 +1134,7 @@ def admin_dashboard(request):
         'stats': stats,
         'members': members,
         'technicians': technicians,
+        'workshop_codes': workshop_codes,
         'status_filter': status_filter,
         'urgency_filter': urgency_filter,
         'tier_filter': tier_filter,
