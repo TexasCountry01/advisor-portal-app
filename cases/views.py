@@ -3996,8 +3996,8 @@ def upload_technician_document(request, case_id):
             case.member_last_update_date = timezone.now()
             case.save(update_fields=['has_member_new_info', 'has_member_updates', 'member_last_update_date'])
             
-            # Create StaffNotification for the assigned technician
-            if case.assigned_to:
+            # Create StaffNotification for the assigned technician — only when case is on hold
+            if case.assigned_to and case.status == 'hold':
                 try:
                     from core.models import StaffNotification
                     StaffNotification.objects.create(
@@ -4638,8 +4638,8 @@ def upload_member_document_to_completed_case(request, case_id):
             case.member_last_update_date = timezone.now()
             case.save(update_fields=['has_member_updates', 'has_member_new_info', 'member_last_update_date'])
             
-            # Create StaffNotification for the assigned technician
-            if case.assigned_to:
+            # Create StaffNotification for the assigned technician — only when case is on hold
+            if case.assigned_to and case.status == 'hold':
                 try:
                     StaffNotification.objects.create(
                         user=case.assigned_to,
@@ -8737,8 +8737,8 @@ def upload_member_documents(request, case_id):
         case.member_last_update_date = timezone.now()
         case.save(update_fields=['has_member_new_info', 'has_member_updates', 'member_last_update_date'])
         
-        # Create StaffNotification for the assigned technician
-        if case.assigned_to:
+        # Create StaffNotification for the assigned technician — only when case is on hold
+        if case.assigned_to and case.status == 'hold':
             try:
                 from core.models import StaffNotification
                 StaffNotification.objects.create(
