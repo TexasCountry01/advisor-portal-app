@@ -7142,17 +7142,6 @@ def approve_case_review(request, case_id):
             review_notes=review_notes
         )
         
-        # Send StaffNotification to Level 1 technician
-        if case.assigned_to:
-            from core.models import StaffNotification
-            StaffNotification.objects.create(
-                user=case.assigned_to,
-                case=case,
-                notification_type='quality_review_feedback',
-                title=f'Case Approved: {case.employee_first_name} {case.employee_last_name}',
-                message=f'{case.employee_first_name} {case.employee_last_name} case has been approved by {user.get_full_name() or user.username}.{" Notes: " + review_notes if review_notes else ""}'
-            )
-        
         # Create internal note for the approval
         from cases.models import CaseNote
         approve_note = f'[Review Approved] Case approved by {user.get_full_name() or user.username}'
@@ -7227,17 +7216,6 @@ def request_case_revisions(request, case_id):
             review_action='revisions_requested',
             review_notes=revision_feedback
         )
-        
-        # Send StaffNotification to Level 1 technician
-        if case.assigned_to:
-            from core.models import StaffNotification
-            StaffNotification.objects.create(
-                user=case.assigned_to,
-                case=case,
-                notification_type='quality_review_feedback',
-                title=f'Revisions Requested: {case.employee_first_name} {case.employee_last_name}',
-                message=f'{case.employee_first_name} {case.employee_last_name} case has been reviewed by {user.get_full_name() or user.username} and revisions are requested. Feedback: {revision_feedback}'
-            )
         
         # Send email notification to Level 1 technician
         if case.assigned_to and case.assigned_to.email:
@@ -7349,17 +7327,6 @@ def correct_case_review(request, case_id):
             review_notes=correction_notes
         )
         
-        # Send StaffNotification to Level 1 technician
-        if case.assigned_to:
-            from core.models import StaffNotification
-            StaffNotification.objects.create(
-                user=case.assigned_to,
-                case=case,
-                notification_type='quality_review_feedback',
-                title=f'Corrections Applied: {case.employee_first_name} {case.employee_last_name}',
-                message=f'{case.employee_first_name} {case.employee_last_name} case has been completed with corrections applied by {user.get_full_name() or user.username}. Notes: {correction_notes}'
-            )
-        
         # Create internal note for the corrections
         from cases.models import CaseNote
         correction_note = f'[Corrections Applied] Corrections applied by {user.get_full_name() or user.username}\nNotes: {correction_notes}'
@@ -7468,32 +7435,6 @@ def submit_for_review(request, case_id):
             if tech_notes:
                 notification_msg += f' Notes: {tech_notes}'
             
-            if reviewer:
-                StaffNotification.objects.create(
-                    user=reviewer,
-                    case=case,
-                    notification_type='review_requested',
-                    title=f'Review Requested: {employee_name}',
-                    message=notification_msg,
-                )
-            else:
-                # Notify all L2/L3 techs + admins + managers
-                from django.db.models import Q
-                eligible = User.objects.filter(
-                    Q(role='technician', user_level__in=['level_2', 'level_3']) |
-                    Q(role__in=['administrator', 'manager']),
-                    is_active=True,
-                ).exclude(pk=user.pk)
-                eligible = _exclude_super_dev_users(eligible)
-                for eligible_user in eligible:
-                    StaffNotification.objects.create(
-                        user=eligible_user,
-                        case=case,
-                        notification_type='review_requested',
-                        title=f'Review Requested: {employee_name}',
-                        message=notification_msg,
-                    )
-            
             # Create internal note for the review submission
             from cases.models import CaseNote
             note_text = f'[Review Submitted] Case submitted for quality review by {user.get_full_name() or user.username}'
@@ -7598,30 +7539,6 @@ def request_review(request, case_id):
 
     # Notify the reviewer (or all eligible reviewers)
     employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-    if reviewer:
-        StaffNotification.objects.create(
-            user=reviewer,
-            case=case,
-            notification_type='review_requested',
-            title=f'Review Requested: {employee_name}',
-            message=f'{user.get_full_name() or user.username} is requesting your review on the case for {employee_name}. Notes: {notes}',
-        )
-    else:
-        # Notify all L2/L3 techs + admins + managers
-        eligible = User.objects.filter(
-            Q(role='technician', user_level__in=['level_2', 'level_3']) |
-            Q(role__in=['administrator', 'manager']),
-            is_active=True,
-        ).exclude(pk=user.pk)
-        eligible = _exclude_super_dev_users(eligible)
-        for eligible_user in eligible:
-            StaffNotification.objects.create(
-                user=eligible_user,
-                case=case,
-                notification_type='review_requested',
-                title=f'Review Requested: {employee_name}',
-                message=f'{user.get_full_name() or user.username} is requesting a review on the case for {employee_name}. Notes: {notes}',
-            )
 
     return JsonResponse({
         'success': True,
@@ -7711,25 +7628,7 @@ def respond_to_review_request(request, review_request_id):
             },
         )
 
-        # Notify the escalation target
         employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
-        if escalate_to:
-            StaffNotification.objects.create(
-                user=escalate_to,
-                case=case,
-                notification_type='review_requested',
-                title=f'Escalated Review: {employee_name}',
-                message=f'{user.get_full_name() or user.username} escalated a review request for {employee_name}. Notes: {response_notes}',
-            )
-
-        # Notify original requester
-        StaffNotification.objects.create(
-            user=review_request.requested_by,
-            case=case,
-            notification_type='review_action_taken',
-            title=f'Review Escalated: {employee_name}',
-            message=f'{user.get_full_name() or user.username} escalated your review request for {employee_name}.' + (f' Notes: {response_notes}' if response_notes else ''),
-        )
 
         return JsonResponse({
             'success': True,
@@ -7770,16 +7669,8 @@ def respond_to_review_request(request, review_request_id):
         },
     )
 
-    # Notify the original requester
     employee_name = f'{case.employee_first_name} {case.employee_last_name}'.strip()
     label = action_label_map.get(action, action)
-    StaffNotification.objects.create(
-        user=review_request.requested_by,
-        case=case,
-        notification_type='review_action_taken',
-        title=f'Review {label.title()}: {employee_name}',
-        message=f'{user.get_full_name() or user.username} {label} your review request for {employee_name}.' + (f' Notes: {response_notes}' if response_notes else ''),
-    )
 
     # If released, mark case as completed and release to member
     if action == 'released':
