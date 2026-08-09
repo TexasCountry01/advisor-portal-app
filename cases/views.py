@@ -862,15 +862,17 @@ def technician_dashboard(request):
     paginator = Paginator(cases, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_cases = list(page_obj.object_list)
-    _staff_roles = ['technician', 'administrator', 'manager']
+    # Badge scoped to the assigned tech's own UnreadMessage rows only.
+    # All staff (admin/manager/tech) see the same count for each case because
+    # the badge reflects the CASE OWNER's unread state, not the viewer's.
+    from django.db.models import F as _F
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
             .filter(
                 case_id__in=[c.pk for c in page_cases],
                 case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
-                user__role__in=_staff_roles,
-                user__is_active=True,
+                user=_F('case__assigned_to'),
             )
             .values('case_id').annotate(cnt=_Count('id'))
     }
@@ -1117,15 +1119,16 @@ def admin_dashboard(request):
     paginator = Paginator(cases, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
     page_cases = list(page_obj.object_list)
-    _staff_roles = ['technician', 'administrator', 'manager']
+    # Badge scoped to the assigned tech's own UnreadMessage rows only.
+    # All staff see the same number for each case (owner's unread state).
+    from django.db.models import F as _F
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
             .filter(
                 case_id__in=[c.pk for c in page_cases],
                 case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
-                user__role__in=_staff_roles,
-                user__is_active=True,
+                user=_F('case__assigned_to'),
             )
             .values('case_id').annotate(cnt=_Count('id'))
     }
@@ -1339,16 +1342,16 @@ def manager_dashboard(request):
     # Submitted cases have no assigned_to yet, so filtering by tech always yields 0.
     if quick_tech and quick_tech != 'all':
         quick_tiles['submitted'] = Case.objects.filter(status='submitted').count()
-    from django.db.models import Count as _Count
-    _staff_roles = ['technician', 'administrator', 'manager']
+    from django.db.models import Count as _Count, F as _F
+    # Badge scoped to the assigned tech's own UnreadMessage rows only.
+    # All staff see the same number for each case (owner's unread state).
     _manager_unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
             .filter(
                 case_id__in=list(cases.values_list('pk', flat=True)),
                 case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
-                user__role__in=_staff_roles,
-                user__is_active=True,
+                user=_F('case__assigned_to'),
             )
             .values('case_id').annotate(cnt=_Count('id'))
     }
@@ -5599,9 +5602,9 @@ def get_unread_message_count(request):
         # the same red badge regardless of who the individual UnreadMessage rows
         # were created for.  Members keep personal (per-user) counts.
         if user.role in ['technician', 'administrator', 'manager']:
+            from django.db.models import F as _F
             unread_by_case = UnreadMessage.objects.filter(
-                user__role__in=['technician', 'administrator', 'manager'],
-                user__is_active=True,
+                user=_F('case__assigned_to'),
                 case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
             ).values('case').annotate(
                 count=models.Count('id')
