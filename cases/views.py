@@ -8384,18 +8384,6 @@ def create_case_change_request(request, case_id):
                     title=f'Case Canceled by Member',
                     message=f'{user.get_full_name() or user.username} canceled {case.employee_first_name} {case.employee_last_name} case. Reason: {cancellation_reason}',
                 )
-                # Create StaffNotification for the assigned technician
-                try:
-                    from core.models import StaffNotification
-                    StaffNotification.objects.create(
-                        user=previous_assigned_to,
-                        case=case,
-                        notification_type='member_change_request',
-                        title=f'Case Canceled by Member',
-                        message=f'{user.get_full_name() or user.username} canceled {case.employee_first_name} {case.employee_last_name} case. Reason: {cancellation_reason}',
-                    )
-                except Exception as e:
-                    logger.error(f'Error creating StaffNotification for cancellation: {str(e)}')
                 # Also create an UnreadMessage-style alert for the tech
                 try:
                     from cases.models import CaseMessage
@@ -8448,21 +8436,6 @@ def create_case_change_request(request, case_id):
         case.has_member_change_request = True
         case.save()
 
-        # Create StaffNotification for the assigned technician
-        if case.assigned_to:
-            try:
-                from core.models import StaffNotification
-                StaffNotification.objects.create(
-                    user=case.assigned_to,
-                    case=case,
-                    notification_type='member_change_request',
-                    title=f'Change Request: {case.employee_first_name} {case.employee_last_name}',
-                    message=f'{user.get_full_name() or user.username} requested {request_type.replace("_", " ")}.' + (f' Notes: {member_notes[:150]}' if member_notes else ''),
-                    is_read=False
-                )
-            except Exception as e:
-                logger.error(f'Error creating StaffNotification for change request: {str(e)}')
-        
         # Log to audit trail
         from core.models import AuditLog
         metadata = {
