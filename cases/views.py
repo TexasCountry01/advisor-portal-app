@@ -156,8 +156,9 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, quick_tech='all'):
     if quick_filter == 'on_hold':
         return queryset.filter(status='hold')
     if quick_filter == 'alerts':
-        # Active cases only — alerts are never for terminal-status cases.
-        active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
+        # Drafts excluded; all other statuses (including completed/cancelled/declined)
+        # are included — a post-completion member chat message should still alert the tech.
+        alert_qs = queryset.exclude(status='draft')
         # Technician dashboard uses quick-tech scope:
         # - All Techs: team-wide alerts
         # - Specific tech: that technician's actionable alerts
@@ -172,28 +173,22 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, quick_tech='all'):
                     _has_unread_for_scoped_user = Exists(
                         UnreadMessage.objects.filter(case=OuterRef('pk'), user=scoped_user)
                     )
-                    return active_qs.filter(
+                    return alert_qs.filter(
                         Q(has_member_updates=True, assigned_to=scoped_user) |
                         _has_unread_for_scoped_user
                     )
                 except User.DoesNotExist:
                     pass
 
-            _staff_roles = ['technician', 'administrator', 'manager']
-            _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
-                case=OuterRef('pk'),
-                user__role__in=_staff_roles,
-                user__is_active=True,
-            ))
-            return active_qs.filter(Q(has_member_updates=True) | _has_active_staff_unread)
+            _has_assigned_tech_unread = Exists(
+                UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
+            )
+            return alert_qs.filter(Q(has_member_updates=True) | _has_assigned_tech_unread)
 
-        _staff_roles = ['technician', 'administrator', 'manager']
-        _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
-            case=OuterRef('pk'),
-            user__role__in=_staff_roles,
-            user__is_active=True,
-        ))
-        return active_qs.filter(Q(has_member_updates=True) | _has_active_staff_unread)
+        _has_assigned_tech_unread = Exists(
+            UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
+        )
+        return alert_qs.filter(Q(has_member_updates=True) | _has_assigned_tech_unread)
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -242,12 +237,9 @@ def _build_staff_quick_tiles(queryset, user, quick_tech='all'):
             Q(date_due__lt=today) & ~inactive, then=1
         ), default=0, output_field=IntegerField())),
     )
-    # Alerts tile: active cases only (exclude terminal statuses).
-    # Technician uses quick-tech scope:
-    # - All Techs: team-wide alerts
-    # - Specific tech: that technician's actionable alerts
-    # Admin/manager: team-wide member updates + active staff unread messages.
-    active_qs = queryset.exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
+    # Alerts tile: drafts excluded; all other statuses included so techs see
+    # post-completion/cancellation/declined member chat messages in the tile.
+    alert_qs = queryset.exclude(status='draft')
     if user.role == 'technician':
         if quick_tech and quick_tech != 'all':
             try:
@@ -259,7 +251,7 @@ def _build_staff_quick_tiles(queryset, user, quick_tech='all'):
                 _has_unread_for_scoped_user = Exists(
                     UnreadMessage.objects.filter(case=OuterRef('pk'), user=scoped_user)
                 )
-                counts['alerts'] = active_qs.filter(
+                counts['alerts'] = alert_qs.filter(
                     Q(has_member_updates=True, assigned_to=scoped_user) |
                     _has_unread_for_scoped_user
                 ).count()
@@ -267,25 +259,19 @@ def _build_staff_quick_tiles(queryset, user, quick_tech='all'):
             except User.DoesNotExist:
                 pass
 
-        _staff_roles = ['technician', 'administrator', 'manager']
-        _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
-            case=OuterRef('pk'),
-            user__role__in=_staff_roles,
-            user__is_active=True,
-        ))
-        counts['alerts'] = active_qs.filter(
-            Q(has_member_updates=True) | _has_active_staff_unread
+        _has_assigned_tech_unread = Exists(
+            UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
+        )
+        counts['alerts'] = alert_qs.filter(
+            Q(has_member_updates=True) | _has_assigned_tech_unread
         ).count()
         return {k: (v or 0) for k, v in counts.items()}
 
-    _staff_roles = ['technician', 'administrator', 'manager']
-    _has_active_staff_unread = Exists(UnreadMessage.objects.filter(
-        case=OuterRef('pk'),
-        user__role__in=_staff_roles,
-        user__is_active=True,
-    ))
-    counts['alerts'] = active_qs.filter(
-        Q(has_member_updates=True) | _has_active_staff_unread
+    _has_assigned_tech_unread = Exists(
+        UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
+    )
+    counts['alerts'] = alert_qs.filter(
+        Q(has_member_updates=True) | _has_assigned_tech_unread
     ).count()
     return {k: (v or 0) for k, v in counts.items()}
 
