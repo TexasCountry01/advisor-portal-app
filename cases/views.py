@@ -5569,11 +5569,22 @@ def mark_messages_as_read(request, pk):
         return JsonResponse({'error': 'Access denied'}, status=403)
     
     try:
-        # Delete all UnreadMessage records for this user on this case
-        UnreadMessage.objects.filter(case=case, user=user).delete()
-        
-        logger.info(f'Messages marked as read for {user.username} on case {case.external_case_id}')
-        
+        if user.role in ['technician', 'administrator', 'manager']:
+            if case.assigned_to == user:
+                # Case owner: globally clear all staff UnreadMessage rows for this case.
+                # Badge is scoped to the assigned tech, so this drops the badge to 0
+                # for every staff viewer simultaneously.
+                UnreadMessage.objects.filter(
+                    case=case,
+                    user__role__in=['technician', 'administrator', 'manager'],
+                ).delete()
+                logger.info(f'Case owner {user.username} globally cleared staff UnreadMessage rows for case {case.external_case_id}')
+            # else: non-owning staff — badge is the assigned tech's count; nothing to clear.
+        else:
+            # Member/delegate: clear own rows only (member badge is personal, not case-scoped)
+            UnreadMessage.objects.filter(case=case, user=user).delete()
+            logger.info(f'Messages marked as read for {user.username} on case {case.external_case_id}')
+
         return JsonResponse({
             'success': True,
             'message': 'Messages marked as read'
