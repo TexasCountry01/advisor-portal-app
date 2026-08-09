@@ -17,7 +17,9 @@ Individual tests:
 import os
 import sys
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+# When piped via `manage.py shell < script.py`, __file__ is not set.
+# Use the project root (cwd when manage.py is invoked) + scripts/
+BASE = os.path.join(os.getcwd(), 'scripts')
 
 TESTS = [
     ("01 — Badge Scope Consistency",          "smoke_test_01_badge_scope.py"),
