@@ -5825,36 +5825,6 @@ def request_modification(request, pk):
         
         # Mark message as unread for assigned technician
         if case.assigned_to:
-            UnreadMessage.objects.get_or_create(
-                message=msg,
-                user=case.assigned_to,
-                case=case
-            )
-            # Send in-app notification to original technician
-            if is_profeds_error:
-                from core.models import StaffNotification
-                StaffNotification.objects.create(
-                    user=case.assigned_to,
-                    case=case,
-                    notification_type='case_modification_error',
-                    title=f'ProFeds Error: {case.employee_first_name} {case.employee_last_name}',
-                    message=f'Member {user.get_full_name()} flagged a modification request for {case.employee_first_name} {case.employee_last_name} as a ProFeds error. New case: {new_case.external_case_id}'
-                )
-            
-            # Send in-app notifications to all managers and admins
-            from core.models import StaffNotification
-            from accounts.models import User
-            staff_users = User.objects.filter(role__in=['manager', 'administrator']).exclude(pk=case.assigned_to_id)
-            for staff_user in staff_users:
-                if is_profeds_error:
-                    StaffNotification.objects.create(
-                        user=staff_user,
-                        case=case,
-                        notification_type='case_modification_error',
-                        title=f'ProFeds Error Alert: {case.employee_first_name} {case.employee_last_name}',
-                        message=f'Member {user.get_full_name()} flagged modification for {case.employee_first_name} {case.employee_last_name} (Tech: {case.assigned_to.get_full_name()}) as ProFeds error. New case: {new_case.external_case_id}'
-                    )
-        
         return JsonResponse({
             'success': True,
             'new_case_id': new_case.external_case_id,
@@ -6002,39 +5972,6 @@ def create_modification_staff(request, pk):
 
         # Notify assigned tech if present
         if case.assigned_to:
-            UnreadMessage.objects.get_or_create(
-                message=original_msg,
-                user=case.assigned_to,
-                case=case
-            )
-            if is_profeds_error:
-                StaffNotification.objects.create(
-                    user=case.assigned_to,
-                    case=case,
-                    notification_type='case_modification_error',
-                    title=f'ProFeds Error: {case.employee_first_name} {case.employee_last_name}',
-                    message=(
-                        f'{user.get_full_name() or user.username} created a modification '
-                        f'for {case.employee_first_name} {case.employee_last_name} and '
-                        f'flagged it as ProFeds error. New case: {new_case.external_case_id}'
-                    )
-                )
-
-                staff_users = AccountUser.objects.filter(role__in=['manager', 'administrator']).exclude(pk=case.assigned_to_id)
-                for staff_user in staff_users:
-                    StaffNotification.objects.create(
-                        user=staff_user,
-                        case=case,
-                        notification_type='case_modification_error',
-                        title=f'ProFeds Error Alert: {case.employee_first_name} {case.employee_last_name}',
-                        message=(
-                            f'{user.get_full_name() or user.username} created a modification '
-                            f'for {case.employee_first_name} {case.employee_last_name} '
-                            f'(Tech: {case.assigned_to.get_full_name()}) and flagged it as '
-                            f'ProFeds error. New case: {new_case.external_case_id}'
-                        )
-                    )
-
         return JsonResponse({
             'success': True,
             'new_case_id': new_case.external_case_id,
