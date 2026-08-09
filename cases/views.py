@@ -3386,19 +3386,6 @@ def reassign_case(request, case_id):
             )
             
             if success:
-                # Create StaffNotification for the new assignee
-                try:
-                    StaffNotification.objects.create(
-                        user=new_technician,
-                        notification_type='case_assigned',
-                        title=f'{case.employee_first_name} {case.employee_last_name} — Case Assigned to You',
-                        message=f'{case.employee_first_name} {case.employee_last_name} case has been reassigned to you by {user.get_full_name() or user.username}. Reason: {reason}',
-                        case=case,
-                        is_read=False
-                    )
-                except Exception as notif_err:
-                    logger.warning(f'Failed to create staff notification for reassignment of case {case_id}: {notif_err}')
-                
                 new_name = new_technician.get_full_name() or new_technician.username
                 
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
