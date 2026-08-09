@@ -5823,8 +5823,6 @@ def request_modification(request, pk):
             message=f"**MODIFICATION REQUEST REASON**\n\n{reason}{error_flag_text}"
         )
         
-        # Mark message as unread for assigned technician
-        if case.assigned_to:
         return JsonResponse({
             'success': True,
             'new_case_id': new_case.external_case_id,
@@ -5970,8 +5968,6 @@ def create_modification_staff(request, pk):
             )
         )
 
-        # Notify assigned tech if present
-        if case.assigned_to:
         return JsonResponse({
             'success': True,
             'new_case_id': new_case.external_case_id,
