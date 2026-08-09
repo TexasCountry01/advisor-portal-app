@@ -2963,6 +2963,13 @@ function previewChatImage(input) {
         reader.onload = function(e) {
             img.src = e.target.result;
             container.style.display = 'block';
+            // Persist image draft so it survives navigation away from the page
+            try {
+                localStorage.setItem(
+                    'chat_draft_image_case_{{ case.id }}',
+                    JSON.stringify({dataUrl: e.target.result, type: file.type, name: file.name})
+                );
+            } catch(err) {} // ignore quota errors
         };
         reader.readAsDataURL(file);
     }
@@ -2973,6 +2980,7 @@ function clearImageAttachment() {
     const container = document.getElementById('image-preview-container');
     if (input) input.value = '';
     if (container) container.style.display = 'none';
+    localStorage.removeItem('chat_draft_image_case_{{ case.id }}');
 }
 
 // Clipboard paste support for chat images + draft persistence
@@ -2981,10 +2989,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const DRAFT_KEY = 'chat_draft_case_{{ case.id }}';
 
     if (chatTextarea) {
-        // Restore saved draft
+        // Restore saved draft text
         const savedDraft = localStorage.getItem(DRAFT_KEY);
         if (savedDraft) {
             chatTextarea.value = savedDraft;
+        }
+
+        // Restore saved image draft
+        const savedImage = localStorage.getItem('chat_draft_image_case_{{ case.id }}');
+        if (savedImage) {
+            try {
+                const imgData = JSON.parse(savedImage);
+                const img = document.getElementById('image-preview');
+                const container = document.getElementById('image-preview-container');
+                if (img && container) {
+                    img.src = imgData.dataUrl;
+                    container.style.display = 'block';
+                }
+                // Reconstruct File so the form can submit it
+                fetch(imgData.dataUrl)
+                    .then(function(r) { return r.blob(); })
+                    .then(function(blob) {
+                        const file = new File([blob], imgData.name || 'image.png', {type: imgData.type});
+                        const dt = new DataTransfer();
+                        dt.items.add(file);
+                        const fileInput = document.getElementById('chat-image-input');
+                        if (fileInput) fileInput.files = dt.files;
+                    })
+                    .catch(function() {});
+            } catch(err) {}
         }
 
         // Save draft on every keystroke
@@ -3076,6 +3109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     messageForm.reset();
                     localStorage.removeItem('chat_draft_case_{{ case.id }}');
+                    localStorage.removeItem('chat_draft_image_case_{{ case.id }}');
                     clearImageAttachment();
                     loadMessages();
                 } else {

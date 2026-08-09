@@ -152,33 +152,94 @@ document.addEventListener('DOMContentLoaded', function() {
         container.scrollTop = container.scrollHeight;
     }
 
-    // Clipboard paste support for message images
+    // ── Draft persistence keys ─────────────────────────────────────────────
+    const CONV_DRAFT_KEY     = 'msg_draft_conv_{{ conversation.pk }}';
+    const CONV_IMG_DRAFT_KEY = 'msg_draft_img_conv_{{ conversation.pk }}';
+
+    // ── Textarea draft: save on keystroke, restore on load ─────────────────
     const msgTextarea = document.querySelector('textarea[name="body"]');
     if (msgTextarea) {
+        const savedDraft = localStorage.getItem(CONV_DRAFT_KEY);
+        if (savedDraft) msgTextarea.value = savedDraft;
+
+        msgTextarea.addEventListener('input', function() {
+            if (this.value.trim()) {
+                localStorage.setItem(CONV_DRAFT_KEY, this.value);
+            } else {
+                localStorage.removeItem(CONV_DRAFT_KEY);
+            }
+        });
+
+        // Clipboard paste: images route to file input; save to draft
         msgTextarea.addEventListener('paste', function(e) {
             const items = (e.clipboardData || e.originalEvent.clipboardData).items;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf('image') !== -1) {
                     const file = items[i].getAsFile();
-                    if (file.size > 5 * 1024 * 1024) {
-                        alert('Image must be under 5 MB.');
-                        return;
-                    }
+                    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5 MB.'); return; }
                     const dataTransfer = new DataTransfer();
                     dataTransfer.items.add(file);
                     const input = document.getElementById('msg-image-input');
                     input.files = dataTransfer.files;
-                    // Trigger preview
                     const reader = new FileReader();
                     reader.onload = function(ev) {
                         document.getElementById('msg-image-preview').src = ev.target.result;
                         document.getElementById('msg-image-preview-container').style.display = 'block';
+                        try {
+                            localStorage.setItem(CONV_IMG_DRAFT_KEY,
+                                JSON.stringify({dataUrl: ev.target.result, type: file.type, name: file.name}));
+                        } catch(err) {}
                     };
                     reader.readAsDataURL(file);
                     e.preventDefault();
                     break;
                 }
             }
+        });
+    }
+
+    // ── Image draft: save on file select ──────────────────────────────────
+    const msgImageInput = document.getElementById('msg-image-input');
+    if (msgImageInput) {
+        msgImageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) { localStorage.removeItem(CONV_IMG_DRAFT_KEY); return; }
+            const r = new FileReader();
+            r.onload = function(e) {
+                try {
+                    localStorage.setItem(CONV_IMG_DRAFT_KEY,
+                        JSON.stringify({dataUrl: e.target.result, type: file.type, name: file.name}));
+                } catch(err) {}
+            };
+            r.readAsDataURL(file);
+        });
+    }
+
+    // ── Image draft: restore preview + reconstruct File on load ───────────
+    const savedImg = localStorage.getItem(CONV_IMG_DRAFT_KEY);
+    if (savedImg) {
+        try {
+            const imgData = JSON.parse(savedImg);
+            document.getElementById('msg-image-preview').src = imgData.dataUrl;
+            document.getElementById('msg-image-preview-container').style.display = 'block';
+            fetch(imgData.dataUrl)
+                .then(function(r) { return r.blob(); })
+                .then(function(blob) {
+                    const file = new File([blob], imgData.name || 'image.png', {type: imgData.type});
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    if (msgImageInput) msgImageInput.files = dt.files;
+                })
+                .catch(function() {});
+        } catch(err) {}
+    }
+
+    // ── Clear both drafts on successful send ──────────────────────────────
+    const replyForm = document.querySelector('form[action*="reply"]');
+    if (replyForm) {
+        replyForm.addEventListener('submit', function() {
+            localStorage.removeItem(CONV_DRAFT_KEY);
+            localStorage.removeItem(CONV_IMG_DRAFT_KEY);
         });
     }
 });
