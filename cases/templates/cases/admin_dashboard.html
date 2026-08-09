@@ -371,7 +371,9 @@
                                     {{ case.member.username }}
                                 {% endif %}
                             </td>
-                            <td data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}>{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td data-column-id="employee" {% if 'employee' not in visible_columns %}class="column-hidden"{% endif %}>
+                                {% if case.has_profeds_error %}<span class="badge bg-danger me-1" title="ProFeds Error">PF ERR</span>{% elif case.original_case_id %}<span class="badge bg-warning text-dark me-1" title="Modification Case">MOD</span>{% endif %}{{ case.employee_first_name }} {{ case.employee_last_name }}
+                            </td>
                             <td data-column-id="submitted" {% if 'submitted' not in visible_columns %}class="column-hidden"{% endif %}>{{ case.date_submitted|date:"m/d/y" }}</td>
                             <td data-column-id="due" {% if 'due' not in visible_columns %}class="column-hidden"{% endif %}>
                                 {% if case.date_due %}

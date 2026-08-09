@@ -507,7 +507,9 @@
                                     {{ case.member.username }}
                                 {% endif %}
                             </td>
-                            <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
+                            <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">
+                                {% if case.has_profeds_error %}<span class="badge bg-danger me-1" title="ProFeds Error">PF ERR</span>{% elif case.original_case_id %}<span class="badge bg-warning text-dark me-1" title="Modification Case">MOD</span>{% endif %}{{ case.employee_first_name }} {{ case.employee_last_name }}
+                            </td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-urgency {% if 'urgency' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.urgency == 'rush' %}
