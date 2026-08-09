@@ -8966,7 +8966,10 @@ def get_staff_notifications(request):
 @login_required
 @require_http_methods(["POST"])
 def mark_staff_notification_read(request, notification_id):
-    """Mark a single staff notification as read."""
+    """Mark a single staff notification as read and clear the user's own UnreadMessage
+    rows for that case so the dashboard row badge reflects the acknowledgement.
+    Only the requesting user's own rows are removed; other staff unread state is untouched.
+    """
     from core.models import StaffNotification
 
     user = request.user
@@ -8974,11 +8977,15 @@ def mark_staff_notification_read(request, notification_id):
         return JsonResponse({'success': False, 'error': 'Staff only'}, status=403)
 
     try:
-        notif = get_object_or_404(StaffNotification, id=notification_id)
+        notif = get_object_or_404(StaffNotification, id=notification_id, user=user)
         if not notif.is_read:
             notif.is_read = True
             notif.read_at = timezone.now()
             notif.save(update_fields=['is_read', 'read_at'])
+        # Clear this user's UnreadMessage rows for this case so the row badge clears.
+        # Scoped to user=user — admin/manager cannot clear another tech's unread rows.
+        if notif.case_id:
+            UnreadMessage.objects.filter(case_id=notif.case_id, user=user).delete()
         return JsonResponse({'success': True, 'notification_id': notif.id})
     except Exception as e:
         logger.error(f'Error marking staff notification {notification_id} read: {e}', exc_info=True)
@@ -8988,7 +8995,10 @@ def mark_staff_notification_read(request, notification_id):
 @login_required
 @require_http_methods(["POST"])
 def mark_all_staff_notifications_read(request):
-    """Mark all unread staff notifications as read."""
+    """Mark all unread staff notifications as read and clear all of the user's own
+    UnreadMessage rows so every case row badge reflects the bulk-acknowledge.
+    Scoped entirely to the requesting user — no other staff member's rows are touched.
+    """
     from core.models import StaffNotification
 
     user = request.user
@@ -9000,6 +9010,9 @@ def mark_all_staff_notifications_read(request):
         count = StaffNotification.objects.filter(
             user=user, is_read=False
         ).update(is_read=True, read_at=now)
+        # Clear all UnreadMessage rows for this user so all case row badges clear.
+        # Only affects the requesting user's own rows.
+        UnreadMessage.objects.filter(user=user).delete()
         return JsonResponse({'success': True, 'marked_count': count})
     except Exception as e:
         logger.error(f'Error marking all staff notifications read: {e}', exc_info=True)
