@@ -857,7 +857,6 @@ def technician_dashboard(request):
         for row in UnreadMessage.objects
             .filter(
                 case_id__in=[c.pk for c in page_cases],
-                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
                 user=_F('case__assigned_to'),
             )
             .values('case_id').annotate(cnt=_Count('id'))
@@ -1113,7 +1112,6 @@ def admin_dashboard(request):
         for row in UnreadMessage.objects
             .filter(
                 case_id__in=[c.pk for c in page_cases],
-                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
                 user=_F('case__assigned_to'),
             )
             .values('case_id').annotate(cnt=_Count('id'))
@@ -1336,7 +1334,6 @@ def manager_dashboard(request):
         for row in UnreadMessage.objects
             .filter(
                 case_id__in=list(cases.values_list('pk', flat=True)),
-                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
                 user=_F('case__assigned_to'),
             )
             .values('case_id').annotate(cnt=_Count('id'))
@@ -5602,7 +5599,6 @@ def get_unread_message_count(request):
             from django.db.models import F as _F
             unread_by_case = UnreadMessage.objects.filter(
                 user=_F('case__assigned_to'),
-                case__status__in=['submitted', 'resubmitted', 'accepted', 'hold', 'pending_review', 'needs_resubmission'],
             ).values('case').annotate(
                 count=models.Count('id')
             ).order_by('-count')
