@@ -3996,6 +3996,22 @@ def upload_technician_document(request, case_id):
                     )
                 except Exception as notif_err:
                     logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
+            # Post a system chat message so the badge increments and the tech knows what triggered it
+            if case.assigned_to:
+                try:
+                    _uploader = user.get_full_name() or user.username
+                    _upload_msg = CaseMessage.objects.create(
+                        case=case,
+                        author=user,
+                        message=f'📎 {_uploader} uploaded {uploaded_count} document(s).'
+                    )
+                    UnreadMessage.objects.get_or_create(
+                        message=_upload_msg,
+                        user=case.assigned_to,
+                        defaults={'case': case}
+                    )
+                except Exception as e:
+                    logger.warning(f'Failed to create upload alert message for case {case_id}: {e}')
         
         # Show updated document count
         from cases.services.document_count_service import get_document_count_message
@@ -4637,6 +4653,22 @@ def upload_member_document_to_completed_case(request, case_id):
                     )
                 except Exception as notif_err:
                     logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
+            # Post a system chat message so the badge increments and the tech knows what triggered it
+            if case.assigned_to:
+                try:
+                    _uploader = user.get_full_name() or user.username
+                    _upload_msg = CaseMessage.objects.create(
+                        case=case,
+                        author=user,
+                        message=f'📎 {_uploader} uploaded {uploaded_count} document(s).'
+                    )
+                    UnreadMessage.objects.get_or_create(
+                        message=_upload_msg,
+                        user=case.assigned_to,
+                        defaults={'case': case}
+                    )
+                except Exception as e:
+                    logger.warning(f'Failed to create upload alert message for case {case_id}: {e}')
         
         # Show updated document count
         from cases.services.document_count_service import get_document_count_message
@@ -8653,6 +8685,22 @@ def upload_member_documents(request, case_id):
                 )
             except Exception as notif_err:
                 logger.warning(f'Failed to create staff notification for member doc upload on case {case_id}: {notif_err}')
+        # Post a system chat message so the badge increments and the tech knows what triggered it
+        if case.assigned_to:
+            try:
+                _uploader = user.get_full_name() or user.username
+                _upload_msg = CaseMessage.objects.create(
+                    case=case,
+                    author=user,
+                    message=f'📎 {_uploader} uploaded {uploaded_count} document(s).'
+                )
+                UnreadMessage.objects.get_or_create(
+                    message=_upload_msg,
+                    user=case.assigned_to,
+                    defaults={'case': case}
+                )
+            except Exception as e:
+                logger.warning(f'Failed to create upload alert message for case {case_id}: {e}')
         
         # Count total member-uploaded documents (supporting docs)
         document_count = CaseDocument.objects.filter(
