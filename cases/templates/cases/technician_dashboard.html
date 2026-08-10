@@ -485,12 +485,12 @@
                                 <div class="d-flex align-items-center gap-2">
                                     <span>{{ case.workshop_code }}</span>
                                     {% if case.has_profeds_error %}
-                                    <span class="badge bg-danger" title="Member flagged this as a ProFeds error — prioritize this modification">
-                                        <i class="bi bi-exclamation-triangle-fill"></i> Our Error
+                                    <span class="badge bg-danger" title="ProFeds Error">
+                                        PF ERR
                                     </span>
-                                    {% elif case.original_case and case.original_case.has_profeds_error %}
-                                    <span class="badge bg-danger" title="Member flagged this as a ProFeds error — prioritize this modification">
-                                        <i class="bi bi-exclamation-triangle-fill"></i> Our Error
+                                    {% elif case.original_case_id %}
+                                    <span class="badge bg-warning text-dark" title="Modification Case">
+                                        MOD
                                     </span>
                                     {% endif %}
                                     {% if case.has_member_updates %}
@@ -508,7 +508,7 @@
                                 {% endif %}
                             </td>
                             <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.has_profeds_error %}<span class="badge bg-danger me-1" title="ProFeds Error">PF ERR</span>{% elif case.original_case_id %}<span class="badge bg-warning text-dark me-1" title="Modification Case">MOD</span>{% endif %}{{ case.employee_first_name }} {{ case.employee_last_name }}
+                                {{ case.employee_first_name }} {{ case.employee_last_name }}
                             </td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-urgency {% if 'urgency' not in visible_columns %}column-hidden{% endif %}">
