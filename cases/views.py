@@ -60,7 +60,8 @@ def _get_active_technicians():
 
     technicians = _exclude_super_dev_users(User.objects.filter(
         role__in=['technician', 'administrator'],
-        is_active=True
+        is_active=True,
+        is_test_account=False,
     )).values('username', 'first_name', 'last_active')
 
     def _compute_status(last_active):
@@ -103,7 +104,8 @@ def _get_super_dev_email():
 
 
 def _exclude_super_dev_users(queryset):
-    """Exclude only the configured super-dev user from operational user querysets."""
+    """Exclude test accounts and the configured super-dev user from operational querysets."""
+    queryset = queryset.filter(is_test_account=False)
     super_dev_email = _get_super_dev_email()
     if super_dev_email:
         queryset = queryset.exclude(email__iexact=super_dev_email)
