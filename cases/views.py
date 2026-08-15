@@ -3418,10 +3418,13 @@ def change_case_tier(request, case_id):
     reason = (body.get('reason') or '').strip()
 
     if user.role != 'technician':
-        return JsonResponse({'success': False, 'error': 'Only the assigned technician can change Tier.'}, status=403)
+        return JsonResponse({'success': False, 'error': 'Only a technician can change Tier.'}, status=403)
 
-    if case.assigned_to_id != user.id:
-        return JsonResponse({'success': False, 'error': 'You can only change Tier on cases assigned to you.'}, status=403)
+    is_current_assignee = case.assigned_to_id == user.id
+    is_original_acceptor = case.accepted_by_id == user.id and case.status in ['accepted', 'hold']
+
+    if not (is_current_assignee or is_original_acceptor):
+        return JsonResponse({'success': False, 'error': 'You can only change Tier on cases assigned to you or that you originally accepted.'}, status=403)
 
     if case.status not in ['accepted', 'hold']:
         return JsonResponse({'success': False, 'error': f'Tier can only be changed after acceptance while the case is Accepted or On Hold. Current status: {case.get_status_display()}.'}, status=400)

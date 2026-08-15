@@ -161,7 +161,7 @@
                         <span class="badge bg-success">
                             <i class="bi bi-check-circle"></i> You own this case
                         </span>
-                        {% if case.status in 'accepted,hold' %}
+                        {% if case.status in 'accepted,hold' and (case.assigned_to and case.assigned_to.id == user.id or case.accepted_by and case.accepted_by.id == user.id) %}
                         <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changeTierModal">
                             <i class="bi bi-layers"></i> Change Tier
                         </button>

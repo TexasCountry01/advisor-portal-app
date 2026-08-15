@@ -1,3 +1,5 @@
+import json
+
 from django.test import TestCase, Client
 from django.urls import reverse
 
@@ -61,6 +63,43 @@ class DashboardSearchTests(TestCase):
         self.assertIn(request, response.context['pending_delegate_requests'])
         self.assertContains(response, 'Delegate Action Pending')
         self.assertContains(response, 'Bob Delegate')
+
+    def test_tech_can_change_tier_on_accepted_unassigned_case_if_they_accepted_it(self):
+        tech = User.objects.create_user(
+            username='tech1',
+            password='Password123!',
+            role='technician',
+            user_level='level_2',
+            first_name='Jamie',
+            last_name='Technician',
+        )
+        case = Case.objects.create(
+            external_case_id='WS-2026-0002',
+            workshop_code='WS008',
+            employee_first_name='John',
+            employee_last_name='Doe',
+            client_email='john.doe@example.com',
+            status='accepted',
+            tier='tier_1',
+            accepted_by=tech,
+            assigned_to=None,
+        )
+
+        client = Client()
+        client.force_login(tech)
+
+        response = client.post(
+            reverse('cases:change_case_tier', args=[case.pk]),
+            data=json.dumps({'tier': 'tier_3', 'reason': 'Escalated after review'}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertTrue(data['success'])
+
+        case.refresh_from_db()
+        self.assertEqual(case.tier, 'tier_3')
 
     def test_admin_can_clear_pending_delegate_request_from_dashboard(self):
         member = User.objects.create_user(
