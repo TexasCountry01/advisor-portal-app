@@ -943,6 +943,15 @@ def admin_dashboard(request):
         messages.error(request, 'Access denied. Administrators only.')
         return redirect('home')
     
+    from accounts.models import DelegateRequest
+
+    # Get any pending member delegate requests that require staff attention.
+    pending_delegate_requests = list(
+        DelegateRequest.objects.filter(status='pending')
+        .select_related('requested_by')
+        .order_by('-created_at')
+    )
+
     # Get all cases with all related data - exclude drafts (only visible to members)
     cases = Case.objects.exclude(status='draft').prefetch_related(
         'documents'
@@ -1141,6 +1150,7 @@ def admin_dashboard(request):
         'quick_tech': quick_tech,
         'quick_technicians': quick_technicians,
         'quick_tiles': quick_tiles,
+        'pending_delegate_requests': pending_delegate_requests,
     }
     
     return render(request, 'cases/admin_dashboard.html', context)

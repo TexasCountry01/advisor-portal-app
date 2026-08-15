@@ -1,7 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 
-from accounts.models import User
+from accounts.models import User, DelegateRequest, MemberDelegate
 from cases.models import Case
 
 
@@ -34,3 +34,70 @@ class DashboardSearchTests(TestCase):
 
         response = client.get(reverse('cases:admin_dashboard'), {'search': 'Jane Smith'})
         self.assertIn(self.case, response.context['cases'].object_list)
+
+    def test_admin_dashboard_shows_pending_delegate_requests_banner(self):
+        member = User.objects.create_user(
+            username='member1',
+            password='Password123!',
+            role='member',
+            first_name='Alice',
+            last_name='Member',
+        )
+        request = DelegateRequest.objects.create(
+            requested_by=member,
+            request_type='add',
+            delegate_name='Bob Delegate',
+            delegate_email='bob@example.com',
+            notes='Please add Bob as a delegate for my workshop account.',
+            status='pending',
+        )
+
+        client = Client()
+        client.force_login(self.admin)
+
+        response = client.get(reverse('cases:admin_dashboard'))
+
+        self.assertIn('pending_delegate_requests', response.context)
+        self.assertIn(request, response.context['pending_delegate_requests'])
+        self.assertContains(response, 'Delegate Action Pending')
+        self.assertContains(response, 'Bob Delegate')
+
+    def test_admin_can_approve_pending_delegate_request_from_dashboard(self):
+        member = User.objects.create_user(
+            username='member2',
+            password='Password123!',
+            role='member',
+            first_name='Carol',
+            last_name='Member',
+        )
+        delegate = User.objects.create_user(
+            username='delegate1',
+            password='Password123!',
+            role='member',
+            first_name='Bob',
+            last_name='Delegate',
+            email='bob@example.com',
+        )
+        request = DelegateRequest.objects.create(
+            requested_by=member,
+            request_type='add',
+            delegate_name='Bob Delegate',
+            delegate_email='bob@example.com',
+            notes='Add Bob as my delegate.',
+            status='pending',
+        )
+
+        client = Client()
+        client.force_login(self.admin)
+
+        response = client.post(
+            reverse('process_delegate_request', args=[request.pk]),
+            {'decision': 'approve'},
+            follow=True,
+        )
+
+        request.refresh_from_db()
+        self.assertEqual(request.status, 'approved')
+        self.assertEqual(request.processed_by, self.admin)
+        self.assertTrue(MemberDelegate.objects.filter(member=member, delegate=delegate).exists())
+        self.assertRedirects(response, reverse('cases:admin_dashboard'))

@@ -16,6 +16,51 @@
         </div>
     </div>
 
+    {% if pending_delegate_requests %}
+    <div class="alert alert-warning fade show mb-3" role="alert">
+        <div class="d-flex align-items-center justify-content-between">
+            <div class="flex-grow-1">
+                <h5 class="alert-heading mb-0" data-bs-toggle="collapse" data-bs-target="#delegate-requests-content" aria-expanded="true" aria-controls="delegate-requests-content" style="cursor: pointer; user-select: none;">
+                    <i class="bi bi-person-plus-fill"></i> Delegate Action Pending
+                    <i class="bi bi-chevron-down ms-2"></i>
+                </h5>
+                <div id="delegate-requests-content" class="collapse show mt-3">
+                    <p class="mb-2 small">The following member requests still need review before delegate access is granted or removed.</p>
+                    <ul class="mb-0">
+                        {% for request in pending_delegate_requests %}
+                        <li class="mb-3">
+                            <strong>{{ request.requested_by.get_full_name|default:request.requested_by.username }}</strong>
+                            requested to {{ request.get_request_type_display|lower }}
+                            <strong>{{ request.delegate_name }}</strong>
+                            {% if request.delegate_email %}
+                            ({{ request.delegate_email }})
+                            {% endif %}
+                            <small class="text-muted">— {{ request.created_at|date:'m/d/Y' }}</small>
+                            {% if request.notes %}
+                            <div class="small text-muted mt-1">Note: {{ request.notes }}</div>
+                            {% endif %}
+                            <div class="mt-2 d-flex gap-2">
+                                <form method="post" action="{% url 'process_delegate_request' request.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="decision" value="approve">
+                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                </form>
+                                <form method="post" action="{% url 'process_delegate_request' request.pk %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="decision" value="deny">
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Deny</button>
+                                </form>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#delegate-requests-content" aria-expanded="true" aria-controls="delegate-requests-content" aria-label="Toggle delegate requests"></button>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Filters + Quick Stats (All in One Card) -->
     <div class="card mb-3">
         <div class="card-header d-flex justify-content-between align-items-center">
