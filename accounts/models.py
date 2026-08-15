@@ -238,6 +238,7 @@ class DelegateRequest(models.Model):
         ('pending', 'Pending'),
         ('approved', 'Approved'),
         ('denied', 'Denied'),
+        ('dismissed', 'Dismissed'),
     ]
 
     requested_by = models.ForeignKey(

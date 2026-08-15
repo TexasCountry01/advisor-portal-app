@@ -78,9 +78,9 @@ urlpatterns = [
         name='toggle_delegate_email'
     ),
     path(
-        'delegate-requests/<int:request_id>/process/',
-        views.process_delegate_request,
-        name='process_delegate_request'
+        'delegate-requests/<int:request_id>/clear/',
+        views.clear_delegate_request,
+        name='clear_delegate_request'
     ),
     
     # ========================================================================

@@ -62,21 +62,13 @@ class DashboardSearchTests(TestCase):
         self.assertContains(response, 'Delegate Action Pending')
         self.assertContains(response, 'Bob Delegate')
 
-    def test_admin_can_approve_pending_delegate_request_from_dashboard(self):
+    def test_admin_can_clear_pending_delegate_request_from_dashboard(self):
         member = User.objects.create_user(
             username='member2',
             password='Password123!',
             role='member',
             first_name='Carol',
             last_name='Member',
-        )
-        delegate = User.objects.create_user(
-            username='delegate1',
-            password='Password123!',
-            role='member',
-            first_name='Bob',
-            last_name='Delegate',
-            email='bob@example.com',
         )
         request = DelegateRequest.objects.create(
             requested_by=member,
@@ -91,13 +83,11 @@ class DashboardSearchTests(TestCase):
         client.force_login(self.admin)
 
         response = client.post(
-            reverse('process_delegate_request', args=[request.pk]),
-            {'decision': 'approve'},
+            reverse('clear_delegate_request', args=[request.pk]),
             follow=True,
         )
 
         request.refresh_from_db()
-        self.assertEqual(request.status, 'approved')
+        self.assertEqual(request.status, 'dismissed')
         self.assertEqual(request.processed_by, self.admin)
-        self.assertTrue(MemberDelegate.objects.filter(member=member, delegate=delegate).exists())
         self.assertRedirects(response, reverse('cases:admin_dashboard'))

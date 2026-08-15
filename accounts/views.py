@@ -904,13 +904,11 @@ def delegate_management(request):
 
 
 @login_required
-def process_delegate_request(request, request_id):
-    """Approve or deny a delegate request from the admin dashboard."""
+def clear_delegate_request(request, request_id):
+    """Dismiss a pending delegate request from the admin dashboard banner."""
     from django.utils import timezone
-    from django.db.models import Q
-    from accounts.models import DelegateRequest, MemberDelegate
     from core.models import AuditLog
-    from cases.services.email_service import send_delegate_assigned_email, send_delegate_removed_email
+    from accounts.models import DelegateRequest
 
     if request.method != 'POST':
         return redirect('cases:admin_dashboard')
@@ -918,132 +916,34 @@ def process_delegate_request(request, request_id):
     if request.user.role not in ['administrator', 'manager'] and not (
         request.user.role == 'technician' and request.user.can_manage_delegates
     ):
-        messages.error(request, 'You do not have permission to process delegate requests.')
+        messages.error(request, 'You do not have permission to clear delegate requests.')
         return redirect('cases:admin_dashboard')
 
     delegate_request = get_object_or_404(DelegateRequest, pk=request_id)
-    decision = request.POST.get('decision', '').lower()
+    delegate_request.status = 'dismissed'
+    delegate_request.processed_by = request.user
+    delegate_request.processed_at = timezone.now()
+    delegate_request.save(update_fields=['status', 'processed_by', 'processed_at'])
 
-    if decision not in ['approve', 'deny']:
-        messages.error(request, 'Please choose approve or deny.')
-        return redirect('cases:admin_dashboard')
+    AuditLog.objects.create(
+        user=request.user,
+        action_type='alert_dismissed',
+        description=(
+            f'{request.user.get_full_name()} dismissed pending delegate request for '
+            f'{delegate_request.requested_by.get_full_name()} to {delegate_request.get_request_type_display().lower()} '
+            f'{delegate_request.delegate_name}.'
+        ),
+        related_user=delegate_request.requested_by,
+        ip_address=request.META.get('REMOTE_ADDR'),
+        metadata={
+            'delegate_request_id': delegate_request.pk,
+            'member_id': delegate_request.requested_by.pk,
+            'delegate_name': delegate_request.delegate_name,
+            'status': 'dismissed',
+        },
+    )
 
-    if decision == 'approve':
-        if delegate_request.request_type == 'add':
-            delegate_user = None
-            delegate_email = (delegate_request.delegate_email or '').strip()
-            if delegate_email:
-                delegate_user = User.objects.filter(email__iexact=delegate_email).first()
-            if not delegate_user:
-                name_parts = [part.strip() for part in (delegate_request.delegate_name or '').split() if part.strip()]
-                if len(name_parts) >= 2:
-                    first_name = name_parts[0]
-                    last_name = ' '.join(name_parts[1:])
-                    delegate_user = User.objects.filter(
-                        first_name__iexact=first_name,
-                        last_name__iexact=last_name,
-                    ).order_by('id').first()
-
-            if delegate_user is None:
-                messages.error(
-                    request,
-                    f'No matching portal user was found for {delegate_request.delegate_name}. '
-                    'Create the user account first, then approve the request.'
-                )
-                return redirect('cases:admin_dashboard')
-
-            if not MemberDelegate.objects.filter(
-                member=delegate_request.requested_by,
-                delegate=delegate_user,
-            ).exists():
-                MemberDelegate.objects.create(
-                    member=delegate_request.requested_by,
-                    delegate=delegate_user,
-                    assigned_by=request.user,
-                )
-
-            send_delegate_assigned_email(delegate_request.requested_by, delegate_user, request.user)
-            AuditLog.objects.create(
-                user=request.user,
-                action_type='delegate_assigned',
-                description=(
-                    f'{request.user.get_full_name()} approved delegate request for '
-                    f'{delegate_request.requested_by.get_full_name()} to add {delegate_user.get_full_name()}.'
-                ),
-                related_user=delegate_user,
-                ip_address=request.META.get('REMOTE_ADDR'),
-                metadata={
-                    'delegate_request_id': delegate_request.pk,
-                    'member_id': delegate_request.requested_by.pk,
-                    'delegate_id': delegate_user.pk,
-                    'decision': 'approve',
-                },
-            )
-
-        elif delegate_request.request_type == 'remove':
-            assignment = None
-            if delegate_request.existing_assignment_id:
-                assignment = MemberDelegate.objects.filter(pk=delegate_request.existing_assignment_id).first()
-            if assignment is None and delegate_request.delegate_email:
-                assignment = MemberDelegate.objects.filter(
-                    member=delegate_request.requested_by,
-                    delegate__email__iexact=delegate_request.delegate_email,
-                ).order_by('-id').first()
-            if assignment is not None:
-                delegate_user = assignment.delegate
-                assignment.delete()
-                send_delegate_removed_email(delegate_request.requested_by, delegate_user, request.user)
-            else:
-                delegate_user = User.objects.filter(email__iexact=(delegate_request.delegate_email or '')).first()
-                if delegate_user:
-                    send_delegate_removed_email(delegate_request.requested_by, delegate_user, request.user)
-
-            AuditLog.objects.create(
-                user=request.user,
-                action_type='delegate_removed',
-                description=(
-                    f'{request.user.get_full_name()} approved delegate removal request for '
-                    f'{delegate_request.requested_by.get_full_name()} and {delegate_request.delegate_name}.'
-                ),
-                related_user=delegate_user,
-                ip_address=request.META.get('REMOTE_ADDR'),
-                metadata={
-                    'delegate_request_id': delegate_request.pk,
-                    'member_id': delegate_request.requested_by.pk,
-                    'delegate_name': delegate_request.delegate_name,
-                    'decision': 'approve',
-                },
-            )
-
-        delegate_request.status = 'approved'
-        delegate_request.processed_by = request.user
-        delegate_request.processed_at = timezone.now()
-        delegate_request.save(update_fields=['status', 'processed_by', 'processed_at'])
-        messages.success(request, 'Delegate request approved and processed.')
-    else:
-        delegate_request.status = 'denied'
-        delegate_request.processed_by = request.user
-        delegate_request.processed_at = timezone.now()
-        delegate_request.save(update_fields=['status', 'processed_by', 'processed_at'])
-        AuditLog.objects.create(
-            user=request.user,
-            action_type='delegate_removed' if delegate_request.request_type == 'remove' else 'delegate_assigned',
-            description=(
-                f'{request.user.get_full_name()} denied delegate request for '
-                f'{delegate_request.requested_by.get_full_name()} to {delegate_request.get_request_type_display().lower()} '
-                f'{delegate_request.delegate_name}.'
-            ),
-            related_user=delegate_request.requested_by,
-            ip_address=request.META.get('REMOTE_ADDR'),
-            metadata={
-                'delegate_request_id': delegate_request.pk,
-                'member_id': delegate_request.requested_by.pk,
-                'delegate_name': delegate_request.delegate_name,
-                'decision': 'deny',
-            },
-        )
-        messages.warning(request, 'Delegate request denied.')
-
+    messages.info(request, 'Delegate request cleared from the banner.')
     return redirect('cases:admin_dashboard')
 
 

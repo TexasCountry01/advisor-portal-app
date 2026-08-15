@@ -39,16 +39,10 @@
                             {% if request.notes %}
                             <div class="small text-muted mt-1">Note: {{ request.notes }}</div>
                             {% endif %}
-                            <div class="mt-2 d-flex gap-2">
-                                <form method="post" action="{% url 'process_delegate_request' request.pk %}" class="d-inline">
+                            <div class="mt-2">
+                                <form method="post" action="{% url 'clear_delegate_request' request.pk %}" class="d-inline">
                                     {% csrf_token %}
-                                    <input type="hidden" name="decision" value="approve">
-                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                </form>
-                                <form method="post" action="{% url 'process_delegate_request' request.pk %}" class="d-inline">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="decision" value="deny">
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">Deny</button>
+                                    <button type="submit" class="btn btn-sm btn-outline-dark">Clear</button>
                                 </form>
                             </div>
                         </li>
