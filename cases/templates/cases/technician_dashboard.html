@@ -448,13 +448,18 @@
             {% if cases %}
             <style>
                 .table { margin-bottom: 0; }
+                .table-responsive {
+                    max-height: 65vh;
+                    overflow-y: auto;
+                    overflow-x: auto;
+                }
                 .table thead th { 
                     padding: 0.5rem 0.35rem; 
                     font-size: 0.8rem; 
                     font-weight: 600;
                     vertical-align: middle;
                     position: sticky;
-                    top: var(--navbar-height, 56px);
+                    top: 0;
                     background-color: #fff;
                     z-index: 5;
                     box-shadow: 0 1px 2px rgba(0,0,0,0.08);
@@ -782,14 +787,6 @@
         // Return true to allow normal link navigation
         return true;
     }
-
-    // Set --navbar-height CSS variable so sticky thead aligns below the navbar
-    document.addEventListener('DOMContentLoaded', function() {
-        const navbar = document.querySelector('nav.navbar');
-        if (navbar) {
-            document.documentElement.style.setProperty('--navbar-height', navbar.offsetHeight + 'px');
-        }
-    });
 
     // Toggle view/stats section
     document.addEventListener('DOMContentLoaded', function() {
