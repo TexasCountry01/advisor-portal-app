@@ -161,11 +161,6 @@
                         <span class="badge bg-success">
                             <i class="bi bi-check-circle"></i> You own this case
                         </span>
-                        {% if case.status in 'accepted,hold' and (case.assigned_to and case.assigned_to.id == user.id or case.accepted_by and case.accepted_by.id == user.id) %}
-                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#changeTierModal">
-                            <i class="bi bi-layers"></i> Change Tier
-                        </button>
-                        {% endif %}
                         <button type="button" class="btn btn-outline-warning" data-bs-toggle="modal" data-bs-target="#reassignModal">
                             <i class="bi bi-arrow-repeat"></i> Reassign
                         </button>
@@ -599,6 +594,21 @@
                                                 <i class="bi bi-pencil"></i>
                                             </button>
                                         {% endif %}
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            {% if user.role in 'technician,administrator,manager' and case.tier %}
+                                <div class="mt-2">
+                                    <strong>Tier:</strong>
+                                    <span class="ms-1">{{ case.get_tier_display }}</span>
+                                    {% if case.status in 'accepted,hold' and user.role == 'technician' and (case.assigned_to and case.assigned_to.id == user.id or case.accepted_by and case.accepted_by.id == user.id) %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary ms-1" data-bs-toggle="modal" data-bs-target="#changeTierModal">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    {% elif case.status in 'accepted,hold' and user.role in 'administrator,manager' %}
+                                        <button type="button" class="btn btn-sm btn-outline-secondary ms-1" data-bs-toggle="modal" data-bs-target="#changeTierModal">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
                                     {% endif %}
                                 </div>
                             {% endif %}
