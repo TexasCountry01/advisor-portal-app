@@ -198,6 +198,38 @@ class StateTokenTest(TestCase):
 # MEMBER DELEGATE MODEL
 # ============================================================================
 
+class AdminRoleFlagsTest(TestCase):
+    """Administrator accounts must retain Django staff/superuser flags."""
+
+    def test_admin_role_sets_staff_and_superuser_flags(self):
+        admin = User.objects.create_user(
+            username='admin_role_flag_test',
+            email='admin-role-flag@test.com',
+            password='testpass',
+            role='administrator',
+            first_name='Admin',
+            last_name='User',
+        )
+
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.is_superuser)
+
+    def test_non_admin_role_clears_staff_and_superuser_flags(self):
+        tech = User.objects.create_user(
+            username='tech_role_flag_test',
+            email='tech-role-flag@test.com',
+            password='testpass',
+            role='technician',
+            first_name='Tech',
+            last_name='User',
+            is_staff=True,
+            is_superuser=True,
+        )
+
+        self.assertFalse(tech.is_staff)
+        self.assertFalse(tech.is_superuser)
+
+
 class MemberDelegateModelTest(TestCase):
     """Test the MemberDelegate model constraints and behavior."""
 

@@ -106,6 +106,17 @@ class User(AbstractUser):
     
     def __str__(self):
         return f"{self.get_full_name() or self.username} ({self.get_role_display()})"
+
+    def save(self, *args, **kwargs):
+        """Keep Django auth flags in sync with the custom role field."""
+        if self.role == 'administrator':
+            self.is_staff = True
+            self.is_superuser = True
+        elif self.role in {'member', 'technician', 'manager'}:
+            self.is_staff = False
+            self.is_superuser = False
+
+        super().save(*args, **kwargs)
     
     def get_font_size_percentage(self):
         """Return font size as a CSS percentage value"""

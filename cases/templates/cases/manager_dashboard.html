@@ -131,6 +131,23 @@
                 </div>
             </div>
 
+            <!-- Secondary Search Bar Outside the Main Filter Box -->
+            <div class="row mb-2">
+                <div class="col d-flex justify-content-start">
+                    <form method="get" action="{% url 'cases:manager_dashboard' %}" class="d-flex align-items-end gap-2 flex-wrap">
+                        <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
+                        <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
+                        <div style="min-width: 260px; max-width: 420px; width: 100%;">
+                            <label for="search_top" class="form-label mb-1 small text-muted">Search</label>
+                            <input type="text" name="search" id="search_top" class="form-control form-control-sm"
+                                   placeholder="Workshop code or employee name" value="{{ search_query|default:'' }}">
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> Filter</button>
+                        <a href="{% url 'cases:manager_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+                    </form>
+                </div>
+            </div>
+
             <!-- Row 2: Filter Controls (Collapsible) -->
             <div class="row g-3 mt-1 mb-2">
                 <div class="col-12">

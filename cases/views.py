@@ -112,6 +112,26 @@ def _exclude_super_dev_users(queryset):
     return queryset
 
 
+def _build_case_dashboard_search_q(search_query):
+    """Return a Q object for dashboard search using workshop code and employee/member names only."""
+    if not search_query or search_query == 'None':
+        return Q()
+
+    tokens = [token.strip() for token in search_query.split() if token.strip()]
+    if not tokens:
+        return Q()
+
+    q = Q()
+    for token in tokens:
+        q |= Q(workshop_code__icontains=token)
+        q |= Q(employee_first_name__icontains=token)
+        q |= Q(employee_last_name__icontains=token)
+        q |= Q(member__first_name__icontains=token)
+        q |= Q(member__last_name__icontains=token)
+        q |= Q(client_email__icontains=token)
+    return q
+
+
 def build_filter_params(request):
     """
     Build a URL-encoded query string with all current filter parameters.
@@ -499,11 +519,7 @@ def member_dashboard(request):
             cases = cases.filter(date_submitted__date__gte=month_ago)
     
     if search_query:
-        cases = cases.filter(
-            Q(external_case_id__icontains=search_query) |
-            Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query)
-        )
+        cases = cases.filter(_build_case_dashboard_search_q(search_query))
 
     # Apply quick tile filter after regular filters so users can combine controls.
     if quick_filter:
@@ -776,14 +792,7 @@ def technician_dashboard(request):
             cases = cases.filter(date_submitted__date__gte=month_ago)
     
     if search_query:
-        cases = cases.filter(
-            Q(external_case_id__icontains=search_query) |
-            Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query) |
-            Q(workshop_code__icontains=search_query) |
-            Q(member__first_name__icontains=search_query) |
-            Q(member__last_name__icontains=search_query)
-        )
+        cases = cases.filter(_build_case_dashboard_search_q(search_query))
 
     # Build tile counts before applying the active quick tile filter.
     tile_scope_cases = cases
@@ -1009,15 +1018,7 @@ def admin_dashboard(request):
             cases = cases.filter(date_submitted__date__gte=month_ago)
     
     if search_query:
-        cases = cases.filter(
-            Q(external_case_id__icontains=search_query) |
-            Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query) |
-            Q(workshop_code__icontains=search_query) |
-            Q(member__first_name__icontains=search_query) |
-            Q(member__last_name__icontains=search_query) |
-            Q(client_email__icontains=search_query)
-        )
+        cases = cases.filter(_build_case_dashboard_search_q(search_query))
 
     tile_scope_cases = cases
     if quick_filter:
@@ -1232,15 +1233,7 @@ def manager_dashboard(request):
             cases = cases.filter(date_submitted__date__gte=month_ago)
     
     if search_query:
-        cases = cases.filter(
-            Q(external_case_id__icontains=search_query) |
-            Q(employee_first_name__icontains=search_query) |
-            Q(employee_last_name__icontains=search_query) |
-            Q(workshop_code__icontains=search_query) |
-            Q(member__first_name__icontains=search_query) |
-            Q(member__last_name__icontains=search_query) |
-            Q(client_email__icontains=search_query)
-        )
+        cases = cases.filter(_build_case_dashboard_search_q(search_query))
 
     tile_scope_cases = cases
     if quick_filter:
