@@ -225,6 +225,7 @@
                     <!-- Quick Tech Filters -->
                     <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
                         <div class="btn-group" role="group">
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if assigned_filter == 'mine' %}active{% endif %}">My Cases</a>
                             <a href="{% url 'cases:technician_dashboard' %}?assigned=all&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if assigned_filter != 'mine' and quick_tech == 'all' %}active{% endif %}">All Techs</a>
                             {% for tech in quick_technicians %}
                             <a href="{% url 'cases:technician_dashboard' %}?assigned=all&quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if assigned_filter != 'mine' and quick_tech == tech.username %}active{% endif %}" data-tech-username="{{ tech.username }}">{{ tech.first_name|default:tech.username }} <span class="tech-status-dot status-{{ tech.status }}" title="{{ tech.label }}"></span></a>
