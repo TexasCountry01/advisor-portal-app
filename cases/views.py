@@ -742,7 +742,8 @@ def technician_dashboard(request):
 
     # Apply quick technician filter from top buttons.
     # Exception: submitted cases have no assigned_to yet — skip for Need to Accept queue.
-    if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
+    # Exception: search queries should return ALL matching cases regardless of tech scope.
+    if quick_tech and quick_tech != 'all' and quick_filter != 'submitted' and not search_query:
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
             if _terminal_selected:
