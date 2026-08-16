@@ -3034,7 +3034,7 @@ def decline_case(request, case_id):
                         'app_name': 'Advisor Portal'
                     }
 
-                    email_subject = f'Case Declined: {case.employee_first_name} {case.employee_last_name}'
+                    email_subject = f'DECLINED: The case for {case.employee_first_name} {case.employee_last_name} has been declined by ProFeds'
                     text_message = render_to_string('emails/case_declined.txt', email_context)
                     html_message = render_to_string('emails/case_declined.html', email_context)
 
