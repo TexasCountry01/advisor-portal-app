@@ -115,8 +115,19 @@
 
     <!-- Statistics Cards + Filters (All in One Card) -->
     <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Quick Stats & Filters</h5>
+        <div class="card-header d-flex justify-content-between align-items-center gap-2">
+            <h5 class="mb-0 me-3">Quick Stats & Filters</h5>
+            <form method="get" action="{% url 'cases:member_dashboard' %}" class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 480px;">
+                <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
+                <input type="hidden" name="view" value="{{ active_view }}">
+                <input type="text" name="search" class="form-control form-control-sm"
+                       placeholder="Employee, Workshop..." value="{{ search_query|default:'' }}">
+                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+                <a href="{% url 'cases:member_dashboard' %}?view={{ active_view }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-toggle="collapse" data-bs-target="#filter-row">
+                <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
+            </button>
             <button type="button" id="toggle-view-stats" class="btn btn-sm btn-outline-secondary" title="Show/hide stats">
                 <i class="bi bi-chevron-up"></i> Hide
             </button>
@@ -160,32 +171,6 @@
                     <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=on_hold&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #e6a400 0%, #c48a14 100%);"><div class="stat-mini-value">{{ member_quick_tiles.on_hold }}</div><div class="stat-mini-label">On Hold</div></div></a>
                     <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=alerts&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #c00000 0%, #9a0000 100%);"><div class="stat-mini-value">{{ member_quick_tiles.alerts }}</div><div class="stat-mini-label">Alerts</div></div></a>
                     <a class="tile-link {% if quick_filter == 'drafts' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=drafts&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);"><div class="stat-mini-value">{{ member_quick_tiles.drafts }}</div><div class="stat-mini-label">Drafts</div></div></a>
-                </div>
-            </div>
-
-            <!-- Secondary Search Bar Outside the Main Filter Box -->
-            <div class="row mb-2">
-                <div class="col d-flex justify-content-start">
-                    <form method="get" action="{% url 'cases:member_dashboard' %}" class="d-flex align-items-end gap-2 flex-wrap">
-                        <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
-                        <input type="hidden" name="view" value="{{ active_view }}">
-                        <div style="min-width: 260px; max-width: 420px; width: 100%;">
-                            <label for="search_top" class="form-label mb-1 small text-muted">Search</label>
-                            <input type="text" name="search" id="search_top" class="form-control form-control-sm"
-                                   placeholder="Workshop code or employee name" value="{{ search_query|default:'' }}">
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> Filter</button>
-                        <a href="{% url 'cases:member_dashboard' %}?view={{ active_view }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Filter Toggle Button -->
-            <div class="row g-3 mt-1 mb-2">
-                <div class="col-12">
-                    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filter-row">
-                        <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
-                    </button>
                 </div>
             </div>
 
