@@ -601,7 +601,7 @@
                                 <div class="mt-2">
                                     <strong>Tier:</strong>
                                     <span class="ms-1">{{ case.get_tier_display }}</span>
-                                    {% if case.status in 'accepted,hold' and user.role == 'technician' and (case.assigned_to and case.assigned_to.id == user.id or case.accepted_by and case.accepted_by.id == user.id) %}
+                                    {% if case.status in 'accepted,hold' and user.role == 'technician' and case.assigned_to and case.assigned_to.id == user.id or case.status in 'accepted,hold' and user.role == 'technician' and case.accepted_by and case.accepted_by.id == user.id %}
                                         <button type="button" class="btn btn-sm btn-outline-secondary ms-1" data-bs-toggle="modal" data-bs-target="#changeTierModal">
                                             <i class="bi bi-pencil"></i>
                                         </button>
