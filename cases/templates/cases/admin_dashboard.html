@@ -20,11 +20,11 @@
     <div class="alert alert-warning fade show mb-3" role="alert">
         <div class="d-flex align-items-center justify-content-between">
             <div class="flex-grow-1">
-                <h5 class="alert-heading mb-0" data-bs-toggle="collapse" data-bs-target="#delegate-requests-content" aria-expanded="true" aria-controls="delegate-requests-content" style="cursor: pointer; user-select: none;">
+                <h5 class="alert-heading mb-0" data-bs-toggle="collapse" data-bs-target="#delegate-requests-content" aria-expanded="false" aria-controls="delegate-requests-content" style="cursor: pointer; user-select: none;">
                     <i class="bi bi-person-plus-fill"></i> Delegate Action Pending
                     <i class="bi bi-chevron-down ms-2"></i>
                 </h5>
-                <div id="delegate-requests-content" class="collapse show mt-3">
+                <div id="delegate-requests-content" class="collapse mt-3">
                     <p class="mb-2 small">The following member requests still need review before delegate access is granted or removed.</p>
                     <ul class="mb-0">
                         {% for request in pending_delegate_requests %}
