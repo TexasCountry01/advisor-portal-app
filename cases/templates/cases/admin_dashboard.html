@@ -57,16 +57,22 @@
 
     <!-- Filters + Quick Stats (All in One Card) -->
     <div class="card mb-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Quick Stats & Filters</h5>
-            <div class="btn-group btn-group-sm" role="group">
-                <button type="button" id="toggle-view-stats" class="btn btn-outline-secondary" title="Show/hide stats">
-                    <i class="bi bi-chevron-up"></i> Hide Stats
-                </button>
-                <button type="button" id="toggle-view-filters" class="btn btn-outline-secondary" title="Show/hide filters" data-bs-toggle="collapse" data-bs-target="#filter-container">
-                    <i class="bi bi-chevron-down"></i> Filters
-                </button>
-            </div>
+        <div class="card-header d-flex justify-content-between align-items-center gap-2">
+            <h5 class="mb-0 me-3">Quick Stats & Filters</h5>
+            <form method="get" action="{% url 'cases:admin_dashboard' %}" class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 480px;">
+                <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
+                <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
+                <input type="text" name="search" class="form-control form-control-sm"
+                       placeholder="Employee, Workshop..." value="{{ search_query|default:'' }}">
+                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+                <a href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-toggle="collapse" data-bs-target="#filter-container">
+                <i class="bi bi-funnel"></i> Filters
+            </button>
+            <button type="button" id="toggle-view-stats" class="btn btn-outline-secondary btn-sm" title="Show/hide stats">
+                <i class="bi bi-chevron-up"></i> Hide Stats
+            </button>
         </div>
         <div id="view-stats-container" class="card-body">
             <style>
@@ -166,23 +172,6 @@
                     <a class="tile-link {% if quick_filter == 'due_tomorrow' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=due_tomorrow"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.due_tomorrow }}</div><div class="stat-mini-label">Due<br>Tomorrow</div></div></a>
                     <a class="tile-link {% if quick_filter == 'past_due' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=past_due"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.past_due }}</div><div class="stat-mini-label">Past<br>Due</div></div></a>
                     <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=alerts"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.alerts }}</div><div class="stat-mini-label">Active<br>Alerts</div></div></a>
-                </div>
-            </div>
-
-            <!-- Secondary Search Bar Outside the Main Filter Box -->
-            <div class="row mb-2">
-                <div class="col d-flex justify-content-start">
-                    <form method="get" action="{% url 'cases:admin_dashboard' %}" class="d-flex align-items-end gap-2 flex-wrap">
-                        <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
-                        <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
-                        <div style="min-width: 260px; max-width: 420px; width: 100%;">
-                            <label for="search_top" class="form-label mb-1 small text-muted">Search</label>
-                            <input type="text" name="search" id="search_top" class="form-control form-control-sm"
-                                   placeholder="Workshop code or employee name" value="{{ search_query|default:'' }}">
-                        </div>
-                        <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i> Filter</button>
-                        <a href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-                    </form>
                 </div>
             </div>
 
