@@ -671,13 +671,10 @@ def technician_dashboard(request):
         preference_key='technician_dashboard_view'
     ).first()
     
-    # Default technician routing: prioritize their own active queue first.
-    # Managers/admins keep the broader all-cases default.
+    # Get saved view type or default to 'all'
     default_view = 'all'
-    if user.role == 'technician':
-        default_view = 'mine'
     if saved_preference:
-        default_view = saved_preference.preference_value.get('view', default_view)
+        default_view = saved_preference.preference_value.get('view', 'all')
     
     # Get all cases (technicians see all, not just assigned)
     # Include all non-draft statuses so declined/cancelled cases remain searchable
@@ -710,7 +707,9 @@ def technician_dashboard(request):
     search_query = request.GET.get('search')
     default_quick_filter = 'pending' if user.role == 'technician' else ''
     quick_filter = request.GET.get('quick_filter', default_quick_filter)
-    quick_tech = request.GET.get('quick_tech', 'all')
+    # Default quick_tech to the logged-in tech's username so their name button is active.
+    default_quick_tech = user.username if user.role == 'technician' else 'all'
+    quick_tech = request.GET.get('quick_tech', default_quick_tech)
     sort_by = request.GET.get('sort')
     if sort_by:
         save_user_sort_preference(user, 'technician_dashboard', sort_by)
@@ -4536,9 +4535,9 @@ def get_view_preference(request):
         ).first()
         
         if preference:
-            view_type = preference.preference_value.get('view', 'mine' if user.role == 'technician' else 'all')
+            view_type = preference.preference_value.get('view', 'all')
         else:
-            view_type = 'mine' if user.role == 'technician' else 'all'
+            view_type = 'all'  # Default to All Cases
         
         return JsonResponse({
             'success': True, 
