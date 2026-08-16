@@ -829,7 +829,14 @@ def technician_dashboard(request):
         'credit_value', '-credit_value'
     ]
     if sort_by in allowed_sorts:
-        cases = cases.order_by(sort_by)
+        from django.db.models import F as _SortF
+        if sort_by == 'date_due':
+            # Soonest due date first, nulls last
+            cases = cases.order_by(_SortF('date_due').asc(nulls_last=True))
+        elif sort_by == '-date_due':
+            cases = cases.order_by(_SortF('date_due').desc(nulls_last=True))
+        else:
+            cases = cases.order_by(sort_by)
     else:
         cases = cases.order_by('-date_submitted')
     
