@@ -507,11 +507,6 @@
                                         MOD
                                     </span>
                                     {% endif %}
-                                    {% if case.has_member_updates %}
-                                    <span class="badge bg-warning text-dark new-info-badge" data-case-id="{{ case.pk }}" title="Member has provided new information">
-                                        <i class="bi bi-info-circle"></i> New Info
-                                    </span>
-                                    {% endif %}
                                 </div>
                             </td>
                             <td class="column-member {% if 'member' not in visible_columns %}column-hidden{% endif %}">
@@ -1105,7 +1100,7 @@ function refreshBadgeCounts() {
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
-            // Build lookup: case_id -> {unread_count, has_member_updates}
+            // Build lookup: case_id -> {unread_count}
             const lookup = {};
             (data.unread_by_case || []).forEach(item => {
                 lookup[item.case_id] = item;
@@ -1115,7 +1110,6 @@ function refreshBadgeCounts() {
                 const caseId = parseInt(row.dataset.caseId);
                 const info = lookup[caseId];
                 const unreadCount = info ? info.unread_count : 0;
-                const hasUpdates = info ? info.has_member_updates : false;
 
                 // Update unread badge on View button
                 const viewLink = row.querySelector('a[href*="/cases/"]');
