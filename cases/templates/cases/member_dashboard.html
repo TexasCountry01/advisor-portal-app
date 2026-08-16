@@ -153,7 +153,8 @@
             </style>
             <!-- Clickable Fast-Filter Tiles -->
             <div class="row mb-3" id="top-row">
-                <div class="col-auto ms-auto d-flex gap-2" style="flex-wrap: wrap; justify-content: flex-end;">
+                <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
+                    {% if quick_filter %}<a href="{% url 'cases:member_dashboard' %}?view={{ active_view }}" class="text-muted small me-2" style="text-decoration: underline;">View All</a>{% endif %}
                     <a class="tile-link {% if quick_filter == 'ready_14d' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=ready_14d&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);"><div class="stat-mini-value">{{ member_quick_tiles.ready_14d }}</div><div class="stat-mini-label">Ready (14d)</div></div></a>
                     <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=pending&view={{ active_view }}"><div class="stat-mini"><div class="stat-mini-value">{{ member_quick_tiles.pending }}</div><div class="stat-mini-label">Pending</div></div></a>
                     <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=on_hold&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #e6a400 0%, #c48a14 100%);"><div class="stat-mini-value">{{ member_quick_tiles.on_hold }}</div><div class="stat-mini-label">On Hold</div></div></a>
