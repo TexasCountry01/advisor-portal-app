@@ -1284,3 +1284,39 @@ class UnreadMessage(models.Model):
     
     def __str__(self):
         return f"Unread message for {self.user.username} on Case {self.case.external_case_id}"
+
+
+class CaseFlag(models.Model):
+    """
+    Per-user personal flag/bookmark on a case.
+    Used for the "Flag for Follow-up" feature — lets a technician mark
+    a case they need to return to after an alert has auto-cleared.
+    """
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='flagged_cases',
+    )
+    case = models.ForeignKey(
+        Case,
+        on_delete=models.CASCADE,
+        related_name='flags',
+    )
+    note = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text='Optional reminder note set by the tech when flagging',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [['user', 'case']]
+        indexes = [
+            models.Index(fields=['user', 'case']),
+            models.Index(fields=['user', '-created_at']),
+        ]
+        verbose_name = 'Case Flag'
+        verbose_name_plural = 'Case Flags'
+
+    def __str__(self):
+        return f"{self.user.username} flagged Case {self.case.external_case_id}"

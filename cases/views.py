@@ -13,7 +13,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.cache import never_cache
 from accounts.models import User
 from core.models import SystemSettings
-from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage, UnreadMessage
+from .models import Case, CaseDocument, CaseChangeRequest, CaseMessage, UnreadMessage, CaseFlag
 import logging
 import json
 from datetime import timedelta
@@ -163,6 +163,12 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, quick_tech='all'):
     today = timezone.localtime(timezone.now()).date()
     tomorrow = today + timedelta(days=1)
 
+    if quick_filter == 'flagged':
+        return queryset.filter(flags__user=user)
+
+    if quick_filter == 'flagged':
+        return queryset.filter(flags__user=user)
+
     if quick_filter == 'submitted':
         return queryset.filter(status='submitted')
     if quick_filter == 'pending':
@@ -287,6 +293,7 @@ def _build_staff_quick_tiles(queryset, user, quick_tech='all'):
         UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
     )
     counts['alerts'] = alert_qs.filter(_has_assigned_tech_unread).count()
+    counts['flagged'] = CaseFlag.objects.filter(user=user).count()
     return {k: (v or 0) for k, v in counts.items()}
 
 
@@ -913,6 +920,7 @@ def technician_dashboard(request):
         'quick_tech': quick_tech,
         'quick_technicians': quick_technicians,
         'quick_tiles': quick_tiles,
+        'my_flagged_case_ids': set(CaseFlag.objects.filter(user=user).values_list('case_id', flat=True)),
     }
     
     # Add column visibility data
@@ -2055,6 +2063,7 @@ def case_detail(request, pk):
         'hold_event_log': hold_event_log,
         'latest_review_event': latest_review_event,
         'user': user,
+        'my_flagged_case_ids': {case.id} if (user.role in ['technician', 'administrator', 'manager'] and CaseFlag.objects.filter(user=user, case=case).exists()) else set(),
     }
     
     return render(request, 'cases/case_detail.html', context)
@@ -6962,6 +6971,24 @@ def get_user_sort_preference(user, dashboard_name, default='-date_submitted'):
         return pref.preference_value.get('sort', default)
     except UserPreference.DoesNotExist:
         return default
+
+
+@login_required
+@require_http_methods(['POST'])
+def toggle_case_flag(request, case_id):
+    """Toggle a personal follow-up flag on a case for the current user."""
+    user = request.user
+    if user.role not in ['technician', 'administrator', 'manager']:
+        return JsonResponse({'success': False, 'error': 'Permission denied.'}, status=403)
+
+    case = get_object_or_404(Case, id=case_id)
+    flag, created = CaseFlag.objects.get_or_create(user=user, case=case)
+    if not created:
+        # Already flagged — unflag it
+        flag.delete()
+        return JsonResponse({'success': True, 'flagged': False})
+
+    return JsonResponse({'success': True, 'flagged': True})
 
 
 def save_user_sort_preference(user, dashboard_name, sort_value):

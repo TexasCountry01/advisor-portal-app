@@ -45,6 +45,7 @@ urlpatterns = [
     path('<int:pk>/add-message/', views.add_case_message, name='add_case_message'),
     path('<int:pk>/messages/', views.get_case_messages, name='get_case_messages'),
     path('<int:pk>/mark-messages-read/', views.mark_messages_as_read, name='mark_messages_as_read'),
+    path('<int:case_id>/toggle-flag/', views.toggle_case_flag, name='toggle_case_flag'),
     path('<int:pk>/request-modification/', views.request_modification, name='request_modification'),
     path('<int:pk>/create-modification-staff/', views.create_modification_staff, name='create_modification_staff'),
     path('unread-message-count/', views.get_unread_message_count, name='get_unread_message_count'),

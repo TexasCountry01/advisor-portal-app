@@ -215,6 +215,13 @@
                 </span>
                 {% endif %}
             {% endif %}
+            {% if user.role in 'technician,administrator,manager' %}
+            <button type="button" id="flag-btn" class="btn {% if case.id in my_flagged_case_ids %}btn-warning{% else %}btn-outline-secondary{% endif %}"
+                    onclick="toggleFlag({{ case.id }})" title="{% if case.id in my_flagged_case_ids %}Remove follow-up flag{% else %}Flag for follow-up{% endif %}">
+                <i class="bi bi-bookmark{% if case.id in my_flagged_case_ids %}-fill{% endif %}"></i>
+                {% if case.id in my_flagged_case_ids %}Follow-up Flagged{% else %}Flag for Follow-up{% endif %}
+            </button>
+            {% endif %}
         </div>
     </div>
 
@@ -3623,6 +3630,29 @@ function submitEmployeeNameEdit() {
 }
 
 // Take Ownership Function (for technicians)
+function toggleFlag(caseId) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+    fetch(`/cases/${caseId}/toggle-flag/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.success) return;
+        const btn = document.getElementById('flag-btn');
+        if (!btn) return;
+        if (data.flagged) {
+            btn.className = 'btn btn-warning';
+            btn.title = 'Remove follow-up flag';
+            btn.innerHTML = '<i class="bi bi-bookmark-fill"></i> Follow-up Flagged';
+        } else {
+            btn.className = 'btn btn-outline-secondary';
+            btn.title = 'Flag for follow-up';
+            btn.innerHTML = '<i class="bi bi-bookmark"></i> Flag for Follow-up';
+        }
+    });
+}
+
 function takeOwnership(caseId) {
     if (!confirm('Take ownership of this case?')) {
         return;
