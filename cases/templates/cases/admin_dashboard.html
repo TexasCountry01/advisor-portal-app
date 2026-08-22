@@ -396,6 +396,7 @@
                             -->
                             <td id="code-column" data-column-id="code" {% if 'code' not in visible_columns %}class="column-hidden"{% endif %}>
                                 <div class="d-flex align-items-center gap-2">
+                                    {% if case.id in my_flagged_case_ids %}<i class="bi bi-bookmark-fill text-warning" title="Flagged for Follow-up" style="font-size:.85rem;"></i>{% endif %}
                                     <span>{{ case.workshop_code }}</span>
                                     {% if case.has_profeds_error %}
                                     <span class="badge bg-danger" title="ProFeds Error">

@@ -242,7 +242,7 @@
                 {% if latest_review_event %}
                 <p class="mb-2"><strong>Submitted:</strong> {{ latest_review_event.timestamp|date:"m/d/Y H:i" }}</p>
                 {% endif %}
-                {% if latest_review_event.metadata.notes %}
+                {% if latest_review_event and latest_review_event.metadata and latest_review_event.metadata.notes %}
                 <div class="p-3 bg-white border rounded mb-3">
                     <strong>Notes from Tech:</strong>
                     <p class="mb-0 mt-1">{{ latest_review_event.metadata.notes }}</p>
@@ -417,9 +417,13 @@
                     <div class="row">
                         <div class="col-md-6">
                             <strong>Member:</strong><br>
-                            {{ case.member.get_full_name|default:case.member.username }}
-                            {% if case.member.email %}
-                                <br><small class="text-muted">{{ case.member.email }}</small>
+                            {% if case.member %}
+                                {{ case.member.get_full_name|default:case.member.username }}
+                                {% if case.member.email %}
+                                    <br><small class="text-muted">{{ case.member.email }}</small>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted fst-italic">No member linked</span>
                             {% endif %}
                         </div>
                         <div class="col-md-6">
@@ -1709,7 +1713,11 @@
                                         </td>
                                         <td>
                                             {% if event.user %}
-                                                {{ event.user.get_full_name|default:event.user.username }}
+                                                {% if event.user.get_full_name %}
+                                                    {{ event.user.get_full_name }}
+                                                {% else %}
+                                                    {{ event.user.username }}
+                                                {% endif %}
                                             {% else %}
                                                 <span class="text-muted fst-italic">System</span>
                                             {% endif %}
@@ -1830,7 +1838,7 @@
                                 <div class="alert alert-info mb-3">
                                     <strong><i class="bi bi-check-circle"></i> Quality Review Required</strong>
                                     <p class="mb-0 small">Review and approve this case from Level 1 technician {{ case.assigned_to.first_name }} {{ case.assigned_to.last_name }}</p>
-                                    {% if latest_review_event.metadata.notes %}
+                                    {% if latest_review_event and latest_review_event.metadata and latest_review_event.metadata.notes %}
                                     <hr class="my-2">
                                     <p class="mb-0 small"><strong>Notes from tech:</strong> {{ latest_review_event.metadata.notes }}</p>
                                     {% endif %}
@@ -1885,7 +1893,20 @@
                                     <div class="alert alert-info mb-0">
                                         <strong><i class="bi bi-hourglass-split"></i> Awaiting Quality Review</strong>
                                         <p class="mb-0 small mt-1">
-                                            Submitted by {{ latest_review_event.user.get_full_name|default:latest_review_event.user.username }}{% if latest_review_event.metadata.reviewer %} &middot; Reviewer: {{ latest_review_event.metadata.reviewer }}{% endif %}{% if latest_review_event %}<br>{{ latest_review_event.timestamp|date:"m/d/Y h:i A" }}{% endif %}
+                                            {% if latest_review_event and latest_review_event.user %}
+                                                Submitted by
+                                                {% if latest_review_event.user.get_full_name %}
+                                                    {{ latest_review_event.user.get_full_name }}
+                                                {% else %}
+                                                    {{ latest_review_event.user.username }}
+                                                {% endif %}
+                                            {% elif latest_review_event %}
+                                                Submitted by system
+                                            {% else %}
+                                                Submitted for review
+                                            {% endif %}
+                                            {% if latest_review_event and latest_review_event.metadata and latest_review_event.metadata.reviewer %} &middot; Reviewer: {{ latest_review_event.metadata.reviewer }}{% endif %}
+                                            {% if latest_review_event %}<br>{{ latest_review_event.timestamp|date:"m/d/Y h:i A" }}{% endif %}
                                         </p>
                                         <p class="mb-0 small mt-1 text-muted">You'll be notified when it's reviewed.</p>
                                     </div>

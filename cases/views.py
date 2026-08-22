@@ -1170,6 +1170,7 @@ def admin_dashboard(request):
         'quick_technicians': quick_technicians,
         'quick_tiles': quick_tiles,
         'pending_delegate_requests': pending_delegate_requests,
+        'my_flagged_case_ids': set(CaseFlag.objects.filter(user=user).values_list('case_id', flat=True)),
     }
     
     return render(request, 'cases/admin_dashboard.html', context)
