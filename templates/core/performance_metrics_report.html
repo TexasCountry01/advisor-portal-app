@@ -73,11 +73,11 @@
         <table class="table table-sm table-hover table-bordered mb-0 align-middle" style="font-size:0.78rem; white-space:nowrap;">
             <thead class="table-dark sticky-top">
                 <tr>
-                    <!-- Core columns (always visible) -->
-                    <th class="core-col">Code</th>
-                    <th class="core-col" style="min-width:130px;">Member</th>
-                    <th class="core-col" style="min-width:120px;">Employee</th>
-                    <th class="core-col" style="min-width:130px;">Technician</th>
+                    <!-- Core columns (always visible) — rowspan=2 so label shows across both header rows -->
+                    <th class="core-col" rowspan="2">Code</th>
+                    <th class="core-col" rowspan="2" style="min-width:130px;">Member</th>
+                    <th class="core-col" rowspan="2" style="min-width:120px;">Employee</th>
+                    <th class="core-col" rowspan="2" style="min-width:130px;">Technician</th>
                     <!-- REVIEWS group header -->
                     <th colspan="5" class="reviews-col text-center" style="background:#5a6a7a; border-left:3px solid #8aa4b8;">
                         <i class="bi bi-chevron-down toggle-icon-th" id="thicon-reviews"></i> REVIEWS
@@ -92,11 +92,7 @@
                     </th>
                 </tr>
                 <tr>
-                    <!-- Core -->
-                    <th class="core-col"></th>
-                    <th class="core-col"></th>
-                    <th class="core-col"></th>
-                    <th class="core-col"></th>
+                    <!-- Core columns handled by rowspan=2 above — no cells needed here -->
                     <!-- REVIEWS subheaders -->
                     <th class="reviews-col" style="border-left:3px solid #8aa4b8;">Reviewer</th>
                     <th class="reviews-col">Tech Notes to Reviewer</th>
