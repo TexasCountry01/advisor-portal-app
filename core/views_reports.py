@@ -4387,3 +4387,154 @@ def performance_scorecard_pdf(request):
     response  = HttpResponse(pdf_buffer.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response
+
+
+# ─── Performance Metrics (Unified Case Report) ───────────────────────────────
+
+@login_required
+def performance_metrics_report(request):
+    """
+    Unified Case Report — one row per completed case, all data in one place.
+    Three collapsible column groups: REVIEWS, MODS & ERRORS, DATES.
+    Admin and Manager only. Date-filtered by date_completed.
+    """
+    if not is_admin(request.user):
+        messages.error(request, 'Access denied. Administrators and Managers only.')
+        return redirect('home')
+
+    from datetime import datetime as _dt
+    from cases.models import CaseReviewHistory
+
+    date_from_str = request.GET.get('date_from', '').strip()
+    date_to_str   = request.GET.get('date_to',   '').strip()
+
+    # Default to last 7 days (same as performance dashboard)
+    if not date_from_str and not date_to_str:
+        date_to_str   = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=7)).strftime('%Y-%m-%d')
+
+    try:
+        date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
+        date_to   = _dt.strptime(date_to_str,   '%Y-%m-%d').date() if date_to_str   else None
+    except ValueError:
+        date_from = date_to = None
+
+    # Base: completed cases, exclude test accounts, filtered by date_completed
+    cases_qs = _exclude_test_account_cases(
+        Case.objects.filter(status='completed', date_completed__isnull=False)
+        .select_related('member', 'assigned_to', 'reviewed_by', 'original_case')
+        .prefetch_related('review_history')
+    )
+    if date_from:
+        cases_qs = cases_qs.filter(date_completed__date__gte=date_from)
+    if date_to:
+        cases_qs = cases_qs.filter(date_completed__date__lte=date_to)
+
+    cases_qs = cases_qs.order_by('-date_completed')
+
+    # Build one row per case
+    rows = []
+    for c in cases_qs:
+        # ── REVIEWS ──────────────────────────────────────────────────────────
+        review_history = list(c.review_history.order_by('reviewed_at'))
+        review_count   = len(review_history)
+        latest_review  = review_history[-1] if review_history else None
+
+        reviewer_name    = ''
+        reviewer_action  = ''
+        reviewer_notes   = ''
+        if latest_review:
+            reviewer_name   = latest_review.reviewed_by.get_full_name() if latest_review.reviewed_by else ''
+            reviewer_action = latest_review.get_review_action_display() if hasattr(latest_review, 'get_review_action_display') else (latest_review.review_action or '')
+            reviewer_notes  = latest_review.review_notes or ''
+
+        # ── MODS & ERRORS ─────────────────────────────────────────────────────
+        is_mod    = bool(c.original_case_id)
+        mod_label = 'Yes' if is_mod else ''
+        error_reason = ''
+        if c.has_profeds_error and c.resubmission_notes:
+            error_reason = c.resubmission_notes
+
+        # ── DATES & CALCULATIONS ──────────────────────────────────────────────
+        dc = c.date_completed.date() if c.date_completed and hasattr(c.date_completed, 'date') else c.date_completed
+        ds = c.date_submitted.date()  if c.date_submitted  and hasattr(c.date_submitted,  'date') else c.date_submitted
+        da = c.date_accepted.date()   if c.date_accepted   and hasattr(c.date_accepted,   'date') else c.date_accepted
+
+        prod_cycle       = f"{(dc - ds).days}d"  if dc and ds else ''
+        readiness_window = ''
+        status_label     = ''
+        if dc and c.date_due:
+            rw = (c.date_due - dc).days
+            readiness_window = f'+{rw}d' if rw >= 0 else f'{rw}d'
+            status_label = 'On Time' if rw >= 0 else 'Late'
+
+        hold_days = ''
+        if c.hold_duration_days is not None:
+            hold_days = str(round(float(c.hold_duration_days), 1))
+
+        rows.append({
+            # Core
+            'case_pk':      c.pk,
+            'case_id':      c.external_case_id,
+            'code':         c.workshop_code or '',
+            'member':       c.member.get_full_name() if c.member else '',
+            'employee':     f'{c.employee_first_name} {c.employee_last_name}'.strip(),
+            'technician':   c.assigned_to.get_full_name() if c.assigned_to else '',
+            # Reviews
+            'reviewer':          reviewer_name,
+            'tech_notes':        '',   # field not yet captured — blank for v1
+            'review_count':      review_count or '',
+            'reviewer_action':   reviewer_action,
+            'reviewer_notes':    reviewer_notes,
+            # Mods & Errors
+            'is_mod':            mod_label,
+            'error_reason':      error_reason,
+            'disputed':          '',   # field not yet captured — blank for v1
+            'disputed_justification': '',
+            # Dates
+            'submitted':         c.date_submitted.strftime('%m/%d/%y')  if c.date_submitted  else '',
+            'accepted':          c.date_accepted.strftime('%m/%d/%y')   if c.date_accepted   else '',
+            'finished':          c.date_completed.strftime('%m/%d/%y')  if c.date_completed  else '',
+            'released':          c.actual_release_date.strftime('%m/%d/%y') if getattr(c, 'actual_release_date', None) else '',
+            'due':               c.date_due.strftime('%m/%d/%y')        if c.date_due        else '',
+            'urgency':           c.urgency.capitalize()                 if c.urgency         else '',
+            'days_on_hold':      hold_days,
+            'prod_cycle':        prod_cycle,
+            'readiness_window':  readiness_window,
+            'status':            status_label,
+        })
+
+    # CSV export
+    if request.GET.get('export') == 'csv':
+        today = timezone.now().strftime('%Y%m%d')
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="performance_metrics_{today}.csv"'
+        import csv as _csv
+        writer = _csv.writer(response)
+        writer.writerow([
+            'Case ID', 'Code', 'Member', 'Employee', 'Technician',
+            # REVIEWS
+            'Reviewer', "Tech's Notes to Reviewer", '# Reviews', 'Reviewer Action', "Reviewer's Notes",
+            # MODS & ERRORS
+            'Mod?', 'Error Reason', 'Disputed by Tech?', 'Disputed Justification',
+            # DATES
+            'Submitted', 'Accepted', 'Finished', 'Released', 'Due', 'Urgency',
+            'Days on Hold', 'Prod Cycle', 'Readiness Window', 'Status',
+        ])
+        for r in rows:
+            writer.writerow([
+                r['case_id'], r['code'], r['member'], r['employee'], r['technician'],
+                r['reviewer'], r['tech_notes'], r['review_count'], r['reviewer_action'], r['reviewer_notes'],
+                r['is_mod'], r['error_reason'], r['disputed'], r['disputed_justification'],
+                r['submitted'], r['accepted'], r['finished'], r['released'], r['due'], r['urgency'],
+                r['days_on_hold'], r['prod_cycle'], r['readiness_window'], r['status'],
+            ])
+        return response
+
+    context = {
+        'rows':      rows,
+        'total':     len(rows),
+        'date_from': date_from_str,
+        'date_to':   date_to_str,
+    }
+    return render(request, 'core/performance_metrics_report.html', context)

@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Performance Metrics — ProFeds Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+
+    <!-- Header -->
+    <div class="row mb-3 align-items-start">
+        <div class="col-md-7">
+            <h1><i class="bi bi-table text-success"></i> Performance Metrics</h1>
+            <p class="text-muted mb-0">One row per completed case — all data in one place. Filtered by date cases were <strong>finished</strong>.</p>
+        </div>
+        <div class="col-md-5 text-end d-flex gap-2 justify-content-end align-items-start flex-wrap">
+            <a href="?date_from={{ date_from }}&date_to={{ date_to }}&export=csv" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-filetype-csv"></i> Download CSV
+            </a>
+            <a href="{% url 'performance_dashboard' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="btn btn-sm btn-outline-secondary">
+                ← Back to Benefits Team Portal Metrics
+            </a>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card mb-3 shadow-sm border-0">
+        <div class="card-body py-3">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label for="date_from" class="form-label fw-semibold small">Completed From</label>
+                    <input type="date" class="form-control form-control-sm" id="date_from" name="date_from" value="{{ date_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="date_to" class="form-label fw-semibold small">Completed To</label>
+                    <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" value="{{ date_to }}">
+                </div>
+                <div class="col-md-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+                    <a href="{% url 'performance_metrics_report' %}" class="btn btn-outline-secondary btn-sm">Reset (7 days)</a>
+                </div>
+                <div class="col-md-auto ms-auto text-end">
+                    <small class="text-muted">
+                        Showing: <strong>{{ date_from }}</strong> → <strong>{{ date_to }}</strong>
+                        &nbsp;·&nbsp; <strong>{{ total }}</strong> case{{ total|pluralize }}
+                    </small>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Column group toggle controls -->
+    <div class="d-flex gap-2 mb-2 align-items-center flex-wrap">
+        <small class="text-muted fw-semibold me-1">Show/Hide sections:</small>
+        <button class="btn btn-sm btn-outline-secondary section-toggle" data-group="reviews" title="Toggle REVIEWS columns">
+            <i class="bi bi-chevron-down toggle-icon" id="icon-reviews"></i> REVIEWS
+        </button>
+        <button class="btn btn-sm btn-outline-secondary section-toggle" data-group="mods" title="Toggle MODS &amp; ERRORS columns">
+            <i class="bi bi-chevron-down toggle-icon" id="icon-mods"></i> MODS &amp; ERRORS
+        </button>
+        <button class="btn btn-sm btn-outline-secondary section-toggle" data-group="dates" title="Toggle DATES columns">
+            <i class="bi bi-chevron-down toggle-icon" id="icon-dates"></i> DATES
+        </button>
+        <span class="ms-auto">
+            <button class="btn btn-sm btn-link text-muted p-0" id="expandAll">Expand all</button>
+            &nbsp;·&nbsp;
+            <button class="btn btn-sm btn-link text-muted p-0" id="collapseAll">Collapse all</button>
+        </span>
+    </div>
+
+    {% if rows %}
+    <!-- Table -->
+    <div class="table-responsive shadow-sm rounded border">
+        <table class="table table-sm table-hover table-bordered mb-0 align-middle" style="font-size:0.78rem; white-space:nowrap;">
+            <thead class="table-dark sticky-top">
+                <tr>
+                    <!-- Core columns (always visible) -->
+                    <th class="core-col" style="min-width:90px;">Case ID</th>
+                    <th class="core-col">Code</th>
+                    <th class="core-col" style="min-width:130px;">Member</th>
+                    <th class="core-col" style="min-width:120px;">Employee</th>
+                    <th class="core-col" style="min-width:130px;">Technician</th>
+                    <!-- REVIEWS group header -->
+                    <th colspan="5" class="reviews-col text-center" style="background:#5a6a7a; border-left:3px solid #8aa4b8;">
+                        <i class="bi bi-chevron-down toggle-icon-th" id="thicon-reviews"></i> REVIEWS
+                    </th>
+                    <!-- MODS & ERRORS group header -->
+                    <th colspan="4" class="mods-col text-center" style="background:#3a5a7a; border-left:3px solid #6a9abf;">
+                        <i class="bi bi-chevron-down toggle-icon-th" id="thicon-mods"></i> MODS &amp; ERRORS
+                    </th>
+                    <!-- DATES group header -->
+                    <th colspan="10" class="dates-col text-center" style="background:#5a4a1a; border-left:3px solid #c8a43a;">
+                        <i class="bi bi-chevron-down toggle-icon-th" id="thicon-dates"></i> DATES
+                    </th>
+                </tr>
+                <tr>
+                    <!-- Core -->
+                    <th class="core-col"></th>
+                    <th class="core-col"></th>
+                    <th class="core-col"></th>
+                    <th class="core-col"></th>
+                    <th class="core-col"></th>
+                    <!-- REVIEWS subheaders -->
+                    <th class="reviews-col" style="border-left:3px solid #8aa4b8;">Reviewer</th>
+                    <th class="reviews-col">Tech Notes to Reviewer</th>
+                    <th class="reviews-col"># Reviews</th>
+                    <th class="reviews-col">Reviewer Action</th>
+                    <th class="reviews-col">Reviewer Notes</th>
+                    <!-- MODS & ERRORS subheaders -->
+                    <th class="mods-col" style="border-left:3px solid #6a9abf;">Mod?</th>
+                    <th class="mods-col">Error Reason</th>
+                    <th class="mods-col">Disputed?</th>
+                    <th class="mods-col">Disputed Justification</th>
+                    <!-- DATES subheaders -->
+                    <th class="dates-col" style="border-left:3px solid #c8a43a;">Submitted</th>
+                    <th class="dates-col">Accepted</th>
+                    <th class="dates-col">Finished</th>
+                    <th class="dates-col">Released</th>
+                    <th class="dates-col">Due</th>
+                    <th class="dates-col">Urgency</th>
+                    <th class="dates-col">Days on Hold</th>
+                    <th class="dates-col">Prod Cycle</th>
+                    <th class="dates-col">Readiness Window</th>
+                    <th class="dates-col">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in rows %}
+                <tr class="{% if r.status == 'Late' %}table-danger{% endif %}">
+                    <!-- Core -->
+                    <td class="core-col fw-semibold">
+                        <a href="{% url 'cases:case_detail' r.case_pk %}" class="text-decoration-none" target="_blank">{{ r.case_id }}</a>
+                    </td>
+                    <td class="core-col">{{ r.code }}</td>
+                    <td class="core-col">{{ r.member }}</td>
+                    <td class="core-col">{{ r.employee }}</td>
+                    <td class="core-col">{{ r.technician }}</td>
+                    <!-- REVIEWS -->
+                    <td class="reviews-col" style="border-left:3px solid #8aa4b8;">{{ r.reviewer }}</td>
+                    <td class="reviews-col text-muted fst-italic">{{ r.tech_notes|default:"—" }}</td>
+                    <td class="reviews-col text-center">{{ r.review_count|default:"—" }}</td>
+                    <td class="reviews-col">
+                        {% if r.reviewer_action == 'Approved' %}
+                            <span class="badge bg-success">{{ r.reviewer_action }}</span>
+                        {% elif r.reviewer_action %}
+                            <span class="badge bg-warning text-dark">{{ r.reviewer_action }}</span>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="reviews-col" style="max-width:180px; white-space:normal;">{{ r.reviewer_notes|default:"—" }}</td>
+                    <!-- MODS & ERRORS -->
+                    <td class="mods-col text-center" style="border-left:3px solid #6a9abf;">
+                        {% if r.is_mod %}<span class="badge bg-info text-dark">MOD</span>{% else %}—{% endif %}
+                    </td>
+                    <td class="mods-col" style="max-width:160px; white-space:normal;">{{ r.error_reason|default:"—" }}</td>
+                    <td class="mods-col text-muted fst-italic text-center">{{ r.disputed|default:"—" }}</td>
+                    <td class="mods-col text-muted fst-italic" style="max-width:140px; white-space:normal;">{{ r.disputed_justification|default:"—" }}</td>
+                    <!-- DATES -->
+                    <td class="dates-col" style="border-left:3px solid #c8a43a;">{{ r.submitted }}</td>
+                    <td class="dates-col">{{ r.accepted }}</td>
+                    <td class="dates-col">{{ r.finished }}</td>
+                    <td class="dates-col">{{ r.released|default:"—" }}</td>
+                    <td class="dates-col">{{ r.due }}</td>
+                    <td class="dates-col">
+                        {% if r.urgency == 'Rush' %}
+                            <span class="badge bg-danger">Rush</span>
+                        {% else %}{{ r.urgency }}{% endif %}
+                    </td>
+                    <td class="dates-col text-center">{{ r.days_on_hold|default:"—" }}</td>
+                    <td class="dates-col text-center">{{ r.prod_cycle|default:"—" }}</td>
+                    <td class="dates-col text-center">
+                        {% if r.readiness_window %}
+                            {% if '-' in r.readiness_window %}<span class="text-danger fw-semibold">{{ r.readiness_window }}</span>
+                            {% else %}<span class="text-success">{{ r.readiness_window }}</span>{% endif %}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="dates-col text-center">
+                        {% if r.status == 'On Time' %}
+                            <span class="badge bg-success">On Time</span>
+                        {% elif r.status == 'Late' %}
+                            <span class="badge bg-danger">Late</span>
+                        {% else %}—{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="alert alert-info mt-4">
+        <i class="bi bi-info-circle me-2"></i>
+        No completed cases found for the selected date range.
+        Try adjusting the <strong>Completed From</strong> / <strong>Completed To</strong> dates above.
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+/* Section collapse */
+.reviews-col, .mods-col, .dates-col { transition: opacity 0.15s; }
+.section-hidden { display: none !important; }
+/* Sticky header row 1 */
+thead tr:first-child th { position: sticky; top: 0; z-index: 3; }
+thead tr:nth-child(2) th { position: sticky; top: 30px; z-index: 2; }
+</style>
+
+<script>
+const GROUPS = {
+    reviews: document.querySelectorAll('.reviews-col'),
+    mods:    document.querySelectorAll('.mods-col'),
+    dates:   document.querySelectorAll('.dates-col'),
+};
+const STATE = { reviews: true, mods: true, dates: true };
+
+function setGroup(group, visible) {
+    STATE[group] = visible;
+    GROUPS[group].forEach(el => el.classList.toggle('section-hidden', !visible));
+    // Update button chevron
+    const icon = document.getElementById('icon-' + group);
+    const thIcon = document.getElementById('thicon-' + group);
+    const cls = visible ? 'bi-chevron-down' : 'bi-chevron-right';
+    [icon, thIcon].forEach(el => { if (el) { el.className = 'bi ' + cls + (el.classList.contains('toggle-icon-th') ? ' toggle-icon-th' : ' toggle-icon'); } });
+}
+
+document.querySelectorAll('.section-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const g = btn.dataset.group;
+        setGroup(g, !STATE[g]);
+        // persist in sessionStorage
+        sessionStorage.setItem('pm_' + g, STATE[g] ? '1' : '0');
+    });
+});
+
+document.getElementById('expandAll').addEventListener('click', () => {
+    Object.keys(GROUPS).forEach(g => { setGroup(g, true); sessionStorage.setItem('pm_' + g, '1'); });
+});
+document.getElementById('collapseAll').addEventListener('click', () => {
+    Object.keys(GROUPS).forEach(g => { setGroup(g, false); sessionStorage.setItem('pm_' + g, '0'); });
+});
+
+// Restore state from session
+Object.keys(GROUPS).forEach(g => {
+    const saved = sessionStorage.getItem('pm_' + g);
+    if (saved === '0') setGroup(g, false);
+});
+</script>
+{% endblock %}
