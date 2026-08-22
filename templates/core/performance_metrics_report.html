@@ -74,7 +74,6 @@
             <thead class="table-dark sticky-top">
                 <tr>
                     <!-- Core columns (always visible) -->
-                    <th class="core-col" style="min-width:90px;">Case ID</th>
                     <th class="core-col">Code</th>
                     <th class="core-col" style="min-width:130px;">Member</th>
                     <th class="core-col" style="min-width:120px;">Employee</th>
@@ -94,7 +93,6 @@
                 </tr>
                 <tr>
                     <!-- Core -->
-                    <th class="core-col"></th>
                     <th class="core-col"></th>
                     <th class="core-col"></th>
                     <th class="core-col"></th>
@@ -127,12 +125,11 @@
                 {% for r in rows %}
                 <tr class="{% if r.status == 'Late' %}table-danger{% endif %}">
                     <!-- Core -->
-                    <td class="core-col fw-semibold">
-                        <a href="{% url 'cases:case_detail' r.case_pk %}" class="text-decoration-none" target="_blank">{{ r.case_id }}</a>
-                    </td>
                     <td class="core-col">{{ r.code }}</td>
                     <td class="core-col">{{ r.member }}</td>
-                    <td class="core-col">{{ r.employee }}</td>
+                    <td class="core-col fw-semibold">
+                        <a href="{% url 'cases:case_detail' r.case_pk %}?back=performance_metrics&date_from={{ date_from }}&date_to={{ date_to }}" class="text-decoration-none">{{ r.employee }}</a>
+                    </td>
                     <td class="core-col">{{ r.technician }}</td>
                     <!-- REVIEWS -->
                     <td class="reviews-col" style="border-left:3px solid #8aa4b8;">{{ r.reviewer }}</td>

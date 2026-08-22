@@ -106,6 +106,11 @@
             {% endif %}
         </div>
         <div class="col-auto d-flex align-items-center gap-2">
+            {% if request.GET.back == 'performance_metrics' %}
+                <a href="{% url 'performance_metrics_report' %}?date_from={{ request.GET.date_from }}&date_to={{ request.GET.date_to }}" class="btn btn-outline-success">
+                    <i class="bi bi-arrow-left"></i> Back to Performance Metrics
+                </a>
+            {% endif %}
             {% if user.role == 'member' %}
                 <a href="{% url 'cases:member_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -148,6 +153,11 @@
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if request.GET.back == 'performance_metrics' %}
+                <a href="{% url 'performance_metrics_report' %}?date_from={{ request.GET.date_from }}&date_to={{ request.GET.date_to }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-arrow-left"></i> Back to Performance Metrics
+                </a>
+                {% endif %}
                 {% if case.status == 'completed' and case.actual_release_date and not case.resubmitted_cases.exists %}
                 <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#staffRequestModModal" id="staffRequestModBtn">
                     <i class="bi bi-pencil-square"></i> Create Mod
@@ -181,6 +191,11 @@
                 <a href="{% url 'cases:manager_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if request.GET.back == 'performance_metrics' %}
+                <a href="{% url 'performance_metrics_report' %}?date_from={{ request.GET.date_from }}&date_to={{ request.GET.date_to }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-arrow-left"></i> Back to Performance Metrics
+                </a>
+                {% endif %}
                 {% if case.status == 'completed' and case.actual_release_date and not case.resubmitted_cases.exists %}
                 <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#staffRequestModModal" id="staffRequestModBtn">
                     <i class="bi bi-pencil-square"></i> Create Mod
@@ -195,6 +210,11 @@
                 <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-primary">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard
                 </a>
+                {% if request.GET.back == 'performance_metrics' %}
+                <a href="{% url 'performance_metrics_report' %}?date_from={{ request.GET.date_from }}&date_to={{ request.GET.date_to }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-arrow-left"></i> Back to Performance Metrics
+                </a>
+                {% endif %}
                 {% if case.status == 'completed' and case.actual_release_date and not case.resubmitted_cases.exists %}
                 <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#staffRequestModModal" id="staffRequestModBtn">
                     <i class="bi bi-pencil-square"></i> Create Mod
