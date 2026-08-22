@@ -73,48 +73,33 @@
         <table class="table table-sm table-hover table-bordered mb-0 align-middle" style="font-size:0.78rem; white-space:nowrap;">
             <thead class="table-dark sticky-top">
                 <tr>
-                    <!-- Core columns (always visible) — rowspan=2 so label shows across both header rows -->
-                    <th class="core-col" rowspan="2">Code</th>
-                    <th class="core-col" rowspan="2" style="min-width:130px;">Member</th>
-                    <th class="core-col" rowspan="2" style="min-width:120px;">Employee</th>
-                    <th class="core-col" rowspan="2" style="min-width:130px;">Technician</th>
-                    <!-- REVIEWS group header -->
-                    <th colspan="5" class="reviews-col text-center" style="background:#5a6a7a; border-left:3px solid #8aa4b8;">
-                        <i class="bi bi-chevron-down toggle-icon-th" id="thicon-reviews"></i> REVIEWS
-                    </th>
-                    <!-- MODS & ERRORS group header -->
-                    <th colspan="4" class="mods-col text-center" style="background:#3a5a7a; border-left:3px solid #6a9abf;">
-                        <i class="bi bi-chevron-down toggle-icon-th" id="thicon-mods"></i> MODS &amp; ERRORS
-                    </th>
-                    <!-- DATES group header -->
-                    <th colspan="10" class="dates-col text-center" style="background:#5a4a1a; border-left:3px solid #c8a43a;">
-                        <i class="bi bi-chevron-down toggle-icon-th" id="thicon-dates"></i> DATES
-                    </th>
-                </tr>
-                <tr>
-                    <!-- Core columns handled by rowspan=2 above — no cells needed here -->
-                    <!-- REVIEWS subheaders -->
-                    <th class="reviews-col" style="border-left:3px solid #8aa4b8;">Reviewer</th>
-                    <th class="reviews-col">Tech Notes to Reviewer</th>
-                    <th class="reviews-col"># Reviews</th>
-                    <th class="reviews-col">Reviewer Action</th>
-                    <th class="reviews-col">Reviewer Notes</th>
-                    <!-- MODS & ERRORS subheaders -->
-                    <th class="mods-col" style="border-left:3px solid #6a9abf;">Mod?</th>
-                    <th class="mods-col">Error Reason</th>
-                    <th class="mods-col">Disputed?</th>
-                    <th class="mods-col">Disputed Justification</th>
-                    <!-- DATES subheaders -->
-                    <th class="dates-col" style="border-left:3px solid #c8a43a;">Submitted</th>
-                    <th class="dates-col">Accepted</th>
-                    <th class="dates-col">Finished</th>
-                    <th class="dates-col">Released</th>
-                    <th class="dates-col">Due</th>
-                    <th class="dates-col">Urgency</th>
-                    <th class="dates-col">Days on Hold</th>
-                    <th class="dates-col">Prod Cycle</th>
-                    <th class="dates-col">Readiness Window</th>
-                    <th class="dates-col">Status</th>
+                    <!-- Core columns -->
+                    <th class="core-col">Code</th>
+                    <th class="core-col" style="min-width:130px;">Member</th>
+                    <th class="core-col" style="min-width:120px;">Employee</th>
+                    <th class="core-col" style="min-width:130px;">Technician</th>
+                    <!-- REVIEWS columns -->
+                    <th class="reviews-col" style="background:#5a6a7a; border-left:3px solid #8aa4b8;">Reviewer</th>
+                    <th class="reviews-col" style="background:#5a6a7a;">Tech Notes to Reviewer</th>
+                    <th class="reviews-col" style="background:#5a6a7a;"># Reviews</th>
+                    <th class="reviews-col" style="background:#5a6a7a;">Reviewer Action</th>
+                    <th class="reviews-col" style="background:#5a6a7a;">Reviewer Notes</th>
+                    <!-- MODS & ERRORS columns -->
+                    <th class="mods-col" style="background:#3a5a7a; border-left:3px solid #6a9abf;">Mod?</th>
+                    <th class="mods-col" style="background:#3a5a7a;">Error Reason</th>
+                    <th class="mods-col" style="background:#3a5a7a;">Disputed?</th>
+                    <th class="mods-col" style="background:#3a5a7a;">Disputed Justification</th>
+                    <!-- DATES columns -->
+                    <th class="dates-col" style="background:#5a4a1a; border-left:3px solid #c8a43a;">Submitted</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Accepted</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Finished</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Released</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Due</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Urgency</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Days on Hold</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Prod Cycle</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Readiness Window</th>
+                    <th class="dates-col" style="background:#5a4a1a;">Status</th>
                 </tr>
             </thead>
             <tbody>
@@ -192,9 +177,8 @@
 /* Section collapse */
 .reviews-col, .mods-col, .dates-col { transition: opacity 0.15s; }
 .section-hidden { display: none !important; }
-/* Sticky header row 1 */
-thead tr:first-child th { position: sticky; top: 0; z-index: 3; }
-thead tr:nth-child(2) th { position: sticky; top: 30px; z-index: 2; }
+/* Single sticky header row */
+thead tr th { position: sticky; top: 0; z-index: 3; }
 </style>
 
 <script>
@@ -208,11 +192,9 @@ const STATE = { reviews: true, mods: true, dates: true };
 function setGroup(group, visible) {
     STATE[group] = visible;
     GROUPS[group].forEach(el => el.classList.toggle('section-hidden', !visible));
-    // Update button chevron
     const icon = document.getElementById('icon-' + group);
-    const thIcon = document.getElementById('thicon-' + group);
     const cls = visible ? 'bi-chevron-down' : 'bi-chevron-right';
-    [icon, thIcon].forEach(el => { if (el) { el.className = 'bi ' + cls + (el.classList.contains('toggle-icon-th') ? ' toggle-icon-th' : ' toggle-icon'); } });
+    if (icon) icon.className = 'bi ' + cls + ' toggle-icon';
 }
 
 document.querySelectorAll('.section-toggle').forEach(btn => {
