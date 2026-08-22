@@ -5,6 +5,7 @@ from django.urls import reverse
 
 from accounts.models import User, DelegateRequest, MemberDelegate
 from cases.models import Case
+from core.models import AuditLog
 
 
 class DashboardSearchTests(TestCase):
@@ -130,3 +131,46 @@ class DashboardSearchTests(TestCase):
         self.assertEqual(request.status, 'dismissed')
         self.assertEqual(request.processed_by, self.admin)
         self.assertRedirects(response, reverse('cases:admin_dashboard'))
+
+    def test_pending_review_detail_renders_even_when_review_event_has_no_user_or_metadata(self):
+        original_tech = User.objects.create_user(
+            username='tech_original',
+            password='Password123!',
+            role='technician',
+            user_level='level_1',
+            first_name='Original',
+            last_name='Tech',
+        )
+        reviewer = User.objects.create_user(
+            username='tech_reviewer',
+            password='Password123!',
+            role='technician',
+            user_level='level_2',
+            first_name='Review',
+            last_name='Tech',
+        )
+        case = Case.objects.create(
+            external_case_id='WS-2026-0003',
+            workshop_code='WS009',
+            employee_first_name='Alice',
+            employee_last_name='Example',
+            client_email='alice@example.com',
+            status='pending_review',
+            assigned_to=original_tech,
+        )
+        AuditLog.objects.create(
+            user=None,
+            case=case,
+            action_type='case_submitted_for_review',
+            description='Submitted for review',
+            metadata={},
+        )
+
+        client = Client()
+        client.force_login(reviewer)
+
+        response = client.get(reverse('cases:case_detail', args=[case.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Case Pending Your Review')
+        self.assertContains(response, 'Submitted for review')
