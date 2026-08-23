@@ -435,10 +435,13 @@
             {% if cases %}
             <style>
                 .table { margin-bottom: 0; }
-                .table-responsive {
+                .table-scroll-outer {
                     max-height: 65vh;
                     overflow-y: auto;
+                }
+                .table-responsive {
                     overflow-x: auto;
+                    overflow-y: clip;
                 }
                 .table thead th { 
                     padding: 0.5rem 0.35rem; 
@@ -462,6 +465,7 @@
                 #code-column { min-width: 80px; text-align: left; }
             </style>
 
+            <div class="table-scroll-outer">
             <div class="table-responsive">
                 <table class="table table-hover table-sm">
                     <thead>
@@ -619,6 +623,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
             </div>
             {% else %}
             <div class="text-center py-5">
