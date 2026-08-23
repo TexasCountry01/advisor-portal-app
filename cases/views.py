@@ -5606,16 +5606,26 @@ def mark_messages_as_read(request, pk):
     
     try:
         if user.role in ['technician', 'administrator', 'manager']:
-            if case.assigned_to == user:
-                # Case owner: globally clear all staff UnreadMessage rows for this case.
-                # Badge is scoped to the assigned tech, so this drops the badge to 0
-                # for every staff viewer simultaneously.
+            is_owner = (case.assigned_to == user)
+            # Senior staff (admin, manager, L3 tech) can clear alerts on unassigned cases
+            # — covers cancelled/declined cases where assigned_to was nulled on transition.
+            is_senior_staff = (
+                user.role in ['administrator', 'manager'] or
+                (user.role == 'technician' and user.user_level == 'level_3')
+            )
+            can_clear_unassigned = (case.assigned_to is None and is_senior_staff)
+
+            if is_owner or can_clear_unassigned:
+                # Clear all staff UnreadMessage rows for this case globally.
                 UnreadMessage.objects.filter(
                     case=case,
                     user__role__in=['technician', 'administrator', 'manager'],
                 ).delete()
-                logger.info(f'Case owner {user.username} globally cleared staff UnreadMessage rows for case {case.external_case_id}')
-            # else: non-owning staff — badge is the assigned tech's count; nothing to clear.
+                if is_owner:
+                    logger.info(f'Case owner {user.username} globally cleared staff UnreadMessage rows for case {case.external_case_id}')
+                else:
+                    logger.info(f'Senior staff {user.username} cleared unassigned-case UnreadMessage rows for case {case.external_case_id}')
+            # else: non-owning staff on an assigned case — badge is the owner's count; nothing to clear.
         else:
             # Member/delegate: clear own rows only (member badge is personal, not case-scoped)
             UnreadMessage.objects.filter(case=case, user=user).delete()
