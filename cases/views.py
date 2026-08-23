@@ -286,13 +286,23 @@ def _build_staff_quick_tiles(queryset, user, quick_tech='all'):
         _has_assigned_tech_unread = Exists(
             UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
         )
-        counts['alerts'] = alert_qs.filter(_has_assigned_tech_unread).count()
+        _has_any_unread = Exists(
+            UnreadMessage.objects.filter(case=OuterRef('pk'))
+        )
+        counts['alerts'] = alert_qs.filter(
+            _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+        ).count()
         return {k: (v or 0) for k, v in counts.items()}
 
     _has_assigned_tech_unread = Exists(
         UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
     )
-    counts['alerts'] = alert_qs.filter(_has_assigned_tech_unread).count()
+    _has_any_unread = Exists(
+        UnreadMessage.objects.filter(case=OuterRef('pk'))
+    )
+    counts['alerts'] = alert_qs.filter(
+        _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+    ).count()
     counts['flagged'] = CaseFlag.objects.filter(user=user).count()
     return {k: (v or 0) for k, v in counts.items()}
 
@@ -872,16 +882,19 @@ def technician_dashboard(request):
     # Badge scoped to the assigned tech's own UnreadMessage rows only.
     # All staff (admin/manager/tech) see the same count for each case because
     # the badge reflects the CASE OWNER's unread state, not the viewer's.
+    # For cancelled/unassigned cases (assigned_to=None), fall back to any unread.
     from django.db.models import F as _F
+    _page_case_ids = [c.pk for c in page_cases]
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(
-                case_id__in=[c.pk for c in page_cases],
-                user=_F('case__assigned_to'),
-            )
+            .filter(case_id__in=_page_case_ids, user=_F('case__assigned_to'))
             .values('case_id').annotate(cnt=_Count('id'))
     }
+    _unassigned_ids = [c.pk for c in page_cases if c.assigned_to_id is None]
+    if _unassigned_ids:
+        for _row in UnreadMessage.objects.filter(case_id__in=_unassigned_ids).values('case_id').annotate(cnt=_Count('id')):
+            _unread_map[_row['case_id']] = _row['cnt']
     for case in page_cases:
         case.unread_message_count = _unread_map.get(case.pk, 0)
 
@@ -1129,16 +1142,19 @@ def admin_dashboard(request):
     page_cases = list(page_obj.object_list)
     # Badge scoped to the assigned tech's own UnreadMessage rows only.
     # All staff see the same number for each case (owner's unread state).
+    # For cancelled/unassigned cases (assigned_to=None), fall back to any unread.
     from django.db.models import F as _F
+    _page_case_ids = [c.pk for c in page_cases]
     _unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(
-                case_id__in=[c.pk for c in page_cases],
-                user=_F('case__assigned_to'),
-            )
+            .filter(case_id__in=_page_case_ids, user=_F('case__assigned_to'))
             .values('case_id').annotate(cnt=_Count('id'))
     }
+    _unassigned_ids = [c.pk for c in page_cases if c.assigned_to_id is None]
+    if _unassigned_ids:
+        for _row in UnreadMessage.objects.filter(case_id__in=_unassigned_ids).values('case_id').annotate(cnt=_Count('id')):
+            _unread_map[_row['case_id']] = _row['cnt']
     for case in page_cases:
         case.unread_message_count = _unread_map.get(case.pk, 0)
 
@@ -1346,15 +1362,18 @@ def manager_dashboard(request):
     from django.db.models import Count as _Count, F as _F
     # Badge scoped to the assigned tech's own UnreadMessage rows only.
     # All staff see the same number for each case (owner's unread state).
+    # For cancelled/unassigned cases (assigned_to=None), fall back to any unread.
+    _manager_all_ids = list(cases.values_list('pk', flat=True))
     _manager_unread_map = {
         row['case_id']: row['cnt']
         for row in UnreadMessage.objects
-            .filter(
-                case_id__in=list(cases.values_list('pk', flat=True)),
-                user=_F('case__assigned_to'),
-            )
+            .filter(case_id__in=_manager_all_ids, user=_F('case__assigned_to'))
             .values('case_id').annotate(cnt=_Count('id'))
     }
+    _manager_unassigned_ids = list(cases.filter(assigned_to__isnull=True).values_list('pk', flat=True))
+    if _manager_unassigned_ids:
+        for _row in UnreadMessage.objects.filter(case_id__in=_manager_unassigned_ids).values('case_id').annotate(cnt=_Count('id')):
+            _manager_unread_map[_row['case_id']] = _row['cnt']
     for case in cases:
         case.unread_message_count = _manager_unread_map.get(case.pk, 0)
     
