@@ -206,21 +206,21 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, quick_tech='all'):
             _has_assigned_tech_unread = Exists(
                 UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
             )
-            _has_any_unread = Exists(
-                UnreadMessage.objects.filter(case=OuterRef('pk'))
+            _has_staff_unread = Exists(
+                UnreadMessage.objects.filter(case=OuterRef('pk'), user__role__in=['technician', 'administrator', 'manager'])
             )
             return alert_qs.filter(
-                _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+                _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_staff_unread)
             )
 
         _has_assigned_tech_unread = Exists(
             UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
         )
-        _has_any_unread = Exists(
-            UnreadMessage.objects.filter(case=OuterRef('pk'))
+        _has_staff_unread = Exists(
+            UnreadMessage.objects.filter(case=OuterRef('pk'), user__role__in=['technician', 'administrator', 'manager'])
         )
         return alert_qs.filter(
-            _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+            _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_staff_unread)
         )
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
@@ -293,22 +293,22 @@ def _build_staff_quick_tiles(queryset, user, quick_tech='all'):
         _has_assigned_tech_unread = Exists(
             UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
         )
-        _has_any_unread = Exists(
-            UnreadMessage.objects.filter(case=OuterRef('pk'))
+        _has_staff_unread = Exists(
+            UnreadMessage.objects.filter(case=OuterRef('pk'), user__role__in=['technician', 'administrator', 'manager'])
         )
         counts['alerts'] = alert_qs.filter(
-            _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+            _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_staff_unread)
         ).count()
         return {k: (v or 0) for k, v in counts.items()}
 
     _has_assigned_tech_unread = Exists(
         UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
     )
-    _has_any_unread = Exists(
-        UnreadMessage.objects.filter(case=OuterRef('pk'))
+    _has_staff_unread = Exists(
+        UnreadMessage.objects.filter(case=OuterRef('pk'), user__role__in=['technician', 'administrator', 'manager'])
     )
     counts['alerts'] = alert_qs.filter(
-        _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+        _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_staff_unread)
     ).count()
     counts['flagged'] = CaseFlag.objects.filter(user=user).count()
     return {k: (v or 0) for k, v in counts.items()}
@@ -902,7 +902,7 @@ def technician_dashboard(request):
     }
     _unassigned_ids = [c.pk for c in page_cases if c.assigned_to_id is None]
     if _unassigned_ids:
-        for _row in UnreadMessage.objects.filter(case_id__in=_unassigned_ids).values('case_id').annotate(cnt=_Count('id')):
+        for _row in UnreadMessage.objects.filter(case_id__in=_unassigned_ids, user__role__in=['technician', 'administrator', 'manager']).values('case_id').annotate(cnt=_Count('id')):
             _unread_map[_row['case_id']] = _row['cnt']
     for case in page_cases:
         case.unread_message_count = _unread_map.get(case.pk, 0)
@@ -1162,7 +1162,7 @@ def admin_dashboard(request):
     }
     _unassigned_ids = [c.pk for c in page_cases if c.assigned_to_id is None]
     if _unassigned_ids:
-        for _row in UnreadMessage.objects.filter(case_id__in=_unassigned_ids).values('case_id').annotate(cnt=_Count('id')):
+        for _row in UnreadMessage.objects.filter(case_id__in=_unassigned_ids, user__role__in=['technician', 'administrator', 'manager']).values('case_id').annotate(cnt=_Count('id')):
             _unread_map[_row['case_id']] = _row['cnt']
     for case in page_cases:
         case.unread_message_count = _unread_map.get(case.pk, 0)
@@ -1381,7 +1381,7 @@ def manager_dashboard(request):
     }
     _manager_unassigned_ids = list(cases.filter(assigned_to__isnull=True).values_list('pk', flat=True))
     if _manager_unassigned_ids:
-        for _row in UnreadMessage.objects.filter(case_id__in=_manager_unassigned_ids).values('case_id').annotate(cnt=_Count('id')):
+        for _row in UnreadMessage.objects.filter(case_id__in=_manager_unassigned_ids, user__role__in=['technician', 'administrator', 'manager']).values('case_id').annotate(cnt=_Count('id')):
             _manager_unread_map[_row['case_id']] = _row['cnt']
     for case in cases:
         case.unread_message_count = _manager_unread_map.get(case.pk, 0)
