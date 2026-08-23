@@ -172,6 +172,8 @@
                     <a class="tile-link {% if quick_filter == 'due_tomorrow' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=due_tomorrow"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.due_tomorrow }}</div><div class="stat-mini-label">Due<br>Tomorrow</div></div></a>
                     <a class="tile-link {% if quick_filter == 'past_due' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=past_due"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.past_due }}</div><div class="stat-mini-label">Past<br>Due</div></div></a>
                     <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=alerts"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.alerts }}</div><div class="stat-mini-label">Active<br>Alerts</div></div></a>
+                    <div class="tile-divider"></div>
+                    <a class="tile-link {% if quick_filter == 'flagged' %}active{% endif %}" href="{% url 'cases:admin_dashboard' %}?quick_tech={{ quick_tech }}&quick_filter=flagged"><div class="stat-mini" style="background:#e67300;"><div class="stat-mini-value" style="font-size:26px; line-height:1;"><i class="bi bi-bookmark-fill"></i></div><div class="stat-mini-label">Pinned<br>Cases</div></div></a>
                 </div>
             </div>
 
