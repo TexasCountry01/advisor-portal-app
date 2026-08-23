@@ -484,6 +484,7 @@
                             <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}" title="Click to sort by Assigned To">Assigned To</a></th>
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}" title="Click to sort by Tier">Tier</a></th>
                             <th data-column-id="credits" {% if 'credits' not in visible_columns %}class="column-hidden"{% endif %}>Credits</th>
+                            <th style="min-width:120px;"></th>
                         </tr>
                     </thead>
                     <tbody>
