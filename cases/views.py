@@ -166,9 +166,6 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, quick_tech='all'):
     if quick_filter == 'flagged':
         return queryset.filter(flags__user=user)
 
-    if quick_filter == 'flagged':
-        return queryset.filter(flags__user=user)
-
     if quick_filter == 'submitted':
         return queryset.filter(status='submitted')
     if quick_filter == 'pending':
@@ -209,12 +206,22 @@ def _apply_staff_quick_filter(queryset, quick_filter, user, quick_tech='all'):
             _has_assigned_tech_unread = Exists(
                 UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
             )
-            return alert_qs.filter(_has_assigned_tech_unread)
+            _has_any_unread = Exists(
+                UnreadMessage.objects.filter(case=OuterRef('pk'))
+            )
+            return alert_qs.filter(
+                _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+            )
 
         _has_assigned_tech_unread = Exists(
             UnreadMessage.objects.filter(case=OuterRef('pk'), user=OuterRef('assigned_to'))
         )
-        return alert_qs.filter(_has_assigned_tech_unread)
+        _has_any_unread = Exists(
+            UnreadMessage.objects.filter(case=OuterRef('pk'))
+        )
+        return alert_qs.filter(
+            _has_assigned_tech_unread | (Q(assigned_to__isnull=True) & _has_any_unread)
+        )
     if quick_filter == 'due_today':
         return queryset.filter(date_due=today).exclude(status__in=['completed', 'cancelled', 'declined', 'draft'])
     if quick_filter == 'due_tomorrow':
@@ -763,13 +770,15 @@ def technician_dashboard(request):
     if quick_tech and quick_tech != 'all' and quick_filter != 'submitted' and not search_query:
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
+            # Include cancelled/declined cases (terminal, unassigned) so their alerts
+            # appear in the Active Alerts tile and row badges.
+            _terminal_q = Q(status__in=['cancelled', 'declined'])
             if _terminal_selected:
-                # Include this tech's assigned cases OR explicitly selected terminal-status cases
                 cases = cases.filter(
-                    Q(assigned_to=tech_user) | Q(status__in=_terminal_selected)
+                    Q(assigned_to=tech_user) | Q(status__in=_terminal_selected) | _terminal_q
                 )
             else:
-                cases = cases.filter(assigned_to=tech_user)
+                cases = cases.filter(Q(assigned_to=tech_user) | _terminal_q)
         except User.DoesNotExist:
             pass  # Filter not applied if technician doesn't exist
     
@@ -1033,7 +1042,7 @@ def admin_dashboard(request):
     if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
-            cases = cases.filter(assigned_to=tech_user)
+            cases = cases.filter(Q(assigned_to=tech_user) | Q(status__in=['cancelled', 'declined']))
         except User.DoesNotExist:
             pass  # Filter not applied if technician doesn't exist
     
@@ -1253,7 +1262,7 @@ def manager_dashboard(request):
     if quick_tech and quick_tech != 'all' and quick_filter != 'submitted':
         try:
             tech_user = User.objects.get(username__iexact=quick_tech, role__in=['technician', 'administrator'], is_active=True)
-            cases = cases.filter(assigned_to=tech_user)
+            cases = cases.filter(Q(assigned_to=tech_user) | Q(status__in=['cancelled', 'declined']))
         except User.DoesNotExist:
             pass  # Filter not applied if technician doesn't exist
     
