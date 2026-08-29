@@ -128,6 +128,7 @@
             <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-toggle="collapse" data-bs-target="#filter-row">
                 <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
             </button>
+            <a href="{% url 'cases:member_dashboard' %}?view={{ active_view }}" class="btn btn-sm btn-outline-secondary" title="Show all cases (clear filter)">All Cases ({{ stats.total_cases }})</a>
             <button type="button" id="toggle-view-stats" class="btn btn-sm btn-outline-secondary" title="Show/hide stats">
                 <i class="bi bi-chevron-up"></i> Hide
             </button>
@@ -163,11 +164,6 @@
                 }
             </style>
             <!-- Clickable Fast-Filter Tiles -->
-            <div class="row mb-1" id="top-row-header">
-                <div class="col-auto ms-auto">
-                    <a href="{% url 'cases:member_dashboard' %}?view={{ active_view }}" class="text-muted small" style="text-decoration: underline;" title="Clear filter and show all cases">All Cases ({{ stats.total_cases }})</a>
-                </div>
-            </div>
             <div class="row mb-3" id="top-row">
                 <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
                     <a class="tile-link {% if quick_filter == 'ready_14d' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=ready_14d&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);"><div class="stat-mini-value">{{ member_quick_tiles.ready_14d }}</div><div class="stat-mini-label">Ready (14d)</div></div></a>
