@@ -107,6 +107,11 @@
                             </li>
                             {% endif %}
                             <li class="nav-item">
+                                <a class="nav-link" href="{% url 'performance_tracker' %}">
+                                    <i class="bi bi-bar-chart-line"></i> Reporting
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link" href="{% url 'messaging:inbox' %}" id="nav-messages-link">
                                     <i class="bi bi-envelope"></i> Messages
                                     <span class="badge bg-danger rounded-pill" id="nav-messages-badge" style="display:none; font-size: 0.65rem; vertical-align: top;"></span>
@@ -150,6 +155,11 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="{% url 'cases:manager_dashboard' %}">
                                     <i class="bi bi-speedometer2"></i> Dashboard
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'performance_tracker' %}">
+                                    <i class="bi bi-bar-chart-line"></i> Reporting
                                 </a>
                             </li>
                             <li class="nav-item">

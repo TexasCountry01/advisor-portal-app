@@ -4315,8 +4315,8 @@ def _build_scorecard_data(selected_tech_ids=None, include_former=False):
 
 @login_required
 def performance_scorecard(request):
-    """Rolling 13-week Performance Scorecard — admin only."""
-    if not is_admin(request.user):
+    """Rolling 13-week Performance Tracker — admin, manager, and technician."""
+    if not (is_admin(request.user) or request.user.role in ('manager', 'technician')):
         messages.error(request, 'Access denied.')
         return redirect('home')
 
@@ -4326,8 +4326,9 @@ def performance_scorecard(request):
     if request.GET.get('export') == 'csv':
         data = _build_scorecard_data(include_former=True)
         today = timezone.now().strftime('%Y%m%d')
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = f'attachment; filename="performance_scorecard_{today}.csv"'
+        response = HttpResponse(content_type='text/csv; charset=utf-8-sig')
+        response['Content-Disposition'] = f'attachment; filename="performance_tracker_{today}.csv"'
+        response.write('\ufeff')  # UTF-8 BOM — ensures Excel opens correctly without garbled characters
         writer = csv.writer(response)
         writer.writerow(['REPORTING PERIOD (MOST RECENT WEEK SHOWN FIRST)'])
         writer.writerow(['TITLE'] + data['week_labels'])

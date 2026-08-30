@@ -48,6 +48,7 @@ urlpatterns = [
     path('reports/performance/', views_reports.performance_dashboard, name='performance_dashboard'),
     path('reports/performance/detail/<slug:metric_slug>/', views_reports.performance_detail, name='performance_detail'),
     path('reports/performance/scorecard/', views_reports.performance_scorecard, name='performance_scorecard'),
+    path('reports/performance/tracker/', views_reports.performance_scorecard, name='performance_tracker'),
     path('reports/performance/scorecard/pdf/', views_reports.performance_scorecard_pdf, name='performance_scorecard_pdf'),
     path('reports/performance/metrics/', views_reports.performance_metrics_report, name='performance_metrics_report'),
     path('reports/advisor-submissions/', views_reports.advisor_submission_report, name='advisor_submission_report'),
