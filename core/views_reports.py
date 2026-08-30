@@ -4250,10 +4250,10 @@ def _build_scorecard_data(selected_tech_ids=None, include_former=False):
         return f"{round(s / c)}d" if c > 0 else '—'
 
     def team_vals(key):
-        return [str(wd[i][key]['team']) for i in range(13)]
+        return ['—' if wd[i][key]['team'] == 0 else str(wd[i][key]['team']) for i in range(13)]
 
     def tech_val_list(key, tid):
-        return [str(wd[i][key]['bt'].get(tid, 0)) for i in range(13)]
+        return ['—' if wd[i][key]['bt'].get(tid, 0) == 0 else str(wd[i][key]['bt'].get(tid, 0)) for i in range(13)]
 
     def make_section(title, t_vals, per_tech_rows):
         rows = [{'label': title, 'is_header': True, 'values': t_vals}]
@@ -4365,8 +4365,8 @@ def performance_scorecard(request):
 
 @login_required
 def performance_scorecard_pdf(request):
-    """PDF download of the Performance Scorecard — admin only."""
-    if not is_admin(request.user):
+    """PDF download of the Performance Tracker — admin, manager, and technician."""
+    if not (is_admin(request.user) or request.user.role in ('manager', 'technician')):
         return HttpResponse('Access denied.', status=403)
 
     from weasyprint import HTML
