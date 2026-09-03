@@ -7464,7 +7464,8 @@ def submit_for_review(request, case_id):
                 case=case,
                 original_technician=user,
                 review_action=action,
-                review_notes=review_notes
+                review_notes=review_notes,
+                tech_notes=tech_notes
             )
             
             # Notify reviewer(s)

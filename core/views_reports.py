@@ -3188,8 +3188,9 @@ def performance_dashboard(request):
 
     # Default: last 7 days
     if not date_from and not date_to:
-        date_to = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
-        date_from = (timezone.localtime(timezone.now()).date() - timedelta(days=7)).strftime('%Y-%m-%d')
+        today = timezone.localtime(timezone.now()).date()
+        date_to = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        date_from = (today - timedelta(days=7)).strftime('%Y-%m-%d')
 
     metrics = get_performance_metrics(date_from or None, date_to or None)
 
@@ -3273,8 +3274,9 @@ def performance_detail(request, metric_slug):
     date_from = request.GET.get('date_from', '').strip()
     date_to   = request.GET.get('date_to',   '').strip()
     if not date_from and not date_to:
-        date_to   = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
-        date_from = (timezone.localtime(timezone.now()).date() - timedelta(days=7)).strftime('%Y-%m-%d')
+        today = timezone.localtime(timezone.now()).date()
+        date_to = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        date_from = (today - timedelta(days=7)).strftime('%Y-%m-%d')
 
     from datetime import datetime as _dt
     date_from_obj = _dt.strptime(date_from, '%Y-%m-%d').date() if date_from else None
@@ -3744,10 +3746,11 @@ def advisor_submission_report(request):
     date_from_str = request.GET.get('date_from', '').strip()
     date_to_str = request.GET.get('date_to', '').strip()
 
-    # Default: last 30 days
+    # Default: last 30 days ending yesterday
     if not date_from_str and not date_to_str:
-        date_to_str = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
-        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=30)).strftime('%Y-%m-%d')
+        today = timezone.localtime(timezone.now()).date()
+        date_to_str = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        date_from_str = (today - timedelta(days=30)).strftime('%Y-%m-%d')
 
     try:
         date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
@@ -3831,8 +3834,9 @@ def review_accuracy_report(request):
     date_to_str = request.GET.get('date_to', '').strip()
 
     if not date_from_str and not date_to_str:
-        date_to_str = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
-        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=30)).strftime('%Y-%m-%d')
+        today = timezone.localtime(timezone.now()).date()
+        date_to_str = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        date_from_str = (today - timedelta(days=30)).strftime('%Y-%m-%d')
 
     try:
         date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
@@ -3933,8 +3937,9 @@ def review_returns_corrections_report(request):
     date_to_str = request.GET.get('date_to', '').strip()
 
     if not date_from_str and not date_to_str:
-        date_to_str = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
-        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=30)).strftime('%Y-%m-%d')
+        today = timezone.localtime(timezone.now()).date()
+        date_to_str = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        date_from_str = (today - timedelta(days=30)).strftime('%Y-%m-%d')
 
     try:
         date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
@@ -4406,13 +4411,28 @@ def performance_metrics_report(request):
     from datetime import datetime as _dt
     from cases.models import CaseReviewHistory
 
+    sort_param = (request.GET.get('sort') or '').strip()
+    allowed_sort_keys = {
+        'code', '-code', 'member', '-member', 'employee', '-employee',
+        'technician', '-technician', 'reviewer', '-reviewer',
+        'tech_notes', '-tech_notes', 'review_count', '-review_count',
+        'reviewer_action', '-reviewer_action', 'reviewer_notes', '-reviewer_notes',
+        'is_mod', '-is_mod', 'error_reason', '-error_reason', 'disputed', '-disputed',
+        'disputed_justification', '-disputed_justification', 'submitted', '-submitted',
+        'accepted', '-accepted', 'finished', '-finished', 'released', '-released',
+        'due', '-due', 'urgency', '-urgency', 'days_on_hold', '-days_on_hold',
+        'prod_cycle', '-prod_cycle', 'readiness_window', '-readiness_window', 'status', '-status'
+    }
+    active_sort = sort_param if sort_param in allowed_sort_keys else ''
+
     date_from_str = request.GET.get('date_from', '').strip()
     date_to_str   = request.GET.get('date_to',   '').strip()
 
-    # Default to last 7 days (same as performance dashboard)
+    # Default to last 7 days ending yesterday (same as performance dashboard)
     if not date_from_str and not date_to_str:
-        date_to_str   = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
-        date_from_str = (timezone.localtime(timezone.now()).date() - timedelta(days=7)).strftime('%Y-%m-%d')
+        today = timezone.localtime(timezone.now()).date()
+        date_to_str = (today - timedelta(days=1)).strftime('%Y-%m-%d')
+        date_from_str = (today - timedelta(days=7)).strftime('%Y-%m-%d')
 
     try:
         date_from = _dt.strptime(date_from_str, '%Y-%m-%d').date() if date_from_str else None
@@ -4438,7 +4458,6 @@ def performance_metrics_report(request):
     for c in cases_qs:
         # ── REVIEWS ──────────────────────────────────────────────────────────
         review_history = list(c.review_history.order_by('reviewed_at'))
-        review_count   = len(review_history)
         latest_review  = review_history[-1] if review_history else None
 
         reviewer_name    = ''
@@ -4448,6 +4467,27 @@ def performance_metrics_report(request):
             reviewer_name   = latest_review.reviewed_by.get_full_name() if latest_review.reviewed_by else ''
             reviewer_action = latest_review.get_review_action_display() if hasattr(latest_review, 'get_review_action_display') else (latest_review.review_action or '')
             reviewer_notes  = latest_review.review_notes or ''
+
+        # Tech's notes to the reviewer — taken from the most recent submission
+        # (submitted_for_review / resubmitted) entry in the review history.
+        tech_notes = ''
+        submission_entries = [
+            r for r in review_history
+            if r.review_action in ('submitted_for_review', 'resubmitted')
+        ]
+        # # Reviews — count only the times the tech sent the case for review,
+        # not the reviewer's response (approved / revisions / corrections),
+        # which would otherwise double-count each review cycle.
+        review_count = len(submission_entries)
+        if submission_entries:
+            submission = submission_entries[-1]
+            tech_notes = (submission.tech_notes or '').strip()
+            if not tech_notes and submission.review_notes:
+                # Legacy entries (before the dedicated field existed) embedded
+                # the tech's notes inline as "... — Notes: <text>".
+                marker = ' — Notes: '
+                if marker in submission.review_notes:
+                    tech_notes = submission.review_notes.split(marker, 1)[1].strip()
 
         # ── MODS & ERRORS ─────────────────────────────────────────────────────
         is_mod    = bool(c.original_case_id)
@@ -4483,7 +4523,7 @@ def performance_metrics_report(request):
             'technician':   c.assigned_to.get_full_name() if c.assigned_to else '',
             # Reviews
             'reviewer':          reviewer_name,
-            'tech_notes':        '',   # field not yet captured — blank for v1
+            'tech_notes':        tech_notes,
             'review_count':      review_count or '',
             'reviewer_action':   reviewer_action,
             'reviewer_notes':    reviewer_notes,
@@ -4504,6 +4544,28 @@ def performance_metrics_report(request):
             'readiness_window':  readiness_window,
             'status':            status_label,
         })
+
+    def _sort_key_for(value):
+        if value is None or value == '' or value == '—':
+            return (0, '')
+        text = str(value).strip()
+        if text == '':
+            return (0, '')
+        if text in {'On Time', 'Late'}:
+            return (1, 0 if text == 'On Time' else 1)
+        try:
+            # Numeric-like values such as 3, 3.5, and 4d should sort numerically.
+            cleaned = text.replace('%', '').replace('d', '').replace('+', '').replace('-', '')
+            if cleaned not in {'', '—'}:
+                return (1, float(cleaned))
+        except ValueError:
+            pass
+        return (1, text.casefold())
+
+    if active_sort:
+        desc = active_sort.startswith('-')
+        field = active_sort[1:] if desc else active_sort
+        rows.sort(key=lambda row: _sort_key_for(row.get(field)), reverse=desc)
 
     # CSV export
     if request.GET.get('export') == 'csv':
@@ -4537,5 +4599,6 @@ def performance_metrics_report(request):
         'total':     len(rows),
         'date_from': date_from_str,
         'date_to':   date_to_str,
+        'current_sort': active_sort,
     }
     return render(request, 'core/performance_metrics_report.html', context)

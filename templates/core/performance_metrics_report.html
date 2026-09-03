@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Performance Metrics — ProFeds Portal{% endblock %}
+{% block title %}Case Metrics — ProFeds Portal{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
@@ -9,7 +9,7 @@
     <!-- Header -->
     <div class="row mb-3 align-items-start">
         <div class="col-md-7">
-            <h1><i class="bi bi-table text-success"></i> Performance Metrics</h1>
+            <h1><i class="bi bi-table text-success"></i> Case Metrics</h1>
             <p class="text-muted mb-0">One row per completed case — all data in one place. Filtered by date cases were <strong>finished</strong>.</p>
         </div>
         <div class="col-md-5 text-end d-flex gap-2 justify-content-end align-items-start flex-wrap">
@@ -35,6 +35,7 @@
                     <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" value="{{ date_to }}">
                 </div>
                 <div class="col-md-auto d-flex gap-2">
+                    <input type="hidden" name="sort" value="{{ current_sort }}">
                     <button type="submit" class="btn btn-primary btn-sm">Apply</button>
                     <a href="{% url 'performance_metrics_report' %}" class="btn btn-outline-secondary btn-sm">Reset (7 days)</a>
                 </div>
@@ -67,39 +68,56 @@
         </span>
     </div>
 
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <label for="employee-find-input" class="form-label mb-0 small fw-semibold text-muted">Find employee</label>
+        <input type="text" id="employee-find-input" class="form-control form-control-sm" style="max-width:220px;" placeholder="Type a name">
+        <button type="button" id="employee-find-btn" class="btn btn-sm btn-outline-primary">Find</button>
+    </div>
+
     {% if rows %}
+    <!-- Horizontal scroll controls -->
+    <div class="d-flex align-items-center gap-2 mb-2">
+        <button type="button" id="scrollLeftBtn" class="btn btn-sm btn-outline-dark" title="Scroll left">
+            <i class="bi bi-chevron-double-left"></i>
+        </button>
+        <button type="button" id="scrollRightBtn" class="btn btn-sm btn-outline-dark" title="Scroll right">
+            <i class="bi bi-chevron-double-right"></i> More columns
+        </button>
+        <small class="text-muted">Tip: hold Shift and scroll, or click-drag the table, to move left/right.</small>
+    </div>
+
     <!-- Table -->
-    <div class="table-responsive shadow-sm rounded border">
+    <div class="table-responsive shadow-sm rounded border" id="metricsTableWrap" style="max-height: calc(100vh - 260px); overflow-y: auto;">
         <table class="table table-sm table-hover table-bordered mb-0 align-middle" style="font-size:0.78rem; white-space:nowrap;">
-            <thead class="table-dark sticky-top">
+            <thead class="table-dark">
                 <tr>
                     <!-- Core columns -->
-                    <th class="core-col" style="background:#212529;">Code</th>
-                    <th class="core-col" style="background:#212529; min-width:130px;">Member</th>
-                    <th class="core-col" style="background:#212529; min-width:120px;">Employee</th>
-                    <th class="core-col" style="background:#212529; min-width:130px;">Technician</th>
+                    <th class="core-col" style="background:#212529;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'code' %}-code{% else %}code{% endif %}" class="text-white text-decoration-none">Code</a></th>
+                    <th class="core-col" style="background:#212529; min-width:130px;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'member' %}-member{% else %}member{% endif %}" class="text-white text-decoration-none">Member</a></th>
+                    <th class="core-col" style="background:#212529; min-width:120px;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'employee' %}-employee{% else %}employee{% endif %}" class="text-white text-decoration-none">Employee</a></th>
+                    <th class="core-col" style="background:#212529; min-width:130px;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'technician' %}-technician{% else %}technician{% endif %}" class="text-white text-decoration-none">Technician</a></th>
                     <!-- REVIEWS columns -->
-                    <th class="reviews-col" style="background:#5a6a7a; border-left:3px solid #8aa4b8;">Reviewer</th>
-                    <th class="reviews-col" style="background:#5a6a7a;">Tech Notes to Reviewer</th>
-                    <th class="reviews-col" style="background:#5a6a7a;"># Reviews</th>
-                    <th class="reviews-col" style="background:#5a6a7a;">Reviewer Action</th>
-                    <th class="reviews-col" style="background:#5a6a7a;">Reviewer Notes</th>
+                    <th class="reviews-col" style="background:#5a6a7a; border-left:3px solid #8aa4b8;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'reviewer' %}-reviewer{% else %}reviewer{% endif %}" class="text-white text-decoration-none">Reviewer</a></th>
+                    <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'tech_notes' %}-tech_notes{% else %}tech_notes{% endif %}" class="text-white text-decoration-none">Tech Notes to Reviewer</a></th>
+                    <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'review_count' %}-review_count{% else %}review_count{% endif %}" class="text-white text-decoration-none"># Reviews</a></th>
+                    <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'reviewer_action' %}-reviewer_action{% else %}reviewer_action{% endif %}" class="text-white text-decoration-none">Reviewer Action</a></th>
+                    <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'reviewer_notes' %}-reviewer_notes{% else %}reviewer_notes{% endif %}" class="text-white text-decoration-none">Reviewer Notes</a></th>
                     <!-- MODS & ERRORS columns -->
-                    <th class="mods-col" style="background:#3a5a7a; border-left:3px solid #6a9abf;">Mod?</th>
-                    <th class="mods-col" style="background:#3a5a7a;">Error Reason</th>
-                    <th class="mods-col" style="background:#3a5a7a;">Disputed?</th>
-                    <th class="mods-col" style="background:#3a5a7a;">Disputed Justification</th>
+                    <th class="mods-col" style="background:#3a5a7a; border-left:3px solid #6a9abf;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'is_mod' %}-is_mod{% else %}is_mod{% endif %}" class="text-white text-decoration-none">Mod?</a></th>
+                    <th class="mods-col" style="background:#3a5a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'error_reason' %}-error_reason{% else %}error_reason{% endif %}" class="text-white text-decoration-none">Error Reason</a></th>
+                    <th class="mods-col" style="background:#3a5a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'disputed' %}-disputed{% else %}disputed{% endif %}" class="text-white text-decoration-none">Disputed?</a></th>
+                    <th class="mods-col" style="background:#3a5a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'disputed_justification' %}-disputed_justification{% else %}disputed_justification{% endif %}" class="text-white text-decoration-none">Disputed Justification</a></th>
                     <!-- DATES columns -->
-                    <th class="dates-col" style="background:#5a4a1a; border-left:3px solid #c8a43a;">Submitted</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Accepted</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Finished</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Released</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Due</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Urgency</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Days on Hold</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Prod Cycle</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Readiness Window</th>
-                    <th class="dates-col" style="background:#5a4a1a;">Status</th>
+                    <th class="dates-col" style="background:#5a4a1a; border-left:3px solid #c8a43a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'submitted' %}-submitted{% else %}submitted{% endif %}" class="text-white text-decoration-none">Submitted</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'accepted' %}-accepted{% else %}accepted{% endif %}" class="text-white text-decoration-none">Accepted</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'finished' %}-finished{% else %}finished{% endif %}" class="text-white text-decoration-none">Finished</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'released' %}-released{% else %}released{% endif %}" class="text-white text-decoration-none">Released</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'due' %}-due{% else %}due{% endif %}" class="text-white text-decoration-none">Due</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'urgency' %}-urgency{% else %}urgency{% endif %}" class="text-white text-decoration-none">Urgency</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'days_on_hold' %}-days_on_hold{% else %}days_on_hold{% endif %}" class="text-white text-decoration-none">Days on Hold</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'prod_cycle' %}-prod_cycle{% else %}prod_cycle{% endif %}" class="text-white text-decoration-none">Prod Cycle</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'readiness_window' %}-readiness_window{% else %}readiness_window{% endif %}" class="text-white text-decoration-none">Readiness Window</a></th>
+                    <th class="dates-col" style="background:#5a4a1a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'status' %}-status{% else %}status{% endif %}" class="text-white text-decoration-none">Status</a></th>
                 </tr>
             </thead>
             <tbody>
@@ -109,7 +127,10 @@
                     <td class="core-col">{{ r.code }}</td>
                     <td class="core-col">{{ r.member }}</td>
                     <td class="core-col fw-semibold">
-                        <a href="{% url 'cases:case_detail' r.case_pk %}?back=performance_metrics&date_from={{ date_from }}&date_to={{ date_to }}" class="text-decoration-none">{{ r.employee }}</a>
+                        <a id="employee-{{ r.employee|slugify }}"
+                           href="{% url 'cases:case_detail' r.case_pk %}?back=performance_metrics&date_from={{ date_from }}&date_to={{ date_to }}"
+                           class="text-decoration-none employee-find-target"
+                           data-employee="{{ r.employee|lower }}">{{ r.employee }}</a>
                     </td>
                     <td class="core-col">{{ r.technician }}</td>
                     <!-- REVIEWS -->
@@ -177,8 +198,33 @@
 /* Section collapse */
 .reviews-col, .mods-col, .dates-col { transition: opacity 0.15s; }
 .section-hidden { display: none !important; }
-/* Single sticky header row */
-thead tr th { position: sticky; top: 0; z-index: 3; }
+
+/* Keep the table header pinned at the top of the scrollable table area (not the page) */
+thead tr th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+}
+
+/* Make the horizontal scrollbar bigger/easier to grab */
+#metricsTableWrap {
+    scrollbar-width: auto;
+    cursor: grab;
+}
+#metricsTableWrap.dragging {
+    cursor: grabbing;
+    user-select: none;
+}
+#metricsTableWrap::-webkit-scrollbar {
+    height: 14px;
+}
+#metricsTableWrap::-webkit-scrollbar-thumb {
+    background: #6c757d;
+    border-radius: 7px;
+}
+#metricsTableWrap::-webkit-scrollbar-track {
+    background: #e9ecef;
+}
 </style>
 
 <script>
@@ -213,10 +259,95 @@ document.getElementById('collapseAll').addEventListener('click', () => {
     Object.keys(GROUPS).forEach(g => { setGroup(g, false); sessionStorage.setItem('pm_' + g, '0'); });
 });
 
+const employeeFindInput = document.getElementById('employee-find-input');
+const employeeFindBtn = document.getElementById('employee-find-btn');
+
+function jumpToEmployee() {
+    const query = (employeeFindInput?.value || '').trim().toLowerCase();
+    if (!query) {
+        employeeFindInput?.focus();
+        return;
+    }
+
+    const matches = [...document.querySelectorAll('.employee-find-target')].filter(el =>
+        (el.dataset.employee || '').includes(query) ||
+        (el.textContent || '').toLowerCase().includes(query)
+    );
+
+    if (!matches.length) {
+        employeeFindInput?.focus();
+        employeeFindInput?.setAttribute('title', 'No employee found');
+        return;
+    }
+
+    const target = matches[0];
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    target.classList.add('bg-warning', 'rounded', 'px-1');
+    target.focus();
+    history.replaceState(null, '', '#' + target.id);
+    setTimeout(() => target.classList.remove('bg-warning', 'rounded', 'px-1'), 1800);
+}
+
+employeeFindBtn?.addEventListener('click', jumpToEmployee);
+employeeFindInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        jumpToEmployee();
+    }
+});
+
 // Restore state from session
 Object.keys(GROUPS).forEach(g => {
     const saved = sessionStorage.getItem('pm_' + g);
     if (saved === '0') setGroup(g, false);
 });
+
+// Easier horizontal scrolling for the wide table
+const tableWrap = document.getElementById('metricsTableWrap');
+if (tableWrap) {
+    const scrollAmount = () => Math.max(200, tableWrap.clientWidth * 0.6);
+
+    document.getElementById('scrollLeftBtn')?.addEventListener('click', () => {
+        tableWrap.scrollBy({ left: -scrollAmount(), behavior: 'smooth' });
+    });
+    document.getElementById('scrollRightBtn')?.addEventListener('click', () => {
+        tableWrap.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
+    });
+
+    // Shift + mouse wheel (or trackpad vertical wheel) scrolls horizontally
+    tableWrap.addEventListener('wheel', (event) => {
+        if (event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+            return; // let native horizontal wheel/shift-wheel behavior happen
+        }
+    }, { passive: true });
+
+    // Click-and-drag to scroll horizontally
+    let isDown = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+
+    tableWrap.addEventListener('mousedown', (event) => {
+        // Ignore drags that start on a link/button so sorting/find still work
+        if (event.target.closest('a, button, input')) return;
+        isDown = true;
+        tableWrap.classList.add('dragging');
+        startX = event.pageX;
+        startScrollLeft = tableWrap.scrollLeft;
+    });
+    window.addEventListener('mouseup', () => {
+        isDown = false;
+        tableWrap.classList.remove('dragging');
+    });
+    tableWrap.addEventListener('mouseleave', () => {
+        isDown = false;
+        tableWrap.classList.remove('dragging');
+    });
+    tableWrap.addEventListener('mousemove', (event) => {
+        if (!isDown) return;
+        event.preventDefault();
+        const delta = event.pageX - startX;
+        tableWrap.scrollLeft = startScrollLeft - delta;
+    });
+}
 </script>
 {% endblock %}

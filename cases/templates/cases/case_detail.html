@@ -183,7 +183,7 @@
                 </a>
                 {% if request.GET.back == 'performance_metrics' %}
                 <a href="{% url 'performance_metrics_report' %}?date_from={{ request.GET.date_from }}&date_to={{ request.GET.date_to }}" class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-arrow-left"></i> Back to Performance Metrics
+                    <i class="bi bi-arrow-left"></i> Back to Case Metrics
                 </a>
                 {% endif %}
                 {% if case.status == 'completed' and case.actual_release_date and not case.resubmitted_cases.exists %}
@@ -202,7 +202,7 @@
                 </a>
                 {% if request.GET.back == 'performance_metrics' %}
                 <a href="{% url 'performance_metrics_report' %}?date_from={{ request.GET.date_from }}&date_to={{ request.GET.date_to }}" class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-arrow-left"></i> Back to Performance Metrics
+                    <i class="bi bi-arrow-left"></i> Back to Case Metrics
                 </a>
                 {% endif %}
                 {% if case.status == 'completed' and case.actual_release_date and not case.resubmitted_cases.exists %}

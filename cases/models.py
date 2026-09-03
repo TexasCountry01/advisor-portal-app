@@ -737,6 +737,11 @@ class CaseReviewHistory(models.Model):
         help_text='Detailed notes from the reviewer'
     )
     
+    tech_notes = models.TextField(
+        blank=True,
+        help_text='Notes the original technician wrote to the reviewer when submitting the case for review'
+    )
+    
     reviewed_at = models.DateTimeField(
         auto_now_add=True,
         help_text='When this review action was taken'
