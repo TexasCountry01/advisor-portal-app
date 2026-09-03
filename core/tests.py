@@ -204,3 +204,61 @@ class CaseMetricsReportSortingTest(TestCase):
         content = response.content.decode()
         # Ascending sort: December 2025 due date should come before January 2026
         self.assertLess(content.index('12/28/25'), content.index('01/05/26'))
+
+    def test_case_metrics_report_reviewer_action_summarizes_full_history(self):
+        from cases.models import CaseReviewHistory
+
+        # case_1: submitted straight to approved — no kickbacks.
+        CaseReviewHistory.objects.create(
+            case=self.case_1,
+            original_technician=self.admin,
+            review_action='submitted_for_review',
+            review_notes='Case submitted for review by Admin User',
+        )
+        CaseReviewHistory.objects.create(
+            case=self.case_1,
+            original_technician=self.admin,
+            reviewed_by=self.admin,
+            review_action='approved',
+            review_notes='Looks good.',
+        )
+
+        # case_2: reviewer sent it back once, then approved after resubmission.
+        CaseReviewHistory.objects.create(
+            case=self.case_2,
+            original_technician=self.admin,
+            review_action='submitted_for_review',
+            review_notes='Case submitted for review by Admin User',
+        )
+        CaseReviewHistory.objects.create(
+            case=self.case_2,
+            original_technician=self.admin,
+            reviewed_by=self.admin,
+            review_action='revisions_requested',
+            review_notes='Please fix the date.',
+        )
+        CaseReviewHistory.objects.create(
+            case=self.case_2,
+            original_technician=self.admin,
+            review_action='resubmitted',
+            review_notes='Case resubmitted for review by Admin User',
+        )
+        CaseReviewHistory.objects.create(
+            case=self.case_2,
+            original_technician=self.admin,
+            reviewed_by=self.admin,
+            review_action='approved',
+            review_notes='Approved now.',
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('performance_metrics_report'))
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        self.assertIn('Approved As-Is', content)
+        self.assertIn('Approved After Revisions', content)
+        # The old generic "Approved" label (without qualifier) should no
+        # longer appear on its own for either case.
+        self.assertNotIn('>Approved<', content)

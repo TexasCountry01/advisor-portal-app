@@ -101,6 +101,8 @@
                     <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'tech_notes' %}-tech_notes{% else %}tech_notes{% endif %}" class="text-white text-decoration-none">Tech Notes to Reviewer</a></th>
                     <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'review_count' %}-review_count{% else %}review_count{% endif %}" class="text-white text-decoration-none"># Reviews</a></th>
                     <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'reviewer_action' %}-reviewer_action{% else %}reviewer_action{% endif %}" class="text-white text-decoration-none">Reviewer Action</a></th>
+                    <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'returned_count' %}-returned_count{% else %}returned_count{% endif %}" class="text-white text-decoration-none">Returned for Corrections</a></th>
+                    <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'fixed_by_reviewer_count' %}-fixed_by_reviewer_count{% else %}fixed_by_reviewer_count{% endif %}" class="text-white text-decoration-none">Fixed by Reviewer</a></th>
                     <th class="reviews-col" style="background:#5a6a7a;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'reviewer_notes' %}-reviewer_notes{% else %}reviewer_notes{% endif %}" class="text-white text-decoration-none">Reviewer Notes</a></th>
                     <!-- MODS & ERRORS columns -->
                     <th class="mods-col" style="background:#3a5a7a; border-left:3px solid #6a9abf;"><a href="?date_from={{ date_from }}&date_to={{ date_to }}&sort={% if current_sort == 'is_mod' %}-is_mod{% else %}is_mod{% endif %}" class="text-white text-decoration-none">Mod?</a></th>
@@ -138,12 +140,18 @@
                     <td class="reviews-col text-muted fst-italic">{{ r.tech_notes|default:"—" }}</td>
                     <td class="reviews-col text-center">{{ r.review_count|default:"—" }}</td>
                     <td class="reviews-col">
-                        {% if r.reviewer_action == 'Approved' %}
+                        {% if r.reviewer_action == 'Approved As-Is' %}
                             <span class="badge bg-success">{{ r.reviewer_action }}</span>
-                        {% elif r.reviewer_action %}
+                        {% elif 'Approved After Revisions' in r.reviewer_action %}
                             <span class="badge bg-warning text-dark">{{ r.reviewer_action }}</span>
+                        {% elif 'Fixed by Reviewer' in r.reviewer_action %}
+                            <span class="badge bg-info text-dark">{{ r.reviewer_action }}</span>
+                        {% elif r.reviewer_action %}
+                            <span class="badge bg-secondary">{{ r.reviewer_action }}</span>
                         {% else %}—{% endif %}
                     </td>
+                    <td class="reviews-col text-center">{{ r.returned_count|default:"—" }}</td>
+                    <td class="reviews-col text-center">{{ r.fixed_by_reviewer_count|default:"—" }}</td>
                     <td class="reviews-col" style="max-width:180px; white-space:normal;">{{ r.reviewer_notes|default:"—" }}</td>
                     <!-- MODS & ERRORS -->
                     <td class="mods-col text-center" style="border-left:3px solid #6a9abf;">

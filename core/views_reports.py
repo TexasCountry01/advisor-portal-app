@@ -4417,6 +4417,7 @@ def performance_metrics_report(request):
         'technician', '-technician', 'reviewer', '-reviewer',
         'tech_notes', '-tech_notes', 'review_count', '-review_count',
         'reviewer_action', '-reviewer_action', 'reviewer_notes', '-reviewer_notes',
+        'returned_count', '-returned_count', 'fixed_by_reviewer_count', '-fixed_by_reviewer_count',
         'is_mod', '-is_mod', 'error_reason', '-error_reason', 'disputed', '-disputed',
         'disputed_justification', '-disputed_justification', 'submitted', '-submitted',
         'accepted', '-accepted', 'finished', '-finished', 'released', '-released',
@@ -4461,11 +4462,9 @@ def performance_metrics_report(request):
         latest_review  = review_history[-1] if review_history else None
 
         reviewer_name    = ''
-        reviewer_action  = ''
         reviewer_notes   = ''
         if latest_review:
             reviewer_name   = latest_review.reviewed_by.get_full_name() if latest_review.reviewed_by else ''
-            reviewer_action = latest_review.get_review_action_display() if hasattr(latest_review, 'get_review_action_display') else (latest_review.review_action or '')
             reviewer_notes  = latest_review.review_notes or ''
 
         # Tech's notes to the reviewer — taken from the most recent submission
@@ -4488,6 +4487,29 @@ def performance_metrics_report(request):
                 marker = ' — Notes: '
                 if marker in submission.review_notes:
                     tech_notes = submission.review_notes.split(marker, 1)[1].strip()
+
+        # Reviewer Action — a case that reaches "completed" always ends in
+        # "approved", so showing only the latest entry hides everything that
+        # happened before that (kickbacks to the tech, or the reviewer fixing
+        # it themselves). Summarize the whole review history instead, and
+        # also surface the raw counts as their own sortable columns.
+        returned_count           = sum(1 for r in review_history if r.review_action == 'revisions_requested')
+        fixed_by_reviewer_count  = sum(1 for r in review_history if r.review_action == 'corrections_needed')
+        was_approved             = any(r.review_action == 'approved' for r in review_history)
+
+        if was_approved and returned_count == 0 and fixed_by_reviewer_count == 0:
+            reviewer_action = 'Approved As-Is'
+        elif was_approved and returned_count > 0 and fixed_by_reviewer_count == 0:
+            reviewer_action = f'Approved After Revisions (×{returned_count})' if returned_count > 1 else 'Approved After Revisions'
+        elif was_approved and fixed_by_reviewer_count > 0 and returned_count == 0:
+            reviewer_action = f'Fixed by Reviewer (×{fixed_by_reviewer_count})' if fixed_by_reviewer_count > 1 else 'Fixed by Reviewer'
+        elif was_approved and fixed_by_reviewer_count > 0 and returned_count > 0:
+            reviewer_action = f'Fixed by Reviewer (×{fixed_by_reviewer_count}) + Revisions (×{returned_count})'
+        elif latest_review:
+            # Not yet approved — fall back to the latest action taken so far.
+            reviewer_action = latest_review.get_review_action_display() if hasattr(latest_review, 'get_review_action_display') else (latest_review.review_action or '')
+        else:
+            reviewer_action = ''
 
         # ── MODS & ERRORS ─────────────────────────────────────────────────────
         is_mod    = bool(c.original_case_id)
@@ -4527,6 +4549,8 @@ def performance_metrics_report(request):
             'review_count':      review_count or '',
             'reviewer_action':   reviewer_action,
             'reviewer_notes':    reviewer_notes,
+            'returned_count':            returned_count or '',
+            'fixed_by_reviewer_count':   fixed_by_reviewer_count or '',
             # Mods & Errors
             'is_mod':            mod_label,
             'error_reason':      error_reason,
@@ -4586,6 +4610,7 @@ def performance_metrics_report(request):
             'Case ID', 'Code', 'Member', 'Employee', 'Technician',
             # REVIEWS
             'Reviewer', "Tech's Notes to Reviewer", '# Reviews', 'Reviewer Action', "Reviewer's Notes",
+            'Returned for Corrections', 'Fixed by Reviewer',
             # MODS & ERRORS
             'Mod?', 'Error Reason', 'Disputed by Tech?', 'Disputed Justification',
             # DATES
@@ -4596,6 +4621,7 @@ def performance_metrics_report(request):
             writer.writerow([
                 r['case_id'], r['code'], r['member'], r['employee'], r['technician'],
                 r['reviewer'], r['tech_notes'], r['review_count'], r['reviewer_action'], r['reviewer_notes'],
+                r['returned_count'], r['fixed_by_reviewer_count'],
                 r['is_mod'], r['error_reason'], r['disputed'], r['disputed_justification'],
                 r['submitted'], r['accepted'], r['finished'], r['released'], r['due'], r['urgency'],
                 r['days_on_hold'], r['prod_cycle'], r['readiness_window'], r['status'],
