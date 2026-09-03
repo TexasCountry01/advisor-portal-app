@@ -155,3 +155,52 @@ class CaseMetricsReportSortingTest(TestCase):
         row_chunk = content[row_start:row_start + 4000]
         self.assertIn('>2<', row_chunk)
         self.assertNotIn('>4<', row_chunk)
+
+    def test_case_metrics_report_sorts_due_date_chronologically_across_year_boundary(self):
+        from datetime import date
+
+        # Both complete "today" so they land in the default report window,
+        # but their due dates straddle a year boundary. A naive string sort
+        # would incorrectly place 01/05/26 before 12/28/25.
+        Case.objects.create(
+            external_case_id='SORT-CASE-JAN',
+            workshop_code='W-JAN',
+            member=self.member_a,
+            employee_first_name='January',
+            employee_last_name='Case',
+            client_email='january@example.com',
+            status='completed',
+            assigned_to=self.admin,
+            date_submitted=timezone.now() - timezone.timedelta(days=3),
+            date_completed=timezone.now(),
+            date_due=timezone.make_aware(timezone.datetime(2026, 1, 5)).date(),
+            urgency='normal',
+        )
+        Case.objects.create(
+            external_case_id='SORT-CASE-DEC',
+            workshop_code='W-DEC',
+            member=self.member_a,
+            employee_first_name='December',
+            employee_last_name='Case',
+            client_email='december@example.com',
+            status='completed',
+            assigned_to=self.admin,
+            date_submitted=timezone.now() - timezone.timedelta(days=3),
+            date_completed=timezone.now(),
+            date_due=timezone.make_aware(timezone.datetime(2025, 12, 28)).date(),
+            urgency='normal',
+        )
+
+        self.client.force_login(self.admin)
+
+        today_str = timezone.localtime(timezone.now()).date().strftime('%Y-%m-%d')
+        response = self.client.get(reverse('performance_metrics_report'), {
+            'sort': 'due',
+            'date_from': today_str,
+            'date_to': today_str,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode()
+        # Ascending sort: December 2025 due date should come before January 2026
+        self.assertLess(content.index('12/28/25'), content.index('01/05/26'))

@@ -4553,6 +4553,14 @@ def performance_metrics_report(request):
             return (0, '')
         if text in {'On Time', 'Late'}:
             return (1, 0 if text == 'On Time' else 1)
+        # Dates rendered as MM/DD/YY must sort chronologically, not as plain
+        # strings — otherwise e.g. "12/31/25" incorrectly sorts after
+        # "01/01/26" because '1' < '2' lexicographically.
+        try:
+            parsed_date = _dt.strptime(text, '%m/%d/%y').date()
+            return (1, parsed_date)
+        except ValueError:
+            pass
         try:
             # Numeric-like values such as 3, 3.5, and 4d should sort numerically.
             cleaned = text.replace('%', '').replace('d', '').replace('+', '').replace('-', '')
