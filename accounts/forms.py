@@ -46,11 +46,12 @@ class UserCreationForm(forms.Form):
     
     password = forms.CharField(
         max_length=128,
-        required=True,
+        required=False,
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Password'
-        })
+        }),
+        help_text='Required for staff (local) login. Not needed if the user will sign in via SSO (GHL Contact ID provided).'
     )
     
     role = forms.ChoiceField(
@@ -143,13 +144,22 @@ class UserCreationForm(forms.Form):
         return contact_id
     
     def clean(self):
-        """Validate that technician role has a user level"""
+        """Validate that technician role has a user level, and password is provided
+        unless this is an SSO-provisioned user (has a GHL contact_id)."""
         cleaned_data = super().clean()
         role = cleaned_data.get('role')
         user_level = cleaned_data.get('user_level')
+        password = cleaned_data.get('password')
+        contact_id = cleaned_data.get('contact_id')
         
         if role == 'technician' and not user_level:
             raise ValidationError('Technician role requires a user level')
+        
+        if not password and not contact_id:
+            raise ValidationError(
+                'Password is required for staff (local) login accounts. '
+                'Leave blank only if this user has a GHL Contact ID and will sign in via SSO.'
+            )
         
         return cleaned_data
     
@@ -175,7 +185,12 @@ class UserCreationForm(forms.Form):
             workshop_code=workshop_code if workshop_code else '',
             contact_id=contact_id if contact_id else None
         )
-        user.set_password(password)
+        if password:
+            user.set_password(password)
+        else:
+            # SSO-provisioned user (has contact_id) — matches accounts/sso.py's
+            # own auto-provision behavior for users who sign in via SSO only.
+            user.set_unusable_password()
         user.save()
         
         return user

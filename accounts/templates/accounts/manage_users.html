@@ -84,9 +84,12 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="{{ form.password.id_for_label }}" class="form-label">Password <span class="text-danger">*</span></label>
+                        <div class="mb-3" id="passwordContainer">
+                            <label for="{{ form.password.id_for_label }}" class="form-label">
+                                Password <span class="text-danger" id="passwordRequiredMark">*</span>
+                            </label>
                             {{ form.password }}
+                            <div class="form-text" id="passwordHelpText">{{ form.password.help_text }}</div>
                             {% if form.password.errors %}
                                 <div class="text-danger small mt-1">
                                     {{ form.password.errors }}
@@ -326,6 +329,28 @@
 {% endif %}
 
 <script>
+// Show/hide password requirement based on whether a GHL contact_id is present.
+// SSO-provisioned users (have a contact_id) never use Django password login,
+// so password is optional for them but still required for manual staff creation.
+function updatePasswordRequirement() {
+    const contactId = document.getElementById('contactIdInput').value.trim();
+    const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+    const requiredMark = document.getElementById('passwordRequiredMark');
+    const helpText = document.getElementById('passwordHelpText');
+
+    if (contactId) {
+        passwordInput.required = false;
+        requiredMark.style.display = 'none';
+        helpText.textContent = 'Not required — this user has a GHL Contact ID and will sign in via SSO.';
+    } else {
+        passwordInput.required = true;
+        requiredMark.style.display = 'inline';
+        helpText.textContent = 'Required for staff (local) login. Not needed if the user will sign in via SSO (GHL Contact ID provided).';
+    }
+}
+document.getElementById('contactIdInput').addEventListener('input', updatePasswordRequirement);
+updatePasswordRequirement();
+
 // Show/hide technician level field based on role selection
 document.getElementById('roleSelect').addEventListener('change', function() {
     const userLevelContainer = document.getElementById('userLevelContainer');
