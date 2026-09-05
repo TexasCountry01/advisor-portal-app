@@ -385,3 +385,35 @@ class CaseMetricsReportSortingTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Yes')
         self.assertContains(response, 'Advisor miscalculated the SCD themselves.')
+
+    def test_case_metrics_report_calculates_days_on_hold_from_audit_trail(self):
+        from core.models import AuditLog
+
+        # Simulate a hold that lasted exactly 2 days, using the same audit
+        # trail resume_case()/hold_case() write. hold_duration_days on the
+        # Case itself is always None by the time a case completes, so the
+        # column must be derived from these events instead.
+        held_at = timezone.now() - timezone.timedelta(days=5)
+        resumed_at = held_at + timezone.timedelta(days=2)
+
+        AuditLog.objects.create(
+            user=self.admin,
+            action_type='case_held',
+            case=self.case_1,
+            description='Case placed on hold',
+            timestamp=held_at,
+        )
+        AuditLog.objects.create(
+            user=self.admin,
+            action_type='case_resumed',
+            case=self.case_1,
+            description='Case resumed from hold',
+            timestamp=resumed_at,
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('performance_metrics_report'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '>2.0<')

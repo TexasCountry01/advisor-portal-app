@@ -4568,9 +4568,25 @@ def performance_metrics_report(request):
             readiness_window = f'+{rw}d' if rw >= 0 else f'{rw}d'
             status_label = 'On Time' if rw >= 0 else 'Late'
 
+        # Days on Hold — hold_duration_days on the Case is always cleared back
+        # to None by resume_case() once a hold ends, so a completed case will
+        # never have it set. The actual elapsed time is only ever recorded in
+        # the audit trail (case_held -> case_resumed timestamp pairs), so sum
+        # those up instead. Handles multiple hold cycles on the same case.
         hold_days = ''
-        if c.hold_duration_days is not None:
-            hold_days = str(round(float(c.hold_duration_days), 1))
+        hold_events = list(
+            c.audit_logs.filter(action_type__in=['case_held', 'case_resumed']).order_by('timestamp')
+        )
+        total_hold_seconds = 0
+        last_held_at = None
+        for ev in hold_events:
+            if ev.action_type == 'case_held':
+                last_held_at = ev.timestamp
+            elif ev.action_type == 'case_resumed' and last_held_at:
+                total_hold_seconds += (ev.timestamp - last_held_at).total_seconds()
+                last_held_at = None
+        if total_hold_seconds > 0:
+            hold_days = str(round(total_hold_seconds / 86400, 1))
 
         rows.append({
             # Core
