@@ -85,16 +85,20 @@ def fetch_ghl_contacts(limit: int = 100, max_total: int = 1000) -> List[Dict[str
     headers = get_ghl_headers()
     base_url = (getattr(settings, 'GHL_API_BASE_URL', 'https://services.leadconnectorhq.com') or '').rstrip('/')
 
-    # GHL caps `limit` at 100 per page — paginate with startAfterId to fetch
-    # everything up to max_total instead of silently truncating results.
+    # GHL caps `limit` at 100 per page — paginate with startAfterId/startAfter
+    # to fetch everything up to max_total instead of silently truncating results.
     page_limit = min(limit, 100)
     all_contacts: List[Dict[str, Any]] = []
+    seen_ids: set = set()
     start_after_id = None
+    start_after = None
 
     while len(all_contacts) < max_total:
         url = f'{base_url}/contacts/?locationId={location_id}&limit={page_limit}'
         if start_after_id:
             url += f'&startAfterId={start_after_id}'
+        if start_after:
+            url += f'&startAfter={start_after}'
 
         response = requests.get(url, headers=headers, timeout=20)
         if response.status_code != 200:
@@ -112,14 +116,33 @@ def fetch_ghl_contacts(limit: int = 100, max_total: int = 1000) -> List[Dict[str
         if not page_contacts:
             break
 
-        all_contacts.extend(page_contacts)
+        # Only keep contacts we haven't already seen. If the API ignores our
+        # pagination cursor and returns the same page again, this stops the
+        # loop instead of duplicating every contact up to max_total.
+        new_contacts = []
+        for item in page_contacts:
+            if not isinstance(item, dict):
+                continue
+            item_id = item.get('id') or item.get('contactId')
+            if item_id and item_id in seen_ids:
+                continue
+            if item_id:
+                seen_ids.add(item_id)
+            new_contacts.append(item)
+
+        if not new_contacts:
+            # Entire page was already seen — pagination cursor isn't advancing.
+            break
+
+        all_contacts.extend(new_contacts)
 
         if len(page_contacts) < page_limit:
             # Last page — fewer results than requested means no more remain.
             break
 
         last_contact = page_contacts[-1]
-        start_after_id = last_contact.get('id') or last_contact.get('contactId') if isinstance(last_contact, dict) else None
+        start_after_id = last_contact.get('id') or last_contact.get('contactId')
+        start_after = last_contact.get('dateAdded') or last_contact.get('dateUpdated')
         if not start_after_id:
             break
 
