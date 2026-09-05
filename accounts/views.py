@@ -202,6 +202,7 @@ def sync_ghl_contacts(request):
             'ghl_role': contact.get('ghl_role'),
             'portal_user': portal_user,
             'portal_role': portal_user.role if portal_user else None,
+            'needs_link': bool(portal_user and not portal_user.contact_id and contact_id),
         }
 
         if portal_user:
@@ -218,6 +219,48 @@ def sync_ghl_contacts(request):
         'current_user_role': request.user.role,
     }
     return render(request, 'accounts/ghl_sync.html', context)
+
+
+@login_required
+def link_ghl_contact(request, user_id):
+    """Backfill contact_id on an existing portal user matched via email fallback.
+    Does NOT change role or any other field — just links the immutable GHL ID
+    so future logins match reliably instead of relying on email.
+    """
+    if request.user.role != 'administrator':
+        messages.error(request, 'Only administrators can link GHL contacts.')
+        return redirect('manage_users')
+
+    if request.method != 'POST':
+        return redirect('sync_ghl_contacts')
+
+    contact_id = (request.POST.get('contact_id') or '').strip()
+    if not contact_id:
+        messages.error(request, 'Missing contact ID.')
+        return redirect('sync_ghl_contacts')
+
+    target_user = get_object_or_404(User, id=user_id)
+
+    if target_user.contact_id:
+        messages.error(request, f'{target_user.get_full_name()} is already linked to a GHL contact.')
+        return redirect('sync_ghl_contacts')
+
+    if User.objects.filter(contact_id=contact_id).exclude(id=target_user.id).exists():
+        messages.error(request, 'This GHL contact is already linked to a different portal user.')
+        return redirect('sync_ghl_contacts')
+
+    target_user.contact_id = contact_id
+    target_user.save(update_fields=['contact_id'])
+
+    AuditLog.objects.create(
+        user=request.user,
+        action_type='ghl_link',
+        description=f'Linked GHL contact {contact_id} to existing user {target_user.get_full_name()} ({target_user.email})',
+        related_user=target_user,
+        metadata={'contact_id': contact_id},
+    )
+    messages.success(request, f'Linked {target_user.get_full_name()} to their GHL contact.')
+    return redirect('sync_ghl_contacts')
 
 
 @login_required

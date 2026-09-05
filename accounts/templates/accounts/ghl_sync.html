@@ -103,6 +103,7 @@
                                 <th>Portal Role</th>
                                 <th>Workshop</th>
                                 <th>Contact ID</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -119,6 +120,19 @@
                                 </td>
                                 <td>{{ row.workshop_code|default:'—' }}</td>
                                 <td><code>{{ row.contact_id|default:'—' }}</code></td>
+                                <td>
+                                    {% if row.needs_link %}
+                                    <form method="post" action="{% url 'link_ghl_contact' row.portal_user.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="contact_id" value="{{ row.contact_id }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Link this GHL contact ID to the existing user record (no role change)">
+                                            <i class="bi bi-link-45deg"></i> Link
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                        <span class="text-muted small">—</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

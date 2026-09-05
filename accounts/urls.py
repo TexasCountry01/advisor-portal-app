@@ -17,6 +17,7 @@ urlpatterns = [
 
     path('manage-users/', views.manage_users, name='manage_users'),
     path('ghl-sync/', views.sync_ghl_contacts, name='sync_ghl_contacts'),
+    path('ghl-sync/link/<int:user_id>/', views.link_ghl_contact, name='link_ghl_contact'),
     path('edit-user-role/<int:user_id>/', views.edit_user_role, name='edit_user_role'),
     path('deactivate-user/<int:user_id>/', views.deactivate_user, name='deactivate_user'),
     path('reactivate-user/<int:user_id>/', views.reactivate_user, name='reactivate_user'),
