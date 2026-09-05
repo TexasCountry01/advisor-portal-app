@@ -4465,7 +4465,23 @@ def performance_metrics_report(request):
         reviewer_notes   = ''
         if latest_review:
             reviewer_name   = latest_review.reviewed_by.get_full_name() if latest_review.reviewed_by else ''
-            reviewer_notes  = latest_review.review_notes or ''
+
+        # Reviewer Notes — the reviewer's actual feedback is captured on
+        # every response action (revisions_requested / corrections_needed /
+        # approved), not just the final one. Showing only the latest entry
+        # hid the substantive feedback whenever a case was kicked back and
+        # later approved with no additional notes on that final approval.
+        # Combine feedback from every round so the full history is visible.
+        reviewer_response_entries = [
+            r for r in review_history
+            if r.review_action in ('approved', 'revisions_requested', 'corrections_needed') and (r.review_notes or '').strip()
+        ]
+        if reviewer_response_entries:
+            note_parts = []
+            for r in reviewer_response_entries:
+                label = r.get_review_action_display() if hasattr(r, 'get_review_action_display') else r.review_action
+                note_parts.append(f'{label}: {r.review_notes.strip()}')
+            reviewer_notes = ' | '.join(note_parts)
 
         # Tech's notes to the reviewer — taken from the most recent submission
         # (submitted_for_review / resubmitted) entry in the review history.

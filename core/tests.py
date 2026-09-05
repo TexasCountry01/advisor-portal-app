@@ -262,3 +262,43 @@ class CaseMetricsReportSortingTest(TestCase):
         # The old generic "Approved" label (without qualifier) should no
         # longer appear on its own for either case.
         self.assertNotIn('>Approved<', content)
+
+    def test_case_metrics_report_reviewer_notes_include_earlier_feedback(self):
+        from cases.models import CaseReviewHistory
+
+        # Case kicked back once with substantive feedback, then approved
+        # with no additional notes on the final approval (the common case,
+        # since notes are optional on approval but required on revisions).
+        CaseReviewHistory.objects.create(
+            case=self.case_1,
+            original_technician=self.admin,
+            review_action='submitted_for_review',
+            review_notes='Case submitted for review by Admin User',
+        )
+        CaseReviewHistory.objects.create(
+            case=self.case_1,
+            original_technician=self.admin,
+            reviewed_by=self.admin,
+            review_action='revisions_requested',
+            review_notes='Please correct the survivor benefit percentage.',
+        )
+        CaseReviewHistory.objects.create(
+            case=self.case_1,
+            original_technician=self.admin,
+            review_action='resubmitted',
+            review_notes='Case resubmitted for review by Admin User',
+        )
+        CaseReviewHistory.objects.create(
+            case=self.case_1,
+            original_technician=self.admin,
+            reviewed_by=self.admin,
+            review_action='approved',
+            review_notes='',
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('performance_metrics_report'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Please correct the survivor benefit percentage.')
