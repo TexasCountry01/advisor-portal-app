@@ -4536,8 +4536,24 @@ def performance_metrics_report(request):
         if is_mod:
             mod_label = 'PF ERR' if c.has_profeds_error else 'MOD'
         error_reason = ''
-        if c.has_profeds_error and c.resubmission_notes:
+        if c.resubmission_notes:
             error_reason = c.resubmission_notes
+
+        # Disputed — a tech/reviewer can dispute an advisor's claim that
+        # ProFeds made an error, clearing the error flag with a mandatory
+        # justification (see clear_profeds_error). That event is only
+        # recorded in the AuditLog, not on the Case itself, so pull it from
+        # there rather than the (now-cleared) has_profeds_error flag.
+        disputed              = ''
+        disputed_justification = ''
+        dispute_entries = list(
+            c.audit_logs.filter(action_type='error_flag_disputed').order_by('-timestamp')
+        )
+        if dispute_entries:
+            latest_dispute = dispute_entries[0]
+            disputed_by = latest_dispute.user.get_full_name() if latest_dispute.user else ''
+            disputed = f'Yes — {disputed_by}' if disputed_by else 'Yes'
+            disputed_justification = (latest_dispute.metadata or {}).get('justification', '') or ''
 
         # ── DATES & CALCULATIONS ──────────────────────────────────────────────
         dc = c.date_completed.date() if c.date_completed and hasattr(c.date_completed, 'date') else c.date_completed
@@ -4575,8 +4591,8 @@ def performance_metrics_report(request):
             # Mods & Errors
             'is_mod':            mod_label,
             'error_reason':      error_reason,
-            'disputed':          '',   # field not yet captured — blank for v1
-            'disputed_justification': '',
+            'disputed':          disputed,
+            'disputed_justification': disputed_justification,
             # Dates
             'submitted':         c.date_submitted.strftime('%m/%d/%y')  if c.date_submitted  else '',
             'accepted':          c.date_accepted.strftime('%m/%d/%y')   if c.date_accepted   else '',
@@ -4633,7 +4649,7 @@ def performance_metrics_report(request):
             'Reviewer', "Tech's Notes to Reviewer", '# Reviews', 'Reviewer Action', "Reviewer's Notes",
             'Returned for Corrections', 'Fixed by Reviewer',
             # MODS & ERRORS
-            'Mod?', 'Error Reason', 'Disputed by Tech?', 'Disputed Justification',
+            'Mod?', 'Mod Reason', 'Disputed by Tech?', 'Disputed Justification',
             # DATES
             'Submitted', 'Accepted', 'Finished', 'Released', 'Due', 'Urgency',
             'Days on Hold', 'Prod Cycle', 'Readiness Window', 'Status',

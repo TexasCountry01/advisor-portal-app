@@ -346,3 +346,42 @@ class CaseMetricsReportSortingTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, '>MOD<')
         self.assertContains(response, '>PF ERR<')
+
+    def test_case_metrics_report_shows_disputed_error_flag(self):
+        from core.models import AuditLog
+
+        # A mod case whose error flag was disputed and cleared by the reviewer.
+        disputed_case = Case.objects.create(
+            external_case_id='SORT-CASE-DISPUTED',
+            workshop_code='W-DISP',
+            member=self.member_a,
+            employee_first_name='Disputed',
+            employee_last_name='Mod',
+            client_email='disputedmod@example.com',
+            status='completed',
+            assigned_to=self.admin,
+            date_submitted=timezone.now() - timezone.timedelta(days=2),
+            date_completed=timezone.now() - timezone.timedelta(days=1),
+            date_due=timezone.now() + timezone.timedelta(days=5),
+            urgency='normal',
+            original_case=self.case_1,
+            has_profeds_error=False,  # cleared after the dispute
+        )
+        AuditLog.log_activity(
+            user=self.admin,
+            action_type='error_flag_disputed',
+            case=disputed_case,
+            description='ProFeds error flag cleared by Admin User. Justification: Advisor miscalculated the SCD themselves.',
+            metadata={
+                'cleared_by': self.admin.username,
+                'justification': 'Advisor miscalculated the SCD themselves.',
+            },
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('performance_metrics_report'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Yes')
+        self.assertContains(response, 'Advisor miscalculated the SCD themselves.')

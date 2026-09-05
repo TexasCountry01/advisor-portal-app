@@ -160,7 +160,7 @@
                         {% else %}—{% endif %}
                     </td>
                     <td class="mods-col" style="max-width:160px; white-space:normal;">{{ r.error_reason|default:"—" }}</td>
-                    <td class="mods-col text-muted fst-italic text-center">{{ r.disputed|default:"—" }}</td>
+                    <td class="mods-col" style="max-width:150px; white-space:normal;">{{ r.disputed|default:"—" }}</td>
                     <td class="mods-col text-muted fst-italic" style="max-width:140px; white-space:normal;">{{ r.disputed_justification|default:"—" }}</td>
                     <!-- DATES -->
                     <td class="dates-col" style="border-left:3px solid #c8a43a;">{{ r.submitted }}</td>
