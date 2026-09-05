@@ -4402,10 +4402,10 @@ def performance_metrics_report(request):
     """
     Unified Case Report — one row per completed case, all data in one place.
     Three collapsible column groups: REVIEWS, MODS & ERRORS, DATES.
-    Admin and Manager only. Date-filtered by date_completed.
+    Admin, Manager, and Technician. Date-filtered by date_completed.
     """
-    if not is_admin(request.user):
-        messages.error(request, 'Access denied. Administrators and Managers only.')
+    if not (is_admin(request.user) or request.user.role in ('manager', 'technician')):
+        messages.error(request, 'Access denied.')
         return redirect('home')
 
     from datetime import datetime as _dt

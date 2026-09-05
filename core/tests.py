@@ -93,6 +93,55 @@ class CaseMetricsReportSortingTest(TestCase):
         self.assertContains(response, 'Mod Reason')
         self.assertNotContains(response, 'Error Reason')
 
+    def test_case_metrics_report_allows_manager_and_technician_access(self):
+        manager = User.objects.create_user(
+            username='manager_metrics_test',
+            email='manager_metrics_test@example.com',
+            password='testpass123',
+            role='manager',
+            first_name='Manager',
+            last_name='User',
+        )
+        technician = User.objects.create_user(
+            username='technician_metrics_test',
+            email='technician_metrics_test@example.com',
+            password='testpass123',
+            role='technician',
+            first_name='Tech',
+            last_name='User',
+        )
+
+        self.client.force_login(manager)
+        response = self.client.get(reverse('performance_metrics_report'))
+        self.assertEqual(response.status_code, 200)
+
+        self.client.force_login(technician)
+        response = self.client.get(reverse('performance_metrics_report'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_case_metrics_report_denies_member_access(self):
+        self.client.force_login(self.member_a)
+
+        response = self.client.get(reverse('performance_metrics_report'))
+
+        self.assertEqual(response.status_code, 302)
+
+    def test_performance_tracker_links_to_case_metrics(self):
+        technician = User.objects.create_user(
+            username='technician_tracker_link_test',
+            email='technician_tracker_link_test@example.com',
+            password='testpass123',
+            role='technician',
+            first_name='Tech',
+            last_name='Link',
+        )
+        self.client.force_login(technician)
+
+        response = self.client.get(reverse('performance_tracker'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse('performance_metrics_report'))
+
     def test_case_metrics_report_defaults_end_date_to_yesterday(self):
         self.client.force_login(self.admin)
 

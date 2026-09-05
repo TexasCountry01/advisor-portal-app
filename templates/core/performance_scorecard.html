@@ -13,6 +13,9 @@
             <p class="text-muted mb-0">Rolling 13-week team performance — weeks run Monday to Sunday, most recent first</p>
         </div>
         <div class="col-md-5 text-end d-flex gap-2 justify-content-end align-items-start flex-wrap">
+            <a href="{% url 'performance_metrics_report' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-table"></i> Case Metrics
+            </a>
             <a href="{% url 'performance_scorecard' %}?export=csv" class="btn btn-sm btn-outline-success">
                 <i class="bi bi-filetype-csv"></i> Download CSV
             </a>

@@ -16,9 +16,15 @@
             <a href="?date_from={{ date_from }}&date_to={{ date_to }}&export=csv" class="btn btn-sm btn-outline-success">
                 <i class="bi bi-filetype-csv"></i> Download CSV
             </a>
+            {% if user.role == 'administrator' %}
             <a href="{% url 'performance_dashboard' %}?date_from={{ date_from }}&date_to={{ date_to }}" class="btn btn-sm btn-outline-secondary">
                 ← Back to Benefits Team Portal Metrics
             </a>
+            {% else %}
+            <a href="{% url 'performance_tracker' %}" class="btn btn-sm btn-outline-secondary">
+                ← Back to Performance Tracker
+            </a>
+            {% endif %}
         </div>
     </div>
 
