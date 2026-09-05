@@ -332,6 +332,11 @@
                     <a href="{% url 'system_settings' %}" class="btn btn-sm btn-outline-info" title="System Settings">
                         <i class="bi bi-gear"></i> Settings
                     </a>
+                    {% if user.role == 'administrator' %}
+                    <a href="{% url 'sync_ghl_contacts' %}" class="btn btn-sm btn-outline-primary" title="Sync GHL contacts for admin provisioning review">
+                        <i class="bi bi-arrow-repeat"></i> Sync from GHL
+                    </a>
+                    {% endif %}
                     <a href="{% url 'references:reimport' %}" class="btn btn-sm btn-outline-secondary" title="Reference Library — upload revised .docx">
                         <i class="bi bi-journals"></i> Notes Library
                     </a>

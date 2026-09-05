@@ -290,6 +290,11 @@ SSO_ALLOWED_EMAILS = [e.strip().lower() for e in _sso_emails.split(',') if e.str
 # Webhook secret for real-time profile sync from WordPress (set in .env)
 WP_WEBHOOK_SECRET = config('WP_WEBHOOK_SECRET', default='')
 
+# GHL Private Integration Token (read-only, used for admin-triggered sync)
+GHL_PRIVATE_TOKEN = config('GHL_PRIVATE_TOKEN', default='')
+GHL_LOCATION_ID = config('GHL_LOCATION_ID', default='')
+GHL_API_BASE_URL = config('GHL_API_BASE_URL', default='https://services.leadconnectorhq.com')
+
 # ============================================================================
 # LOGGING — ensure app-level logs reach gunicorn/journal
 # ============================================================================

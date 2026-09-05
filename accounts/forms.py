@@ -82,6 +82,20 @@ class UserCreationForm(forms.Form):
         }),
         help_text='Only for Members: Pre-assigned workshop code'
     )
+
+    contact_id = forms.CharField(
+        max_length=100,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'GHL Contact ID (optional)',
+            'id': 'contactIdInput'
+        }),
+        help_text=(
+            'Optional: paste the GHL contact ID (from GHL Sync Review) so this user is '
+            'matched automatically on their first SSO login — no need to log in as them.'
+        )
+    )
     
     def __init__(self, *args, current_user=None, **kwargs):
         """Initialize form with role filtering based on current user"""
@@ -120,6 +134,13 @@ class UserCreationForm(forms.Form):
         if User.objects.filter(email=email).exists():
             raise ValidationError('Email already exists')
         return email
+
+    def clean_contact_id(self):
+        """Check if contact_id already exists (must be unique when provided)"""
+        contact_id = (self.cleaned_data.get('contact_id') or '').strip()
+        if contact_id and User.objects.filter(contact_id=contact_id).exists():
+            raise ValidationError('A user is already linked to this GHL contact ID.')
+        return contact_id
     
     def clean(self):
         """Validate that technician role has a user level"""
@@ -142,6 +163,7 @@ class UserCreationForm(forms.Form):
         role = self.cleaned_data['role']
         user_level = self.cleaned_data.get('user_level')
         workshop_code = self.cleaned_data.get('workshop_code')
+        contact_id = self.cleaned_data.get('contact_id')
         
         user = User(
             username=username,
@@ -150,7 +172,8 @@ class UserCreationForm(forms.Form):
             last_name=last_name,
             role=role,
             user_level=user_level if user_level else None,
-            workshop_code=workshop_code if workshop_code else ''
+            workshop_code=workshop_code if workshop_code else '',
+            contact_id=contact_id if contact_id else None
         )
         user.set_password(password)
         user.save()

@@ -124,6 +124,19 @@
                             {% endif %}
                         </div>
 
+                        <div class="mb-3">
+                            <label for="{{ form.contact_id.id_for_label }}" class="form-label">
+                                GHL Contact ID <span class="text-muted">(optional)</span>
+                            </label>
+                            {{ form.contact_id }}
+                            <div class="form-text">{{ form.contact_id.help_text }}</div>
+                            {% if form.contact_id.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.contact_id.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
                         {% if form.non_field_errors %}
                             <div class="alert alert-danger">
                                 {{ form.non_field_errors }}

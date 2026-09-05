@@ -11,6 +11,8 @@ from .forms import (
     WorkshopDelegateForm
 )
 from .models import DelegateAccess, MemberCreditAllowance, WorkshopDelegate
+from .ghl_client import fetch_ghl_contacts
+from .sso import determine_role_from_tags
 from core.models import AuditLog
 from cases.services.email_service import send_delegate_assigned_email, send_delegate_removed_email
 
@@ -111,7 +113,28 @@ def manage_users(request):
                 except Exception as e:
                     messages.error(request, f'Error creating user: {str(e)}')
     else:
-        form = UserCreationForm(current_user=current_user)
+        # Pre-fill from GHL Sync Review "Provision" link, if present.
+        # This lets the admin assign a role now using the immutable contact_id,
+        # so the real first SSO login matches this record instantly — no impersonation needed.
+        initial = {}
+        if request.GET.get('contact_id'):
+            initial = {
+                'contact_id': request.GET.get('contact_id', ''),
+                'email': request.GET.get('email', ''),
+                'first_name': request.GET.get('first_name', ''),
+                'last_name': request.GET.get('last_name', ''),
+                'workshop_code': request.GET.get('workshop_code', ''),
+                'username': (request.GET.get('email', '').split('@')[0] or ''),
+            }
+            ghl_role = request.GET.get('role', '')
+            if ghl_role in dict(User.ROLE_CHOICES):
+                initial['role'] = ghl_role
+            messages.info(
+                request,
+                'Pre-filled from GHL. Set a role and password, then save — '
+                'the user will be matched automatically on their first login.'
+            )
+        form = UserCreationForm(current_user=current_user, initial=initial)
     
     # Get users based on current user's role
     if current_user.role == 'administrator':
@@ -130,6 +153,71 @@ def manage_users(request):
     }
     
     return render(request, 'accounts/manage_users.html', context)
+
+
+@login_required
+def sync_ghl_contacts(request):
+    """Hybrid provisioning: pull GHL contacts for admin review without overriding app role assignment."""
+    if request.user.role != 'administrator':
+        messages.error(request, 'Only administrators can sync from GHL.')
+        return redirect('manage_users')
+
+    try:
+        raw_contacts = fetch_ghl_contacts(limit=100, max_total=1000)
+    except Exception as exc:
+        messages.error(request, f'GHL sync failed: {exc}')
+        return redirect('manage_users')
+
+    # Only contacts with a portal access tag are relevant for provisioning —
+    # everything else is generic CRM/marketing noise. Reuses the same tag
+    # matching logic as SSO login so results are always consistent.
+    contacts = []
+    for contact in raw_contacts:
+        role, is_pure_delegate, has_access = determine_role_from_tags(contact.get('tags', []))
+        if has_access:
+            contact['ghl_role'] = role
+            contact['is_pure_delegate'] = is_pure_delegate
+            contacts.append(contact)
+
+    matched = []
+    unmatched = []
+
+    for contact in contacts:
+        contact_id = contact.get('contact_id')
+        email = contact.get('email')
+        portal_user = None
+        if contact_id:
+            portal_user = User.objects.filter(contact_id=contact_id).first()
+        if not portal_user and email:
+            portal_user = User.objects.filter(email__iexact=email).first()
+
+        row = {
+            'contact_id': contact_id,
+            'name': f"{contact.get('first_name', '').strip()} {contact.get('last_name', '').strip()}".strip() or 'Unknown',
+            'first_name': contact.get('first_name', ''),
+            'last_name': contact.get('last_name', ''),
+            'email': email,
+            'workshop_code': contact.get('workshop_code', ''),
+            'tags': ', '.join(contact.get('tags', [])[:10]) or '—',
+            'ghl_role': contact.get('ghl_role'),
+            'portal_user': portal_user,
+            'portal_role': portal_user.role if portal_user else None,
+        }
+
+        if portal_user:
+            matched.append(row)
+        else:
+            unmatched.append(row)
+
+    context = {
+        'matched': matched,
+        'unmatched': unmatched,
+        'total_contacts': len(contacts),
+        'matched_count': len(matched),
+        'unmatched_count': len(unmatched),
+        'current_user_role': request.user.role,
+    }
+    return render(request, 'accounts/ghl_sync.html', context)
 
 
 @login_required
