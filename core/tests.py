@@ -302,3 +302,47 @@ class CaseMetricsReportSortingTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Please correct the survivor benefit percentage.')
+
+    def test_case_metrics_report_distinguishes_mod_from_pf_error(self):
+        # A routine mod (member-requested change), no ProFeds error.
+        Case.objects.create(
+            external_case_id='SORT-CASE-MOD',
+            workshop_code='W-MOD',
+            member=self.member_a,
+            employee_first_name='Regular',
+            employee_last_name='Mod',
+            client_email='regularmod@example.com',
+            status='completed',
+            assigned_to=self.admin,
+            date_submitted=timezone.now() - timezone.timedelta(days=2),
+            date_completed=timezone.now() - timezone.timedelta(days=1),
+            date_due=timezone.now() + timezone.timedelta(days=5),
+            urgency='normal',
+            original_case=self.case_1,
+            has_profeds_error=False,
+        )
+        # A mod caused by a ProFeds error.
+        Case.objects.create(
+            external_case_id='SORT-CASE-PFERR',
+            workshop_code='W-PFERR',
+            member=self.member_a,
+            employee_first_name='Error',
+            employee_last_name='Mod',
+            client_email='errormod@example.com',
+            status='completed',
+            assigned_to=self.admin,
+            date_submitted=timezone.now() - timezone.timedelta(days=2),
+            date_completed=timezone.now() - timezone.timedelta(days=1),
+            date_due=timezone.now() + timezone.timedelta(days=5),
+            urgency='normal',
+            original_case=self.case_2,
+            has_profeds_error=True,
+        )
+
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('performance_metrics_report'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, '>MOD<')
+        self.assertContains(response, '>PF ERR<')

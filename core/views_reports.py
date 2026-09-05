@@ -4529,7 +4529,12 @@ def performance_metrics_report(request):
 
         # ── MODS & ERRORS ─────────────────────────────────────────────────────
         is_mod    = bool(c.original_case_id)
-        mod_label = 'Yes' if is_mod else ''
+        # Distinguish a plain modification from one caused by a ProFeds error —
+        # these are tracked separately so the team can see which mods were
+        # avoidable errors vs. routine member-requested changes.
+        mod_label = ''
+        if is_mod:
+            mod_label = 'PF ERR' if c.has_profeds_error else 'MOD'
         error_reason = ''
         if c.has_profeds_error and c.resubmission_notes:
             error_reason = c.resubmission_notes

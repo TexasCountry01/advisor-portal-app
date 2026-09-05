@@ -155,7 +155,9 @@
                     <td class="reviews-col" style="max-width:180px; white-space:normal;">{{ r.reviewer_notes|default:"—" }}</td>
                     <!-- MODS & ERRORS -->
                     <td class="mods-col text-center" style="border-left:3px solid #6a9abf;">
-                        {% if r.is_mod %}<span class="badge bg-info text-dark">MOD</span>{% else %}—{% endif %}
+                        {% if r.is_mod == 'PF ERR' %}<span class="badge bg-danger">PF ERR</span>
+                        {% elif r.is_mod == 'MOD' %}<span class="badge bg-info text-dark">MOD</span>
+                        {% else %}—{% endif %}
                     </td>
                     <td class="mods-col" style="max-width:160px; white-space:normal;">{{ r.error_reason|default:"—" }}</td>
                     <td class="mods-col text-muted fst-italic text-center">{{ r.disputed|default:"—" }}</td>
