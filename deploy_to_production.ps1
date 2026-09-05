@@ -113,23 +113,44 @@ Write-Host ""
 # STEP 4: Restart Gunicorn
 Write-Host "[4/4] Restarting Gunicorn..." -ForegroundColor Yellow
 
-# Kill existing gunicorn master via pidfile (avoids pkill -f which self-kills the SSH bash
-# because the command string itself contains 'gunicorn').
-# Removes stale socket and pidfile before starting fresh daemon.
-# Use a quoted heredoc-style single string to avoid PowerShell interpreting 2>/dev/null
-$restartCmd = "pkill -f gunicorn; sleep 3; cd $projectPath && rm -f gunicorn.sock /tmp/gunicorn.pid && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
-ssh $prodServerUser@$prodServerHost $restartCmd
+# IMPORTANT: do NOT use `pkill -f gunicorn` here. The remote shell that runs this
+# restart command has the full command string (including the words "gunicorn" and
+# "gunicorn.sock") as its own argv, so `pkill -f gunicorn` matches and kills that
+# shell too -- before it ever reaches the "start new gunicorn" step. This previously
+# caused silent production outages: the old workers died, but the new daemon never
+# started because the shell running the start command was killed first.
+#
+# Fix: stop the old master by PID (from the pidfile) instead of pattern matching,
+# wait for it to actually exit, then start the new daemon as a separate SSH call.
+$stopCmd = "if [ -f /tmp/gunicorn.pid ]; then OLDPID=`$(cat /tmp/gunicorn.pid); if kill -0 `$OLDPID 2>/dev/null; then kill -TERM `$OLDPID; for i in 1 2 3 4 5 6 7 8 9 10; do kill -0 `$OLDPID 2>/dev/null || break; sleep 1; done; fi; fi; rm -f $projectPath/gunicorn.sock /tmp/gunicorn.pid; echo stopped"
+ssh $prodServerUser@$prodServerHost $stopCmd
 
-Start-Sleep -Seconds 6
+$startCmd = "cd $projectPath && $venvPath/bin/gunicorn --workers 3 --bind $gunicornSocket --umask 0000 --daemon --pid /tmp/gunicorn.pid --log-file /tmp/gunicorn.log --log-level info config.wsgi:application"
+ssh $prodServerUser@$prodServerHost $startCmd
 
-# Verify gunicorn is running
+# Verify gunicorn is running, retrying with backoff instead of a single fixed sleep
 Write-Host "Verifying Gunicorn process..." -ForegroundColor Yellow
-$processCount = ssh $prodServerUser@$prodServerHost "ps aux | grep gunicorn | grep -v grep | wc -l"
+$processCount = 0
+for ($attempt = 1; $attempt -le 6; $attempt++) {
+    Start-Sleep -Seconds 2
+    $processCount = ssh $prodServerUser@$prodServerHost "ps aux | grep gunicorn | grep -v grep | wc -l"
+    if ([int]$processCount -ge 2) {
+        break
+    }
+    Write-Host "  Attempt $attempt/6: only $processCount process(es) so far, retrying..." -ForegroundColor Yellow
+}
 
 if ([int]$processCount -lt 2) {
     Write-Host "WARNING: Only $processCount gunicorn process(es) found - checking logs..." -ForegroundColor Red
     ssh $prodServerUser@$prodServerHost "tail -20 /tmp/gunicorn.log 2>/dev/null"
-    exit 1
+    Write-Host "Attempting to start Gunicorn once more..." -ForegroundColor Yellow
+    ssh $prodServerUser@$prodServerHost $startCmd
+    Start-Sleep -Seconds 4
+    $processCount = ssh $prodServerUser@$prodServerHost "ps aux | grep gunicorn | grep -v grep | wc -l"
+    if ([int]$processCount -lt 2) {
+        Write-Host "ERROR: Gunicorn still not running after retry. Manual intervention required." -ForegroundColor Red
+        exit 1
+    }
 }
 
 Write-Host "OK - $processCount gunicorn processes running" -ForegroundColor Green
