@@ -84,6 +84,15 @@ class CaseMetricsReportSortingTest(TestCase):
         self.assertContains(response, 'Find employee')
         self.assertContains(response, 'employee-find-input')
 
+    def test_case_metrics_report_uses_mod_reason_label(self):
+        self.client.force_login(self.admin)
+
+        response = self.client.get(reverse('performance_metrics_report'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Mod Reason')
+        self.assertNotContains(response, 'Error Reason')
+
     def test_case_metrics_report_defaults_end_date_to_yesterday(self):
         self.client.force_login(self.admin)
 
