@@ -72,9 +72,20 @@ def normalize_contact(raw_contact: Dict[str, Any]) -> Dict[str, Any]:
     first_name = (raw_contact.get('firstName') or raw_contact.get('first_name') or '').strip()
     last_name = (raw_contact.get('lastName') or raw_contact.get('last_name') or '').strip()
 
-    custom_fields = raw_contact.get('customFields') or raw_contact.get('custom_fields') or {}
+    custom_fields = raw_contact.get('customFields') or raw_contact.get('custom_fields') or []
     workshop_code = ''
-    if isinstance(custom_fields, dict):
+    member_code_field_id = (getattr(settings, 'GHL_MEMBER_CODE_FIELD_ID', '') or '').strip()
+
+    if isinstance(custom_fields, list):
+        # GHL's contact API returns customFields as [{'id': <opaque_id>, 'value': ...}, ...].
+        # Several similarly-named fields exist (Workshop Code, Member Code (Ops), etc.)
+        # so we must match the exact field ID, not guess by value.
+        if member_code_field_id:
+            for field in custom_fields:
+                if isinstance(field, dict) and field.get('id') == member_code_field_id:
+                    workshop_code = field.get('value') or ''
+                    break
+    elif isinstance(custom_fields, dict):
         workshop_code = (
             custom_fields.get('workshop_code')
             or custom_fields.get('member_code')
@@ -82,8 +93,10 @@ def normalize_contact(raw_contact: Dict[str, Any]) -> Dict[str, Any]:
             or custom_fields.get('company')
             or ''
         )
+
     if not workshop_code:
-        workshop_code = (raw_contact.get('workshop_code') or raw_contact.get('member_code') or '').strip().upper()
+        fallback = raw_contact.get('workshop_code') or raw_contact.get('member_code') or ''
+        workshop_code = fallback if isinstance(fallback, str) else ''
 
     tags = normalize_tags(raw_contact.get('tags'))
 

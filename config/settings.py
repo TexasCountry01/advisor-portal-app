@@ -294,6 +294,10 @@ WP_WEBHOOK_SECRET = config('WP_WEBHOOK_SECRET', default='')
 GHL_PRIVATE_TOKEN = config('GHL_PRIVATE_TOKEN', default='')
 GHL_LOCATION_ID = config('GHL_LOCATION_ID', default='')
 GHL_API_BASE_URL = config('GHL_API_BASE_URL', default='https://services.leadconnectorhq.com')
+# Opaque GHL custom field ID for the "Member Code" field (used as workshop code).
+# Found via GET /locations/{locationId}/customFields — several similarly-named
+# fields exist (Workshop Code, Member Code (Ops), etc.) so this must be exact.
+GHL_MEMBER_CODE_FIELD_ID = config('GHL_MEMBER_CODE_FIELD_ID', default='tZHCpD2fYiN40VYA4RO4')
 
 # ============================================================================
 # LOGGING — ensure app-level logs reach gunicorn/journal
