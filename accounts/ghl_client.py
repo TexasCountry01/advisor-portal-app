@@ -1,10 +1,30 @@
 import logging
+from datetime import datetime
 from typing import Any, Dict, List
 
 import requests
 from django.conf import settings
 
 logger = logging.getLogger(__name__)
+
+
+def _to_epoch_millis(value: Any) -> Any:
+    """Convert a GHL ISO date string (dateAdded/dateUpdated) to epoch milliseconds.
+    GHL's `startAfter` pagination param requires a number, not an ISO string.
+    Returns None if the value can't be parsed.
+    """
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return int(value)
+    if isinstance(value, str):
+        try:
+            iso_value = value.replace('Z', '+00:00')
+            dt = datetime.fromisoformat(iso_value)
+            return int(dt.timestamp() * 1000)
+        except (ValueError, TypeError):
+            return None
+    return None
 
 
 def get_ghl_headers() -> Dict[str, str]:
@@ -142,7 +162,7 @@ def fetch_ghl_contacts(limit: int = 100, max_total: int = 1000) -> List[Dict[str
 
         last_contact = page_contacts[-1]
         start_after_id = last_contact.get('id') or last_contact.get('contactId')
-        start_after = last_contact.get('dateAdded') or last_contact.get('dateUpdated')
+        start_after = _to_epoch_millis(last_contact.get('dateAdded') or last_contact.get('dateUpdated'))
         if not start_after_id:
             break
 
