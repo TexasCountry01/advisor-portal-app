@@ -58,6 +58,7 @@
                                 <th>Workshop</th>
                                 <th>GHL Role</th>
                                 <th>Contact ID</th>
+                                <th>First Detected</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -69,6 +70,14 @@
                                 <td>{{ row.workshop_code|default:'—' }}</td>
                                 <td><span class="badge bg-info text-dark">{{ row.ghl_role|default:'—' }}</span></td>
                                 <td><code>{{ row.contact_id|default:'—' }}</code></td>
+                                <td>
+                                    {% if row.first_detected_at %}
+                                        {{ row.first_detected_at|date:"M j, Y" }}
+                                        {% if row.is_new %}<span class="badge bg-danger ms-1">NEW</span>{% endif %}
+                                    {% else %}
+                                        <span class="text-muted small">Not yet tracked</span>
+                                    {% endif %}
+                                </td>
                                 <td>
                                     {% if row.contact_id %}
                                     <a class="btn btn-sm btn-outline-primary"

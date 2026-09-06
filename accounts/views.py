@@ -168,6 +168,21 @@ def sync_ghl_contacts(request):
         messages.error(request, f'GHL sync failed: {exc}')
         return redirect('manage_users')
 
+    # "First Detected"/"NEW" badge data comes from the ProvisioningAlert table
+    # maintained by the daily sync_provisioning_alerts cron job -- this page
+    # only reads it, it never writes to it, so the email and the panel always
+    # agree on when something was first noticed.
+    from .models import ProvisioningAlert
+    from django.utils import timezone
+    from datetime import timedelta
+
+    first_detected_by_contact_id = dict(
+        ProvisioningAlert.objects.filter(
+            alert_type='new_ghl_contact', resolved_at__isnull=True
+        ).values_list('contact_id', 'first_detected_at')
+    )
+    new_cutoff = timezone.now() - timedelta(hours=24)
+
     matched = []
     unmatched = []
 
@@ -175,6 +190,7 @@ def sync_ghl_contacts(request):
         contact_id = contact.get('contact_id')
         email = contact.get('email')
         portal_user = contact.get('portal_user')
+        first_detected_at = first_detected_by_contact_id.get(contact_id)
 
         row = {
             'contact_id': contact_id,
@@ -188,6 +204,8 @@ def sync_ghl_contacts(request):
             'portal_user': portal_user,
             'portal_role': portal_user.role if portal_user else None,
             'needs_link': bool(portal_user and not portal_user.contact_id and contact_id),
+            'first_detected_at': first_detected_at,
+            'is_new': bool(first_detected_at and first_detected_at >= new_cutoff),
         }
 
         if portal_user:
