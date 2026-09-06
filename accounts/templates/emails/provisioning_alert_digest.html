@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="650" cellpadding="0" cellspacing="0" border="0" style="max-width: 650px; background-color: #f9f9f9; border: 1px solid #dddddd; border-radius: 8px;">
+                    <tr>
+                        <td style="background-color: #2c3e50; color: #ffffff; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; font-size: 22px; color: #ffffff;">Portal Access Changes</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 20px;">
+                            <p style="margin: 0 0 16px 0; font-size: 15px;">Daily GHL &lt;-&gt; advisor-portal provisioning summary for {{ run_date|date:"F j, Y" }}.</p>
+
+                            {% if new_contact_rows %}
+                            <p style="margin: 20px 0 10px 0; font-size: 16px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px;">
+                                New GHL Contacts Not Yet Provisioned ({{ new_contacts_count }})
+                            </p>
+                            <div style="background-color: #ecf0f1; padding: 12px; border-left: 4px solid #3498db; margin: 0 0 12px 0; border-radius: 4px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <tr style="border-bottom: 2px solid #bdc3c7;">
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">Name</td>
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">Email</td>
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">Workshop</td>
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">GHL Role</td>
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">First Detected</td>
+                                    </tr>
+                                    {% for row in new_contact_rows %}
+                                    <tr style="border-bottom: 1px solid #bdc3c7;">
+                                        <td style="padding: 6px 4px; color: #34495e;">{{ row.name }}</td>
+                                        <td style="padding: 6px 4px; color: #34495e;">{{ row.email|default:"—" }}</td>
+                                        <td style="padding: 6px 4px; color: #34495e;">{{ row.workshop_code|default:"—" }}</td>
+                                        <td style="padding: 6px 4px; color: #34495e;">{{ row.ghl_role|default:"—" }}</td>
+                                        <td style="padding: 6px 4px; color: #34495e;">
+                                            {{ row.first_detected_at|date:"M j, Y" }}
+                                            {% if row.is_new %}<span style="background-color: #e74c3c; color: #ffffff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 3px; margin-left: 4px;">NEW</span>{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto 24px auto;">
+                                <tr>
+                                    <td align="center" bgcolor="#27ae60" style="background-color: #27ae60; border-radius: 4px;">
+                                        <a href="{{ ghl_sync_url }}" target="_blank" style="display: inline-block; padding: 10px 24px; font-family: Arial, sans-serif; font-size: 13px; font-weight: bold; color: #ffffff; text-decoration: none;">Review &amp; Provision</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            {% endif %}
+
+                            {% if missing_tag_rows %}
+                            <p style="margin: 20px 0 10px 0; font-size: 16px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #e67e22; padding-bottom: 8px;">
+                                Active Portal Users Missing GHL Access ({{ missing_tag_count }})
+                            </p>
+                            <div style="background-color: #fdf2e9; padding: 12px; border-left: 4px solid #e67e22; margin: 0 0 12px 0; border-radius: 4px;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <tr style="border-bottom: 2px solid #f0c9a3;">
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">Name</td>
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">Username</td>
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">Email</td>
+                                        <td style="padding: 6px 4px; font-weight: bold; color: #2c3e50;">First Detected</td>
+                                    </tr>
+                                    {% for row in missing_tag_rows %}
+                                    <tr style="border-bottom: 1px solid #f0c9a3;">
+                                        <td style="padding: 6px 4px; color: #34495e;">{{ row.name }}</td>
+                                        <td style="padding: 6px 4px; color: #34495e;"><code>{{ row.username }}</code></td>
+                                        <td style="padding: 6px 4px; color: #34495e;">{{ row.email|default:"—" }}</td>
+                                        <td style="padding: 6px 4px; color: #34495e;">
+                                            {{ row.first_detected_at|date:"M j, Y" }}
+                                            {% if row.is_new %}<span style="background-color: #e74c3c; color: #ffffff; font-size: 10px; font-weight: bold; padding: 1px 5px; border-radius: 3px; margin-left: 4px;">NEW</span>{% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                            <div style="background-color: #FDF5DE; border: 1px solid #EDA618; color: #856404; padding: 12px; border-radius: 4px; margin: 0 0 20px 0; font-size: 13px;">
+                                <strong>To deactivate:</strong> Go to <strong>Admin Dashboard &rarr; User Management</strong>, find the user, and click the deactivate icon next to their row. This preserves their case history and can be reversed at any time via the reactivate icon.
+                            </div>
+                            {% endif %}
+
+                            <p style="margin: 12px 0 0 0; font-size: 13px; color: #7f8c8d;">These items were still open as of this run and will continue to appear daily until resolved (provisioned, tag restored, or account deactivated).</p>
+
+                            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #dddddd; font-size: 12px; color: #7f8c8d; text-align: center;">
+                                <p style="margin: 4px 0;">This is an automated notification from the Advisor Portal.</p>
+                                <p style="margin: 4px 0;">Please do not reply to this email.</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

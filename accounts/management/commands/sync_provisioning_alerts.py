@@ -13,10 +13,6 @@ Detects two kinds of drift (see accounts/services/provisioning_sync.py):
 Sends a single digest email (subject: "Portal Access Changes - Action Required")
 to up to 3 configured recipients in System Settings, ONLY if something is open.
 Always writes an AuditLog entry summarizing the run, even a no-op run.
-
-NOTE: Email sending is implemented in Phase 4 once the digest templates exist.
-This command already performs full detection + persistence + audit logging;
-only the actual email dispatch is a placeholder until then.
 """
 import logging
 
@@ -107,7 +103,8 @@ class Command(BaseCommand):
 
         email_sent = False
         if total_open > 0:
-            email_sent = self._send_digest_email(system_settings, open_new_contacts, open_missing_tag)
+            new_alert_ids = {a.id for a in result['new_alerts']}
+            email_sent = self._send_digest_email(system_settings, open_new_contacts, open_missing_tag, new_alert_ids)
 
         # Always write an audit log entry, even a no-op run.
         AuditLog.objects.create(
@@ -136,11 +133,11 @@ class Command(BaseCommand):
                 f'Email sent: {email_sent}'
             ))
 
-    def _send_digest_email(self, system_settings, open_new_contacts, open_missing_tag):
-        """Send the "Portal Access Changes - Action Required" digest email.
-
-        Placeholder until Phase 4 builds the email templates
-        (accounts/templates/emails/provisioning_alert_digest.html/.txt).
+    def _send_digest_email(self, system_settings, open_new_contacts, open_missing_tag, new_alert_ids):
+        """Send the "Portal Access Changes - Action Required" digest email to up
+        to 3 configured recipients. Respects the global email kill switch
+        (should_send_emails()) in addition to provisioning_alerts_enabled,
+        which was already checked before this method is ever called.
         """
         recipients = []
         if system_settings.provisioning_alert_email_1_enabled and system_settings.provisioning_alert_email_1:
@@ -157,7 +154,91 @@ class Command(BaseCommand):
             ))
             return False
 
-        self.stdout.write(self.style.WARNING(
-            f'Email templates not yet implemented (Phase 4) — would send to {recipients}, skipping send for now.'
-        ))
-        return False
+        from cases.services.email_service import should_send_emails
+        if not should_send_emails():
+            self.stdout.write(self.style.WARNING(
+                'Email notifications are disabled globally (System Settings) — skipping send.'
+            ))
+            return False
+
+        from django.core.mail import send_mail
+        from django.template.loader import render_to_string
+        from django.conf import settings as django_settings
+        from django.utils import timezone
+        from core.models import AuditLog
+
+        def _row_for_contact_alert(alert):
+            d = alert.details or {}
+            name = f"{d.get('first_name', '')} {d.get('last_name', '')}".strip() or 'Unknown'
+            return {
+                'name': name,
+                'email': alert.email or d.get('email', ''),
+                'workshop_code': d.get('workshop_code', ''),
+                'ghl_role': d.get('ghl_role', ''),
+                'first_detected_at': alert.first_detected_at,
+                'is_new': alert.id in new_alert_ids,
+            }
+
+        def _row_for_missing_tag_alert(alert):
+            d = alert.details or {}
+            return {
+                'name': d.get('name') or alert.email or 'Unknown',
+                'username': d.get('username', ''),
+                'email': alert.email or d.get('email', ''),
+                'first_detected_at': alert.first_detected_at,
+                'is_new': alert.id in new_alert_ids,
+            }
+
+        new_contact_rows = [_row_for_contact_alert(a) for a in open_new_contacts.order_by('-first_detected_at')]
+        missing_tag_rows = [_row_for_missing_tag_alert(a) for a in open_missing_tag.order_by('-first_detected_at')]
+
+        site_url = getattr(django_settings, 'SITE_URL', 'https://portal.profeds.com')
+        context = {
+            'run_date': timezone.now(),
+            'new_contact_rows': new_contact_rows,
+            'missing_tag_rows': missing_tag_rows,
+            'new_contacts_count': len(new_contact_rows),
+            'missing_tag_count': len(missing_tag_rows),
+            'ghl_sync_url': f'{site_url}/accounts/ghl-sync/',
+        }
+
+        subject = 'Portal Access Changes - Action Required'
+        text_message = render_to_string('emails/provisioning_alert_digest.txt', context)
+        html_message = render_to_string('emails/provisioning_alert_digest.html', context)
+
+        try:
+            send_mail(
+                subject=subject,
+                message=text_message,
+                from_email=django_settings.DEFAULT_FROM_EMAIL,
+                recipient_list=recipients,
+                html_message=html_message,
+                fail_silently=False,
+            )
+        except Exception as e:
+            logger.error(f'Failed to send provisioning alert digest: {e}')
+            self.stdout.write(self.style.ERROR(f'Failed to send digest email: {e}'))
+            AuditLog.objects.create(
+                user=None,
+                action_type='email_notification_failed',
+                description=f'Provisioning alert digest email FAILED to {recipients}: {e}',
+                metadata={'recipients': recipients, 'error': str(e)},
+            )
+            return False
+
+        AuditLog.objects.create(
+            user=None,
+            action_type='provisioning_alert_sent',
+            description=(
+                f'Provisioning alert digest sent to {recipients}: '
+                f'{len(new_contact_rows)} new-contact, {len(missing_tag_rows)} missing-tag item(s).'
+            ),
+            metadata={
+                'recipients': recipients,
+                'subject': subject,
+                'new_contacts_count': len(new_contact_rows),
+                'missing_tag_count': len(missing_tag_rows),
+            },
+        )
+        self.stdout.write(self.style.SUCCESS(f'Digest email sent to {recipients}'))
+        return True

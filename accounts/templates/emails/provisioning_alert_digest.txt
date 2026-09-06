@@ -1,0 +1,22 @@
+PORTAL ACCESS CHANGES
+Daily GHL <-> advisor-portal provisioning summary for {{ run_date|date:"F j, Y" }}.
+
+{% if new_contact_rows %}NEW GHL CONTACTS NOT YET PROVISIONED ({{ new_contacts_count }})
+─────────────────────────────────────
+{% for row in new_contact_rows %}- {{ row.name }} <{{ row.email|default:"—" }}> | Workshop: {{ row.workshop_code|default:"—" }} | Role: {{ row.ghl_role|default:"—" }} | First Detected: {{ row.first_detected_at|date:"M j, Y" }}{% if row.is_new %} [NEW]{% endif %}
+{% endfor %}
+Review & Provision: {{ ghl_sync_url }}
+
+{% endif %}{% if missing_tag_rows %}ACTIVE PORTAL USERS MISSING GHL ACCESS ({{ missing_tag_count }})
+─────────────────────────────────────
+{% for row in missing_tag_rows %}- {{ row.name }} ({{ row.username }}) <{{ row.email|default:"—" }}> | First Detected: {{ row.first_detected_at|date:"M j, Y" }}{% if row.is_new %} [NEW]{% endif %}
+{% endfor %}
+To deactivate: Go to Admin Dashboard -> User Management, find the user, and click
+the deactivate icon next to their row. This preserves their case history and can
+be reversed at any time via the reactivate icon.
+
+{% endif %}These items were still open as of this run and will continue to appear
+daily until resolved (provisioned, tag restored, or account deactivated).
+
+─────────────────────────────────────
+This is an automated notification from the Advisor Portal. Please do not reply to this email.
