@@ -11,8 +11,6 @@ from .forms import (
     WorkshopDelegateForm
 )
 from .models import DelegateAccess, MemberCreditAllowance, WorkshopDelegate
-from .ghl_client import fetch_ghl_contacts
-from .sso import determine_role_from_tags
 from core.models import AuditLog
 from cases.services.email_service import send_delegate_assigned_email, send_delegate_removed_email
 
@@ -162,34 +160,21 @@ def sync_ghl_contacts(request):
         messages.error(request, 'Only administrators can sync from GHL.')
         return redirect('manage_users')
 
+    from .services.provisioning_sync import get_relevant_contacts
+
     try:
-        raw_contacts = fetch_ghl_contacts(limit=100, max_total=1000)
+        relevant = get_relevant_contacts()
     except Exception as exc:
         messages.error(request, f'GHL sync failed: {exc}')
         return redirect('manage_users')
 
-    # Only contacts with a portal access tag are relevant for provisioning —
-    # everything else is generic CRM/marketing noise. Reuses the same tag
-    # matching logic as SSO login so results are always consistent.
-    contacts = []
-    for contact in raw_contacts:
-        role, is_pure_delegate, has_access = determine_role_from_tags(contact.get('tags', []))
-        if has_access:
-            contact['ghl_role'] = role
-            contact['is_pure_delegate'] = is_pure_delegate
-            contacts.append(contact)
-
     matched = []
     unmatched = []
 
-    for contact in contacts:
+    for contact in relevant:
         contact_id = contact.get('contact_id')
         email = contact.get('email')
-        portal_user = None
-        if contact_id:
-            portal_user = User.objects.filter(contact_id=contact_id).first()
-        if not portal_user and email:
-            portal_user = User.objects.filter(email__iexact=email).first()
+        portal_user = contact.get('portal_user')
 
         row = {
             'contact_id': contact_id,
@@ -213,7 +198,7 @@ def sync_ghl_contacts(request):
     context = {
         'matched': matched,
         'unmatched': unmatched,
-        'total_contacts': len(contacts),
+        'total_contacts': len(relevant),
         'matched_count': len(matched),
         'unmatched_count': len(unmatched),
         'current_user_role': request.user.role,
