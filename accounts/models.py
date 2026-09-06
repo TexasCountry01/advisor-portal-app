@@ -748,3 +748,75 @@ class SSOAllowedEmail(models.Model):
     def save(self, *args, **kwargs):
         self.email = self.email.strip().lower()
         super().save(*args, **kwargs)
+
+
+# ============================================================================
+# PROVISIONING SYNC ALERTS — persistent tracking of GHL/portal drift
+# ============================================================================
+
+class ProvisioningAlert(models.Model):
+    """
+    Tracks GHL <-> portal provisioning drift across daily sync runs.
+
+    Two kinds of drift are tracked:
+      - new_ghl_contact: a GHL contact has a portal-access tag but no
+        matching portal User record yet (needs Provision).
+      - missing_ghl_tag: an active, role='member' portal User no longer
+        has a portal-access tag in GHL (needs Deactivate).
+
+    first_detected_at/last_seen_at/resolved_at give the daily cron job
+    (and the GHL Sync Review page) a stable "when did we first notice
+    this" timestamp, so the same 8 unmatched contacts found today don't
+    look brand-new again tomorrow -- only genuinely new drift is badged
+    NEW. When drift is no longer detected on a run (provisioned, tag
+    restored, or account deactivated), the alert is marked resolved
+    automatically -- no manual cleanup needed.
+    """
+    ALERT_TYPES = [
+        ('new_ghl_contact', 'New GHL Contact Not Provisioned'),
+        ('missing_ghl_tag', 'Active Portal User Missing GHL Tag'),
+    ]
+
+    alert_type = models.CharField(max_length=30, choices=ALERT_TYPES)
+
+    # For new_ghl_contact alerts: the GHL contact_id (immutable identifier).
+    # For missing_ghl_tag alerts: the contact_id on file for the portal user
+    # (may be blank if the user was never linked to a GHL contact at all).
+    contact_id = models.CharField(max_length=100, blank=True, null=True)
+
+    # For missing_ghl_tag alerts: the portal User in question.
+    # Null for new_ghl_contact alerts (no portal user exists yet).
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='provisioning_alerts'
+    )
+
+    email = models.EmailField(blank=True, default='')
+
+    # Snapshot of relevant details at detection time (name, workshop_code,
+    # ghl_role, tags, etc.) -- kept even after resolution for audit history.
+    details = models.JSONField(default=dict, blank=True)
+
+    first_detected_at = models.DateTimeField(auto_now_add=True)
+    last_seen_at = models.DateTimeField(auto_now=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Provisioning Alert'
+        verbose_name_plural = 'Provisioning Alerts'
+        ordering = ['-first_detected_at']
+        indexes = [
+            models.Index(fields=['alert_type', 'resolved_at']),
+        ]
+
+    def __str__(self):
+        status = 'resolved' if self.resolved_at else 'open'
+        return f'{self.get_alert_type_display()} ({status}) - {self.email or self.contact_id}'
+
+    @property
+    def is_open(self):
+        return self.resolved_at is None

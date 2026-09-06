@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import User, UserPreference, AuditLog, MemberDelegate, SSOAllowedEmail
+from .models import User, UserPreference, AuditLog, MemberDelegate, SSOAllowedEmail, ProvisioningAlert
 
 
 @admin.register(User)
@@ -73,6 +73,18 @@ class SSOAllowedEmailAdmin(admin.ModelAdmin):
     
     def has_add_permission(self, request):
         return request.user.is_superuser
+
+
+@admin.register(ProvisioningAlert)
+class ProvisioningAlertAdmin(admin.ModelAdmin):
+    """Read-only view of GHL/portal provisioning drift, for debugging the daily sync job."""
+    list_display = ['alert_type', 'email', 'contact_id', 'user', 'first_detected_at', 'last_seen_at', 'resolved_at']
+    list_filter = ['alert_type', 'resolved_at']
+    search_fields = ['email', 'contact_id', 'user__username']
+    readonly_fields = ['alert_type', 'contact_id', 'user', 'email', 'details', 'first_detected_at', 'last_seen_at', 'resolved_at', 'last_notified_at']
+
+    def has_add_permission(self, request):
+        return False
     
     def has_change_permission(self, request, obj=None):
         return request.user.is_superuser

@@ -86,6 +86,8 @@ class AuditLog(models.Model):
         ('wp_user_sync', 'WP User Sync Completed'),
         ('data_sync', 'Data Sync Operation'),
         ('ghl_link', 'GHL Contact Linked to Existing User'),
+        ('provisioning_alert_run', 'Provisioning Alert Sync Run'),
+        ('provisioning_alert_sent', 'Provisioning Alert Email Sent'),
         ('error_flag_disputed', 'ProFeds Error Flag Disputed'),
         ('other', 'Other Activity'),
     ]
@@ -360,6 +362,39 @@ class SystemSettings(models.Model):
     feedback_email_2_enabled = models.BooleanField(
         default=False,
         help_text='Enable notifications to feedback email 2'
+    )
+
+    # Provisioning Sync Alert Emails (GHL <-> portal drift daily digest)
+    provisioning_alerts_enabled = models.BooleanField(
+        default=True,
+        help_text='Enable the daily GHL/portal provisioning drift alert email (runs via cron, 6:00 AM Central)'
+    )
+    provisioning_alert_email_1 = models.EmailField(
+        blank=True,
+        default='',
+        help_text='First email address to notify about GHL/portal provisioning drift'
+    )
+    provisioning_alert_email_1_enabled = models.BooleanField(
+        default=False,
+        help_text='Enable notifications to provisioning alert email 1'
+    )
+    provisioning_alert_email_2 = models.EmailField(
+        blank=True,
+        default='',
+        help_text='Second email address to notify about GHL/portal provisioning drift'
+    )
+    provisioning_alert_email_2_enabled = models.BooleanField(
+        default=False,
+        help_text='Enable notifications to provisioning alert email 2'
+    )
+    provisioning_alert_email_3 = models.EmailField(
+        blank=True,
+        default='',
+        help_text='Third email address to notify about GHL/portal provisioning drift'
+    )
+    provisioning_alert_email_3_enabled = models.BooleanField(
+        default=False,
+        help_text='Enable notifications to provisioning alert email 3'
     )
 
     # Super-dev account policy
