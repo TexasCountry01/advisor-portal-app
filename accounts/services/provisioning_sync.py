@@ -16,9 +16,9 @@ import logging
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 
-from .ghl_client import fetch_ghl_contacts
-from .sso import determine_role_from_tags
-from .models import ProvisioningAlert
+from ..ghl_client import fetch_ghl_contacts
+from ..sso import determine_role_from_tags
+from ..models import ProvisioningAlert
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
