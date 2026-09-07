@@ -103,6 +103,22 @@ def manage_users(request):
             else:
                 try:
                     user = form.save()
+                    AuditLog.objects.create(
+                        user=current_user,
+                        action_type='user_created',
+                        description=(
+                            f'{current_user.get_full_name()} created user {user.get_full_name()} '
+                            f'({user.username}, role={user.role})'
+                        ),
+                        related_user=user,
+                        metadata={
+                            'created_user_id': user.id,
+                            'username': user.username,
+                            'role': user.role,
+                            'contact_id': user.contact_id or None,
+                            'from_ghl_provisioning': bool(user.contact_id),
+                        },
+                    )
                     messages.success(
                         request,
                         f'User {user.get_full_name()} ({user.username}) created successfully!'

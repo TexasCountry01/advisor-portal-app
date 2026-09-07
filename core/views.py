@@ -445,6 +445,15 @@ def request_add_delegate(request):
         notes=notes,
     )
 
+    # Check GHL status once here so it's captured in the persistent audit
+    # trail, not just the transient staff email.
+    ghl_status = None
+    try:
+        from accounts.services.provisioning_sync import check_ghl_status_for_email
+        ghl_status = check_ghl_status_for_email(delegate_email)
+    except Exception as e:
+        logger.warning(f'GHL lookup failed for delegate request email {delegate_email}: {e}')
+
     # Audit log
     member_name = request.user.get_full_name() or request.user.username
     AuditLog.objects.create(
@@ -461,10 +470,11 @@ def request_add_delegate(request):
             'notes': notes,
             'member_id': request.user.pk,
             'member_name': member_name,
+            'ghl_status': ghl_status,
         },
     )
 
-    _send_delegate_request_email(request.user, dr)
+    _send_delegate_request_email(request.user, dr, ghl_status=ghl_status)
     messages.success(request, f'Request to add "{delegate_name}" as a delegate has been submitted. You will be notified when it is processed.')
     return redirect('profile')
 
@@ -573,8 +583,14 @@ def request_remove_delegate(request):
     return redirect('profile')
 
 
-def _send_delegate_request_email(member, delegate_request, account_deactivated=False):
-    """Send notification email to L3 techs, admins, and managers about a delegate request."""
+def _send_delegate_request_email(member, delegate_request, account_deactivated=False, ghl_status=None):
+    """Send notification email to L3 techs, admins, and managers about a delegate request.
+
+    ghl_status: optional precomputed result from check_ghl_status_for_email(),
+    passed in by request_add_delegate() so the GHL lookup happens once and is
+    captured in the AuditLog. If not provided (e.g. remove-request callers),
+    it is left as None and simply not shown for the add-request GHL Status block.
+    """
     try:
         from django.core.mail import send_mail
         from django.conf import settings as django_settings
@@ -656,13 +672,6 @@ def _send_delegate_request_email(member, delegate_request, account_deactivated=F
             else:
                 lines.append('- Update GHL delegate tags as needed')
         else:
-            ghl_status = None
-            try:
-                from accounts.services.provisioning_sync import check_ghl_status_for_email
-                ghl_status = check_ghl_status_for_email(delegate_request.delegate_email)
-            except Exception as e:
-                logger.warning(f'GHL lookup failed for delegate request email {delegate_request.delegate_email}: {e}')
-
             lines += ['', 'GHL Status:']
             if not delegate_request.delegate_email:
                 lines.append('- No delegate email was provided — cannot check GHL. Verify manually.')

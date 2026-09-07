@@ -266,6 +266,12 @@ def run_provisioning_alert_cycle(triggered_by=None, force=False):
     }
 
     if not force and not system_settings.provisioning_alerts_enabled:
+        AuditLog.objects.create(
+            user=triggered_by,
+            action_type='provisioning_alert_run',
+            description='Provisioning alert sync skipped — disabled in System Settings.',
+            metadata={'skipped_disabled': True, 'manual': triggered_by is not None},
+        )
         return {'success': True, 'skipped_disabled': True, 'error': None, **empty_result}
 
     try:
