@@ -267,6 +267,48 @@ def link_ghl_contact(request, user_id):
 
 
 @login_required
+def run_provisioning_alerts_now(request):
+    """On-demand "Run Now" trigger for the GHL provisioning drift sync + digest
+    email, from System Settings -> Provisioning Alerts. Runs the exact same
+    logic as the daily cron (accounts.services.provisioning_sync.
+    run_provisioning_alert_cycle), but bypasses the provisioning_alerts_enabled
+    schedule toggle since this is an explicit manual action. The global email
+    kill switch is still respected.
+    """
+    if request.user.role != 'administrator':
+        messages.error(request, 'Only administrators can run this.')
+        return redirect('system_settings')
+
+    if request.method != 'POST':
+        return redirect('system_settings')
+
+    from django.urls import reverse
+    from .services.provisioning_sync import run_provisioning_alert_cycle
+
+    result = run_provisioning_alert_cycle(triggered_by=request.user, force=True)
+
+    if not result['success']:
+        messages.error(request, f"Provisioning sync failed: {result['error']}")
+    elif result['total_open'] == 0:
+        messages.success(request, 'Provisioning sync ran successfully — no open items to report, no email sent.')
+    elif result['email_sent']:
+        messages.success(
+            request,
+            f"Provisioning sync ran: {result['open_new_count']} new-contact, "
+            f"{result['open_missing_count']} missing-tag item(s) open. Digest email sent."
+        )
+    else:
+        messages.warning(
+            request,
+            f"Provisioning sync ran: {result['open_new_count']} new-contact, "
+            f"{result['open_missing_count']} missing-tag item(s) open, but the email was NOT sent "
+            f"({result.get('email_skip_reason') or 'unknown reason'}). Check recipient config and the master email toggle."
+        )
+
+    return redirect(reverse('system_settings') + '?tab=provisioning')
+
+
+@login_required
 def deactivate_user(request, user_id):
     """Deactivate a user (set inactive). Preserves all case associations."""
     

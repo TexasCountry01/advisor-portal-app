@@ -234,3 +234,196 @@ def sync_provisioning_alerts():
         'still_open_alerts': still_open_alerts,
         'resolved_count': resolved_count,
     }
+
+
+def run_provisioning_alert_cycle(triggered_by=None, force=False):
+    """Run one full detection + persist + conditional-email cycle.
+
+    Used by BOTH the daily cron (force=False, respects
+    SystemSettings.provisioning_alerts_enabled) and the manual "Run Now"
+    admin action (force=True, always runs regardless of that toggle — the
+    global email kill switch, should_send_emails(), is still respected
+    either way, since that's the app-wide emergency stop, not something a
+    single feature's manual trigger should bypass).
+
+    Returns a summary dict:
+        {'success': bool, 'error': str|None, 'skipped_disabled': bool,
+         'open_new_count': int, 'open_missing_count': int, 'total_open': int,
+         'new_count': int, 'still_open_count': int, 'resolved_count': int,
+         'email_sent': bool, 'email_skip_reason': str|None}
+    """
+    from core.models import SystemSettings, AuditLog
+
+    system_settings = SystemSettings.get_settings()
+
+    empty_result = {
+        'open_new_count': 0, 'open_missing_count': 0, 'total_open': 0,
+        'new_count': 0, 'still_open_count': 0, 'resolved_count': 0,
+        'email_sent': False, 'email_skip_reason': None,
+    }
+
+    if not force and not system_settings.provisioning_alerts_enabled:
+        return {'success': True, 'skipped_disabled': True, 'error': None, **empty_result}
+
+    try:
+        result = sync_provisioning_alerts()
+    except Exception as e:
+        logger.error(f'Provisioning alert sync failed: {e}')
+        AuditLog.objects.create(
+            user=triggered_by,
+            action_type='provisioning_alert_run',
+            description=f'Provisioning alert sync FAILED: {e}',
+            metadata={'error': str(e), 'manual': triggered_by is not None},
+        )
+        return {'success': False, 'skipped_disabled': False, 'error': str(e), **empty_result}
+
+    open_new_contacts = ProvisioningAlert.objects.filter(alert_type='new_ghl_contact', resolved_at__isnull=True)
+    open_missing_tag = ProvisioningAlert.objects.filter(alert_type='missing_ghl_tag', resolved_at__isnull=True)
+    open_new_count = open_new_contacts.count()
+    open_missing_count = open_missing_tag.count()
+    total_open = open_new_count + open_missing_count
+
+    email_sent = False
+    email_skip_reason = None
+    if total_open > 0:
+        new_alert_ids = {a.id for a in result['new_alerts']}
+        email_sent, email_skip_reason = _send_digest_email(
+            system_settings, open_new_contacts, open_missing_tag, new_alert_ids, triggered_by=triggered_by
+        )
+
+    AuditLog.objects.create(
+        user=triggered_by,
+        action_type='provisioning_alert_run',
+        description=(
+            f'Provisioning alert sync run: {len(result["new_alerts"])} new, '
+            f'{len(result["still_open_alerts"])} still open, '
+            f'{result["resolved_count"]} resolved. Email sent: {email_sent}.'
+        ),
+        metadata={
+            'new_alerts_count': len(result['new_alerts']),
+            'still_open_count': len(result['still_open_alerts']),
+            'resolved_count': result['resolved_count'],
+            'open_new_contacts': open_new_count,
+            'open_missing_tag_users': open_missing_count,
+            'email_sent': email_sent,
+            'manual': triggered_by is not None,
+        },
+    )
+
+    return {
+        'success': True,
+        'skipped_disabled': False,
+        'error': None,
+        'open_new_count': open_new_count,
+        'open_missing_count': open_missing_count,
+        'total_open': total_open,
+        'new_count': len(result['new_alerts']),
+        'still_open_count': len(result['still_open_alerts']),
+        'resolved_count': result['resolved_count'],
+        'email_sent': email_sent,
+        'email_skip_reason': email_skip_reason,
+    }
+
+
+def _send_digest_email(system_settings, open_new_contacts, open_missing_tag, new_alert_ids, triggered_by=None):
+    """Send the "Portal Access Changes - Action Required" digest email to up
+    to 3 configured recipients.
+
+    Returns (sent: bool, skip_reason: str|None).
+    """
+    recipients = []
+    if system_settings.provisioning_alert_email_1_enabled and system_settings.provisioning_alert_email_1:
+        recipients.append(system_settings.provisioning_alert_email_1)
+    if system_settings.provisioning_alert_email_2_enabled and system_settings.provisioning_alert_email_2:
+        recipients.append(system_settings.provisioning_alert_email_2)
+    if system_settings.provisioning_alert_email_3_enabled and system_settings.provisioning_alert_email_3:
+        recipients.append(system_settings.provisioning_alert_email_3)
+
+    if not recipients:
+        logger.warning('Provisioning alert: open items exist but no recipient emails are configured/enabled.')
+        return False, 'no recipient emails configured/enabled'
+
+    from cases.services.email_service import should_send_emails
+    if not should_send_emails():
+        return False, 'email notifications disabled globally in System Settings'
+
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings as django_settings
+    from django.utils import timezone
+    from core.models import AuditLog
+
+    def _row_for_contact_alert(alert):
+        d = alert.details or {}
+        name = f"{d.get('first_name', '')} {d.get('last_name', '')}".strip() or 'Unknown'
+        return {
+            'name': name,
+            'email': alert.email or d.get('email', ''),
+            'workshop_code': d.get('workshop_code', ''),
+            'ghl_role': d.get('ghl_role', ''),
+            'first_detected_at': alert.first_detected_at,
+            'is_new': alert.id in new_alert_ids,
+        }
+
+    def _row_for_missing_tag_alert(alert):
+        d = alert.details or {}
+        return {
+            'name': d.get('name') or alert.email or 'Unknown',
+            'username': d.get('username', ''),
+            'email': alert.email or d.get('email', ''),
+            'first_detected_at': alert.first_detected_at,
+            'is_new': alert.id in new_alert_ids,
+        }
+
+    new_contact_rows = [_row_for_contact_alert(a) for a in open_new_contacts.order_by('-first_detected_at')]
+    missing_tag_rows = [_row_for_missing_tag_alert(a) for a in open_missing_tag.order_by('-first_detected_at')]
+
+    site_url = getattr(django_settings, 'SITE_URL', 'https://portal.profeds.com')
+    context = {
+        'run_date': timezone.now(),
+        'new_contact_rows': new_contact_rows,
+        'missing_tag_rows': missing_tag_rows,
+        'new_contacts_count': len(new_contact_rows),
+        'missing_tag_count': len(missing_tag_rows),
+        'ghl_sync_url': f'{site_url}/accounts/ghl-sync/',
+    }
+
+    subject = 'Portal Access Changes - Action Required'
+    text_message = render_to_string('emails/provisioning_alert_digest.txt', context)
+    html_message = render_to_string('emails/provisioning_alert_digest.html', context)
+
+    try:
+        send_mail(
+            subject=subject,
+            message=text_message,
+            from_email=django_settings.DEFAULT_FROM_EMAIL,
+            recipient_list=recipients,
+            html_message=html_message,
+            fail_silently=False,
+        )
+    except Exception as e:
+        logger.error(f'Failed to send provisioning alert digest: {e}')
+        AuditLog.objects.create(
+            user=triggered_by,
+            action_type='email_notification_failed',
+            description=f'Provisioning alert digest email FAILED to {recipients}: {e}',
+            metadata={'recipients': recipients, 'error': str(e)},
+        )
+        return False, f'send failed: {e}'
+
+    AuditLog.objects.create(
+        user=triggered_by,
+        action_type='provisioning_alert_sent',
+        description=(
+            f'Provisioning alert digest sent to {recipients}: '
+            f'{len(new_contact_rows)} new-contact, {len(missing_tag_rows)} missing-tag item(s).'
+        ),
+        metadata={
+            'recipients': recipients,
+            'subject': subject,
+            'new_contacts_count': len(new_contact_rows),
+            'missing_tag_count': len(missing_tag_rows),
+            'manual': triggered_by is not None,
+        },
+    )
+    return True, None

@@ -271,9 +271,15 @@ def system_settings(request):
         date__year__in=[today_year, today_year + 1]
     ).order_by('date')
 
+    from core.models import AuditLog
+    provisioning_last_run = AuditLog.objects.filter(
+        action_type='provisioning_alert_run'
+    ).order_by('-timestamp').first()
+
     context = {
         'settings': settings,
         'holidays': holidays_display,
+        'provisioning_last_run': provisioning_last_run,
     }
 
     return render(request, 'core/system_settings.html', context)
