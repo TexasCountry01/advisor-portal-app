@@ -18,11 +18,12 @@
 
     <div class="alert alert-light border small mb-4">
         <strong>GHL Role</strong> (Unmatched table) is the role GHL's tags say this person <em>would become</em> if provisioned — it's a suggestion read from GHL, nothing has been created in advisor-portal yet.<br>
-        <strong>Portal Role</strong> (Matched table) is the role this person <em>already has</em> inside advisor-portal today — GHL never overwrites this; staff roles (Technician/Manager/Administrator) are always set here, not from GHL.
+        <strong>Portal Role</strong> (Matched/Conflicted tables) is the role this person <em>already has</em> inside advisor-portal today — GHL never overwrites this; staff roles (Technician/Manager/Administrator) are always set here, not from GHL.<br>
+        Both are shown as <strong>"User"</strong> instead of "Member" here, since this role covers both advisors and their delegates (support staff) — not everyone shown is a financial advisor.
     </div>
 
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Total contacts</div>
@@ -30,19 +31,27 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="text-muted small">Already matched</div>
-                    <div class="display-6 fw-bold text-success">{{ matched_count }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
                     <div class="text-muted small">Unmatched</div>
                     <div class="display-6 fw-bold text-warning">{{ unmatched_count }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Conflicted</div>
+                    <div class="display-6 fw-bold text-danger">{{ conflicted_count }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Already matched</div>
+                    <div class="display-6 fw-bold text-success">{{ matched_count }}</div>
                 </div>
             </div>
         </div>
@@ -59,10 +68,10 @@
                     <table class="table table-sm mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th><a href="?unmatched_sort={% if unmatched_sort == 'name' %}-name{% else %}name{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Name {% if unmatched_sort == 'name' %}▲{% elif unmatched_sort == '-name' %}▼{% endif %}</a></th>
-                                <th><a href="?unmatched_sort={% if unmatched_sort == 'email' %}-email{% else %}email{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Email {% if unmatched_sort == 'email' %}▲{% elif unmatched_sort == '-email' %}▼{% endif %}</a></th>
-                                <th><a href="?unmatched_sort={% if unmatched_sort == 'code' %}-code{% else %}code{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Code {% if unmatched_sort == 'code' %}▲{% elif unmatched_sort == '-code' %}▼{% endif %}</a></th>
-                                <th><a href="?unmatched_sort={% if unmatched_sort == 'role' %}-role{% else %}role{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">GHL Role {% if unmatched_sort == 'role' %}▲{% elif unmatched_sort == '-role' %}▼{% endif %}</a></th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'name' %}-name{% else %}name{% endif %}&matched_sort={{ matched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">Name {% if unmatched_sort == 'name' %}▲{% elif unmatched_sort == '-name' %}▼{% endif %}</a></th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'email' %}-email{% else %}email{% endif %}&matched_sort={{ matched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">Email {% if unmatched_sort == 'email' %}▲{% elif unmatched_sort == '-email' %}▼{% endif %}</a></th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'code' %}-code{% else %}code{% endif %}&matched_sort={{ matched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">Code {% if unmatched_sort == 'code' %}▲{% elif unmatched_sort == '-code' %}▼{% endif %}</a></th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'role' %}-role{% else %}role{% endif %}&matched_sort={{ matched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">GHL Role {% if unmatched_sort == 'role' %}▲{% elif unmatched_sort == '-role' %}▼{% endif %}</a></th>
                                 <th>Contact ID</th>
                                 <th>First Detected</th>
                                 <th>Action</th>
@@ -103,6 +112,96 @@
         </div>
     </div>
 
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">Conflicted Portal Users</h5>
+        </div>
+        <div class="card-body p-0">
+            <p class="text-muted fst-italic px-3 pt-3 mb-2">Those without a GHL "portal access" tag, but need to be deactivated in the portal.</p>
+            {% if conflicted %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th><a href="?conflicted_sort={% if conflicted_sort == 'name' %}-name{% else %}name{% endif %}&unmatched_sort={{ unmatched_sort }}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Name {% if conflicted_sort == 'name' %}▲{% elif conflicted_sort == '-name' %}▼{% endif %}</a></th>
+                                <th><a href="?conflicted_sort={% if conflicted_sort == 'email' %}-email{% else %}email{% endif %}&unmatched_sort={{ unmatched_sort }}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Email {% if conflicted_sort == 'email' %}▲{% elif conflicted_sort == '-email' %}▼{% endif %}</a></th>
+                                <th><a href="?conflicted_sort={% if conflicted_sort == 'code' %}-code{% else %}code{% endif %}&unmatched_sort={{ unmatched_sort }}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Code {% if conflicted_sort == 'code' %}▲{% elif conflicted_sort == '-code' %}▼{% endif %}</a></th>
+                                <th><a href="?conflicted_sort={% if conflicted_sort == 'role' %}-role{% else %}role{% endif %}&unmatched_sort={{ unmatched_sort }}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Portal Role {% if conflicted_sort == 'role' %}▲{% elif conflicted_sort == '-role' %}▼{% endif %}</a></th>
+                                <th>Contact ID</th>
+                                <th>First Detected</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in conflicted %}
+                            <tr>
+                                <td>{{ row.name }}</td>
+                                <td>{{ row.email|default:'—' }}</td>
+                                <td>{{ row.workshop_code|default:'—' }}</td>
+                                <td><span class="badge bg-info text-dark">{{ row.portal_role|default:'—' }}</span></td>
+                                <td><code>{{ row.contact_id|default:'—' }}</code></td>
+                                <td>
+                                    {% if row.first_detected_at %}
+                                        {{ row.first_detected_at|date:"M j, Y" }}
+                                        {% if row.is_new %}<span class="badge bg-danger ms-1">NEW</span>{% endif %}
+                                    {% else %}
+                                        <span class="text-muted small">Not yet tracked</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'deactivate_user' row.user_id %}" class="btn btn-sm btn-outline-danger"
+                                       onclick="return confirm('Are you sure you want to deactivate {{ row.name }}? Their case history will be preserved.');">
+                                        <i class="bi bi-person-dash"></i> Deactivate
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-3 text-muted">No conflicted users found.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Requested Delegate Assignments</h5>
+        </div>
+        <div class="card-body p-0">
+            <p class="text-muted fst-italic px-3 pt-3 mb-2">Those who the advisor has requested to have access to their cases, but are awaiting delegate assignment.</p>
+            {% if delegate_requests %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Requesting Advisor</th>
+                                <th>Delegate Name</th>
+                                <th>Delegate Email</th>
+                                <th>Notes</th>
+                                <th>Requested</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dr in delegate_requests %}
+                            <tr>
+                                <td>{{ dr.requested_by.get_full_name|default:dr.requested_by.username }}</td>
+                                <td>{{ dr.delegate_name }}</td>
+                                <td>{{ dr.delegate_email|default:'—' }}</td>
+                                <td>{{ dr.notes|default:'—' }}</td>
+                                <td>{{ dr.created_at|date:"M j, Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="p-3 text-muted">No pending delegate requests.</div>
+            {% endif %}
+        </div>
+    </div>
+
     <div class="card shadow-sm">
         <div class="card-header bg-success text-white">
             <h5 class="mb-0">Matched Portal Users</h5>
@@ -114,10 +213,10 @@
                     <table class="table table-sm mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th><a href="?matched_sort={% if matched_sort == 'name' %}-name{% else %}name{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Name {% if matched_sort == 'name' %}▲{% elif matched_sort == '-name' %}▼{% endif %}</a></th>
-                                <th><a href="?matched_sort={% if matched_sort == 'email' %}-email{% else %}email{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Email {% if matched_sort == 'email' %}▲{% elif matched_sort == '-email' %}▼{% endif %}</a></th>
-                                <th><a href="?matched_sort={% if matched_sort == 'code' %}-code{% else %}code{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Code {% if matched_sort == 'code' %}▲{% elif matched_sort == '-code' %}▼{% endif %}</a></th>
-                                <th><a href="?matched_sort={% if matched_sort == 'role' %}-role{% else %}role{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Portal Role {% if matched_sort == 'role' %}▲{% elif matched_sort == '-role' %}▼{% endif %}</a></th>
+                                <th><a href="?matched_sort={% if matched_sort == 'name' %}-name{% else %}name{% endif %}&unmatched_sort={{ unmatched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">Name {% if matched_sort == 'name' %}▲{% elif matched_sort == '-name' %}▼{% endif %}</a></th>
+                                <th><a href="?matched_sort={% if matched_sort == 'email' %}-email{% else %}email{% endif %}&unmatched_sort={{ unmatched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">Email {% if matched_sort == 'email' %}▲{% elif matched_sort == '-email' %}▼{% endif %}</a></th>
+                                <th><a href="?matched_sort={% if matched_sort == 'code' %}-code{% else %}code{% endif %}&unmatched_sort={{ unmatched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">Code {% if matched_sort == 'code' %}▲{% elif matched_sort == '-code' %}▼{% endif %}</a></th>
+                                <th><a href="?matched_sort={% if matched_sort == 'role' %}-role{% else %}role{% endif %}&unmatched_sort={{ unmatched_sort }}&conflicted_sort={{ conflicted_sort }}" class="text-dark text-decoration-none">Portal Role {% if matched_sort == 'role' %}▲{% elif matched_sort == '-role' %}▼{% endif %}</a></th>
                                 <th>Contact ID</th>
                                 <th>Action</th>
                             </tr>

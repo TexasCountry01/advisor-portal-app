@@ -176,7 +176,7 @@ def sync_ghl_contacts(request):
         messages.error(request, 'Only administrators can sync from GHL.')
         return redirect('manage_users')
 
-    from .services.provisioning_sync import get_relevant_contacts
+    from .services.provisioning_sync import get_relevant_contacts, compute_missing_tag_users
 
     try:
         relevant = get_relevant_contacts()
@@ -197,7 +197,22 @@ def sync_ghl_contacts(request):
             alert_type='new_ghl_contact', resolved_at__isnull=True
         ).values_list('contact_id', 'first_detected_at')
     )
+    first_detected_by_user_id = dict(
+        ProvisioningAlert.objects.filter(
+            alert_type='missing_ghl_tag', resolved_at__isnull=True
+        ).values_list('user_id', 'first_detected_at')
+    )
     new_cutoff = timezone.now() - timedelta(hours=24)
+
+    def _display_role(role):
+        """This list contains both members (advisors) and their delegates
+        (support staff), all stored under the same 'member' role -- display
+        it as the more generic 'User' here to avoid implying everyone shown
+        is a financial advisor. Other roles (technician/manager/administrator)
+        are shown as-is."""
+        if not role:
+            return role
+        return 'User' if role == 'member' else role
 
     matched = []
     unmatched = []
@@ -216,9 +231,9 @@ def sync_ghl_contacts(request):
             'email': email,
             'workshop_code': contact.get('workshop_code', ''),
             'tags': ', '.join(contact.get('tags', [])[:10]) or '—',
-            'ghl_role': contact.get('ghl_role'),
+            'ghl_role': _display_role(contact.get('ghl_role')),
             'portal_user': portal_user,
-            'portal_role': portal_user.role if portal_user else None,
+            'portal_role': _display_role(portal_user.role) if portal_user else None,
             'needs_link': bool(portal_user and not portal_user.contact_id and contact_id),
             'first_detected_at': first_detected_at,
             'is_new': bool(first_detected_at and first_detected_at >= new_cutoff),
@@ -228,6 +243,31 @@ def sync_ghl_contacts(request):
             matched.append(row)
         else:
             unmatched.append(row)
+
+    # Conflicted: active, role='member' portal users whose GHL tag was
+    # removed -- same detection used by the daily digest email, now also
+    # visible here so there's a place to see this besides the email.
+    conflicted = []
+    for item in compute_missing_tag_users():
+        first_detected_at = first_detected_by_user_id.get(item['user_id'])
+        conflicted.append({
+            'user_id': item['user_id'],
+            'name': item['name'],
+            'email': item['email'],
+            'workshop_code': '',
+            'portal_role': _display_role('member'),
+            'contact_id': item.get('contact_id') or '',
+            'first_detected_at': first_detected_at,
+            'is_new': bool(first_detected_at and first_detected_at >= new_cutoff),
+        })
+
+    # Requested delegate assignments: advisors have asked for a delegate to
+    # be added, but nobody has processed it in GHL + portal yet. Previously
+    # the only visibility into this was the staff notification email.
+    from .models import DelegateRequest
+    delegate_requests = DelegateRequest.objects.filter(
+        request_type='add', status='pending'
+    ).select_related('requested_by').order_by('-created_at')
 
     # Sortable columns: Name, Email, Code, Role -- independent per table so
     # sorting one doesn't reset the other's state on page reload.
@@ -249,18 +289,25 @@ def sync_ghl_contacts(request):
 
     unmatched_sort = request.GET.get('unmatched_sort', '')
     matched_sort = request.GET.get('matched_sort', '')
+    conflicted_sort = request.GET.get('conflicted_sort', '')
     unmatched = _apply_sort(unmatched, unmatched_sort, 'ghl_role')
     matched = _apply_sort(matched, matched_sort, 'portal_role')
+    conflicted = _apply_sort(conflicted, conflicted_sort, 'portal_role')
 
     context = {
         'matched': matched,
         'unmatched': unmatched,
+        'conflicted': conflicted,
+        'delegate_requests': delegate_requests,
         'total_contacts': len(relevant),
         'matched_count': len(matched),
         'unmatched_count': len(unmatched),
+        'conflicted_count': len(conflicted),
+        'delegate_requests_count': delegate_requests.count(),
         'current_user_role': request.user.role,
         'unmatched_sort': unmatched_sort,
         'matched_sort': matched_sort,
+        'conflicted_sort': conflicted_sort,
     }
     return render(request, 'accounts/ghl_sync.html', context)
 
