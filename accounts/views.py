@@ -229,6 +229,29 @@ def sync_ghl_contacts(request):
         else:
             unmatched.append(row)
 
+    # Sortable columns: Name, Email, Code, Role -- independent per table so
+    # sorting one doesn't reset the other's state on page reload.
+    def _apply_sort(rows, sort_param, role_field):
+        field_map = {
+            'name': 'name',
+            'email': 'email',
+            'code': 'workshop_code',
+            'role': role_field,
+        }
+        if not sort_param:
+            return rows
+        descending = sort_param.startswith('-')
+        field_key = sort_param[1:] if descending else sort_param
+        actual_field = field_map.get(field_key)
+        if not actual_field:
+            return rows
+        return sorted(rows, key=lambda r: (r.get(actual_field) or '').lower(), reverse=descending)
+
+    unmatched_sort = request.GET.get('unmatched_sort', '')
+    matched_sort = request.GET.get('matched_sort', '')
+    unmatched = _apply_sort(unmatched, unmatched_sort, 'ghl_role')
+    matched = _apply_sort(matched, matched_sort, 'portal_role')
+
     context = {
         'matched': matched,
         'unmatched': unmatched,
@@ -236,6 +259,8 @@ def sync_ghl_contacts(request):
         'matched_count': len(matched),
         'unmatched_count': len(unmatched),
         'current_user_role': request.user.role,
+        'unmatched_sort': unmatched_sort,
+        'matched_sort': matched_sort,
     }
     return render(request, 'accounts/ghl_sync.html', context)
 

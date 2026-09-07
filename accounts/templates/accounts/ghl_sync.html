@@ -53,15 +53,16 @@
             <h5 class="mb-0">Unmatched Contacts</h5>
         </div>
         <div class="card-body p-0">
+            <p class="text-muted fst-italic px-3 pt-3 mb-2">Those with a GHL "portal access" tag, but need portal role assigned.</p>
             {% if unmatched %}
                 <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Code</th>
-                                <th>GHL Role</th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'name' %}-name{% else %}name{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Name {% if unmatched_sort == 'name' %}▲{% elif unmatched_sort == '-name' %}▼{% endif %}</a></th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'email' %}-email{% else %}email{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Email {% if unmatched_sort == 'email' %}▲{% elif unmatched_sort == '-email' %}▼{% endif %}</a></th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'code' %}-code{% else %}code{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">Code {% if unmatched_sort == 'code' %}▲{% elif unmatched_sort == '-code' %}▼{% endif %}</a></th>
+                                <th><a href="?unmatched_sort={% if unmatched_sort == 'role' %}-role{% else %}role{% endif %}&matched_sort={{ matched_sort }}" class="text-dark text-decoration-none">GHL Role {% if unmatched_sort == 'role' %}▲{% elif unmatched_sort == '-role' %}▼{% endif %}</a></th>
                                 <th>Contact ID</th>
                                 <th>First Detected</th>
                                 <th>Action</th>
@@ -107,15 +108,16 @@
             <h5 class="mb-0">Matched Portal Users</h5>
         </div>
         <div class="card-body p-0">
+            <p class="text-muted fst-italic px-3 pt-3 mb-2">Those with a GHL "portal access" tag, and an active portal role assigned.</p>
             {% if matched %}
                 <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Name</th>
-                                <th>Email</th>
-                                <th>Portal Role</th>
-                                <th>Code</th>
+                                <th><a href="?matched_sort={% if matched_sort == 'name' %}-name{% else %}name{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Name {% if matched_sort == 'name' %}▲{% elif matched_sort == '-name' %}▼{% endif %}</a></th>
+                                <th><a href="?matched_sort={% if matched_sort == 'email' %}-email{% else %}email{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Email {% if matched_sort == 'email' %}▲{% elif matched_sort == '-email' %}▼{% endif %}</a></th>
+                                <th><a href="?matched_sort={% if matched_sort == 'code' %}-code{% else %}code{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Code {% if matched_sort == 'code' %}▲{% elif matched_sort == '-code' %}▼{% endif %}</a></th>
+                                <th><a href="?matched_sort={% if matched_sort == 'role' %}-role{% else %}role{% endif %}&unmatched_sort={{ unmatched_sort }}" class="text-dark text-decoration-none">Portal Role {% if matched_sort == 'role' %}▲{% elif matched_sort == '-role' %}▼{% endif %}</a></th>
                                 <th>Contact ID</th>
                                 <th>Action</th>
                             </tr>
@@ -125,6 +127,7 @@
                             <tr>
                                 <td>{{ row.name }}</td>
                                 <td>{{ row.email|default:'—' }}</td>
+                                <td>{{ row.workshop_code|default:'—' }}</td>
                                 <td>
                                     {% if row.portal_role %}
                                         <span class="badge bg-info text-dark">{{ row.portal_role }}</span>
@@ -132,7 +135,6 @@
                                         <span class="text-muted">Not linked</span>
                                     {% endif %}
                                 </td>
-                                <td>{{ row.workshop_code|default:'—' }}</td>
                                 <td><code>{{ row.contact_id|default:'—' }}</code></td>
                                 <td>
                                     {% if row.needs_link %}
