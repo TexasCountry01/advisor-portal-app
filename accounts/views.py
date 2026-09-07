@@ -272,8 +272,9 @@ def run_provisioning_alerts_now(request):
     email, from System Settings -> Provisioning Alerts. Runs the exact same
     logic as the daily cron (accounts.services.provisioning_sync.
     run_provisioning_alert_cycle), but bypasses the provisioning_alerts_enabled
-    schedule toggle since this is an explicit manual action. The global email
-    kill switch is still respected.
+    schedule toggle since this is an explicit manual action. Sending is
+    governed only by this feature's own recipient toggles -- independent of
+    the app's general email_notifications_enabled master toggle.
     """
     if request.user.role != 'administrator':
         messages.error(request, 'Only administrators can run this.')

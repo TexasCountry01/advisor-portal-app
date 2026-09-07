@@ -241,10 +241,13 @@ def run_provisioning_alert_cycle(triggered_by=None, force=False):
 
     Used by BOTH the daily cron (force=False, respects
     SystemSettings.provisioning_alerts_enabled) and the manual "Run Now"
-    admin action (force=True, always runs regardless of that toggle — the
-    global email kill switch, should_send_emails(), is still respected
-    either way, since that's the app-wide emergency stop, not something a
-    single feature's manual trigger should bypass).
+    admin action (force=True, always runs regardless of that toggle).
+
+    Provisioning alert emails are independent of the app's general
+    email_notifications_enabled master toggle (used by case-related emails)
+    — same design as Feedback Alerts. Whether this feature's email actually
+    sends is governed only by provisioning_alerts_enabled and the individual
+    recipient toggles configured in System Settings -> Provisioning Alerts.
 
     Returns a summary dict:
         {'success': bool, 'error': str|None, 'skipped_disabled': bool,
@@ -329,6 +332,10 @@ def _send_digest_email(system_settings, open_new_contacts, open_missing_tag, new
     """Send the "Portal Access Changes - Action Required" digest email to up
     to 3 configured recipients.
 
+    Independent of the app's general email_notifications_enabled master
+    toggle (used by case-related emails) — same design as Feedback Alerts.
+    Governed only by the individual recipient toggles below.
+
     Returns (sent: bool, skip_reason: str|None).
     """
     recipients = []
@@ -342,10 +349,6 @@ def _send_digest_email(system_settings, open_new_contacts, open_missing_tag, new
     if not recipients:
         logger.warning('Provisioning alert: open items exist but no recipient emails are configured/enabled.')
         return False, 'no recipient emails configured/enabled'
-
-    from cases.services.email_service import should_send_emails
-    if not should_send_emails():
-        return False, 'email notifications disabled globally in System Settings'
 
     from django.core.mail import send_mail
     from django.template.loader import render_to_string
