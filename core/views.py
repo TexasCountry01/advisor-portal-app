@@ -243,6 +243,15 @@ def system_settings(request):
             settings.feedback_email_2 = request.POST.get('feedback_email_2', '').strip()
             settings.feedback_email_2_enabled = request.POST.get('feedback_email_2_enabled') == 'on'
 
+            # Provisioning Sync Alert Emails (GHL <-> portal drift daily digest)
+            settings.provisioning_alerts_enabled = request.POST.get('provisioning_alerts_enabled') == 'on'
+            settings.provisioning_alert_email_1 = request.POST.get('provisioning_alert_email_1', '').strip()
+            settings.provisioning_alert_email_1_enabled = request.POST.get('provisioning_alert_email_1_enabled') == 'on'
+            settings.provisioning_alert_email_2 = request.POST.get('provisioning_alert_email_2', '').strip()
+            settings.provisioning_alert_email_2_enabled = request.POST.get('provisioning_alert_email_2_enabled') == 'on'
+            settings.provisioning_alert_email_3 = request.POST.get('provisioning_alert_email_3', '').strip()
+            settings.provisioning_alert_email_3_enabled = request.POST.get('provisioning_alert_email_3_enabled') == 'on'
+
             # Super-dev account policy
             settings.super_dev_email = request.POST.get('super_dev_email', '').strip().lower()
 

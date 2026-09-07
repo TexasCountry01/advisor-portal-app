@@ -66,6 +66,11 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="provisioning-tab" data-bs-toggle="tab" data-bs-target="#provisioning" type="button" role="tab" aria-controls="provisioning" aria-selected="false">
+                    <i class="bi bi-person-lines-fill"></i> Provisioning Alerts
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="super-dev-tab" data-bs-toggle="tab" data-bs-target="#super-dev" type="button" role="tab" aria-controls="super-dev" aria-selected="false">
                     <i class="bi bi-person-gear"></i> Super Dev Access
                 </button>
@@ -612,6 +617,89 @@
 
                         <div class="alert alert-info" role="alert">
                             <i class="bi bi-info-circle"></i> <strong>Note:</strong> Feedback notification emails are sent independently of the master email toggle. They will be sent as long as the individual toggle is enabled and an email address is provided.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provisioning Alerts Tab -->
+            <div class="tab-pane fade" id="provisioning" role="tabpanel" aria-labelledby="provisioning-tab">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="card-title mb-0">GHL Provisioning Drift Alerts</h5>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="provisioning_alerts_enabled" name="provisioning_alerts_enabled" form="settingsForm" {% if settings.provisioning_alerts_enabled %}checked{% endif %}>
+                                <label class="form-check-label" for="provisioning_alerts_enabled">
+                                    <span class="badge {% if settings.provisioning_alerts_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {% if settings.provisioning_alerts_enabled %}Enabled{% else %}Disabled{% endif %}
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <p class="text-muted mb-4">
+                            Runs daily at 6:00 AM Central Time. Detects GHL contacts with a portal access tag not yet
+                            provisioned in advisor-portal, and active member users whose GHL tag was removed.
+                            Sends "Portal Access Changes - Action Required" only if something is open — configure up
+                            to 3 recipients below. Use the master toggle above to turn the whole feature on/off.
+                        </p>
+
+                        <!-- Email 1 -->
+                        <div class="card mb-3 border">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="provisioning_alert_email_1" class="form-label fw-semibold mb-0">Notification Email 1</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="provisioning_alert_email_1_enabled" name="provisioning_alert_email_1_enabled" form="settingsForm" {% if settings.provisioning_alert_email_1_enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="provisioning_alert_email_1_enabled">
+                                            <span class="badge {% if settings.provisioning_alert_email_1_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if settings.provisioning_alert_email_1_enabled %}Active{% else %}Inactive{% endif %}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="email" class="form-control" id="provisioning_alert_email_1" name="provisioning_alert_email_1" form="settingsForm" value="{{ settings.provisioning_alert_email_1 }}" placeholder="e.g. admin@profeds.com">
+                            </div>
+                        </div>
+
+                        <!-- Email 2 -->
+                        <div class="card mb-3 border">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="provisioning_alert_email_2" class="form-label fw-semibold mb-0">Notification Email 2</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="provisioning_alert_email_2_enabled" name="provisioning_alert_email_2_enabled" form="settingsForm" {% if settings.provisioning_alert_email_2_enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="provisioning_alert_email_2_enabled">
+                                            <span class="badge {% if settings.provisioning_alert_email_2_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if settings.provisioning_alert_email_2_enabled %}Active{% else %}Inactive{% endif %}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="email" class="form-control" id="provisioning_alert_email_2" name="provisioning_alert_email_2" form="settingsForm" value="{{ settings.provisioning_alert_email_2 }}" placeholder="e.g. devops@profeds.com">
+                            </div>
+                        </div>
+
+                        <!-- Email 3 -->
+                        <div class="card mb-3 border">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label for="provisioning_alert_email_3" class="form-label fw-semibold mb-0">Notification Email 3</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" id="provisioning_alert_email_3_enabled" name="provisioning_alert_email_3_enabled" form="settingsForm" {% if settings.provisioning_alert_email_3_enabled %}checked{% endif %}>
+                                        <label class="form-check-label" for="provisioning_alert_email_3_enabled">
+                                            <span class="badge {% if settings.provisioning_alert_email_3_enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                                                {% if settings.provisioning_alert_email_3_enabled %}Active{% else %}Inactive{% endif %}
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <input type="email" class="form-control" id="provisioning_alert_email_3" name="provisioning_alert_email_3" form="settingsForm" value="{{ settings.provisioning_alert_email_3 }}" placeholder="e.g. chris@profeds.com">
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> <strong>Note:</strong> These emails also respect the master email toggle in the General tab — both must be on for the digest to actually send.
                         </div>
                     </div>
                 </div>
