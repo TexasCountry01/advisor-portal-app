@@ -641,6 +641,33 @@ def _send_delegate_request_email(member, delegate_request, account_deactivated=F
             else:
                 lines.append('- Update GHL delegate tags as needed')
         else:
+            ghl_status = None
+            try:
+                from accounts.services.provisioning_sync import check_ghl_status_for_email
+                ghl_status = check_ghl_status_for_email(delegate_request.delegate_email)
+            except Exception as e:
+                logger.warning(f'GHL lookup failed for delegate request email {delegate_request.delegate_email}: {e}')
+
+            lines += ['', 'GHL Status:']
+            if not delegate_request.delegate_email:
+                lines.append('- No delegate email was provided — cannot check GHL. Verify manually.')
+            elif ghl_status is None:
+                lines.append('- Could not check GHL (lookup failed) — verify manually.')
+            elif not ghl_status['found']:
+                lines.append(
+                    f"- No GHL contact record exists for {delegate_request.delegate_email} — create one first."
+                )
+            elif not ghl_status['has_access']:
+                lines.append(
+                    f"- A GHL contact record exists (contact_id: {ghl_status['contact_id']}) but has no portal "
+                    f"access tag — apply the Member or Delegate tag."
+                )
+            else:
+                lines.append(
+                    f"- GHL contact found (contact_id: {ghl_status['contact_id']}) and already has a portal "
+                    f"access tag ({ghl_status['role']}) — ready to add as delegate in the portal."
+                )
+
             lines += [
                 '',
                 'Action Required:',

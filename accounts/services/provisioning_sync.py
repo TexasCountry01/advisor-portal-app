@@ -44,6 +44,32 @@ def _fetch_and_index_contacts(limit=100, max_total=1000):
     return contacts, by_contact_id, by_email
 
 
+def check_ghl_status_for_email(email):
+    """Look up a single email among ALL GHL contacts (not just tag-filtered)
+    to determine provisioning status — used to enrich the delegate-request
+    staff email with a specific, actionable GHL status instead of a generic
+    "process in GHL" instruction.
+
+    Returns a dict:
+        {'found': bool, 'contact_id': str|None, 'has_access': bool, 'role': str|None}
+    """
+    if not email:
+        return {'found': False, 'contact_id': None, 'has_access': False, 'role': None}
+
+    _, _, by_email = _fetch_and_index_contacts()
+    contact = by_email.get(email.strip().lower())
+    if not contact:
+        return {'found': False, 'contact_id': None, 'has_access': False, 'role': None}
+
+    role, is_pure_delegate, has_access = determine_role_from_tags(contact.get('tags', []))
+    return {
+        'found': True,
+        'contact_id': contact.get('contact_id'),
+        'has_access': has_access,
+        'role': role,
+    }
+
+
 def get_relevant_contacts(contacts=None):
     """All GHL contacts with a portal-access tag, annotated with the
     determined role/delegate flag and the matching portal User (if any,
