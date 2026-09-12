@@ -112,7 +112,11 @@ def content_block_detail(request, block_id):
     versions = block.versions.all()
 
     return render(request, 'fact_finder_content/content_block_detail.html', {
-        'block': block,
+        # NOTE: deliberately NOT named 'block' — Django's {% block %} tag pushes a
+        # BlockContext entry into context['block'] to support {{ block.super }}, which
+        # silently shadows any user context variable named 'block' inside {% block %}...
+        # {% endblock %} sections. Use 'content_block' everywhere in the template instead.
+        'content_block': block,
         'versions': versions,
         'default_plan_year': _default_plan_year(),
     })

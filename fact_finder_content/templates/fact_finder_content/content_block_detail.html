@@ -1,16 +1,16 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ block.label }} — Fact Finder Content{% endblock %}
+{% block title %}{{ content_block.label }} — Fact Finder Content{% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1>{{ block.label }}</h1>
-            <p class="text-muted">{{ block.group.label }} &middot; <code>{{ block.key }}</code></p>
-            {% if block.required_placeholders %}
+            <h1>{{ content_block.label }}</h1>
+            <p class="text-muted">{{ content_block.group.label }} &middot; <code>{{ content_block.key }}</code></p>
+            {% if content_block.required_placeholders %}
                 <p class="text-muted">Required placeholders:
-                    {% for token in block.required_placeholders %}<code>[[{{ token }}]]</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+                    {% for token in content_block.required_placeholders %}<code>[[{{ token }}]]</code>{% if not forloop.last %}, {% endif %}{% endfor %}
                 </p>
             {% endif %}
         </div>
@@ -31,7 +31,7 @@
     <div class="card mb-4">
         <div class="card-header"><strong>New Draft</strong></div>
         <div class="card-body">
-            <form method="post">
+            <form method="post" id="newDraftForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="create_draft">
                 <div class="row mb-3">
@@ -40,9 +40,30 @@
                         <input type="number" class="form-control" id="plan_year" name="plan_year" value="{{ default_plan_year }}">
                     </div>
                 </div>
+
+                {% if content_block.required_placeholders %}
+                <div class="mb-3">
+                    <label for="merge_field_picker" class="form-label">Insert merge field</label>
+                    <div class="input-group" style="max-width: 400px;">
+                        <select class="form-select" id="merge_field_picker">
+                            <option value="">Choose a field…</option>
+                            {% for token in content_block.required_placeholders %}
+                            <option value="{{ token }}">{{ token }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="btn btn-outline-secondary" id="insert_merge_field_btn">Insert</button>
+                    </div>
+                    <div class="form-text">Inserts a safe <code>[[token]]</code> merge field at the cursor — never hand-type these.</div>
+                </div>
+                {% endif %}
+
                 <div class="mb-3">
                     <label for="body_html" class="form-label">Body</label>
-                    <textarea class="form-control" id="body_html" name="body_html" rows="6" placeholder="Use [[token]] for merge fields, e.g. [[mra_years]]"></textarea>
+                    <!-- The textarea (no name) is where TinyMCE mounts. The hidden input (has the
+                         name) is what actually gets POSTed — kept in sync via JS below. This mirrors
+                         the pattern already used for SystemSettings.technical_notes_template. -->
+                    <input type="hidden" id="body_html_hidden" name="body_html" form="newDraftForm" value="">
+                    <textarea class="form-control" id="body_html" rows="6"></textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Save Draft</button>
             </form>
@@ -106,4 +127,66 @@
         </table>
     </div>
 </div>
+
+<!-- Restricted TinyMCE editor: bold/italic/underline/lists/paragraph only — no images, no
+     link, no raw HTML source view (per the analysis doc's Security notes: stored content is
+     merged into a PDF pipeline, so keep the producible tag set small and predictable). -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var textarea = document.getElementById('body_html');
+    var hidden = document.getElementById('body_html_hidden');
+    if (!textarea || !hidden) { return; }
+
+    function pushContent() {
+        if (typeof tinymce !== 'undefined') {
+            var editor = tinymce.get('body_html');
+            if (editor) {
+                hidden.value = editor.getContent();
+                return;
+            }
+        }
+        hidden.value = textarea.value;
+    }
+
+    tinymce.init({
+        selector: '#body_html',
+        plugins: 'lists',
+        toolbar: 'formatselect | bold italic underline | bullist numlist',
+        menubar: false,
+        statusbar: true,
+        height: 250,
+        branding: false,
+        promotion: false,
+        license_key: 'gpl',
+        convert_urls: false,
+        setup: function(editor) {
+            editor.on('init', pushContent);
+            editor.on('change keyup NodeChange', pushContent);
+        },
+    });
+
+    var form = document.getElementById('newDraftForm');
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        pushContent();
+        HTMLFormElement.prototype.submit.call(form);
+    });
+
+    // Merge-field picker: insert a safe [[token]] at the cursor — never hand-typed.
+    var insertBtn = document.getElementById('insert_merge_field_btn');
+    var picker = document.getElementById('merge_field_picker');
+    if (insertBtn && picker) {
+        insertBtn.addEventListener('click', function() {
+            var token = picker.value;
+            if (!token) { return; }
+            var editor = tinymce.get('body_html');
+            if (editor) {
+                editor.execCommand('mceInsertContent', false, '[[' + token + ']]');
+                pushContent();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

@@ -195,3 +195,27 @@ class ContentPanelViewTests(TestCase):
         )
         version.refresh_from_db()
         self.assertEqual(version.status, ContentBlockVersion.STATUS_IN_REVIEW)
+
+    def test_detail_page_renders_merge_field_picker_from_required_placeholders(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'id="merge_field_picker"')
+        self.assertContains(response, '<option value="match_percentage">match_percentage</option>')
+
+    def test_detail_page_hides_merge_field_picker_when_no_placeholders_required(self):
+        plain_block = ContentBlock.objects.create(
+            key='cover.title', group=self.group, label='Cover Title', required_placeholders=[],
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[plain_block.id]))
+        self.assertNotContains(response, 'id="merge_field_picker"')
+
+    def test_detail_page_renders_tinymce_editor_with_restricted_toolbar(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'tinymce.min.js')
+        self.assertContains(response, "toolbar: 'formatselect | bold italic underline | bullist numlist'")
+        self.assertContains(response, 'id="body_html_hidden"')
+        # The textarea TinyMCE mounts on must NOT have a name attribute — only the hidden
+        # input should be POSTed, per the pattern used for SystemSettings.technical_notes_template.
+        self.assertNotContains(response, 'id="body_html" name="body_html"')
