@@ -40,7 +40,13 @@
         <div class="card-header">
             <strong>{{ row.group.label }}</strong>
         </div>
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0" style="table-layout: fixed; width: 100%;">
+            <colgroup>
+                <col style="width: 40%;">
+                <col style="width: 20%;">
+                <col style="width: 20%;">
+                <col style="width: 20%;">
+            </colgroup>
             <thead>
                 <tr>
                     <th>Block</th>
@@ -52,7 +58,7 @@
             <tbody>
                 {% for entry in row.blocks %}
                 <tr>
-                    <td>{{ entry.block.label }}</td>
+                    <td class="text-truncate">{{ entry.block.label }}</td>
                     <td>
                         {% if entry.published %}
                             <span class="badge bg-success">Published</span>
