@@ -1,0 +1,222 @@
+"""
+Fact Finder Data Contract (schema v1 / "2026.1")
+
+NOT the same thing as `FederalFactFinder` (see cases/models_fact_finder.py), which is the
+advisor-facing INTAKE form (the official ProFeds "Federal Fact Finder" questionnaire PDF
+that advisors fill out and upload). The two happen to share the name "Fact Finder" because
+they're both part of the same domain, but they are unrelated data structures.
+
+This module defines the OUTPUT contract described in
+docs/FACT_FINDER_PDF_MODERNIZATION_ANALYSIS_2026-09-06.md: a versioned, computed-only
+structure that `benefits-software`'s calculation engine (EmployeeRepository.php) should
+eventually emit, and that any Fact Finder PDF renderer (the existing TCPDF/Blade template,
+or a future renderer) should only ever consume, never recompute.
+
+Field names below are grounded in verified return shapes read directly from
+`benefits-software/app/Repositories/EmployeeRepository.php` and
+`benefits-software/app/Http/Controllers/Admin/EmployeeController.php` — not guessed.
+Where a field does not exist yet in the current PHP code (everything under
+`computed_flags`), that is called out explicitly; producing those flags is Phase 2 work,
+not this file.
+
+Phase 1 scope only: this is a schema definition + validation. It is not wired into any
+view, API endpoint, or production code path yet. No data flows through it.
+"""
+from rest_framework import serializers
+
+SCHEMA_VERSION = "2026.1"
+
+
+class PensionScenarioSerializer(serializers.Serializer):
+    """One of the 6 pre-calculated retirement scenarios.
+
+    Grounded in EmployeeRepository::getFirstPension($empId, $scenario),
+    ::getMRAPenalty(), ::getEarlyOutPenalty(), ::getCsrsOffsetPenalty() (all take a
+    $scenario argument of 1-6).
+    """
+    scenario_number = serializers.IntegerField(min_value=1, max_value=6)
+    retirement_date = serializers.DateField(required=False, allow_null=True)
+    gross_annual_pension = serializers.DecimalField(max_digits=12, decimal_places=2)
+    first_pension_mra10_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    months_under_62 = serializers.IntegerField(required=False, allow_null=True)
+    multiplier = serializers.DecimalField(max_digits=6, decimal_places=4, required=False, allow_null=True)
+    early_out_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    csrs_offset_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+
+
+class PensionSerializer(serializers.Serializer):
+    scenarios = PensionScenarioSerializer(many=True)
+    non_deduction_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    refunded_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    wep_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+
+
+class FegliCurrentElectionsSerializer(serializers.Serializer):
+    """Grounded in EmployeeRepository::getFegliReport()'s `current_fegli` key."""
+    basic = serializers.BooleanField()
+    optionA = serializers.BooleanField()
+    optionB = serializers.IntegerField(min_value=0)
+    optionC = serializers.IntegerField(min_value=0)
+    optionC_spouse = serializers.BooleanField(required=False)
+    optionC_dependent = serializers.BooleanField(required=False)
+
+
+class FegliProjectionRowSerializer(serializers.Serializer):
+    """One row of `fegli_arr`, returned by EmployeeRepository::getFegliReport()."""
+    age = serializers.IntegerField()
+    years_in_retirement = serializers.IntegerField()
+    annual_sal = serializers.DecimalField(max_digits=12, decimal_places=2)
+    basic_coverage = serializers.DecimalField(max_digits=12, decimal_places=2)
+    optionA_coverage = serializers.DecimalField(max_digits=12, decimal_places=2)
+    optionB_coverage = serializers.DecimalField(max_digits=12, decimal_places=2)
+    optionC_coverage = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_coverage = serializers.DecimalField(max_digits=12, decimal_places=2)
+    totalBiWeekly = serializers.DecimalField(max_digits=12, decimal_places=2)
+    totalMonthly = serializers.DecimalField(max_digits=12, decimal_places=2)
+    totalYearly = serializers.DecimalField(max_digits=12, decimal_places=2)
+    runningTotalCost = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+
+class FegliAllScenariosRowSerializer(serializers.Serializer):
+    """One row from EmployeeRepository::getFegliAllScenarios() — the FEGLI election-combo
+    projections shown in the "all scenarios" table."""
+    age = serializers.IntegerField()
+    basicCoverageNoReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    basicCoverage50Reduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    basicCoverage75Reduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    basicCostNoReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    basicCost50Reduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    basicCost75Reduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    optionACoverage = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    OptionACost = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    optionBCoverageNoReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    OptionBCostNoReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    optionBCoverageFullReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    OptionBCostFullReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    optionCCoverageNoReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    optionCCostNoReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    optionCCoverageFullReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    optionCCostFullReduction = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+
+
+class FegliSerializer(serializers.Serializer):
+    current_fegli = FegliCurrentElectionsSerializer()
+    is_married = serializers.BooleanField()
+    has_dependents = serializers.BooleanField()
+    fegli_arr = FegliProjectionRowSerializer(many=True)
+    fegli_all_scenarios = FegliAllScenariosRowSerializer(many=True, required=False)
+
+
+class SocialSecurityDetailRowSerializer(serializers.Serializer):
+    """One row of `ss_details`, returned by EmployeeRepository::getSocialSecurityDetailPdf()."""
+    years_in_ret = serializers.IntegerField()
+    age = serializers.IntegerField()
+    monthly_pension = serializers.DecimalField(max_digits=12, decimal_places=2)
+    fers_srs = serializers.DecimalField(max_digits=12, decimal_places=2)
+    ss_benefits = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    configInc = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+
+
+class SocialSecuritySerializer(serializers.Serializer):
+    ss_cola = serializers.DecimalField(max_digits=6, decimal_places=3)
+    ss_earned_income_limit = serializers.DecimalField(max_digits=12, decimal_places=2)
+    ss_details = SocialSecurityDetailRowSerializer(many=True)
+    ss_years_earning = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "Grounded in $pdf_data['employee']['SSYearsEarning'] — the input the WEP "
+            "condition (< 30) is evaluated against in report_pdf.blade.php."
+        ),
+    )
+
+
+class TspFundSerializer(serializers.Serializer):
+    """One fund row. Deliberately a list (not one-column-per-fund) — see the analysis
+    doc's TSP pain-point deep-dive on why per-fund columns (`GFund`, `L2050`, ...) don't
+    scale when a new fund is added. `fund_code` values are grounded in the Tsp model's
+    $fillable list (GFund/FFund/CFund/SFund/IFund/LIncome/L2020/L2030/L2040/L2050/...)."""
+    fund_code = serializers.CharField()
+    balance = serializers.DecimalField(max_digits=14, decimal_places=2)
+    allocation_pct = serializers.DecimalField(max_digits=5, decimal_places=2, required=False, allow_null=True)
+
+
+class TspSerializer(serializers.Serializer):
+    """Grounded in EmployeeRepository::calcProjectedEndingBalanceTsp()."""
+    funds = TspFundSerializer(many=True)
+    agency_percentage = serializers.DecimalField(max_digits=6, decimal_places=3, required=False)
+    agency_contribution = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    employee_contribution = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    sal_percentage_in_contri = serializers.DecimalField(max_digits=6, decimal_places=3)
+    max_agency_contribution = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+
+
+class SystemSerializer(serializers.Serializer):
+    SYSTEM_TYPE_CHOICES = ["FERS", "CSRS", "CSRS Offset", "Transfers"]
+    RETIREMENT_TYPE_CHOICES = ["Regular", "Optional", "Deferred", "Disability"]
+
+    system_type = serializers.ChoiceField(choices=SYSTEM_TYPE_CHOICES)
+    retirement_type = serializers.ChoiceField(choices=RETIREMENT_TYPE_CHOICES)
+    birth_year = serializers.IntegerField()
+
+
+class ComputedFlagsSerializer(serializers.Serializer):
+    """
+    The key new piece this whole project is about: booleans the calculation layer
+    already has enough information to produce, but does not currently expose — the PDF
+    template re-derives them instead (see the analysis doc's Blade template deep-dive).
+
+    None of these fields exist yet in benefits-software's output today. Phase 2 adds a
+    single read-only aggregation method that derives them from values already returned
+    by the methods referenced above — no new math, no changed calculations.
+
+    Every flag below is traced to a specific `@if`/`@elseif` in report_pdf.blade.php,
+    cataloged in benefits-software/PDF_USER_LITERAL_AND_CONDITIONAL_LOGIC.md — nothing
+    here is speculative.
+    """
+    is_fers_or_transfers = serializers.BooleanField(
+        help_text="systemType in ('FERS', 'Transfers') — drives pension/SBP/SRS/TSP-match wording branches."
+    )
+    is_csrs_or_csrs_offset = serializers.BooleanField(
+        help_text="systemType in ('CSRS', 'CSRS Offset') — the explicit @elseif branch in the same sections "
+        "(not just the logical negation of is_fers_or_transfers, since the template checks it directly)."
+    )
+    is_deferred_retirement = serializers.BooleanField(
+        help_text="retirementType == 'Deferred' — drives pension/SBP/SRS/FEGLI/FEHB deferred-vs-immediate wording."
+    )
+    is_wep_applicable = serializers.BooleanField(
+        help_text="(systemType in ('CSRS', 'CSRS Offset')) and (SSYearsEarning < 30) — today this exact "
+        "compound condition is inline in the blade template's WEP sentence."
+    )
+    is_gpo_applicable = serializers.BooleanField(
+        help_text="systemType == 'CSRS' (pure CSRS only, NOT CSRS Offset) — Government Pension Offset "
+        "applies to the Social Security spousal benefit only for pure CSRS retirees."
+    )
+    hit_full_tsp_match = serializers.BooleanField(
+        help_text=(
+            "True when sal_percentage_in_contri >= 4.95. Today this threshold is "
+            "hardcoded inline in resources/views/admin/employee/report_pdf.blade.php "
+            "around line 2191 instead of being a precomputed flag."
+        )
+    )
+
+
+class FactFinderDataContractSerializer(serializers.Serializer):
+    """Top-level Fact Finder Data Contract, schema_version 2026.1."""
+    schema_version = serializers.CharField(default=SCHEMA_VERSION)
+    employee_id = serializers.IntegerField()
+    generated_at = serializers.DateTimeField()
+    system = SystemSerializer()
+    pension = PensionSerializer()
+    fegli = FegliSerializer()
+    social_security = SocialSecuritySerializer()
+    tsp = TspSerializer()
+    computed_flags = ComputedFlagsSerializer()
+
+    def validate_schema_version(self, value):
+        if value != SCHEMA_VERSION:
+            raise serializers.ValidationError(
+                f"Unsupported schema_version '{value}'; this validator only accepts '{SCHEMA_VERSION}'."
+            )
+        return value
