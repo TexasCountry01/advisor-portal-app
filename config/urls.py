@@ -28,6 +28,7 @@ urlpatterns = [
     path('tinymce/', include('tinymce.urls')),
     path('references/', include('references.urls', namespace='references')),
     path('fact-finder-content/', include('fact_finder_content.urls', namespace='fact_finder_content')),
+    path('api/fact-finder/', include('fact_finder_content.urls_api')),
 ]
 
 # Serve media files in development
