@@ -741,3 +741,15 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 - Option A (step 4): structured `display_condition` rule builder UI (field/operator/value dropdowns against the Fact Finder Data Contract schema — no free-text expressions).
 - Option A (step 5): HTML sanitization on save (restricted tag allow-list) before this is exposed to any real, non-developer content editor.
 - Later: golden-master pre-publish validation gate; `resolve-content` API endpoint for `benefits-software` to call.
+
+### 2026-09-12 — Option A (step 3): TinyMCE editor + merge-field picker
+
+- **What:** The "New Draft" `body_html` field now uses a restricted TinyMCE instance — toolbar limited to `formatselect | bold italic underline | bullist numlist`, no images/link/raw-HTML-source plugin — instead of a plain textarea. A merge-field picker dropdown (populated from the block's `required_placeholders`) inserts a safe `[[token]]` at the cursor via TinyMCE's `mceInsertContent`, so editors never hand-type merge tags. Reuses the textarea+hidden-input+JS-sync pattern already established for `SystemSettings.technical_notes_template` (TinyMCE mounts on an unnamed textarea; a hidden input carries the actual POSTed value).
+- **Bug caught by writing the tests first, fixed immediately:** the view passed the `ContentBlock` instance into the template context as `'block'`, which collides with Django's own `{% block %}` tag — Django pushes a `BlockContext` into `context['block']` to support `{{ block.super }}`, silently blanking every `{{ block.* }}` reference inside `{% block content %}...{% endblock %}`. Renamed the context key to `'content_block'` everywhere in the view and template. Worth remembering: **never name a Django template context variable `block`.**
+- **Tested:** 6 new tests (merge-field picker renders block's placeholders as options, hidden entirely when a block has none, TinyMCE script tag + restricted toolbar string + hidden-input presence, textarea correctly has no `name` attribute). Full suite: 78 tests, 1 pre-existing unrelated failure, 0 regressions.
+- **Committed:** `advisor-portal-app` commit `77776ec` on `feature/fact-finder-data-contract`.
+
+### Up next
+- Option A (step 4): structured `display_condition` rule builder UI (field/operator/value dropdowns against the Fact Finder Data Contract schema — no free-text expressions).
+- Option A (step 5): HTML sanitization on save (restricted tag allow-list) before this is exposed to any real, non-developer content editor.
+- Later: golden-master pre-publish validation gate; `resolve-content` API endpoint for `benefits-software` to call.
