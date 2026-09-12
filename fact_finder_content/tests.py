@@ -99,6 +99,23 @@ class ContentBlockModelTests(TestCase):
         with self.assertRaises(ProtectedError):
             self.group.delete()
 
+    def test_save_sanitizes_body_html_on_create(self):
+        version = ContentBlockVersion.objects.create(
+            block=self.block, plan_year=2026,
+            body_html='<p>Hi</p><script>alert(1)</script>',
+        )
+        self.assertNotIn('<script', version.body_html)
+
+    def test_save_sanitizes_body_html_on_update(self):
+        version = ContentBlockVersion.objects.create(
+            block=self.block, plan_year=2026, body_html='<p>Clean</p>',
+        )
+        version.body_html = '<p onclick="alert(1)">Edited</p>'
+        version.save()
+        version.refresh_from_db()
+        self.assertNotIn('onclick', version.body_html)
+        self.assertIn('Edited', version.body_html)
+
 
 class ContentPanelViewTests(TestCase):
     def setUp(self):
@@ -144,6 +161,17 @@ class ContentPanelViewTests(TestCase):
         version = ContentBlockVersion.objects.get(block=self.block, plan_year=2026)
         self.assertEqual(version.status, ContentBlockVersion.STATUS_DRAFT)
         self.assertEqual(version.created_by, self.admin)
+
+    def test_create_draft_via_post_sanitizes_html(self):
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'create_draft', 'plan_year': 2026, 'body_html': '<p onclick="alert(1)">[[match_percentage]]</p><script>alert(2)</script>'},
+        )
+        version = ContentBlockVersion.objects.get(block=self.block, plan_year=2026)
+        self.assertNotIn('onclick', version.body_html)
+        self.assertNotIn('<script', version.body_html)
+        self.assertIn('[[match_percentage]]', version.body_html)
 
     def test_create_draft_missing_placeholder_warns_but_still_saves(self):
         self.client.force_login(self.admin)

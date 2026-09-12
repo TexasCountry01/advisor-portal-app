@@ -15,6 +15,8 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+from .sanitize import sanitize_body_html
+
 
 class ContentBlockGroup(models.Model):
     """Mirrors the PDF's own sections, so the panel's grouping matches the
@@ -157,6 +159,14 @@ class ContentBlockVersion(models.Model):
 
     def __str__(self):
         return f'{self.block.key} ({self.plan_year}) — {self.get_status_display()}'
+
+    def save(self, *args, **kwargs):
+        """Sanitize body_html at the trust boundary (save time), not just on
+        render — see fact_finder_content/sanitize.py. Applies on every save
+        (create AND update), regardless of which code path (view, admin,
+        shell, tests) is writing this row."""
+        self.body_html = sanitize_body_html(self.body_html)
+        super().save(*args, **kwargs)
 
     def missing_placeholders(self):
         """Return the subset of block.required_placeholders NOT present in
