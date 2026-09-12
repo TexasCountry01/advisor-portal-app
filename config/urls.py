@@ -27,6 +27,7 @@ urlpatterns = [
     path('messages/', include('messaging.urls', namespace='messaging')),
     path('tinymce/', include('tinymce.urls')),
     path('references/', include('references.urls', namespace='references')),
+    path('fact-finder-content/', include('fact_finder_content.urls', namespace='fact_finder_content')),
 ]
 
 # Serve media files in development

@@ -1,3 +1,118 @@
-from django.shortcuts import render
+"""
+Views for the Fact Finder content panel (Option A, step 2).
 
-# Create your views here.
+Admin-only for now (mirrors core.views.is_admin's role check). No merge-field
+picker or structured display_condition rule builder yet — plain textarea for
+body_html and a raw JSON field for display_condition. Those are later,
+separately-tested increments (see docs/FACT_FINDER_PDF_MODERNIZATION_ANALYSIS_2026-09-06.md).
+"""
+import datetime
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+
+from .models import ContentBlock, ContentBlockGroup, ContentBlockVersion
+
+
+def _require_admin(request):
+    """Returns an HttpResponseForbidden if the user isn't an administrator, else None."""
+    if not (request.user.is_authenticated and request.user.role == 'administrator'):
+        return HttpResponseForbidden('Access denied. Administrators only.')
+    return None
+
+
+def _default_plan_year():
+    return datetime.date.today().year
+
+
+@login_required
+def content_list(request):
+    denied = _require_admin(request)
+    if denied:
+        return denied
+
+    plan_year = int(request.GET.get('plan_year', _default_plan_year()))
+
+    groups = ContentBlockGroup.objects.prefetch_related('blocks').all()
+    group_rows = []
+    for group in groups:
+        block_rows = []
+        for block in group.blocks.filter(is_active=True):
+            published = block.published_version_for(plan_year)
+            draft = block.versions.filter(
+                plan_year=plan_year,
+                status=ContentBlockVersion.STATUS_DRAFT,
+            ).order_by('-created_at').first()
+            block_rows.append({
+                'block': block,
+                'published': published,
+                'draft': draft,
+            })
+        group_rows.append({'group': group, 'blocks': block_rows})
+
+    return render(request, 'fact_finder_content/content_list.html', {
+        'group_rows': group_rows,
+        'plan_year': plan_year,
+    })
+
+
+@login_required
+def content_block_detail(request, block_id):
+    denied = _require_admin(request)
+    if denied:
+        return denied
+
+    block = get_object_or_404(ContentBlock, pk=block_id)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'create_draft':
+            plan_year = int(request.POST.get('plan_year') or _default_plan_year())
+            body_html = request.POST.get('body_html', '')
+            version = ContentBlockVersion.objects.create(
+                block=block,
+                plan_year=plan_year,
+                body_html=body_html,
+                created_by=request.user,
+            )
+            missing = version.missing_placeholders()
+            if missing:
+                messages.warning(
+                    request,
+                    f'Draft saved, but missing required placeholder(s): {", ".join(missing)}.'
+                )
+            else:
+                messages.success(request, f'Draft saved for plan year {plan_year}.')
+            return redirect('fact_finder_content:content_block_detail', block_id=block.id)
+
+        if action == 'submit_for_review':
+            version = get_object_or_404(ContentBlockVersion, pk=request.POST.get('version_id'), block=block)
+            version.status = ContentBlockVersion.STATUS_IN_REVIEW
+            version.save()
+            messages.success(request, 'Submitted for review.')
+            return redirect('fact_finder_content:content_block_detail', block_id=block.id)
+
+        if action == 'publish':
+            version = get_object_or_404(ContentBlockVersion, pk=request.POST.get('version_id'), block=block)
+            missing = version.missing_placeholders()
+            if missing:
+                messages.error(
+                    request,
+                    f'Cannot publish — missing required placeholder(s): {", ".join(missing)}.'
+                )
+            else:
+                version.publish(by_user=request.user)
+                messages.success(request, f'Published for plan year {version.plan_year}.')
+            return redirect('fact_finder_content:content_block_detail', block_id=block.id)
+
+    versions = block.versions.all()
+
+    return render(request, 'fact_finder_content/content_block_detail.html', {
+        'block': block,
+        'versions': versions,
+        'default_plan_year': _default_plan_year(),
+    })

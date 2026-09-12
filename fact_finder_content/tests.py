@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.urls import reverse
 
 from accounts.models import User
 from fact_finder_content.models import ContentBlockGroup, ContentBlock, ContentBlockVersion
@@ -97,3 +98,100 @@ class ContentBlockModelTests(TestCase):
         from django.db.models import ProtectedError
         with self.assertRaises(ProtectedError):
             self.group.delete()
+
+
+class ContentPanelViewTests(TestCase):
+    def setUp(self):
+        self.group = ContentBlockGroup.objects.create(key='tsp', label='TSP', display_order=8)
+        self.block = ContentBlock.objects.create(
+            key='tsp.agency_match_explanation',
+            group=self.group,
+            label='TSP Agency Match Explanation',
+            required_placeholders=['match_percentage'],
+        )
+        self.admin = User.objects.create_user(
+            username='ff_admin', password='Password123!', role='administrator',
+            first_name='Admin', last_name='User',
+        )
+        self.technician = User.objects.create_user(
+            username='ff_tech', password='Password123!', role='technician',
+            first_name='Tech', last_name='User',
+        )
+
+    def test_content_list_requires_admin(self):
+        self.client.force_login(self.technician)
+        response = self.client.get(reverse('fact_finder_content:content_list'))
+        self.assertEqual(response.status_code, 403)
+
+    def test_content_list_loads_for_admin(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_list'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'TSP Agency Match Explanation')
+
+    def test_content_block_detail_requires_admin(self):
+        self.client.force_login(self.technician)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_create_draft_via_post(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'create_draft', 'plan_year': 2026, 'body_html': '<p>You are contributing [[match_percentage]]%.</p>'},
+        )
+        self.assertRedirects(response, reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        version = ContentBlockVersion.objects.get(block=self.block, plan_year=2026)
+        self.assertEqual(version.status, ContentBlockVersion.STATUS_DRAFT)
+        self.assertEqual(version.created_by, self.admin)
+
+    def test_create_draft_missing_placeholder_warns_but_still_saves(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'create_draft', 'plan_year': 2026, 'body_html': '<p>No token here.</p>'},
+            follow=True,
+        )
+        self.assertContains(response, 'missing required placeholder')
+        self.assertTrue(ContentBlockVersion.objects.filter(block=self.block, plan_year=2026).exists())
+
+    def test_publish_blocked_when_placeholder_missing(self):
+        self.client.force_login(self.admin)
+        version = ContentBlockVersion.objects.create(
+            block=self.block, plan_year=2026, body_html='<p>No token.</p>', created_by=self.admin,
+        )
+        response = self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'publish', 'version_id': version.id},
+            follow=True,
+        )
+        version.refresh_from_db()
+        self.assertEqual(version.status, ContentBlockVersion.STATUS_DRAFT)
+        self.assertContains(response, 'Cannot publish')
+
+    def test_publish_succeeds_when_placeholder_present(self):
+        self.client.force_login(self.admin)
+        version = ContentBlockVersion.objects.create(
+            block=self.block, plan_year=2026, body_html='<p>[[match_percentage]]%</p>', created_by=self.admin,
+        )
+        response = self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'publish', 'version_id': version.id},
+            follow=True,
+        )
+        version.refresh_from_db()
+        self.assertEqual(version.status, ContentBlockVersion.STATUS_PUBLISHED)
+        self.assertEqual(version.reviewed_by, self.admin)
+        self.assertContains(response, 'Published')
+
+    def test_submit_for_review(self):
+        self.client.force_login(self.admin)
+        version = ContentBlockVersion.objects.create(
+            block=self.block, plan_year=2026, body_html='<p>[[match_percentage]]%</p>', created_by=self.admin,
+        )
+        self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'submit_for_review', 'version_id': version.id},
+        )
+        version.refresh_from_db()
+        self.assertEqual(version.status, ContentBlockVersion.STATUS_IN_REVIEW)
