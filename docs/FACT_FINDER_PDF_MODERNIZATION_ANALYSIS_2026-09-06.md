@@ -725,3 +725,19 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 
 ### Up next
 - Option A (step 2): admin/content-editor views — the list screen, TinyMCE-based block editor (reusing the `system_settings.html` panel pattern and existing TinyMCE config), and the draft → review → publish workflow UI.
+
+### 2026-09-12 — Option A (step 2): content list + block editor views
+
+- **What:** Admin-only views wired into a new `fact_finder_content` URL namespace (`/fact-finder-content/`):
+  - `content_list` — groups blocks by `ContentBlockGroup`, shows published/draft status per plan year (switchable via a `?plan_year=` query param).
+  - `content_block_detail` — version history table, a "New Draft" form, and `submit_for_review`/`publish` actions.
+- **Publish gating:** `publish` is blocked server-side (with an inline error, not a silent bad publish) when `required_placeholders` are missing from `body_html` — reusing `missing_placeholders()` from step 1. Draft creation is allowed to proceed with only a warning, so content editors aren't blocked mid-edit.
+- **Deliberately deferred to a later increment:** TinyMCE integration (plain `<textarea>` for now), the merge-field picker, and the structured `display_condition` rule builder — all still just plain textarea/raw JSON. Keeping each increment small and testable per the agreed approach.
+- **Tested:** 10 new tests (permission checks for both views, draft creation, publish blocked when a placeholder is missing, publish succeeds when present, submit-for-review). Full suite: 75 tests, 1 pre-existing unrelated failure, 0 regressions.
+- **Committed:** `advisor-portal-app` commit `93c5f5a` on `feature/fact-finder-data-contract`.
+
+### Up next
+- Option A (step 3): TinyMCE editor + merge-field picker for `body_html` (reusing the existing `TINYMCE_DEFAULT_CONFIG` already wired up for `SystemSettings.technical_notes_template`).
+- Option A (step 4): structured `display_condition` rule builder UI (field/operator/value dropdowns against the Fact Finder Data Contract schema — no free-text expressions).
+- Option A (step 5): HTML sanitization on save (restricted tag allow-list) before this is exposed to any real, non-developer content editor.
+- Later: golden-master pre-publish validation gate; `resolve-content` API endpoint for `benefits-software` to call.
