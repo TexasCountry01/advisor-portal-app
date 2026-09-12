@@ -714,3 +714,14 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 
 ### Up next (revised again)
 - Option A verbiage panel in `advisor-portal`.
+
+### 2026-09-12 — Option A (step 1): content block models
+
+- **What:** New Django app `fact_finder_content` with `ContentBlockGroup`, `ContentBlock`, and `ContentBlockVersion` — matching this doc's earlier "Concrete UI design" data model, adapted to this codebase's existing conventions (`settings.AUTH_USER_MODEL`, `CaseReviewHistory`-style draft/review pattern). Models + admin registration + migration only in this step — no views, no API, no rules-engine evaluation yet.
+- **Where:** `fact_finder_content/models.py`, `admin.py`, `migrations/0001_initial.py`.
+- **Key design point carried over from the doc:** only one `(block, plan_year)` pair may be `published` at a time, enforced in `ContentBlockVersion.publish()` (not a DB constraint) — so old versions stay as `superseded` rows for historical PDF reproducibility, and publishing a new version for one plan year never touches another plan year's already-published wording.
+- **Tested:** 8 new tests in `fact_finder_content/tests.py` (group/block `__str__`, placeholder-detection via `missing_placeholders()`, publish/supersede semantics, cross-plan-year isolation, `PROTECT` on group delete). Full suite: 67 tests, 1 pre-existing unrelated failure (`DashboardSearchTests`), 0 regressions.
+- **Committed:** `advisor-portal-app` commit `99faca2` on `feature/fact-finder-data-contract`.
+
+### Up next
+- Option A (step 2): admin/content-editor views — the list screen, TinyMCE-based block editor (reusing the `system_settings.html` panel pattern and existing TinyMCE config), and the draft → review → publish workflow UI.
