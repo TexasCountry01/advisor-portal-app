@@ -695,3 +695,22 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 ### Up next (revised)
 - Diff a real case's logged Data Contract against that same case's existing PDF numbers end-to-end, to close the loop per the "Recommended integrity guardrail" section above.
 - Then: Option A verbiage panel in `advisor-portal`.
+
+### 2026-09-12 — Phase 2 committed; end-to-end HTML diff (contract vs. actual rendered PDF)
+
+- **Committed:** the Phase 2 changes (`FactFinderDataContractBuilder.php`, its 9 tests, and the `EmployeeController` instrumentation) are now committed in `benefits-software` (commit `ddc9b45`, "Fact Finder: add read-only Data Contract builder (Phase 2) + controller instrumentation"). The Phase 1 schema work is committed in `advisor-portal-app` on branch `feature/fact-finder-data-contract` (commit `6537ec1`).
+- **What:** Built `benefits-software/scripts/validate_fact_finder_html_diff.php` — mirrors `EmployeeController@createPdfFEGLI` almost verbatim (same repository calls, same order) with exactly two intentional differences: (1) skips `updateDateCompleted($empId)`, the controller's one DB write, and (2) stops right after `$view->render()` — never instantiates TCPDF/MYPDF, never writes a PDF file. It then renders the **real** `report_pdf.blade.php` view (the actual production template, unmodified) into an HTML string held only in memory, and diffs specific figures/sentences in that HTML against the Fact Finder Data Contract built from the same underlying values. One incidental side effect was observed and reverted: rendering triggered Laravel's normal Blade-cache recompilation of one stale compiled view file (`storage/framework/views/...php`, tracked in git in this repo) — reverted via `git checkout --` immediately after, restoring a byte-identical working tree. No database rows were written; no PDF files were written.
+- **Cases tested (same 3 as the earlier repository-level validation):**
+
+  | System type | EmployeeId | Pension figure found in rendered HTML | WEP sentence present | TSP wording matches flag |
+  |---|---|---|---|---|
+  | FERS | 42293 | ✅ `$2,228`/mo (see note below) | n/a (WEP doesn't apply to FERS) | ✅ "full match" sentence present (`hit_full_tsp_match=true`) |
+  | CSRS | 36798 | ✅ `$205,243`/yr and `$17,104`/mo both present | ✅ WEP penalty sentence present (`is_wep_applicable=true`) | n/a — CSRS never gets match wording regardless of `hit_full_tsp_match` (see note) |
+  | CSRS Offset | 41444 | ✅ `$63,801`/yr and `$5,317`/mo both present | ✅ WEP penalty sentence present (`is_wep_applicable=true`) | n/a — same as CSRS |
+
+- **Independent cross-validation bonus:** case 42293's contract-derived monthly pension ($2,228, from $26,739/yr ÷ 12, rounded) matches the **pre-existing, independently-verified** expected value for this exact case already hardcoded in this repo's `validate_deferred_fix.php` ("42293 ... Brooke Turner ... expected 2228 // $2,228/mo (18y8m)") — a fixture built for an unrelated pension-rounding bug fix, with no connection to this project. The contract's numbers matching a completely independent prior validation is stronger evidence than a self-consistency check alone.
+- **Nuance discovered (not a bug, but worth recording):** `hit_full_tsp_match` was `true` for all 3 cases (all three employees contribute well above 4.95%), but the rendered HTML only shows "full match" wording for the FERS case — CSRS/CSRS Offset always render "you receive no matching funds" regardless of contribution %, because the blade template's TSP-match wording is nested *inside* the `is_fers_or_transfers` branch, not evaluated independently. This confirms `computed_flags` are correctly modeled as independent atomic booleans (matching what the calculation layer can determine), and any future rules panel/renderer must combine them the same way the template does today (`is_fers_or_transfers AND hit_full_tsp_match` → full-match wording), not treat `hit_full_tsp_match` alone as sufficient.
+- **Conclusion:** the Data Contract's numbers and flags now check out against (a) the raw repository values Phase 2 already validated, (b) the actual rendered production PDF template's real output text, and (c) an independent, previously-verified fixture value from unrelated bug-fix work. This closes the "Recommended integrity guardrail" loop for Phase 1–2 with real evidence, not just code review.
+
+### Up next (revised again)
+- Option A verbiage panel in `advisor-portal`.
