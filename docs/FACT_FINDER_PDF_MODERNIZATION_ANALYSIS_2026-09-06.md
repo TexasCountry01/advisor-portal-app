@@ -778,3 +778,20 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 - Golden-master pre-publish validation gate: before allowing `publish`, run the version's `display_condition` + placeholder checks against a fixed set of ~10–15 representative real cases (one per major branch: FERS immediate/deferred, CSRS, CSRS Offset, Transfers, WEP-affected, etc.) and show the content owner exactly which scenarios will/won't see the block — the pre-publish safety net described in the "Concrete UI design" section above.
 - `resolve-content` API endpoint (`POST /api/fact-finder/resolve-content/`) for `benefits-software` to call — the other end of the integration contract described earlier in this document. Needs an authentication mechanism (shared secret / IP allowlist, per the doc's Integration contract section) before it's callable from outside this app.
 - Nav link into the content panel from the admin dashboard (currently only reachable by direct URL).
+
+### 2026-09-12 — Nav link + resolve-content API (both integration gaps closed)
+
+- **Nav link:** added a "Fact Finder Content" button to the admin dashboard's action row, next to System Settings — no longer only reachable by direct URL. 1 new test.
+- **`resolve-content` API shipped:** `POST /api/fact-finder/resolve-content/` — the other half of Option A's integration contract, finally connecting the panel to something that can call it.
+  - **Request:** `{"plan_year": 2026, "data_contract": {...}}` → **Response:** `{"blocks": [{"key": "...", "html": "...", "order": 1}, ...]}`.
+  - **Auth:** shared-secret `Authorization: Bearer <key>` header, timing-safe compared (`hmac.compare_digest`) against `SystemSettings.benefits_software_api_key` — the exact field this app already had reserved for benefits-software integration (previously only used for the *outbound* direction in `cases/services/api_integration.py`), so no second secret was invented. The shipped placeholder value is explicitly never accepted — a misconfigured deployment fails closed, not open.
+  - **Validation-first:** the submitted `data_contract` is validated against the existing Phase 1 `FactFinderDataContractSerializer` before anything else runs — malformed/incomplete contracts are rejected with field-level error details, never partially processed.
+  - **Resolution logic:** for each active `ContentBlock` with a published version for the requested plan year, its `display_condition` rules (Option A step 4's rule engine) are evaluated against the submitted contract; only blocks whose rules pass (or have none) come back, in a stable order.
+- **Tested:** 16 new tests total (1 nav link + 15 API: auth paths, payload validation, and content-resolution logic — no published version, condition match/no-match, wrong plan year, inactive-block exclusion, multi-block ordering). Full suite: 134 tests, 1 pre-existing unrelated failure, 0 regressions.
+- **Committed:** `advisor-portal-app` commits `75d73e2` (nav link) and `9e2dc7a` (API) on `feature/fact-finder-data-contract`.
+- **Still not done:** `benefits-software` doesn't call this endpoint yet — today it only logs the Data Contract (Phase 2 scope). Wiring `EmployeeController` (or, better, the eventual Blade partials) to actually call `resolve-content` and use the returned blocks is the next cross-repo increment. The golden-master pre-publish validation gate is also still unbuilt. Neither the `feature/fact-finder-data-contract` branch nor `benefits-software`'s equivalent work has been merged to `main`/`master` yet.
+
+### Up next
+- Wire `benefits-software` to actually call `resolve-content` and use the returned HTML (currently it only logs the contract) — this is what makes Option A's content governance real instead of theoretical.
+- Golden-master pre-publish validation gate (test a draft against ~10–15 representative cases before allowing publish).
+- Merge `feature/fact-finder-data-contract` to `main` once the above is further along.
