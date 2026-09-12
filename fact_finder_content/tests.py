@@ -219,3 +219,83 @@ class ContentPanelViewTests(TestCase):
         # The textarea TinyMCE mounts on must NOT have a name attribute — only the hidden
         # input should be POSTed, per the pattern used for SystemSettings.technical_notes_template.
         self.assertNotContains(response, 'id="body_html" name="body_html"')
+
+
+class DisplayConditionRuleBuilderViewTests(TestCase):
+    def setUp(self):
+        self.group = ContentBlockGroup.objects.create(key='tsp', label='TSP', display_order=8)
+        self.block = ContentBlock.objects.create(
+            key='tsp.agency_match_explanation', group=self.group, label='TSP Agency Match Explanation',
+        )
+        self.admin = User.objects.create_user(
+            username='rule_admin', password='Password123!', role='administrator',
+            first_name='Admin', last_name='User',
+        )
+
+    def test_detail_page_renders_field_dropdown_and_value_registry(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'id="rule_field"')
+        self.assertContains(response, '<option value="system.system_type">System Type</option>')
+        self.assertContains(response, 'FIELD_VALUE_OPTIONS')
+
+    def test_add_valid_choice_rule(self):
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'add_display_rule', 'rule_field': 'system.system_type', 'rule_operator': 'equals', 'rule_value': 'FERS'},
+        )
+        self.block.refresh_from_db()
+        self.assertEqual(
+            self.block.display_condition,
+            {'rules': [{'field': 'system.system_type', 'operator': 'equals', 'value': 'FERS'}]},
+        )
+
+    def test_add_boolean_rule_coerces_value(self):
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'add_display_rule', 'rule_field': 'computed_flags.is_wep_applicable', 'rule_operator': 'equals', 'rule_value': 'true'},
+        )
+        self.block.refresh_from_db()
+        self.assertIs(self.block.display_condition['rules'][0]['value'], True)
+
+    def test_add_invalid_rule_is_rejected_with_message(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'add_display_rule', 'rule_field': 'system.system_type', 'rule_operator': 'equals', 'rule_value': 'NotARealSystem'},
+            follow=True,
+        )
+        self.block.refresh_from_db()
+        self.assertIsNone(self.block.display_condition)
+        self.assertContains(response, 'Could not add rule')
+
+    def test_remove_rule(self):
+        self.block.display_condition = {'rules': [
+            {'field': 'system.system_type', 'operator': 'equals', 'value': 'FERS'},
+            {'field': 'computed_flags.is_wep_applicable', 'operator': 'equals', 'value': True},
+        ]}
+        self.block.save()
+        self.client.force_login(self.admin)
+        self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'remove_display_rule', 'rule_index': '0'},
+        )
+        self.block.refresh_from_db()
+        self.assertEqual(len(self.block.display_condition['rules']), 1)
+        self.assertEqual(self.block.display_condition['rules'][0]['field'], 'computed_flags.is_wep_applicable')
+
+    def test_rule_builder_requires_admin(self):
+        technician = User.objects.create_user(
+            username='rule_tech', password='Password123!', role='technician',
+            first_name='Tech', last_name='User',
+        )
+        self.client.force_login(technician)
+        response = self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'add_display_rule', 'rule_field': 'system.system_type', 'rule_operator': 'equals', 'rule_value': 'FERS'},
+        )
+        self.assertEqual(response.status_code, 403)
+        self.block.refresh_from_db()
+        self.assertIsNone(self.block.display_condition)

@@ -1,12 +1,11 @@
 """
-Views for the Fact Finder content panel (Option A, step 2).
+Views for the Fact Finder content panel (Option A, step 2-4).
 
-Admin-only for now (mirrors core.views.is_admin's role check). No merge-field
-picker or structured display_condition rule builder yet — plain textarea for
-body_html and a raw JSON field for display_condition. Those are later,
-separately-tested increments (see docs/FACT_FINDER_PDF_MODERNIZATION_ANALYSIS_2026-09-06.md).
+Admin-only for now (mirrors core.views.is_admin's role check). No HTML
+sanitization on save yet (step 5) — see docs/FACT_FINDER_PDF_MODERNIZATION_ANALYSIS_2026-09-06.md.
 """
 import datetime
+import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -15,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from .models import ContentBlock, ContentBlockGroup, ContentBlockVersion
+from .rules import AVAILABLE_FIELDS, coerce_value, field_value_choices, validate_rules
 
 
 def _require_admin(request):
@@ -109,7 +109,45 @@ def content_block_detail(request, block_id):
                 messages.success(request, f'Published for plan year {version.plan_year}.')
             return redirect('fact_finder_content:content_block_detail', block_id=block.id)
 
+        if action == 'add_display_rule':
+            field_key = request.POST.get('rule_field', '')
+            operator = request.POST.get('rule_operator', '')
+            raw_value = request.POST.get('rule_value', '')
+            new_rule = {
+                'field': field_key,
+                'operator': operator,
+                'value': coerce_value(field_key, raw_value),
+            }
+            current_rules = (block.display_condition or {}).get('rules', [])
+            candidate_rules = current_rules + [new_rule]
+
+            errors = validate_rules(candidate_rules)
+            if errors:
+                messages.error(request, 'Could not add rule: ' + ' '.join(errors))
+            else:
+                block.display_condition = {'rules': candidate_rules}
+                block.save()
+                messages.success(request, 'Display rule added.')
+            return redirect('fact_finder_content:content_block_detail', block_id=block.id)
+
+        if action == 'remove_display_rule':
+            index = int(request.POST.get('rule_index', -1))
+            current_rules = (block.display_condition or {}).get('rules', [])
+            if 0 <= index < len(current_rules):
+                current_rules.pop(index)
+                block.display_condition = {'rules': current_rules}
+                block.save()
+                messages.success(request, 'Display rule removed.')
+            return redirect('fact_finder_content:content_block_detail', block_id=block.id)
+
     versions = block.versions.all()
+
+    display_rules = (block.display_condition or {}).get('rules', [])
+    field_options = [
+        {'key': key, 'label': field_def['label']}
+        for key, field_def in AVAILABLE_FIELDS.items()
+    ]
+    field_value_options = {key: field_value_choices(key) for key in AVAILABLE_FIELDS}
 
     return render(request, 'fact_finder_content/content_block_detail.html', {
         # NOTE: deliberately NOT named 'block' — Django's {% block %} tag pushes a
@@ -118,5 +156,8 @@ def content_block_detail(request, block_id):
         # {% endblock %} sections. Use 'content_block' everywhere in the template instead.
         'content_block': block,
         'versions': versions,
+        'display_rules': display_rules,
+        'field_options': field_options,
+        'field_value_options_json': json.dumps(field_value_options),
         'default_plan_year': _default_plan_year(),
     })
