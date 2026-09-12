@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'cases',
     'messaging',
     'references',
+    'fact_finder_content',
 ]
 
 MIDDLEWARE = [
