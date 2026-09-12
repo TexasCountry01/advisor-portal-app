@@ -765,3 +765,16 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 ### Up next
 - Option A (step 5): HTML sanitization on save (restricted tag allow-list) before this is exposed to any real, non-developer content editor.
 - Later: golden-master pre-publish validation gate; `resolve-content` API endpoint for `benefits-software` to call.
+
+### 2026-09-12 — Option A (step 5): HTML sanitization on save
+
+- **What:** New dependency `bleach==6.4.0`. `fact_finder_content/sanitize.py`'s `sanitize_body_html()` allow-lists exactly the tags the restricted TinyMCE toolbar is meant to produce (`p`, `strong`, `em`, `ul`, `ol`, `li`, `br`) with **no attributes permitted at all** — no `style`, no `href`/`src`, no `on*` handlers — eliminating attribute-based XSS regardless of any future toolbar change. Disallowed tags (`script`, `img`, `a`, `span`, `div`, etc.) are stripped; their text content survives as inert plain text (safe, since it's no longer inside an executable/interactive element).
+- **Enforced at the trust boundary, per the doc's own Security notes ("sanitize on save, not just on render"):** `ContentBlockVersion.save()` is overridden to sanitize `body_html` on every save — create *and* update — so it applies no matter which code path writes a version (view, admin, shell, or a future API), not just the one view action that exists today.
+- **Tested:** 11 new tests — 9 direct sanitizer unit tests (script stripped-but-inert, `onclick`/`style`/`href` stripped, disallowed tags removed, merge-field `[[tokens]]` survive untouched since they're plain text, `None`/empty input handled) + 2 model-level `save()` tests (create and update both sanitize) + 1 view-level integration test (POSTing malicious HTML through `create_draft` comes out clean in the DB). Full suite: 118 tests, 1 pre-existing unrelated failure, 0 regressions.
+- **Committed:** `advisor-portal-app` commit `62a22bc` on `feature/fact-finder-data-contract`.
+- **This closes out the core Option A build-out** (steps 1–5: models, list/editor views, TinyMCE + merge-field picker, structured rule builder, sanitization). What's left is integration work, not new UI surface — see "Up next" below.
+
+### Up next
+- Golden-master pre-publish validation gate: before allowing `publish`, run the version's `display_condition` + placeholder checks against a fixed set of ~10–15 representative real cases (one per major branch: FERS immediate/deferred, CSRS, CSRS Offset, Transfers, WEP-affected, etc.) and show the content owner exactly which scenarios will/won't see the block — the pre-publish safety net described in the "Concrete UI design" section above.
+- `resolve-content` API endpoint (`POST /api/fact-finder/resolve-content/`) for `benefits-software` to call — the other end of the integration contract described earlier in this document. Needs an authentication mechanism (shared secret / IP allowlist, per the doc's Integration contract section) before it's callable from outside this app.
+- Nav link into the content panel from the admin dashboard (currently only reachable by direct URL).
