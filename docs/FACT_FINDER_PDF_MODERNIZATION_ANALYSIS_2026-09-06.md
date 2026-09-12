@@ -753,3 +753,15 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 - Option A (step 4): structured `display_condition` rule builder UI (field/operator/value dropdowns against the Fact Finder Data Contract schema — no free-text expressions).
 - Option A (step 5): HTML sanitization on save (restricted tag allow-list) before this is exposed to any real, non-developer content editor.
 - Later: golden-master pre-publish validation gate; `resolve-content` API endpoint for `benefits-software` to call.
+
+### 2026-09-12 — Option A (step 4): structured display_condition rule builder
+
+- **What:** A small, non-code rule engine (`fact_finder_content/rules.py`) plus its UI wiring. `AVAILABLE_FIELDS` is a fixed registry grounded directly in the Fact Finder Data Contract schema (`system.system_type`, `system.retirement_type`, all six `computed_flags.*` booleans) — not a free-text expression box, nothing `eval()`'d. `validate_rules()` rejects unknown fields, invalid operators, and out-of-range values with specific errors; `evaluate_rules()` ANDs a list of `{field, operator, value}` rows against a data-contract-shaped dict.
+- **UI:** the block detail page now has a "Display Condition" card — a table of current rules with per-row Remove, and an Add Rule form (field dropdown → operator dropdown → value dropdown). The value dropdown's options swap client-side based on the chosen field's declared type (boolean fields get `true`/`false`; choice fields get their exact declared choices) — populated from a server-rendered JSON registry, never hand-typed.
+- **Validation is server-side and atomic:** adding a rule re-validates the *entire* candidate rule list before saving; an invalid addition is rejected with an inline error and never persisted (no partially-bad state).
+- **Tested:** 22 rule-engine unit tests (including a case grounded directly in the earlier Phase 2 real-data validation: `is_gpo_applicable` true for pure CSRS, false for CSRS Offset — proving the rule engine reproduces that exact distinction) + 6 view tests (registry rendering, valid choice/boolean rule addition, invalid-rule rejection, rule removal, permission check). Full suite: 106 tests, 1 pre-existing unrelated failure, 0 regressions.
+- **Committed:** `advisor-portal-app` commit `4f841a4` on `feature/fact-finder-data-contract`.
+
+### Up next
+- Option A (step 5): HTML sanitization on save (restricted tag allow-list) before this is exposed to any real, non-developer content editor.
+- Later: golden-master pre-publish validation gate; `resolve-content` API endpoint for `benefits-software` to call.
