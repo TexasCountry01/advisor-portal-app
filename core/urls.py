@@ -14,6 +14,7 @@ urlpatterns = [
     path('update-delegate-notifications/', views.update_delegate_notifications, name='update_delegate_notifications'),
     path('request-add-delegate/', views.request_add_delegate, name='request_add_delegate'),
     path('request-remove-delegate/', views.request_remove_delegate, name='request_remove_delegate'),
+    path('cancel-delegate-request/<int:request_id>/', views.cancel_delegate_request, name='cancel_delegate_request'),
     path('system-settings/', views.system_settings, name='system_settings'),
     path('beta-feedback/', views.submit_beta_feedback, name='submit_beta_feedback'),
     path('reports/', views_reports.view_reports, name='view_reports'),

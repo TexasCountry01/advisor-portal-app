@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -580,6 +580,47 @@ def request_remove_delegate(request):
     _send_delegate_request_email(request.user, dr, account_deactivated=account_deactivated)
 
     messages.success(request, f'"{delegate_name}" has been removed as your delegate. Our team has been notified.')
+    return redirect('profile')
+
+
+@login_required
+def cancel_delegate_request(request, request_id):
+    """Member cancels their own pending delegate request before staff processes it."""
+    if request.method != 'POST':
+        return redirect('profile')
+
+    from accounts.models import DelegateRequest
+    from core.models import AuditLog
+    from django.utils import timezone
+
+    delegate_request = get_object_or_404(
+        DelegateRequest, pk=request_id, requested_by=request.user, status='pending'
+    )
+
+    delegate_request.status = 'dismissed'
+    delegate_request.processed_by = request.user
+    delegate_request.processed_at = timezone.now()
+    delegate_request.save(update_fields=['status', 'processed_by', 'processed_at'])
+
+    member_name = request.user.get_full_name() or request.user.username
+    AuditLog.objects.create(
+        user=request.user,
+        action_type='delegate_request_cancelled',
+        description=(
+            f'{member_name} cancelled their pending request to '
+            f'{delegate_request.get_request_type_display().lower()} delegate "{delegate_request.delegate_name}".'
+        ),
+        ip_address=request.META.get('HTTP_X_FORWARDED_FOR', request.META.get('REMOTE_ADDR', '')).split(',')[0].strip() or None,
+        metadata={
+            'delegate_request_id': delegate_request.pk,
+            'delegate_name': delegate_request.delegate_name,
+            'request_type': delegate_request.request_type,
+            'member_id': request.user.pk,
+            'member_name': member_name,
+        },
+    )
+
+    messages.success(request, f'Your request for "{delegate_request.delegate_name}" has been cancelled.')
     return redirect('profile')
 
 

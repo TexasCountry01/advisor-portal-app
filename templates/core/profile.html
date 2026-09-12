@@ -316,7 +316,16 @@
                                 <small class="text-muted">(removal request)</small>
                             {% endif %}
                         </span>
-                        <span class="badge bg-warning text-dark">Pending</span>
+                        <span class="d-flex gap-2 align-items-center">
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            <form method="post" action="{% url 'cancel_delegate_request' req.pk %}"
+                                  onsubmit="return confirm('Cancel your pending request for {{ req.delegate_name|escapejs }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-x-circle"></i> Cancel
+                                </button>
+                            </form>
+                        </span>
                     </li>
                     {% endfor %}
                 </ul>

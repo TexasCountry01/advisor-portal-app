@@ -73,6 +73,7 @@ class AuditLog(models.Model):
         ('delegate_removed', 'Delegate Removed'),
         ('delegate_add_requested', 'Delegate Add Requested'),
         ('delegate_remove_requested', 'Delegate Remove Requested'),
+        ('delegate_request_cancelled', 'Delegate Request Cancelled'),
         ('notification_preferences_changed', 'Notification Preferences Changed'),
         ('review_setting_changed', 'Review Setting Changed'),
         ('review_requested', 'Review Requested'),
