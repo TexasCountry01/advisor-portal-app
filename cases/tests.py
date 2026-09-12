@@ -38,6 +38,12 @@ class DashboardSearchTests(TestCase):
         response = client.get(reverse('cases:admin_dashboard'), {'search': 'Jane Smith'})
         self.assertIn(self.case, response.context['cases'].object_list)
 
+    def test_admin_dashboard_links_to_fact_finder_content_panel(self):
+        client = Client()
+        client.force_login(self.admin)
+        response = client.get(reverse('cases:admin_dashboard'))
+        self.assertContains(response, reverse('fact_finder_content:content_list'))
+
     def test_admin_dashboard_shows_pending_delegate_requests_banner(self):
         member = User.objects.create_user(
             username='member1',
