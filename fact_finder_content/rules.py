@@ -32,7 +32,10 @@ AVAILABLE_FIELDS = {
     'system.retirement_type': {
         'label': 'Retirement Type',
         'type': 'choice',
-        'choices': ['Regular', 'Optional', 'Deferred', 'Disability'],
+        # Matches cases.fact_finder_data_contract.SystemSerializer.RETIREMENT_TYPE_CHOICES
+        # exactly — verified 2026-09-13 against benefits-software's real RetirementType
+        # lookup table. Only these 3 values exist in real data (no "Optional"/"Disability").
+        'choices': ['Regular', 'VERA / DSR', 'Deferred'],
     },
     'computed_flags.is_fers_or_transfers': {
         'label': 'Is FERS or Transfers',

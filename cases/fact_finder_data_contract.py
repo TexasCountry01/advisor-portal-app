@@ -163,7 +163,15 @@ class TspSerializer(serializers.Serializer):
 
 class SystemSerializer(serializers.Serializer):
     SYSTEM_TYPE_CHOICES = ["FERS", "CSRS", "CSRS Offset", "Transfers"]
-    RETIREMENT_TYPE_CHOICES = ["Regular", "Optional", "Deferred", "Disability"]
+    # Verified 2026-09-13 directly against benefits-software's real RetirementType
+    # lookup table (`AppLookup::where('AppLookupTypeName', 'RetirementType')`) —
+    # these are the ONLY 3 values that exist in that table; there is no separate
+    # "Optional" or "Disability" retirement type in this application at all. The
+    # previous list (["Regular", "Optional", "Deferred", "Disability"]) was never
+    # grounded in real data and caused every real VERA/early-out case (stored as
+    # the literal string "VERA / DSR") to fail schema validation. Caught via the
+    # golden-master pre-publish validation gate's 24 real-case fixtures.
+    RETIREMENT_TYPE_CHOICES = ["Regular", "VERA / DSR", "Deferred"]
 
     system_type = serializers.ChoiceField(choices=SYSTEM_TYPE_CHOICES)
     retirement_type = serializers.ChoiceField(choices=RETIREMENT_TYPE_CHOICES)

@@ -248,6 +248,23 @@ class ContentPanelViewTests(TestCase):
         # input should be POSTed, per the pattern used for SystemSettings.technical_notes_template.
         self.assertNotContains(response, 'id="body_html" name="body_html"')
 
+    def test_detail_page_shows_golden_master_gate_matching_all_24_when_no_rules(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'Test Against Sample Cases')
+        self.assertContains(response, 'Will appear for 24 of 24 sample cases')
+
+    def test_detail_page_golden_master_gate_reflects_display_condition(self):
+        self.block.display_condition = {'rules': [
+            {'field': 'computed_flags.is_wep_applicable', 'operator': 'equals', 'value': True},
+        ]}
+        self.block.save()
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        # Grounded in the same real-data fact verified in fact_finder_content/tests_golden_master.py:
+        # exactly 3 of the 24 golden-master cases have is_wep_applicable == True.
+        self.assertContains(response, 'Will appear for 3 of 24 sample cases')
+
 
 class DisplayConditionRuleBuilderViewTests(TestCase):
     def setUp(self):

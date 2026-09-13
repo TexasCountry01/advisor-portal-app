@@ -1,0 +1,2289 @@
+{
+    "schema_version": "2026.1",
+    "employee_id": 37794,
+    "generated_at": "2026-09-13T11:58:58+00:00",
+    "system": {
+        "system_type": "FERS",
+        "retirement_type": "Regular",
+        "birth_year": 1968
+    },
+    "pension": {
+        "scenarios": [
+            {
+                "scenario_number": 1,
+                "gross_annual_pension": 18646,
+                "first_pension_mra10_penalty": 3729.2,
+                "early_out_penalty": 0,
+                "csrs_offset_penalty": 0
+            },
+            {
+                "scenario_number": 2,
+                "gross_annual_pension": 19925,
+                "first_pension_mra10_penalty": 2988.75,
+                "early_out_penalty": 0,
+                "csrs_offset_penalty": 0
+            },
+            {
+                "scenario_number": 3,
+                "gross_annual_pension": 21250,
+                "first_pension_mra10_penalty": 2125,
+                "early_out_penalty": 0,
+                "csrs_offset_penalty": 0
+            },
+            {
+                "scenario_number": 4,
+                "gross_annual_pension": 22621,
+                "first_pension_mra10_penalty": 0,
+                "early_out_penalty": 0,
+                "csrs_offset_penalty": 0
+            },
+            {
+                "scenario_number": 5,
+                "gross_annual_pension": 24041,
+                "first_pension_mra10_penalty": 0,
+                "early_out_penalty": 0,
+                "csrs_offset_penalty": 0
+            },
+            {
+                "scenario_number": 6,
+                "gross_annual_pension": 28062,
+                "first_pension_mra10_penalty": 0,
+                "early_out_penalty": 0,
+                "csrs_offset_penalty": 0
+            }
+        ],
+        "non_deduction_penalty": 0,
+        "refunded_penalty": 0,
+        "wep_penalty": 0
+    },
+    "fegli": {
+        "current_fegli": {
+            "basic": true,
+            "optionA": false,
+            "optionB": 0,
+            "optionC": 0,
+            "optionC_spouse": false,
+            "optionC_dependent": false
+        },
+        "is_married": true,
+        "has_dependents": false,
+        "fegli_arr": [
+            {
+                "years_in_retirement": 2,
+                "age": 58,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 110.26,
+                "totalMonthly": 238.9,
+                "totalYearly": 2866.76,
+                "runningTotalCost": 2866.76,
+                "costs": {
+                    "basic": {
+                        "monthly": 238.89639999999997,
+                        "BiWeekly": 110.25987692307692,
+                        "yearly": 2866.7567999999997
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 3,
+                "age": 59,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 110.26,
+                "totalMonthly": 238.9,
+                "totalYearly": 2866.76,
+                "runningTotalCost": 5733.51,
+                "costs": {
+                    "basic": {
+                        "monthly": 238.89639999999997,
+                        "BiWeekly": 110.25987692307692,
+                        "yearly": 2866.7567999999997
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 4,
+                "age": 60,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 110.26,
+                "totalMonthly": 238.9,
+                "totalYearly": 2866.76,
+                "runningTotalCost": 8600.27,
+                "costs": {
+                    "basic": {
+                        "monthly": 238.89639999999997,
+                        "BiWeekly": 110.25987692307692,
+                        "yearly": 2866.7567999999997
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 5,
+                "age": 61,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 110.26,
+                "totalMonthly": 238.9,
+                "totalYearly": 2866.76,
+                "runningTotalCost": 11467.03,
+                "costs": {
+                    "basic": {
+                        "monthly": 238.89639999999997,
+                        "BiWeekly": 110.25987692307692,
+                        "yearly": 2866.7567999999997
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 6,
+                "age": 62,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 110.26,
+                "totalMonthly": 238.9,
+                "totalYearly": 2866.76,
+                "runningTotalCost": 14333.78,
+                "costs": {
+                    "basic": {
+                        "monthly": 238.89639999999997,
+                        "BiWeekly": 110.25987692307692,
+                        "yearly": 2866.7567999999997
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 7,
+                "age": 63,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 110.26,
+                "totalMonthly": 238.9,
+                "totalYearly": 2866.76,
+                "runningTotalCost": 17200.54,
+                "costs": {
+                    "basic": {
+                        "monthly": 238.89639999999997,
+                        "BiWeekly": 110.25987692307692,
+                        "yearly": 2866.7567999999997
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 8,
+                "age": 64,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 110.26,
+                "totalMonthly": 238.9,
+                "totalYearly": 2866.76,
+                "runningTotalCost": 20067.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 238.89639999999997,
+                        "BiWeekly": 110.25987692307692,
+                        "yearly": 2866.7567999999997
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 9,
+                "age": 65,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 22551.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 10,
+                "age": 66,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 25035.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 11,
+                "age": 67,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 27519.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 12,
+                "age": 68,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 30003.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 13,
+                "age": 69,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 32487.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 14,
+                "age": 70,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 34971.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 15,
+                "age": 71,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 37455.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 16,
+                "age": 72,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 39939.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 17,
+                "age": 73,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 42423.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 18,
+                "age": 74,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 44907.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 19,
+                "age": 75,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 47391.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 20,
+                "age": 76,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 49875.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 21,
+                "age": 77,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 52359.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 22,
+                "age": 78,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 54843.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 23,
+                "age": 79,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 57327.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 24,
+                "age": 80,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 59811.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 25,
+                "age": 81,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 62295.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 26,
+                "age": 82,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 64779.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 27,
+                "age": 83,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 67263.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 28,
+                "age": 84,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 69747.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 29,
+                "age": 85,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 72231.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 30,
+                "age": 86,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 74715.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 31,
+                "age": 87,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 77199.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 32,
+                "age": 88,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 79683.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 33,
+                "age": 89,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 82167.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            },
+            {
+                "years_in_retirement": 34,
+                "age": 90,
+                "annual_sal": 0,
+                "basic_coverage": 92000,
+                "optionA_coverage": 0,
+                "optionB_coverage": 0,
+                "optionC_coverage": 0,
+                "total_coverage": 92000,
+                "totalBiWeekly": 95.54,
+                "totalMonthly": 207,
+                "totalYearly": 2484,
+                "runningTotalCost": 84651.3,
+                "costs": {
+                    "basic": {
+                        "monthly": 207,
+                        "BiWeekly": 95.53846153846153,
+                        "yearly": 2484
+                    },
+                    "optionA": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionB": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    },
+                    "optionC": {
+                        "monthly": 0,
+                        "BiWeekly": 0,
+                        "yearly": 0
+                    }
+                }
+            }
+        ],
+        "fegli_all_scenarios": [
+            {
+                "age": 57,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 58,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 59,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 60,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 61,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 62,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 63,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 64,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 92000,
+                "basicCoverage75Reduction": 92000,
+                "basicCostNoReduction": 238.9,
+                "basicCost50Reduction": 100.9,
+                "basicCost75Reduction": 31.9,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 65,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 80960,
+                "basicCoverage75Reduction": 69920,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 66,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 69920,
+                "basicCoverage75Reduction": 47840,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 67,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 58880,
+                "basicCoverage75Reduction": 25760,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 68,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 47840,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 69,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 70,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 71,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 72,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 73,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 74,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 75,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 76,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 77,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 78,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 79,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 80,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 81,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 82,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 83,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 84,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 85,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 86,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 87,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 88,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 89,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            },
+            {
+                "age": 90,
+                "basicCoverageNoReduction": 92000,
+                "basicCoverage50Reduction": 46000,
+                "basicCoverage75Reduction": 23000,
+                "basicCostNoReduction": 207,
+                "basicCost50Reduction": 69,
+                "basicCost75Reduction": 0,
+                "optionACoverage": 0,
+                "OptionACost": 0,
+                "optionBCoverageNoReduction": 0,
+                "OptionBCostNoReduction": 0,
+                "optionBCoverageFullReduction": 0,
+                "OptionBCostFullReduction": 0,
+                "optionCCoverageNoReduction": 0,
+                "optionCCostNoReduction": 0,
+                "optionCCoverageFullReduction": 0,
+                "optionCCostFullReduction": 0
+            }
+        ]
+    },
+    "social_security": {
+        "ss_cola": 3.11,
+        "ss_earned_income_limit": 23400,
+        "ss_years_earning": "0.0000000000000000",
+        "ss_details": [
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 0,
+                "age": 57,
+                "monthly_pension": 1243.07,
+                "ss_benefits": 0,
+                "total": 1243.07
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 1,
+                "age": 58,
+                "monthly_pension": 1243.07,
+                "ss_benefits": 0,
+                "total": 1243.07
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 2,
+                "age": 59,
+                "monthly_pension": 1243.07,
+                "ss_benefits": 0,
+                "total": 1243.07
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 3,
+                "age": 60,
+                "monthly_pension": 1243.07,
+                "ss_benefits": 0,
+                "total": 1243.07
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 4,
+                "age": 61,
+                "monthly_pension": 1243.07,
+                "ss_benefits": 0,
+                "total": 1243.07
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 5,
+                "age": 62,
+                "monthly_pension": 1283.47,
+                "ss_benefits": 0,
+                "total": 1283.47
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 6,
+                "age": 63,
+                "monthly_pension": 1324.92,
+                "ss_benefits": 0,
+                "total": 1324.92
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 7,
+                "age": 64,
+                "monthly_pension": 1367.44,
+                "ss_benefits": 0,
+                "total": 1367.44
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 8,
+                "age": 65,
+                "monthly_pension": 1411.08,
+                "ss_benefits": 0,
+                "total": 1411.08
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 9,
+                "age": 66,
+                "monthly_pension": 1455.85,
+                "ss_benefits": 0,
+                "total": 1455.85
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 10,
+                "age": 67,
+                "monthly_pension": 1501.78,
+                "ss_benefits": 3349,
+                "total": 4850.78
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 11,
+                "age": 68,
+                "monthly_pension": 1548.9,
+                "ss_benefits": 3453.15,
+                "total": 5002.05
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 12,
+                "age": 69,
+                "monthly_pension": 1597.25,
+                "ss_benefits": 3560.55,
+                "total": 5157.8
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 13,
+                "age": 70,
+                "monthly_pension": 1646.86,
+                "ss_benefits": 3671.28,
+                "total": 5318.14
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 14,
+                "age": 71,
+                "monthly_pension": 1697.76,
+                "ss_benefits": 3785.46,
+                "total": 5483.22
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 15,
+                "age": 72,
+                "monthly_pension": 1749.98,
+                "ss_benefits": 3903.18,
+                "total": 5653.16
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 16,
+                "age": 73,
+                "monthly_pension": 1803.56,
+                "ss_benefits": 4024.57,
+                "total": 5828.13
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 17,
+                "age": 74,
+                "monthly_pension": 1858.54,
+                "ss_benefits": 4149.74,
+                "total": 6008.28
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 18,
+                "age": 75,
+                "monthly_pension": 1914.94,
+                "ss_benefits": 4278.79,
+                "total": 6193.73
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 19,
+                "age": 76,
+                "monthly_pension": 1972.81,
+                "ss_benefits": 4411.87,
+                "total": 6384.68
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 20,
+                "age": 77,
+                "monthly_pension": 2032.18,
+                "ss_benefits": 4549.07,
+                "total": 6581.25
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 21,
+                "age": 78,
+                "monthly_pension": 2093.1,
+                "ss_benefits": 4690.55,
+                "total": 6783.65
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 22,
+                "age": 79,
+                "monthly_pension": 2155.6,
+                "ss_benefits": 4836.43,
+                "total": 6992.03
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 23,
+                "age": 80,
+                "monthly_pension": 2219.72,
+                "ss_benefits": 4986.84,
+                "total": 7206.56
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 24,
+                "age": 81,
+                "monthly_pension": 2285.51,
+                "ss_benefits": 5141.93,
+                "total": 7427.44
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 25,
+                "age": 82,
+                "monthly_pension": 2353.02,
+                "ss_benefits": 5301.84,
+                "total": 7654.86
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 26,
+                "age": 83,
+                "monthly_pension": 2422.28,
+                "ss_benefits": 5466.73,
+                "total": 7889.01
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 27,
+                "age": 84,
+                "monthly_pension": 2493.33,
+                "ss_benefits": 5636.75,
+                "total": 8130.08
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 28,
+                "age": 85,
+                "monthly_pension": 2566.24,
+                "ss_benefits": 5812.05,
+                "total": 8378.29
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 29,
+                "age": 86,
+                "monthly_pension": 2641.04,
+                "ss_benefits": 5992.8,
+                "total": 8633.84
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 30,
+                "age": 87,
+                "monthly_pension": 2717.79,
+                "ss_benefits": 6179.18,
+                "total": 8896.97
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 31,
+                "age": 88,
+                "monthly_pension": 2796.53,
+                "ss_benefits": 6371.35,
+                "total": 9167.88
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 32,
+                "age": 89,
+                "monthly_pension": 2877.32,
+                "ss_benefits": 6569.5,
+                "total": 9446.82
+            },
+            {
+                "fers_srs": 0,
+                "configInc": 2.6,
+                "years_in_ret": 33,
+                "age": 90,
+                "monthly_pension": 2960.21,
+                "ss_benefits": 6773.81,
+                "total": 9734.02
+            }
+        ]
+    },
+    "tsp": {
+        "funds": [
+            {
+                "fund_code": "GFund",
+                "balance": 79681,
+                "allocation_pct": 0
+            },
+            {
+                "fund_code": "FFund",
+                "balance": 0,
+                "allocation_pct": 0
+            },
+            {
+                "fund_code": "CFund",
+                "balance": 86410,
+                "allocation_pct": 20
+            },
+            {
+                "fund_code": "SFund",
+                "balance": 85211,
+                "allocation_pct": 20
+            },
+            {
+                "fund_code": "IFund",
+                "balance": 88321,
+                "allocation_pct": 20
+            },
+            {
+                "fund_code": "LIncome",
+                "balance": 0,
+                "allocation_pct": 0
+            },
+            {
+                "fund_code": "L2020",
+                "balance": 0,
+                "allocation_pct": 0
+            },
+            {
+                "fund_code": "L2030",
+                "balance": 15187,
+                "allocation_pct": 20
+            },
+            {
+                "fund_code": "L2040",
+                "balance": 15661,
+                "allocation_pct": 20
+            },
+            {
+                "fund_code": "L2050",
+                "balance": 0,
+                "allocation_pct": 0
+            }
+        ],
+        "agency_percentage": 4,
+        "agency_contribution": 4451.35,
+        "employee_contribution": 342.41,
+        "sal_percentage_in_contri": 10,
+        "max_agency_contribution": 3561.08
+    },
+    "computed_flags": {
+        "is_fers_or_transfers": true,
+        "is_csrs_or_csrs_offset": false,
+        "is_deferred_retirement": false,
+        "is_wep_applicable": false,
+        "is_gpo_applicable": false,
+        "hit_full_tsp_match": true
+    }
+}

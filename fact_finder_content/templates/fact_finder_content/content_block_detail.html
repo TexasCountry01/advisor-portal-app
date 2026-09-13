@@ -91,6 +91,50 @@
     </div>
 
     <div class="card mb-4">
+        <div class="card-header"><strong>Test Against Sample Cases</strong></div>
+        <div class="card-body">
+            <p class="text-muted">
+                Pre-publish safety net: this shows which of 24 real, representative Fact Finder
+                cases (spanning every real system-type / retirement-type / WEP / postal combination
+                found in production) will and won't see this block, based on the Display Condition
+                above <em>right now</em> — before anything is published. Confirm this matches your
+                intent before publishing a draft.
+            </p>
+            <p>
+                <span class="badge {% if golden_master_match_count == golden_master_total_count %}bg-secondary{% else %}bg-primary{% endif %}">
+                    Will appear for {{ golden_master_match_count }} of {{ golden_master_total_count }} sample cases
+                </span>
+            </p>
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <thead><tr><th colspan="2" class="text-success">✓ Will appear</th></tr></thead>
+                        <tbody>
+                            {% for result in golden_master_results %}
+                            {% if result.matches %}
+                            <tr><td>{{ result.emp_id }}</td><td>{{ result.label }}</td></tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <thead><tr><th colspan="2" class="text-muted">✗ Will NOT appear</th></tr></thead>
+                        <tbody>
+                            {% for result in golden_master_results %}
+                            {% if not result.matches %}
+                            <tr class="text-muted"><td>{{ result.emp_id }}</td><td>{{ result.label }}{% if result.error %} <span class="badge bg-danger">rule error: {{ result.error }}</span>{% endif %}</td></tr>
+                            {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
         <div class="card-header"><strong>New Draft</strong></div>
         <div class="card-body">
             <form method="post" id="newDraftForm">

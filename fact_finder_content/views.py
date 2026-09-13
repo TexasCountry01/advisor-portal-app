@@ -13,6 +13,7 @@ from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
+from .golden_master import evaluate_display_condition
 from .models import ContentBlock, ContentBlockGroup, ContentBlockVersion
 from .rules import AVAILABLE_FIELDS, coerce_value, field_value_choices, validate_rules
 
@@ -149,6 +150,15 @@ def content_block_detail(request, block_id):
     ]
     field_value_options = {key: field_value_choices(key) for key in AVAILABLE_FIELDS}
 
+    # Pre-publish validation gate: show which of the 24 golden-master real
+    # cases this block's CURRENT display_condition would appear for, so an
+    # admin can catch an unintended audience before ever publishing anything.
+    # See docs/FACT_FINDER_PDF_MODERNIZATION_ANALYSIS_2026-09-06.md's "Concrete
+    # UI design" section — this is the missing safety net the shelved
+    # feature/pdf-viewer-v2 attempt didn't have.
+    golden_master_results = evaluate_display_condition(block.display_condition)
+    golden_master_match_count = sum(1 for r in golden_master_results if r['matches'])
+
     return render(request, 'fact_finder_content/content_block_detail.html', {
         # NOTE: deliberately NOT named 'block' — Django's {% block %} tag pushes a
         # BlockContext entry into context['block'] to support {{ block.super }}, which
@@ -160,4 +170,7 @@ def content_block_detail(request, block_id):
         'field_options': field_options,
         'field_value_options_json': json.dumps(field_value_options),
         'default_plan_year': _default_plan_year(),
+        'golden_master_results': golden_master_results,
+        'golden_master_match_count': golden_master_match_count,
+        'golden_master_total_count': len(golden_master_results),
     })
