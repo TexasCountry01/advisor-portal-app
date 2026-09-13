@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 28207,
-    "generated_at": "2026-09-13T14:24:56+00:00",
+    "generated_at": "2026-09-13T17:07:14+00:00",
     "system": {
         "system_type": "Transfers",
         "retirement_type": "Regular",
@@ -1767,6 +1767,9 @@
         "employee_contribution": 50,
         "sal_percentage_in_contri": 1.674,
         "max_agency_contribution": 3107.1
+    },
+    "fehb": {
+        "average_premium_increase": 5.66
     },
     "computed_flags": {
         "is_fers_or_transfers": true,

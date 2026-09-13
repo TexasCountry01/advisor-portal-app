@@ -239,6 +239,20 @@ class TspSerializer(serializers.Serializer):
     max_agency_contribution = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
 
 
+class FehbSerializer(serializers.Serializer):
+    """Grounded in $pdf_data['empConf']['FEHBAveragePremiumIncrease'] — the FEHB "in
+    retirement" projection paragraph's 10-year-average cost-increase merge field. PHP
+    falls back to the literal 4.83 when the per-employee config value is missing
+    (`$pdf_data['empConf']['FEHBAveragePremiumIncrease'] ?? '4.83'`); the builder
+    applies that same fallback, so this field is effectively never null in practice,
+    but it's still required=False/allow_null=True for consistency with every other
+    passthrough field and to tolerate older fixtures captured before this field existed.
+    """
+    average_premium_increase = serializers.DecimalField(
+        max_digits=6, decimal_places=3, required=False, allow_null=True,
+    )
+
+
 class SystemSerializer(serializers.Serializer):
     SYSTEM_TYPE_CHOICES = ["FERS", "CSRS", "CSRS Offset", "Transfers"]
     # Verified 2026-09-13 directly against benefits-software's real RetirementType
@@ -316,6 +330,7 @@ class FactFinderDataContractSerializer(serializers.Serializer):
     fegli = FegliSerializer()
     social_security = SocialSecuritySerializer()
     tsp = TspSerializer()
+    fehb = FehbSerializer(required=False)
     computed_flags = ComputedFlagsSerializer()
 
     def validate_schema_version(self, value):

@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 41475,
-    "generated_at": "2026-09-13T14:25:00+00:00",
+    "generated_at": "2026-09-13T17:07:18+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Regular",
@@ -2239,6 +2239,9 @@
         "employee_contribution": 1250,
         "sal_percentage_in_contri": 18.31,
         "max_agency_contribution": 7099.88
+    },
+    "fehb": {
+        "average_premium_increase": 5.66
     },
     "computed_flags": {
         "is_fers_or_transfers": true,

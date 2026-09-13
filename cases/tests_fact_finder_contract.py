@@ -222,6 +222,26 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_fehb_average_premium_increase_accepts_real_value(self):
+        """Grounded in $pdf_data['empConf']['FEHBAveragePremiumIncrease'] — added
+        2026-09-13 to support the FEHB projection intro paragraph's merge field."""
+        payload = _sample_contract()
+        payload["fehb"] = {"average_premium_increase": "4.830"}
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(
+            str(serializer.validated_data["fehb"]["average_premium_increase"]), "4.830"
+        )
+
+    def test_fehb_group_is_optional_for_backward_compatibility(self):
+        """Older golden-master fixtures captured before this field existed (and every
+        fixture before FEHB was migrated) must still validate — the whole `fehb` group
+        is required=False for exactly this reason."""
+        payload = _sample_contract()
+        self.assertNotIn("fehb", payload)
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
     def test_cola_and_retirement_date_accept_real_values(self):
         """Grounded in EmployeeRepository::getPensionDetailsPdf()['cola'|'retirement_date'] —
         added 2026-09-13 to support the "Your Federal Pension" paragraph's merge fields."""

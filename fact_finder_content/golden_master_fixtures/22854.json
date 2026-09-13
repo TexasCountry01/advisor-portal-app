@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 22854,
-    "generated_at": "2026-09-13T14:24:57+00:00",
+    "generated_at": "2026-09-13T17:07:16+00:00",
     "system": {
         "system_type": "CSRS",
         "retirement_type": "Regular",
@@ -1859,6 +1859,9 @@
         "employee_contribution": 1154,
         "sal_percentage_in_contri": 38.398,
         "max_agency_contribution": 3125.6
+    },
+    "fehb": {
+        "average_premium_increase": 5.66
     },
     "computed_flags": {
         "is_fers_or_transfers": false,
