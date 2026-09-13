@@ -928,3 +928,16 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 - Once several real Pension-section blocks are migrated/trusted, move to SBP, then SRS/SS (WEP/GPO — needs the preserve-vs-fix decision made explicitly, same pattern as this increment), then FEGLI, FEHB, FLTCIP, TSP, Checklist — in that document order.
 - Only once a meaningful number of real blocks are migrated and trusted: the actual `report_pdf.blade.php` edit to consume `resolve-content` blocks for those sections.
 - Merge `feature/fact-finder-data-contract` to `main` once further along.
+
+## Content migration decisions log (living section — append one entry per preserve/fix decision, in order asked)
+
+This is the running record of "does the migrated content faithfully reproduce today's Blade behavior, or does it fix a known issue" decisions — kept separate from the narrative Progress log above so a future session (or a non-technical stakeholder) can scan just this section to see every judgment call made, without reading the full implementation history.
+
+| # | Date | Question asked | Decision | Where it applies |
+|---|---|---|---|---|
+| 1 | 2026-09-13 | Pension heading mislabels Transfers employees as "Civil Service Retirement System" (Blade only special-cases `systemType=='FERS'`). Fix, or preserve the bug? | **Preserve exactly as-is** | `pension.system_type_heading_non_fers` (built — reproduces the bug via `system.system_type not_equals FERS`, which also catches Transfers) |
+| 2 | 2026-09-13 | "Eligibility to Retire" paragraph says "FERS employees will be fully-eligible..." but is shown to every system type, unconditionally. Reword to be system-neutral, or preserve the literal wording? | **Preserve exactly as-is** | Not yet migrated as of decision date; migrated in the next increment (see Progress log below) |
+| 3 | 2026-09-13 | "Day of the Month to Retire" has the same pattern — "FERS employees should retire..." shown to everyone, even though the guidance is true for all systems. Fix wording, or preserve? | **Preserve exactly as-is** | Not yet migrated as of decision date |
+| 4 | 2026-09-13 | Which block should be built first: the short pension heading (strict document order, includes decision #1 immediately), or a cleaner/safer block further down as an easier proof of concept? | **Pension heading first** (strict document order) | Set the precedent: migration proceeds top-to-bottom through the document, not by "easiest first" |
+
+**Standing rule this log establishes:** every time a migrated block's real content doesn't match what a "fixed" version would say (i.e. the Blade template currently has a bug, inconsistency, or questionable wording), stop and ask before writing the `ContentBlockVersion` — never silently decide either way. Update this table every time.
