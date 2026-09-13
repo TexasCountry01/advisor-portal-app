@@ -88,6 +88,45 @@ class PensionSerializer(serializers.Serializer):
             "this is a single top-level, already-formatted display value for the primary scenario."
         ),
     )
+    retirement_month_year = serializers.CharField(
+        required=False, allow_null=True,
+        help_text=(
+            "Pre-formatted 'F Y' display string (e.g. 'December 2026'), derived from the same "
+            "underlying RetirementDate as `retirement_date` above. Grounded in "
+            "report_pdf.blade.php's 'Planned & Delayed Retirement' intro paragraph: "
+            "\"...you plan to retire in {{date('F Y', strtotime($pension['retirement_date']))}}...\" "
+            "— note the template itself re-parses the already-formatted `retirement_date` string "
+            "rather than a raw date; this field reproduces that exact formatting faithfully."
+        ),
+    )
+    retirement_age_years = serializers.IntegerField(
+        required=False, allow_null=True,
+        help_text="Grounded in EmployeeRepository::getPensionDetailsPdf()['retirementAgeY'].",
+    )
+    retirement_age_months = serializers.IntegerField(
+        required=False, allow_null=True,
+        help_text="Grounded in EmployeeRepository::getPensionDetailsPdf()['retirementAgeM'].",
+    )
+    unused_sick_leave_hours = serializers.IntegerField(
+        required=False, allow_null=True,
+        help_text=(
+            "Grounded in $pdf_data['employee']['UnusedSickLeave'], rounded to the nearest whole "
+            "hour — matches report_pdf.blade.php's 'Planned & Delayed Retirement' paragraph: "
+            "'{{round($pdf_data['employee']['UnusedSickLeave'])}} hours'."
+        ),
+    )
+    unused_sick_leave_months = serializers.DecimalField(
+        max_digits=6, decimal_places=2, required=False, allow_null=True,
+        help_text=(
+            "The federal 2,087-hours-per-year conversion of unused_sick_leave_hours into months "
+            "(hours / 2087 * 12), rounded to 2 decimal places. GENUINELY NEW computed field, "
+            "added 2026-09-13 with explicit user approval — this conversion previously existed "
+            "ONLY inline in report_pdf.blade.php, nowhere in EmployeeRepository, unlike every "
+            "other Data Contract field which is a pure reshaping of an already-computed PHP "
+            "value. Grounded in the exact same 2,087-hour/year rule already explained in the "
+            "'Applying Unused Sick Leave' paragraph migrated earlier (see the OPM '2,087 chart')."
+        ),
+    )
 
 
 class FegliCurrentElectionsSerializer(serializers.Serializer):

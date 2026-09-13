@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 41444,
-    "generated_at": "2026-09-13T13:32:00+00:00",
+    "generated_at": "2026-09-13T13:55:56+00:00",
     "system": {
         "system_type": "CSRS Offset",
         "retirement_type": "Regular",
@@ -58,7 +58,12 @@
         "mra_year": 55,
         "mra_month": 6,
         "cola": 3.11,
-        "retirement_date": "12/31/2027"
+        "retirement_date": "12/31/2027",
+        "retirement_month_year": "December 2027",
+        "retirement_age_years": 77,
+        "retirement_age_months": 2,
+        "unused_sick_leave_hours": 857,
+        "unused_sick_leave_months": 4.93
     },
     "fegli": {
         "current_fegli": {

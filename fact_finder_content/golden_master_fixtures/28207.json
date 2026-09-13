@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 28207,
-    "generated_at": "2026-09-13T13:32:16+00:00",
+    "generated_at": "2026-09-13T13:56:13+00:00",
     "system": {
         "system_type": "Transfers",
         "retirement_type": "Regular",
@@ -58,7 +58,12 @@
         "mra_year": 56,
         "mra_month": 0,
         "cola": 3.11,
-        "retirement_date": "06/30/2024"
+        "retirement_date": "06/30/2024",
+        "retirement_month_year": "June 2024",
+        "retirement_age_years": 64,
+        "retirement_age_months": 9,
+        "unused_sick_leave_hours": 603,
+        "unused_sick_leave_months": 3.47
     },
     "fegli": {
         "current_fegli": {

@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 38491,
-    "generated_at": "2026-09-13T13:32:01+00:00",
+    "generated_at": "2026-09-13T13:55:57+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "VERA / DSR",
@@ -58,7 +58,12 @@
         "mra_year": 56,
         "mra_month": 6,
         "cola": 2.6,
-        "retirement_date": "02/28/2026"
+        "retirement_date": "02/28/2026",
+        "retirement_month_year": "February 2026",
+        "retirement_age_years": 58,
+        "retirement_age_months": 4,
+        "unused_sick_leave_hours": 1021,
+        "unused_sick_leave_months": 5.87
     },
     "fegli": {
         "current_fegli": {

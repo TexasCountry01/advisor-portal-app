@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 41486,
-    "generated_at": "2026-09-13T13:31:58+00:00",
+    "generated_at": "2026-09-13T13:55:55+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Regular",
@@ -58,7 +58,12 @@
         "mra_year": 57,
         "mra_month": 0,
         "cola": 2.6,
-        "retirement_date": "04/30/2053"
+        "retirement_date": "04/30/2053",
+        "retirement_month_year": "April 2053",
+        "retirement_age_years": 57,
+        "retirement_age_months": 0,
+        "unused_sick_leave_hours": 440,
+        "unused_sick_leave_months": 2.53
     },
     "fegli": {
         "current_fegli": {

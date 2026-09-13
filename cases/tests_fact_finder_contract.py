@@ -227,3 +227,25 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         payload = _sample_contract()
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_planned_delayed_retirement_fields_accept_real_values(self):
+        """Grounded in EmployeeRepository::getPensionDetailsPdf()['retirementAgeY'|'retirementAgeM']
+        and $pdf_data['employee']['UnusedSickLeave'] — added 2026-09-13 for the "Planned & Delayed
+        Retirement" intro paragraph. unused_sick_leave_months is a genuinely NEW computed field
+        (hours/2087*12), added with explicit user approval since this project's usual rule is
+        pure reshaping of already-computed values only."""
+        payload = _sample_contract()
+        payload["pension"]["retirement_month_year"] = "December 2026"
+        payload["pension"]["retirement_age_years"] = 62
+        payload["pension"]["retirement_age_months"] = 3
+        payload["pension"]["unused_sick_leave_hours"] = 240
+        payload["pension"]["unused_sick_leave_months"] = "1.38"
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["pension"]["retirement_month_year"], "December 2026")
+        self.assertEqual(serializer.validated_data["pension"]["retirement_age_years"], 62)
+
+    def test_planned_delayed_retirement_fields_are_optional_for_backward_compatibility(self):
+        payload = _sample_contract()
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
