@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 42293,
-    "generated_at": "2026-09-13T17:06:53+00:00",
+    "generated_at": "2026-09-13T17:20:25+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Deferred",
@@ -2136,6 +2136,12 @@
     },
     "fehb": {
         "average_premium_increase": 5.66
+    },
+    "fltcip": {
+        "daily_benefit_amount": "OPM is not taking new applications",
+        "benefit_period": "OPM is not taking new applications",
+        "waiting_period": "OPM is not taking new applications",
+        "inflation_protection": "OPM is not taking new applications"
     },
     "computed_flags": {
         "is_fers_or_transfers": true,

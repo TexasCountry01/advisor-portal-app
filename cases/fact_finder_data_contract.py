@@ -253,6 +253,23 @@ class FehbSerializer(serializers.Serializer):
     )
 
 
+class FltcipSerializer(serializers.Serializer):
+    """Grounded in $pdf_data['empConf'][...] — the FLTCIP "Coverage available" table's
+    4 merge fields. Unlike every other passthrough field so far, these are all STRING
+    values (not numeric) — each one is a literal, human-readable description ('$100-
+    $450/day', '2, 3, 5 years', etc.), not a computed figure. PHP falls back to a
+    literal default string when the per-employee config value is missing; the builder
+    applies those same defaults, so these fields are effectively never null in
+    practice, but they're still required=False/allow_null=True for consistency with
+    every other passthrough field and to tolerate older fixtures captured before FLTCIP
+    was migrated.
+    """
+    daily_benefit_amount = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    benefit_period = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    waiting_period = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    inflation_protection = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+
 class SystemSerializer(serializers.Serializer):
     SYSTEM_TYPE_CHOICES = ["FERS", "CSRS", "CSRS Offset", "Transfers"]
     # Verified 2026-09-13 directly against benefits-software's real RetirementType
@@ -331,6 +348,7 @@ class FactFinderDataContractSerializer(serializers.Serializer):
     social_security = SocialSecuritySerializer()
     tsp = TspSerializer()
     fehb = FehbSerializer(required=False)
+    fltcip = FltcipSerializer(required=False)
     computed_flags = ComputedFlagsSerializer()
 
     def validate_schema_version(self, value):

@@ -242,6 +242,30 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_fltcip_accepts_real_string_values(self):
+        """Grounded in $pdf_data['empConf'][...] — added 2026-09-13 to support the
+        FLTCIP "Coverage available" table's 4 merge fields. Unlike every other
+        passthrough field so far, these are plain strings, not numeric."""
+        payload = _sample_contract()
+        payload["fltcip"] = {
+            "daily_benefit_amount": "$150/day",
+            "benefit_period": "3 years",
+            "waiting_period": "90 days",
+            "inflation_protection": "Automatic 3%",
+        }
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["fltcip"]["daily_benefit_amount"], "$150/day")
+
+    def test_fltcip_group_is_optional_for_backward_compatibility(self):
+        """Older golden-master fixtures captured before this field existed (and every
+        fixture before FLTCIP was migrated) must still validate — the whole `fltcip`
+        group is required=False for exactly this reason."""
+        payload = _sample_contract()
+        self.assertNotIn("fltcip", payload)
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
     def test_cola_and_retirement_date_accept_real_values(self):
         """Grounded in EmployeeRepository::getPensionDetailsPdf()['cola'|'retirement_date'] —
         added 2026-09-13 to support the "Your Federal Pension" paragraph's merge fields."""
