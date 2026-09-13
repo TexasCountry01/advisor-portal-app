@@ -64,7 +64,16 @@ class FegliCurrentElectionsSerializer(serializers.Serializer):
 class FegliProjectionRowSerializer(serializers.Serializer):
     """One row of `fegli_arr`, returned by EmployeeRepository::getFegliReport()."""
     age = serializers.IntegerField()
-    years_in_retirement = serializers.IntegerField()
+    years_in_retirement = serializers.CharField(
+        help_text=(
+            "Grounded in a real-data finding (2026-09-12 end-to-end validation, case #42293): "
+            "this is NOT always numeric — getFegliReport() emits a literal '*' marker for at "
+            "least one row (a footnote-style flag in the source table), so this must accept "
+            "that value faithfully rather than force it into an IntegerField. CharField "
+            "accepts int/float/bool-safe input too (DRF coerces via str()), so ordinary numeric "
+            "rows still round-trip fine."
+        )
+    )
     annual_sal = serializers.DecimalField(max_digits=12, decimal_places=2)
     basic_coverage = serializers.DecimalField(max_digits=12, decimal_places=2)
     optionA_coverage = serializers.DecimalField(max_digits=12, decimal_places=2)

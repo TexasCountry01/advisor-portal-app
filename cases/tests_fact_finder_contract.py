@@ -111,6 +111,24 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=_sample_contract())
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_fegli_arr_years_in_retirement_accepts_asterisk_marker(self):
+        """Grounded in a real end-to-end validation finding (2026-09-12, case #42293):
+        EmployeeRepository::getFegliReport() emits a literal '*' marker for
+        years_in_retirement on at least one row (a footnote-style flag in the source
+        table), not always a number. The contract must accept it faithfully."""
+        payload = _sample_contract()
+        payload["fegli"]["fegli_arr"][0]["years_in_retirement"] = "*"
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["fegli"]["fegli_arr"][0]["years_in_retirement"], "*")
+
+    def test_fegli_arr_years_in_retirement_still_accepts_numeric_value(self):
+        payload = _sample_contract()
+        payload["fegli"]["fegli_arr"][0]["years_in_retirement"] = 5
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["fegli"]["fegli_arr"][0]["years_in_retirement"], "5")
+
     def test_wrong_schema_version_is_rejected(self):
         payload = _sample_contract()
         payload["schema_version"] = "2020.1"
