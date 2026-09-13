@@ -836,3 +836,54 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 - Golden-master pre-publish validation gate for the content panel (test a draft against these same representative cases before allowing publish — reusing this exact case set).
 - Only once the above is solid: the actual `report_pdf.blade.php` edit to consume `resolve-content` blocks.
 - Merge `feature/fact-finder-data-contract` to `main` once further along.
+
+### 2026-09-13 — Golden master expanded to 24 cases; the "non-determinism" root cause is now conclusively known and fixed
+
+- **Case set expansion (6 → 24), evidence-based, not guessed:** queried the full local `profeds` dataset (18,229+ qualifying employee records) for every real combination of `system_type` × `retirement_type` × `employee_type` × WEP-applicability × postal-status that actually occurs, yielding 22 distinct cases. Added 2 more specifically for TSP variety not otherwise represented: general-purpose loan #1+#2 (#42210) and a lifecycle/L2050 fund allocation (#41475). Full list (all 24) is now in `FactFinderGoldenMaster::DEFAULT_CASES` in `benefits-software`.
+
+  | EmployeeId | Description |
+  |---|---|
+  | 42293 | FERS / Deferred / Regular |
+  | 41486 | FERS / Regular / Regular |
+  | 41456 | FERS / Regular / Other (Special Provision) |
+  | 41444 | CSRS Offset / Regular / Regular (WEP) |
+  | 38491 | FERS / VERA-DSR / Regular |
+  | 37794 | FERS / Regular / Regular (Postal) |
+  | 37578 | FERS / Regular / eCBPO |
+  | 36798 | CSRS / Regular / Regular (WEP) |
+  | 36726 | CSRS Offset / Regular / Regular (No WEP) |
+  | 35789 | FERS / Deferred / eCBPO |
+  | 35696 | CSRS / Regular / Regular (No WEP) |
+  | 34971 | Transfers / Regular / Regular |
+  | 34631 | FERS / Regular / Other (Special Provision, Postal) |
+  | 33197 | FERS / VERA-DSR / Other (Special Provision) |
+  | 31853 | FERS / Deferred / Regular (Postal) |
+  | 31369 | CSRS Offset / Regular / Other (Special Provision, No WEP) |
+  | 30257 | CSRS / Regular / Regular (WEP, Postal) |
+  | 29970 | CSRS Offset / Regular / Regular (No WEP, Postal) |
+  | 29708 | FERS / VERA-DSR / Regular (Postal) |
+  | 28207 | Transfers / Regular / Regular (Postal) |
+  | 22854 | CSRS / Regular / Regular (No WEP, Postal) |
+  | 19833 | FERS / Deferred / Other (Special Provision) |
+  | 42210 | TSP variety: General Purpose #1 + #2 loans |
+  | 41475 | TSP variety: lifecycle (L2050) fund allocation |
+
+- **The earlier "non-determinism" is now root-caused and fixed — this supersedes the unresolved caveat left in the 2026-09-13 entry above.** While validating the expanded case set at scale, the round-trip sanity check (add a temp comment to the blade source → expect all cases to show as differing → revert → expect a clean match) intermittently showed stale results — e.g. "19 of 24 case(s) differ" immediately after a git-confirmed clean revert of the blade source, mirroring the original 4-of-6 finding but now reproducible at will and affecting most cases, not a fluke specific to one case.
+  - **Ruled out (again, more rigorously):** DB data mutation, `updateDateCompleted()` side effects (confirmed via source read: only ever writes the `DateCompleted` column), `pre_retirement()`/`post_retirement()` side effects (RetirementDate confirmed unchanged after calling them), opcache (confirmed not loaded for CLI PHP — `php -m` shows no opcache module).
+  - **Actual root cause:** `storage/framework/views/*.php` — Laravel's compiled Blade view cache — is tracked in git in this repository, which is unusual. Laravel's cache-invalidation check compares file mtimes to decide whether to recompile a view, but `git checkout` and repeated edits do not preserve meaningful mtime ordering. So the compiled cache could look "fresher" than the checked-out `.blade.php` source per the mtime heuristic, causing Laravel to silently serve a stale compiled view instead of recompiling — independent of what the actual source file said. This exactly explains every previously-observed symptom (the original 4-of-6 IRS-penalty-text flip, and now the 19-of-24 flip after a confirmed-clean revert).
+  - **Fix:** `FactFinderGoldenMaster::handle()` now calls `\Artisan::call('view:clear')` as its very first action, forcing a guaranteed-fresh Blade compile on every capture/check run, regardless of ambient file mtimes.
+- **Verified after the fix, thoroughly:**
+  - Fresh capture of all 24 cases.
+  - `--check` run 3 times in separate process invocations: stable, all 24 match every time.
+  - Full sanity round-trip repeated end-to-end: temp blade comment added → all 24 correctly flagged as differing → comment reverted → all 24 cleanly match, 3 times over with zero flakiness.
+  - `storage/framework/views/` restored to its committed state via `git checkout -- storage/framework/views/` after testing, so no unintended tracked-file churn was committed.
+  - Full PHP unit suite still passes (21 tests, 40 assertions) — no regressions.
+- **Tested:** no new PHPUnit tests added (same reasoning as the original 6-case harness — this inherently depends on the real local synced-from-PROD database). Correctness demonstrated via the repeated round-trip sanity check above instead.
+- **Committed:** `benefits-software` commit `4a7f0f6` ("Golden-master: expand to 24 cases, fix view-cache staleness bug") on `master`.
+- **Practical note for anyone touching this harness in the future:** always call (or trust that `handle()` calls) `view:clear` before capture/check — do not skip it even for a "quick" one-off run. If you ever manually run `php artisan view:clear` outside the harness for some other reason, remember `storage/framework/views/*.php` is tracked in this repo, so run `git checkout -- storage/framework/views/` afterward to keep `git status` clean before committing anything else.
+
+### Up next
+- 24 real, evidence-based cases likely represents the practical ceiling of distinct real combinations in this dataset (the `RetirementType` lookup only has Regular/VERA-DSR/Deferred — no separate Disability/Optional type exists) — a 25th case would need to be another FEGLI-election or TSP-fund variety rather than a new retirement-type combination, if one is wanted.
+- Golden-master pre-publish validation gate for the content panel (test a draft against this same 24-case set before allowing publish).
+- Only once the above is solid: the actual `report_pdf.blade.php` edit to consume `resolve-content` blocks — the user's ultimate goal of moving verbiage-selection business logic out of the Blade template and into the governed content panel while guaranteeing correct, per-retirement-type PDF output.
+- Merge `feature/fact-finder-data-contract` to `main` once further along.
