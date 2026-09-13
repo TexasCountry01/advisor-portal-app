@@ -941,3 +941,10 @@ This is the running record of "does the migrated content faithfully reproduce to
 | 4 | 2026-09-13 | Which block should be built first: the short pension heading (strict document order, includes decision #1 immediately), or a cleaner/safer block further down as an easier proof of concept? | **Pension heading first** (strict document order) | Set the precedent: migration proceeds top-to-bottom through the document, not by "easiest first" |
 
 **Standing rule this log establishes:** every time a migrated block's real content doesn't match what a "fixed" version would say (i.e. the Blade template currently has a bug, inconsistency, or questionable wording), stop and ask before writing the `ContentBlockVersion` — never silently decide either way. Update this table every time.
+
+### 2026-09-13 — Second real verbiage migration: "Eligibility to Retire" (static, wording preserved per decision #2)
+
+- **What was built:** `pension.eligibility_to_retire` — a single `ContentBlock`, `display_condition: null` (always shown, matching the real Blade source which has no `@if` around this paragraph at all). Body is the exact real text, unreworded per decision #2 in the table above: "FERS employees will be fully-eligible to retire once they have met both the age and service requirements. Employees are strongly encouraged to complete a Certified Summary of Federal Service to confirm their time."
+- **Built the same way as the heading:** `ContentBlock` definition created via ORM (one-time technical step), then the real draft/publish flow done through the actual browser UI (same `ff_migration_admin` session, already logged in). Golden-master gate confirmed "Will appear for 24 of 24 sample cases" before publishing, matching the always-shown expectation.
+- **Verified end-to-end:** called the live `resolve-content` API with the CSRS #36798 golden-master contract — confirmed the block resolves with the literal "FERS employees..." wording even for a CSRS case, exactly as decided (not reworded).
+- **Committed:** doc-only change (this entry); the `ContentBlock`/`ContentBlockVersion` rows themselves live in the untracked `db.sqlite3`, nothing else to commit.
