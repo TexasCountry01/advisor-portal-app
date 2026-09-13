@@ -61,6 +61,22 @@ AVAILABLE_FIELDS = {
         'label': 'Hit Full TSP Match',
         'type': 'boolean',
     },
+    'computed_flags.is_penalty_free_at_59_5': {
+        'label': 'Penalty-Free at Age 59.5+ (IRS Early Withdrawal)',
+        'type': 'boolean',
+    },
+    'computed_flags.is_special_provision': {
+        'label': 'Is Special Provision (IRS Early Withdrawal)',
+        'type': 'boolean',
+    },
+    'computed_flags.meets_sp_age_service_rules': {
+        'label': 'Meets Special Provision Age/Service Rules (IRS Early Withdrawal)',
+        'type': 'boolean',
+    },
+    'computed_flags.meets_age_55_rule': {
+        'label': 'Meets Age 55 Rule (IRS Early Withdrawal)',
+        'type': 'boolean',
+    },
 }
 
 

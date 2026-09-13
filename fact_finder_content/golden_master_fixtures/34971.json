@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 34971,
-    "generated_at": "2026-09-13T18:17:48+00:00",
+    "generated_at": "2026-09-13T18:52:08+00:00",
     "system": {
         "system_type": "Transfers",
         "retirement_type": "Regular",
@@ -1738,6 +1738,10 @@
         "is_deferred_retirement": false,
         "is_wep_applicable": false,
         "is_gpo_applicable": false,
-        "hit_full_tsp_match": false
+        "hit_full_tsp_match": false,
+        "is_penalty_free_at_59_5": true,
+        "is_special_provision": false,
+        "meets_sp_age_service_rules": null,
+        "meets_age_55_rule": true
     }
 }

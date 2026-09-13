@@ -176,6 +176,26 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_irs_penalty_flags_accept_real_values(self):
+        """Grounded in EmployeeController@createPdfFEGLI's IRS Early Withdrawal Penalty
+        text choice (~lines 1559-1621) — added 2026-09-13 during Checklist-section
+        migration."""
+        payload = _sample_contract()
+        payload["computed_flags"]["is_penalty_free_at_59_5"] = False
+        payload["computed_flags"]["is_special_provision"] = True
+        payload["computed_flags"]["meets_sp_age_service_rules"] = True
+        payload["computed_flags"]["meets_age_55_rule"] = False
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertTrue(serializer.validated_data["computed_flags"]["is_special_provision"])
+
+    def test_irs_penalty_flags_are_optional_for_backward_compatibility(self):
+        """Older golden-master fixtures captured before these flags existed must still
+        validate — all required=False for exactly this reason."""
+        payload = _sample_contract()
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
     def test_mra_year_and_month_accept_real_values(self):
         """Grounded in EmployeeRepository::getMinumumRetirementAge()['mra_year']/['mra_month']
         — added 2026-09-13 to support the real MRA paragraph's merge fields during content

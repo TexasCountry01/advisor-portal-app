@@ -357,6 +357,49 @@ class ComputedFlagsSerializer(serializers.Serializer):
             "around line 2191 instead of being a precomputed flag."
         )
     )
+    # Added 2026-09-13 for the "IRS Early Withdrawal Penalty" text (EmployeeController@
+    # createPdfFEGLI, ~lines 1559-1621 — controller-level, not Blade — a 5-way hardcoded
+    # paragraph choice found while migrating the Checklist section). All 4 flags below are
+    # pure passthroughs or single-comparison derivations of values the controller ALREADY
+    # computes today for this exact feature (age-at-retirement, special-provision detection,
+    # covered-service-years) — no new calculations introduced by this migration.
+    is_penalty_free_at_59_5 = serializers.BooleanField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "(retirement_age_years == 59 and retirement_age_months >= 6) or (retirement_age_years >= 60) "
+            "— derived from the SAME pension.retirement_age_years/retirement_age_months fields already "
+            "in the contract (added for the pension section). Top branch of the IRS Early Withdrawal "
+            "Penalty 5-way text choice: an employee already 59\u00bd+ at retirement is never subject to it."
+        ),
+    )
+    is_special_provision = serializers.BooleanField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "Passthrough of $isSpecialProvision, already computed in EmployeeController@createPdfFEGLI "
+            "as (EmployeeType == 'Other') OR eCBPO-qualifies-as-LEO. Routes between the Special Provision "
+            "and Regular-employee branches of the IRS Early Withdrawal Penalty text."
+        ),
+    )
+    meets_sp_age_service_rules = serializers.BooleanField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "Passthrough of $meetsSPRules, already computed in EmployeeController@createPdfFEGLI as "
+            "(age in retirement calendar year >= 50) OR (covered service years >= 25) — the two "
+            "qualifying paths for Special Provision employees' penalty-free TSP access."
+        ),
+    )
+    meets_age_55_rule = serializers.BooleanField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "age in retirement calendar year >= 55 — the Regular-employee qualifying rule for "
+            "penalty-free TSP access, derived from the same $ageRetCalenderYear the controller "
+            "already computes for this feature (and for eCBPO/LEO routing)."
+        ),
+    )
 
 
 class FactFinderDataContractSerializer(serializers.Serializer):

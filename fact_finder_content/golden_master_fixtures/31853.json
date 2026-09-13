@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 31853,
-    "generated_at": "2026-09-13T18:17:52+00:00",
+    "generated_at": "2026-09-13T18:52:12+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Deferred",
@@ -2208,6 +2208,10 @@
         "is_deferred_retirement": true,
         "is_wep_applicable": false,
         "is_gpo_applicable": false,
-        "hit_full_tsp_match": false
+        "hit_full_tsp_match": false,
+        "is_penalty_free_at_59_5": false,
+        "is_special_provision": false,
+        "meets_sp_age_service_rules": null,
+        "meets_age_55_rule": false
     }
 }
