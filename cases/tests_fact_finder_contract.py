@@ -204,3 +204,26 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         payload = _sample_contract()
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_cola_and_retirement_date_accept_real_values(self):
+        """Grounded in EmployeeRepository::getPensionDetailsPdf()['cola'|'retirement_date'] —
+        added 2026-09-13 to support the "Your Federal Pension" paragraph's merge fields."""
+        payload = _sample_contract()
+        payload["pension"]["cola"] = "2.500"
+        payload["pension"]["retirement_date"] = "12/31/2026"
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["pension"]["retirement_date"], "12/31/2026")
+
+    def test_retirement_date_is_a_charfield_not_a_dateformat(self):
+        """retirement_date is deliberately a CharField carrying PHP's pre-formatted 'm/d/Y'
+        display string verbatim — must NOT be rejected for not matching ISO date format."""
+        payload = _sample_contract()
+        payload["pension"]["retirement_date"] = "12/31/2026"
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_cola_and_retirement_date_are_optional_for_backward_compatibility(self):
+        payload = _sample_contract()
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)

@@ -64,6 +64,30 @@ class PensionSerializer(serializers.Serializer):
         required=False, allow_null=True,
         help_text="The months component of MRA, alongside mra_year above — same source method.",
     )
+    cola = serializers.DecimalField(
+        max_digits=6, decimal_places=3, required=False, allow_null=True,
+        help_text=(
+            "Grounded in EmployeeRepository::getPensionDetailsPdf()['cola'] — the system-type-"
+            "specific 10-year average COLA percentage ($empConf['FERSCola'] or "
+            "$empConf['CSRSCola']). Used as a merge field in report_pdf.blade.php's pension "
+            "narrative: '...A Cost of Living Adjustment (COLA) has been applied to your pension "
+            "...(the 10-year average is {{$pension['cola']}}%).'"
+        ),
+    )
+    retirement_date = serializers.CharField(
+        required=False, allow_null=True,
+        help_text=(
+            "Grounded in EmployeeRepository::getPensionDetailsPdf()['retirement_date'] — the "
+            "employee's planned RetirementDate, PRE-FORMATTED as 'm/d/Y' (e.g. '12/31/2026') by "
+            "the PHP source itself, not an ISO date. Deliberately a CharField (not DateField): "
+            "this value's only real use is direct merge-field substitution into "
+            "report_pdf.blade.php prose ('...on the date you planned "
+            "({{ $pension['retirement_date'] }})...'), so it must carry the exact display string "
+            "PHP already produces, not be reparsed/reformatted. NOT the same field as "
+            "pension.scenarios[i].retirement_date above (a real per-scenario ISO DateField) — "
+            "this is a single top-level, already-formatted display value for the primary scenario."
+        ),
+    )
 
 
 class FegliCurrentElectionsSerializer(serializers.Serializer):

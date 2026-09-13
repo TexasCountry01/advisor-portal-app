@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 36726,
-    "generated_at": "2026-09-13T12:52:18+00:00",
+    "generated_at": "2026-09-13T13:32:04+00:00",
     "system": {
         "system_type": "CSRS Offset",
         "retirement_type": "Regular",
@@ -56,7 +56,9 @@
         "refunded_penalty": 0,
         "wep_penalty": 0,
         "mra_year": 56,
-        "mra_month": 0
+        "mra_month": 0,
+        "cola": 3.11,
+        "retirement_date": "12/31/2025"
     },
     "fegli": {
         "current_fegli": {
