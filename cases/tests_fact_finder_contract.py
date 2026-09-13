@@ -205,6 +205,23 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_current_year_accepts_real_value(self):
+        """Grounded in the same generated_at timestamp the contract already carries —
+        added 2026-09-13 to support the SRS/SS Earnings Test paragraphs' 'which for
+        {{date('Y')}}...' merge field during content migration."""
+        payload = _sample_contract()
+        payload["system"]["current_year"] = 2026
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["system"]["current_year"], 2026)
+
+    def test_current_year_is_optional_for_backward_compatibility(self):
+        """Older golden-master fixtures captured before this field existed must still
+        validate — current_year is required=False for exactly this reason."""
+        payload = _sample_contract()
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
     def test_cola_and_retirement_date_accept_real_values(self):
         """Grounded in EmployeeRepository::getPensionDetailsPdf()['cola'|'retirement_date'] —
         added 2026-09-13 to support the "Your Federal Pension" paragraph's merge fields."""

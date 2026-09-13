@@ -1,11 +1,12 @@
 {
     "schema_version": "2026.1",
     "employee_id": 36798,
-    "generated_at": "2026-09-13T13:56:00+00:00",
+    "generated_at": "2026-09-13T14:24:40+00:00",
     "system": {
         "system_type": "CSRS",
         "retirement_type": "Regular",
-        "birth_year": 1939
+        "birth_year": 1939,
+        "current_year": 2026
     },
     "pension": {
         "scenarios": [

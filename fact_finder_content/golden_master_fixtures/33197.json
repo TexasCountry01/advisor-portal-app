@@ -1,11 +1,12 @@
 {
     "schema_version": "2026.1",
     "employee_id": 33197,
-    "generated_at": "2026-09-13T13:56:06+00:00",
+    "generated_at": "2026-09-13T14:24:48+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "VERA / DSR",
-        "birth_year": 1968
+        "birth_year": 1968,
+        "current_year": 2026
     },
     "pension": {
         "scenarios": [

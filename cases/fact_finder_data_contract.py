@@ -254,6 +254,15 @@ class SystemSerializer(serializers.Serializer):
     system_type = serializers.ChoiceField(choices=SYSTEM_TYPE_CHOICES)
     retirement_type = serializers.ChoiceField(choices=RETIREMENT_TYPE_CHOICES)
     birth_year = serializers.IntegerField()
+    current_year = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text=(
+            "The calendar year date('Y') returns in report_pdf.blade.php today (e.g. the SRS/SS "
+            "Earnings Test paragraphs' 'which for {{date('Y')}}...' wording). Derived from the "
+            "same generated_at timestamp the contract already carries — not a new calculation."
+        ),
+    )
 
 
 class ComputedFlagsSerializer(serializers.Serializer):

@@ -1,11 +1,12 @@
 {
     "schema_version": "2026.1",
     "employee_id": 28207,
-    "generated_at": "2026-09-13T13:56:13+00:00",
+    "generated_at": "2026-09-13T14:24:56+00:00",
     "system": {
         "system_type": "Transfers",
         "retirement_type": "Regular",
-        "birth_year": 1959
+        "birth_year": 1959,
+        "current_year": 2026
     },
     "pension": {
         "scenarios": [

@@ -1,11 +1,12 @@
 {
     "schema_version": "2026.1",
     "employee_id": 31853,
-    "generated_at": "2026-09-13T13:56:07+00:00",
+    "generated_at": "2026-09-13T14:24:49+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Deferred",
-        "birth_year": 1981
+        "birth_year": 1981,
+        "current_year": 2026
     },
     "pension": {
         "scenarios": [

@@ -1,11 +1,12 @@
 {
     "schema_version": "2026.1",
     "employee_id": 37794,
-    "generated_at": "2026-09-13T13:55:58+00:00",
+    "generated_at": "2026-09-13T14:24:39+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Regular",
-        "birth_year": 1968
+        "birth_year": 1968,
+        "current_year": 2026
     },
     "pension": {
         "scenarios": [
