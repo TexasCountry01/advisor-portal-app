@@ -795,3 +795,28 @@ Tracks actual implementation work against the rollout plan above. Each entry is 
 - Wire `benefits-software` to actually call `resolve-content` and use the returned HTML (currently it only logs the contract) — this is what makes Option A's content governance real instead of theoretical.
 - Golden-master pre-publish validation gate (test a draft against ~10–15 representative cases before allowing publish).
 - Merge `feature/fact-finder-data-contract` to `main` once the above is further along.
+
+### 2026-09-13 — benefits-software now actually calls resolve-content (real end-to-end round trip, 2 real bugs found and fixed)
+
+- **What:** New `App\Services\FactFinderContentClient` in `benefits-software` — calls advisor-portal's `POST /api/fact-finder/resolve-content/` with the already-built Data Contract. Never throws, never blocks PDF generation: returns `null` if not configured, unreachable, or the call fails for any reason (logged as a warning, never an exception). Wired into the existing read-only instrumentation block in `EmployeeController@createPdfFEGLI` — after building and logging the Data Contract, it now also calls `resolveContent()` and logs the result. **Still Phase 2 scope**: the resolved blocks are logged, not used to render anything — the PDF is completely unaffected.
+- **Config:** `config/services.php`'s new `advisor_portal` entry (`ADVISOR_PORTAL_BASE_URL` / `ADVISOR_PORTAL_API_KEY` in `.env`, gitignored, not committed). The API key must match `SystemSettings.benefits_software_api_key` on the `advisor-portal` side — the exact shared secret already reserved for this integration.
+- **Real end-to-end validation — not mocked, an actual HTTP round trip against a live local `advisor-portal-app` dev server**, using the same 3 real cases as before. This caught **two genuine schema/reality mismatches** that unit tests with synthetic data had not (and likely could not have):
+  1. **Floating-point precision:** `FactFinderDataContractBuilder` now rounds currency fields to 2 decimal places and percentage fields to 3 (matching the schema's `DecimalField` precision exactly) before returning them. Real PHP float math left artifacts like `637.0024500000001` that the schema correctly rejected. Also casts FEGLI boolean-ish fields (`basic`/`optionA`/`optionC_dependent`) to real PHP booleans. **This is formatting, not calculation** — the underlying pension/TSP/FEGLI numbers computed upstream in `EmployeeRepository` are completely untouched, only how they're carried in the contract changed.
+  2. **A genuinely non-numeric real value:** `EmployeeRepository::getFegliReport()` emits a literal `'*'` marker for `fegli_arr`'s `years_in_retirement` on at least one row for case #42293 — a footnote-style flag in the real data, not a bug. The schema (`cases/fact_finder_data_contract.py`) had assumed this was always an integer; changed to `CharField` so the contract carries it faithfully. Numeric rows still round-trip fine (DRF coerces int/float input to string).
+- **Real round-trip results** (live local server, 3 real cases, after both fixes):
+
+  | Case | Blocks resolved | Notable inclusion/exclusion |
+  |---|---|---|
+  | FERS #42293 (Deferred) | 4 | `sbp.deferred_intro` **included** (`retirement_type == Deferred` matched) |
+  | CSRS #36798 (Regular) | 3 | `sbp.deferred_intro` **excluded** (condition correctly did not match) |
+  | CSRS Offset #41444 (Regular) | 3 | same exclusion |
+
+  All three correctly returned `cover.title`, `fegli.basic_description`, and `tsp.agency_match_explanation` (all published, no display condition) — proving the whole chain (real PHP-computed contract → real HTTP call → real Django validation → real rule evaluation against seeded content) works end-to-end, not just in isolated unit tests on either side.
+- **Tested:** 11 new PHPUnit tests for `FactFinderContentClient` (Guzzle `MockHandler` — no real network calls in the automated suite itself): `isConfigured()` variants, success parsing, malformed/unexpected response body handling, 403/connection-failure handling, a "never throws" guarantee test, and correct URL construction (no double-slash). 2 new Python regression tests for the `years_in_retirement` fix. `benefits-software` PHP suite: 21 tests. `advisor-portal-app` suite: 136 tests, 1 pre-existing unrelated failure, 0 regressions.
+- **Committed:** `benefits-software` commit `98aeb68` (client + controller wiring + precision fixes) on `master`; `advisor-portal-app` commit `9812363` (schema fix) on `feature/fact-finder-data-contract`.
+- **Still not done:** the resolved blocks are logged, not rendered — nothing in `report_pdf.blade.php` consumes them yet (deliberately; that template edit should wait for the golden-master regression harness described in the "Concrete action plan" section above). Neither branch has been merged to `main`/`master`'s default yet (well — `benefits-software`'s changes did land directly on `master`, since that repo has no separate integration branch in use for this project; `advisor-portal-app`'s work remains on `feature/fact-finder-data-contract`).
+
+### Up next
+- Golden-master pre-publish validation gate (test a draft against ~10–15 representative cases before allowing publish).
+- Phase 0 of the "Concrete action plan" (golden-master regression harness) before ever touching `report_pdf.blade.php` to actually consume resolved blocks.
+- Merge `feature/fact-finder-data-contract` to `main` once further along.
