@@ -49,6 +49,21 @@ class PensionSerializer(serializers.Serializer):
     non_deduction_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
     refunded_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
     wep_penalty = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    mra_year = serializers.IntegerField(
+        required=False, allow_null=True,
+        help_text=(
+            "Grounded in EmployeeRepository::getMinumumRetirementAge($empId)['mra_year'] "
+            "(note: 'Minumum' typo preserved verbatim from the real PHP method name) — the "
+            "whole-years component of a FERS employee's Minimum Retirement Age, used in "
+            "report_pdf.blade.php's MRA paragraph: '{{ $minimumRetirementAge['mra_year'] }}y "
+            "{{ $minimumRetirementAge['mra_month'] }}m'. Null when DateOfBirth is missing "
+            "(the PHP method returns '' in that case; the builder coerces '' to null)."
+        ),
+    )
+    mra_month = serializers.IntegerField(
+        required=False, allow_null=True,
+        help_text="The months component of MRA, alongside mra_year above — same source method.",
+    )
 
 
 class FegliCurrentElectionsSerializer(serializers.Serializer):

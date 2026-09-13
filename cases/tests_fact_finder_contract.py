@@ -175,3 +175,32 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         del payload["social_security"]["ss_years_earning"]
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
+
+    def test_mra_year_and_month_accept_real_values(self):
+        """Grounded in EmployeeRepository::getMinumumRetirementAge()['mra_year']/['mra_month']
+        — added 2026-09-13 to support the real MRA paragraph's merge fields during content
+        migration (docs/FACT_FINDER_PDF_MODERNIZATION_ANALYSIS_2026-09-06.md)."""
+        payload = _sample_contract()
+        payload["pension"]["mra_year"] = 56
+        payload["pension"]["mra_month"] = 4
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["pension"]["mra_year"], 56)
+        self.assertEqual(serializer.validated_data["pension"]["mra_month"], 4)
+
+    def test_mra_year_and_month_accept_null(self):
+        """getMinumumRetirementAge() returns '' for both when DateOfBirth is missing; the
+        PHP builder coerces that to null rather than passing the raw empty string through."""
+        payload = _sample_contract()
+        payload["pension"]["mra_year"] = None
+        payload["pension"]["mra_month"] = None
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertIsNone(serializer.validated_data["pension"]["mra_year"])
+
+    def test_mra_year_and_month_are_optional_for_backward_compatibility(self):
+        """Older golden-master fixtures captured before this field existed must still
+        validate — mra_year/mra_month are required=False for exactly this reason."""
+        payload = _sample_contract()
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)

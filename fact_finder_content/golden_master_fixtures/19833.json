@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 19833,
-    "generated_at": "2026-09-13T11:59:15+00:00",
+    "generated_at": "2026-09-13T12:52:35+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Deferred",
@@ -54,7 +54,9 @@
         ],
         "non_deduction_penalty": 0,
         "refunded_penalty": 0,
-        "wep_penalty": 0
+        "wep_penalty": 0,
+        "mra_year": 57,
+        "mra_month": 0
     },
     "fegli": {
         "current_fegli": {
