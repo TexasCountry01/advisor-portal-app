@@ -237,6 +237,28 @@ class TspSerializer(serializers.Serializer):
     employee_contribution = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
     sal_percentage_in_contri = serializers.DecimalField(max_digits=6, decimal_places=3)
     max_agency_contribution = serializers.DecimalField(max_digits=12, decimal_places=2, required=False)
+    # Added 2026-09-13 to support the TSP section's merge fields — all pure passthroughs of
+    # values already computed by EmployeeRepository::getEmpTspConfigurations() /
+    # calcProjectedEndingBalanceTsp(), grounded directly in report_pdf.blade.php's usage.
+    year_of_contribution = serializers.IntegerField(required=False, allow_null=True)
+    deff_limit = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
+    catchup_limit = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
+    gfund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
+    ffund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
+    cfund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
+    sfund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
+    ifund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
+    missing_out_amount = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    emp_min_contri_for_full_agency_contri = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    # ^ Both of the above are CharField, not DecimalField, because EmployeeRepository::
+    # calcProjectedEndingBalanceTsp() returns them ALREADY pre-formatted via PHP's
+    # number_format(round(...)) (e.g. "1,234" with a thousands separator) — passed straight
+    # through to the merge field with no further formatting in Blade. A DecimalField would
+    # reject that comma on any real value >= 1000.
+    # A whole-number reformat of sal_percentage_in_contri (Blade calls round() with no
+    # decimals specifically for the two Matching Funds sentences) — not a new calculation.
+    sal_percentage_in_contri_rounded = serializers.IntegerField(required=False, allow_null=True)
+
 
 
 class FehbSerializer(serializers.Serializer):

@@ -266,6 +266,33 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_tsp_new_fields_accept_real_values(self):
+        """Grounded in EmployeeRepository::getEmpTspConfigurations() / calcProjectedEndingBalanceTsp()
+        — added 2026-09-13 to support the TSP section's merge fields."""
+        payload = _sample_contract()
+        payload["tsp"]["year_of_contribution"] = 2026
+        payload["tsp"]["deff_limit"] = "23500.00"
+        payload["tsp"]["catchup_limit"] = "7500.00"
+        payload["tsp"]["gfund_rate"] = "2.500"
+        payload["tsp"]["ffund_rate"] = "1.800"
+        payload["tsp"]["cfund_rate"] = "12.900"
+        payload["tsp"]["sfund_rate"] = "9.400"
+        payload["tsp"]["ifund_rate"] = "5.600"
+        payload["tsp"]["missing_out_amount"] = "150"
+        payload["tsp"]["emp_min_contri_for_full_agency_contri"] = "200"
+        payload["tsp"]["sal_percentage_in_contri_rounded"] = 5
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["tsp"]["year_of_contribution"], 2026)
+        self.assertEqual(serializer.validated_data["tsp"]["sal_percentage_in_contri_rounded"], 5)
+
+    def test_tsp_new_fields_are_optional_for_backward_compatibility(self):
+        """Older golden-master fixtures captured before these fields existed must still
+        validate — all required=False for exactly this reason."""
+        payload = _sample_contract()
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
     def test_cola_and_retirement_date_accept_real_values(self):
         """Grounded in EmployeeRepository::getPensionDetailsPdf()['cola'|'retirement_date'] —
         added 2026-09-13 to support the "Your Federal Pension" paragraph's merge fields."""

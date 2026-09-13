@@ -1,7 +1,7 @@
 {
     "schema_version": "2026.1",
     "employee_id": 35789,
-    "generated_at": "2026-09-13T17:20:35+00:00",
+    "generated_at": "2026-09-13T18:17:46+00:00",
     "system": {
         "system_type": "FERS",
         "retirement_type": "Deferred",
@@ -2038,7 +2038,18 @@
         "agency_contribution": 7728.53,
         "employee_contribution": 653.4,
         "sal_percentage_in_contri": 10.991,
-        "max_agency_contribution": 6182.83
+        "max_agency_contribution": 6182.83,
+        "year_of_contribution": 2025,
+        "deff_limit": 23500,
+        "catchup_limit": 7500,
+        "gfund_rate": 2.76,
+        "ffund_rate": 2.11,
+        "cfund_rate": 14.79,
+        "sfund_rate": 11.04,
+        "ifund_rate": 8.7,
+        "missing_out_amount": "0",
+        "emp_min_contri_for_full_agency_contri": "297",
+        "sal_percentage_in_contri_rounded": 11
     },
     "fehb": {
         "average_premium_increase": 5.66
