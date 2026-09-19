@@ -6,8 +6,22 @@
 <div class="container-fluid mt-4">
     <div class="row mb-4">
         <div class="col-md-8">
-            <h1>{{ content_block.label }}</h1>
+            <h1>{{ content_block.label }}
+                {% if is_wired %}
+                    <span class="badge bg-success" title="This block's content is actually rendered into the real PDF today.">Live in PDF</span>
+                {% else %}
+                    <span class="badge bg-warning text-dark" title="Publishing changes here will NOT appear in the PDF yet — this section of the template hasn't been connected to this panel.">Not yet connected to PDF</span>
+                {% endif %}
+            </h1>
             <p class="text-muted">{{ content_block.group.label }} &middot; <code>{{ content_block.key }}</code></p>
+            {% if not is_wired %}
+                <div class="alert alert-warning py-2">
+                    <strong>Heads up:</strong> this block exists in the content panel and can be edited/published, but
+                    <code>report_pdf.blade.php</code> doesn't read from it yet — any change you publish here will have
+                    <strong>no effect</strong> on the generated PDF until this block is wired in. Ask engineering before
+                    relying on edits here to change a real report.
+                </div>
+            {% endif %}
             {% if content_block.required_placeholders %}
                 <p class="text-muted">Required placeholders:
                     {% for token in content_block.required_placeholders %}<code>[[{{ token }}]]</code>{% if not forloop.last %}, {% endif %}{% endfor %}

@@ -117,6 +117,30 @@ class ContentBlockModelTests(TestCase):
         self.assertIn('Edited', version.body_html)
 
 
+class WiringStatusTests(TestCase):
+    """
+    Grounded in a direct scan of benefits-software/resources/views/admin/employee/
+    report_pdf.blade.php on 2026-09-19 — see fact_finder_content/wiring_status.py's
+    module docstring for the full rationale and maintenance burden.
+    """
+
+    def test_known_wired_block_is_wired(self):
+        from fact_finder_content.wiring_status import is_wired
+        self.assertTrue(is_wired('fltcip.what_is_ltc'))
+
+    def test_never_wired_cover_title_is_not_wired(self):
+        from fact_finder_content.wiring_status import is_wired
+        self.assertFalse(is_wired('cover.title'))
+
+    def test_deferred_structural_block_is_not_wired(self):
+        from fact_finder_content.wiring_status import is_wired
+        self.assertFalse(is_wired('pension.high3_pay_included_table'))
+
+    def test_unknown_key_is_not_wired(self):
+        from fact_finder_content.wiring_status import is_wired
+        self.assertFalse(is_wired('not_a_real_key.anything'))
+
+
 class ContentPanelViewTests(TestCase):
     def setUp(self):
         self.group = ContentBlockGroup.objects.create(key='tsp', label='TSP', display_order=8)
@@ -150,6 +174,22 @@ class ContentPanelViewTests(TestCase):
         self.client.force_login(self.technician)
         response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
         self.assertEqual(response.status_code, 403)
+
+    def test_detail_page_shows_live_badge_for_wired_block(self):
+        # tsp.agency_match_explanation is a real, wired key (see wiring_status.py).
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'Live in PDF')
+        self.assertNotContains(response, 'Not yet connected to PDF')
+
+    def test_detail_page_shows_not_connected_badge_for_unwired_block(self):
+        unwired_block = ContentBlock.objects.create(
+            key='cover.title', group=self.group, label='Cover Page Title',
+        )
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[unwired_block.id]))
+        self.assertContains(response, 'Not yet connected to PDF')
+        self.assertContains(response, 'no effect')
 
     def test_create_draft_via_post(self):
         self.client.force_login(self.admin)

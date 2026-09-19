@@ -16,6 +16,7 @@ from django.urls import reverse
 from .golden_master import evaluate_display_condition
 from .models import ContentBlock, ContentBlockGroup, ContentBlockVersion
 from .rules import AVAILABLE_FIELDS, coerce_value, field_value_choices, validate_rules
+from .wiring_status import is_wired
 
 
 def _require_admin(request):
@@ -51,6 +52,7 @@ def content_list(request):
                 'block': block,
                 'published': published,
                 'draft': draft,
+                'is_wired': is_wired(block.key),
             })
         group_rows.append({'group': group, 'blocks': block_rows})
 
@@ -176,6 +178,7 @@ def content_block_detail(request, block_id):
         'content_block': block,
         'versions': versions,
         'current_body_html': current_body_html,
+        'is_wired': is_wired(block.key),
         'display_rules': display_rules,
         'field_options': field_options,
         'field_value_options_json': json.dumps(field_value_options),
