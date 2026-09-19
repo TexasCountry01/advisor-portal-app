@@ -135,8 +135,14 @@
     </div>
 
     <div class="card mb-4">
-        <div class="card-header"><strong>New Draft</strong></div>
+        <div class="card-header"><strong>Edit Content</strong></div>
         <div class="card-body">
+            <p class="text-muted">
+                This box is pre-filled with the block's current content — edit it directly, then
+                save. Saving creates a new draft version; it does not go live until you Publish it
+                below in Version History. You can also load any older version back into this box
+                using its “Load into Editor” button.
+            </p>
             <form method="post" id="newDraftForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="create_draft">
@@ -167,9 +173,11 @@
                     <label for="body_html" class="form-label">Body</label>
                     <!-- The textarea (no name) is where TinyMCE mounts. The hidden input (has the
                          name) is what actually gets POSTed — kept in sync via JS below. This mirrors
-                         the pattern already used for SystemSettings.technical_notes_template. -->
+                         the pattern already used for SystemSettings.technical_notes_template.
+                         Pre-filled with the block's current content (see current_body_html in the
+                         view) so editing means "modify what's live", not "start from a blank box". -->
                     <input type="hidden" id="body_html_hidden" name="body_html" form="newDraftForm" value="">
-                    <textarea class="form-control" id="body_html" rows="6"></textarea>
+                    <textarea class="form-control" id="body_html" rows="6">{{ current_body_html }}</textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Save Draft</button>
             </form>
@@ -204,10 +212,13 @@
                             <span class="badge bg-secondary">Superseded</span>
                         {% endif %}
                     </td>
-                    <td style="max-width: 400px;">{{ version.body_html|truncatechars:120 }}</td>
+                    <td style="max-width: 400px;">
+                        <div class="version-body-preview" style="max-height: 100px; overflow-y: auto; white-space: normal; font-size: 0.85em;">{{ version.body_html|safe }}</div>
+                    </td>
                     <td>{{ version.created_by|default:'—' }}</td>
                     <td>{{ version.updated_at }}</td>
                     <td class="text-nowrap">
+                        <button type="button" class="btn btn-sm btn-outline-primary load-version-btn" data-body-html="{{ version.body_html }}">Load into Editor</button>
                         {% if version.status == 'draft' %}
                         <form method="post" class="d-inline">
                             {% csrf_token %}
@@ -317,6 +328,21 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // "Load into Editor" — pulls any historical version's exact HTML back into the
+    // editor box, so an admin can revert to or continue from an older/superseded
+    // version instead of only ever being able to start from the current live text.
+    document.querySelectorAll('.load-version-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var html = btn.getAttribute('data-body-html');
+            var editor = tinymce.get('body_html');
+            if (editor) {
+                editor.setContent(html);
+                pushContent();
+            }
+            document.getElementById('body_html').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+    });
 });
 </script>
 {% endblock %}

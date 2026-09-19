@@ -159,6 +159,15 @@ def content_block_detail(request, block_id):
     golden_master_results = evaluate_display_condition(block.display_condition)
     golden_master_match_count = sum(1 for r in golden_master_results if r['matches'])
 
+    # Pre-fill the "New Draft" editor with the block's current content instead of
+    # starting blank — editing a block should default to "modify what's live now",
+    # not "retype everything from scratch while squinting at a truncated history
+    # table" (the exact confusion this was built to fix). Prefers the published
+    # version for the default plan year; falls back to the single most recent
+    # version overall (any status/plan year) if nothing is published yet.
+    current_version = block.published_version_for(_default_plan_year()) or block.versions.order_by('-id').first()
+    current_body_html = current_version.body_html if current_version else ''
+
     return render(request, 'fact_finder_content/content_block_detail.html', {
         # NOTE: deliberately NOT named 'block' — Django's {% block %} tag pushes a
         # BlockContext entry into context['block'] to support {{ block.super }}, which
@@ -166,6 +175,7 @@ def content_block_detail(request, block_id):
         # {% endblock %} sections. Use 'content_block' everywhere in the template instead.
         'content_block': block,
         'versions': versions,
+        'current_body_html': current_body_html,
         'display_rules': display_rules,
         'field_options': field_options,
         'field_value_options_json': json.dumps(field_value_options),
