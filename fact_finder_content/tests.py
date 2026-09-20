@@ -137,7 +137,7 @@ class WiringStatusTests(TestCase):
 
     def test_deferred_structural_block_is_not_wired(self):
         from fact_finder_content.wiring_status import is_wired
-        self.assertFalse(is_wired('pension.high3_pay_included_table'))
+        self.assertFalse(is_wired('checklist.topics_before_srs'))
 
     def test_unknown_key_is_not_wired(self):
         from fact_finder_content.wiring_status import is_wired
@@ -187,7 +187,7 @@ class ContentPanelViewTests(TestCase):
 
     def test_detail_page_shows_not_connected_badge_for_unwired_block(self):
         unwired_block = ContentBlock.objects.create(
-            key='pension.high3_pay_included_table', group=self.group, label='High-3: Pay Included/Not Included Lists',
+            key='checklist.topics_before_srs', group=self.group, label='Checklist Topics Before SRS',
         )
         self.client.force_login(self.admin)
         response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[unwired_block.id]))
@@ -285,7 +285,7 @@ class ContentPanelViewTests(TestCase):
         self.client.force_login(self.admin)
         response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
         self.assertContains(response, 'tinymce.min.js')
-        self.assertContains(response, "toolbar: 'formatselect | bold italic underline | bullist numlist'")
+        self.assertContains(response, "toolbar: 'formatselect | bold italic underline | bullist numlist | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'")
         self.assertContains(response, 'id="body_html_hidden"')
         # The textarea TinyMCE mounts on must NOT have a name attribute — only the hidden
         # input should be POSTed, per the pattern used for SystemSettings.technical_notes_template.

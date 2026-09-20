@@ -258,9 +258,13 @@
     </div>
 </div>
 
-<!-- Restricted TinyMCE editor: bold/italic/underline/lists/paragraph only — no images, no
-     link, no raw HTML source view (per the analysis doc's Security notes: stored content is
-     merged into a PDF pipeline, so keep the producible tag set small and predictable). -->
+<!-- Restricted TinyMCE editor: bold/italic/underline/lists/paragraph/table only — still no
+     images, no link, no raw HTML source view (per the analysis doc's Security notes: stored
+     content is merged into a PDF pipeline, so keep the producible tag set small and
+     predictable). Table support (plugin + toolbar) was added for Phase 3's Category B
+     "structural reference tables" work — the server-side allow-list in
+     fact_finder_content/sanitize.py is the actual security boundary; this toolbar just makes
+     it convenient to author content that will actually be accepted. -->
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -305,8 +309,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     tinymce.init({
         selector: '#body_html',
-        plugins: 'lists',
-        toolbar: 'formatselect | bold italic underline | bullist numlist',
+        plugins: 'lists table',
+        toolbar: 'formatselect | bold italic underline | bullist numlist | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
         menubar: false,
         statusbar: true,
         height: 250,
@@ -314,6 +318,14 @@ document.addEventListener('DOMContentLoaded', function() {
         promotion: false,
         license_key: 'gpl',
         convert_urls: false,
+        table_toolbar: 'tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+        // Only the small attribute surface the sanitizer allow-list also
+        // accepts (style/width/cellpadding) — keeps the editor from
+        // producing markup the server will just silently strip on save.
+        table_advtab: false,
+        table_cell_advtab: false,
+        table_row_advtab: false,
+        table_default_attributes: { cellpadding: '3' },
         setup: function(editor) {
             editor.on('init', pushContent);
             editor.on('change keyup NodeChange', pushContent);
