@@ -128,9 +128,12 @@ class WiringStatusTests(TestCase):
         from fact_finder_content.wiring_status import is_wired
         self.assertTrue(is_wired('fltcip.what_is_ltc'))
 
-    def test_never_wired_cover_title_is_not_wired(self):
+    def test_cover_title_is_wired(self):
+        # cover.title was wired 2026-09-20 (Option A from the "Options for the 14
+        # not-yet-connected blocks" section) -- previously the canonical "never wired"
+        # example in this test file; now it's wired, so it moved to this test instead.
         from fact_finder_content.wiring_status import is_wired
-        self.assertFalse(is_wired('cover.title'))
+        self.assertTrue(is_wired('cover.title'))
 
     def test_deferred_structural_block_is_not_wired(self):
         from fact_finder_content.wiring_status import is_wired
@@ -184,7 +187,7 @@ class ContentPanelViewTests(TestCase):
 
     def test_detail_page_shows_not_connected_badge_for_unwired_block(self):
         unwired_block = ContentBlock.objects.create(
-            key='cover.title', group=self.group, label='Cover Page Title',
+            key='pension.high3_pay_included_table', group=self.group, label='High-3: Pay Included/Not Included Lists',
         )
         self.client.force_login(self.admin)
         response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[unwired_block.id]))
