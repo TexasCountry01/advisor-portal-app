@@ -1207,10 +1207,12 @@ Every section above is fully authored and reachable via `resolve-content`, but u
 
 ### Options for the 14 not-yet-connected blocks (as of 2026-09-19)
 
+> **UPDATE (2026-09-20): Option A is DONE.** `cover.title` is now wired (see the Progress log entry below) — the accounting and remaining categories B–E are unchanged, just down to 13 not-yet-connected blocks (12 real follow-up decisions become 11).
+
 Verified by direct cross-reference against `fact_finder_content/wiring_status.py`'s `WIRED_BLOCK_KEYS` registry — every active `ContentBlock` NOT in that set, grouped by why:
 
-**A. Never wired at all — a plain oversight, not a deliberate deferral (1 block, trivial to fix):**
-- `cover.title` — the Cover page section of `report_pdf.blade.php` was simply skipped during Phase 3 (which started at Pension). No structural concern at all — this is a single unconditional paragraph, identical in kind to the ~80 blocks already wired. **Recommendation: wire this next, immediately** — there's no reason to leave it out.
+**A. ~~Never wired at all~~ — DONE 2026-09-20 (was 1 block):**
+- ~~`cover.title`~~ — wired. See Progress log entry below.
 
 **B. Structural reference tables — real Blade renders a multi-column `<table>`, but the CMS stores the same information as a plain `<ul>` bullet list (7 blocks):** `pension.high3_pay_included_table`, `sbp.levels_fers_transfers`, `sbp.levels_csrs`, `fegli.coverage_available`, `fegli.choices_in_retirement_table`, `fltcip.coverage_available_intro`, `tsp.five_funds_available`. Options:
   1. **Restructure the real Blade markup** to accept a plain bullet-list replacement (visually changes that part of the page from a 2-4 column table to a stacked list — needs explicit sign-off since it's a real layout change, not just a text swap).
@@ -1228,4 +1230,12 @@ Verified by direct cross-reference against `fact_finder_content/wiring_status.py
 
 **E. Genuinely inert, no real content, zero live effect regardless of wiring (2 blocks) — not really "pending work" at all:** `fltcip.coverage_description` (no published version, ever) and `checklist.next_steps` (same). These were pre-project placeholder stubs that were never developed. No decision needed unless there's a genuine desire to either author real content for them (there's no known real Blade text they'd correspond to) or delete them outright for tidiness.
 
-**Total accounting:** 99 active blocks − 85 wired = 14 not-yet-connected, of which 12 represent real, identifiable follow-up decisions (A+B+C+D) and 2 (E) are inert historical artifacts with no action required.
+**Total accounting (as of 2026-09-19, before Option A):** 99 active blocks − 85 wired = 14 not-yet-connected, of which 12 represent real, identifiable follow-up decisions (A+B+C+D) and 2 (E) are inert historical artifacts with no action required.
+
+### 2026-09-20 — Option A implemented: `cover.title` wired (Cover section)
+
+- **What was done:** wired `cover.title` into `report_pdf.blade.php`'s cover page `<h1>` (the exact same `inline($governedContent ?? [], 'cover.title', '<original text>')` pattern as every other block), following user instruction to implement Option A only from the list above.
+- **Verified:** golden-master `--check` showed only the known 7 age-drift cases (no new diffs). Full PHP suite: 64/64, 112 assertions. Live API check against a real golden-master fixture (`#36798`) confirmed `cover.title` resolves correctly with the real "FedImpact Retirement Report" text.
+- **Registry updated:** `fact_finder_content/wiring_status.py`'s `WIRED_BLOCK_KEYS` now includes `cover.title` (86 keys total, up from 85). Two existing tests that used `cover.title` as their canonical "never wired" example were updated to use `pension.high3_pay_included_table` instead (still genuinely unwired) — `fact_finder_content` suite: 92 tests, still all passing. Full project suite: 172 tests, same 1 pre-existing unrelated failure.
+- **Committed:** `benefits-software` `f4f21f0` (blade.php wiring), `advisor-portal-app` `35db7fa` (registry + test updates).
+- **Updated accounting:** 99 active blocks − 86 wired = **13 not-yet-connected** (11 real follow-up decisions across B+C+D, plus 2 inert stubs in E — category A is now fully closed out).
