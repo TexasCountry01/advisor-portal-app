@@ -32,8 +32,13 @@ analysis doc), and updated again 2026-09-20 when 5 of the 7 Category B
 support `<table>` markup, and each block's stored content was reformatted to
 match the exact existing table structure) plus 2 brand-new SBP levels tables
 were added to the layout for the first time (`sbp.levels_fers_transfers`/
-`sbp.levels_csrs` never had an existing table to preserve) — treat it as
-ground truth as of that date, not a permanent guarantee.
+`sbp.levels_csrs` never had an existing table to preserve), and updated
+2026-09-26 when Category C (`srs_ss.fers_eligibility`) was wired by splitting
+the one 2-paragraph ContentBlock into two — the original key trimmed to
+paragraph 1, plus a new `srs_ss.fers_eligibility_exceptions` key for
+paragraph 2, matching the real Blade source's two separate `<tr><td>` rows
+with no Blade restructuring needed — treat it as ground truth as of that
+date, not a permanent guarantee.
 """
 
 WIRED_BLOCK_KEYS = frozenset({
@@ -80,6 +85,8 @@ WIRED_BLOCK_KEYS = frozenset({
     'srs_ss.summary_earnings_test_note',
     'srs_ss.summary_ss_note',
     'srs_ss.wep_sentence',
+    'srs_ss.fers_eligibility',
+    'srs_ss.fers_eligibility_exceptions',
     # FEGLI
     'fegli.purpose',
     'fegli.extra_benefit_under_45',
