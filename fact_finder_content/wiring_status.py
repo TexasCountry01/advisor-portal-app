@@ -32,13 +32,18 @@ analysis doc), and updated again 2026-09-20 when 5 of the 7 Category B
 support `<table>` markup, and each block's stored content was reformatted to
 match the exact existing table structure) plus 2 brand-new SBP levels tables
 were added to the layout for the first time (`sbp.levels_fers_transfers`/
-`sbp.levels_csrs` never had an existing table to preserve), and updated
+`sbp.levels_csrs` never had an existing table to preserve), updated
 2026-09-26 when Category C (`srs_ss.fers_eligibility`) was wired by splitting
 the one 2-paragraph ContentBlock into two — the original key trimmed to
 paragraph 1, plus a new `srs_ss.fers_eligibility_exceptions` key for
 paragraph 2, matching the real Blade source's two separate `<tr><td>` rows
-with no Blade restructuring needed — treat it as ground truth as of that
-date, not a permanent guarantee.
+with no Blade restructuring needed — and updated again 2026-09-26 when
+Category D (the 3 Checklist topic-list blocks) was wired via Option D.1: the
+sanitizer/editor now support a fixed, pre-approved `style` allow-list on
+`ul`/`li` (including a closed set of exact `list-style-type` values for the
+custom SVG bullet icons), and each block's content was reformatted to carry
+the exact real styling instead of being plain unstyled lists — treat it as
+ground truth as of that date, not a permanent guarantee.
 """
 
 WIRED_BLOCK_KEYS = frozenset({
@@ -141,6 +146,9 @@ WIRED_BLOCK_KEYS = frozenset({
     # Checklist
     'checklist.intro',
     'checklist.mark_areas_prompt',
+    'checklist.topics_before_srs',
+    'checklist.srs_topic',
+    'checklist.topics_after_srs',
     # Category B structural reference tables (wired 2026-09-20 as real
     # <table> markup, not a bullet-list substitute -- see sanitize.py)
     'pension.high3_pay_included_table',

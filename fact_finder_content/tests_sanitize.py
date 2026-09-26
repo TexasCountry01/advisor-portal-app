@@ -102,6 +102,39 @@ class SanitizeBodyHtmlTests(SimpleTestCase):
         result = sanitize_body_html('<td cellpadding="3">Hi</td>')
         self.assertNotIn('cellpadding', result)
 
+    def test_ul_li_with_safe_style_and_allowed_list_style_type_pass_through(self):
+        html = (
+            '<ul style="font-family:Arial, sans-serif; font-size: 10px; color: #2e2e2e; '
+            'font-weight: bold; padding-left: 18px; list-style-type:img|svg|3|3|images/rectangle.svg;">'
+            '<li style="font-family:Arial, sans-serif; font-size: 11px; line-height: 20px; color: #285FBF;">Pension'
+            '<ul style="list-style-type:img|svg|3|3|images/circle.svg; font-size: 10px; color: #2e2e2e; font-weight: normal; padding-left: 18px;">'
+            '<li style="line-height: 17px;"><em>Question?</em></li>'
+            '</ul>'
+            '</li>'
+            '</ul>'
+        )
+        result = sanitize_body_html(html)
+        self.assertIn('list-style-type:img|svg|3|3|images/rectangle.svg', result)
+        self.assertIn('list-style-type:img|svg|3|3|images/circle.svg', result)
+        self.assertIn('padding-left: 18px', result)
+        self.assertIn('color: #285FBF', result)
+        self.assertIn('<em>Question?</em>', result)
+
+    def test_list_style_type_rejects_unapproved_path(self):
+        result = sanitize_body_html('<ul style="list-style-type:img|svg|3|3|images/../../etc/passwd">Hi</ul>')
+        self.assertNotIn('list-style-type', result)
+        self.assertNotIn('etc/passwd', result)
+
+    def test_list_style_type_rejects_arbitrary_value(self):
+        result = sanitize_body_html('<ul style="list-style-type:disc;">Hi</ul>')
+        self.assertNotIn('list-style-type', result)
+
+    def test_style_on_ol_still_stripped(self):
+        # <ol> is an allowed TAG (numbered lists) but was never given style
+        # eligibility -- only ul/li (Checklist's specific bullet-list case).
+        result = sanitize_body_html('<ol style="list-style-type:img|svg|3|3|images/circle.svg;">Hi</ol>')
+        self.assertNotIn('style', result)
+
     def test_merge_field_tokens_survive_inside_table_cell(self):
         # html5lib's tree construction wraps a bare <tr> in an implicit
         # <tbody> (standard, harmless HTML5 normalization) -- check content

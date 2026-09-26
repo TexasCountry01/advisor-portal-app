@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
     tinymce.init({
         selector: '#body_html',
         plugins: 'lists table',
-        toolbar: 'formatselect | bold italic underline | bullist numlist | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
+        toolbar: 'formatselect | bold italic underline | bullist numlist | styleselect | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
         menubar: false,
         statusbar: true,
         height: 250,
@@ -326,6 +326,31 @@ document.addEventListener('DOMContentLoaded', function() {
         table_cell_advtab: false,
         table_row_advtab: false,
         table_default_attributes: { cellpadding: '3' },
+        // Checklist's custom SVG-bullet lists (Category D) use a fixed,
+        // pre-approved `list-style-type` value the sanitizer allow-lists
+        // exactly — exposed here as named styles so an editor doesn't need
+        // to hand-type the raw style attribute (which they couldn't anyway;
+        // there's no raw-HTML view in this restricted editor).
+        style_formats: [
+            {
+                title: 'Checklist Topic List (rectangle bullets)',
+                selector: 'ul',
+                styles: {
+                    'font-family': 'Arial, sans-serif', 'font-size': '10px', 'color': '#2e2e2e',
+                    'font-weight': 'bold', 'padding-left': '18px',
+                    'list-style-type': 'img|svg|3|3|images/rectangle.svg',
+                },
+            },
+            {
+                title: 'Checklist Sub-topic List (circle bullets)',
+                selector: 'ul',
+                styles: {
+                    'font-family': 'Arial, sans-serif', 'font-size': '10px', 'color': '#2e2e2e',
+                    'font-weight': 'normal', 'padding-left': '18px',
+                    'list-style-type': 'img|svg|3|3|images/circle.svg',
+                },
+            },
+        ],
         setup: function(editor) {
             editor.on('init', pushContent);
             editor.on('change keyup NodeChange', pushContent);

@@ -15,16 +15,25 @@ reproduce the exact multi-column reference tables that already exist,
 hardcoded, in report_pdf.blade.php (e.g. TSP fund rates, FEGLI coverage
 tables) — see the "Category B" options in the analysis doc.
 
-No attribute is allowed anywhere by default. Exactly three attributes are
+No attribute is allowed anywhere by default. Exactly four attributes are
 permitted, each scoped to the specific tags that legitimately need them, and
 each validated for content (not just name):
-  - `style` on table/th/td/span — value must be a semicolon-separated list of
-    `property: value` declarations where the property is on a small safe
-    allow-list (SAFE_CSS_PROPERTIES) and the value contains only
+  - `style` on table/th/td/span/ul/li — value must be a semicolon-separated
+    list of `property: value` declarations where the property is on a small
+    safe allow-list (SAFE_CSS_PROPERTIES) and the value contains only
     letters/digits/`#`/`%`/`.`/`,`/`-`/spaces. This blocks every known
     CSS-based attack vector (`url(...)`, `expression(...)`, `@import`, etc.)
     because none of those require characters outside that safe set — the
     parentheses alone make `url(...)`/`expression(...)` fail the regex.
+    ONE property is special-cased instead of using that generic character
+    check: `list-style-type` (needed to reproduce the Checklist's custom SVG
+    bullet icons — TCPDF's own non-standard `img|svg|width|height|path`
+    syntax, which contains `|`/`/` characters the generic safe-value regex
+    deliberately excludes). Its value must be an EXACT match against
+    `_ALLOWED_LIST_STYLE_TYPE_VALUES` — a fixed, closed set of the 2 literal
+    strings the real Blade source actually uses (rectangle/circle bullets),
+    not a pattern — so no other file path can ever be referenced this way,
+    per Category D Option 1's "fixed, pre-approved set" requirement.
   - `width` on th/td — must be a bare 1-3 digit number, optionally with a
     trailing `%`.
   - `cellpadding` on table — must be a bare 1-2 digit number.
@@ -42,14 +51,25 @@ ALLOWED_TAGS = ['p', 'strong', 'em', 'ul', 'ol', 'li', 'br'] + TABLE_TAGS
 SAFE_CSS_PROPERTIES = {
     'font-family', 'font-size', 'font-weight', 'text-align', 'color',
     'border-top', 'border-bottom', 'border-left', 'border-right',
-    'width', 'line-height', 'margin', 'margin-top', 'padding',
-    'page-break-after', 'page-break-before',
+    'width', 'line-height', 'margin', 'margin-top', 'padding', 'padding-left',
+    'page-break-after', 'page-break-before', 'list-style-type',
 }
 _SAFE_CSS_VALUE_RE = re.compile(r'^[A-Za-z0-9#%.,\- ]+$')
 _WIDTH_ATTR_RE = re.compile(r'^\d{1,3}%?$')
 _CELLPADDING_ATTR_RE = re.compile(r'^\d{1,2}$')
 
-_STYLE_ELIGIBLE_TAGS = {'table', 'th', 'td', 'span'}
+# Fixed, closed set (Category D Option 1) — the ONLY 2 `list-style-type`
+# values the real Blade source uses (Checklist's rectangle/circle SVG bullet
+# icons). Deliberately NOT a pattern: `list-style-type` is TCPDF's own
+# `img|svg|width|height|path` syntax, and the last segment is a file path —
+# allowing arbitrary paths here would be a real (if PDF-only) file-reference
+# injection surface, so only these exact, pre-approved literal strings pass.
+_ALLOWED_LIST_STYLE_TYPE_VALUES = {
+    'img|svg|3|3|images/rectangle.svg',
+    'img|svg|3|3|images/circle.svg',
+}
+
+_STYLE_ELIGIBLE_TAGS = {'table', 'th', 'td', 'span', 'ul', 'li'}
 _WIDTH_ELIGIBLE_TAGS = {'th', 'td'}
 _CELLPADDING_ELIGIBLE_TAGS = {'table'}
 
@@ -80,6 +100,10 @@ def _is_safe_style_value(value):
         val = val.strip()
         if prop not in SAFE_CSS_PROPERTIES:
             return False
+        if prop == 'list-style-type':
+            if val not in _ALLOWED_LIST_STYLE_TYPE_VALUES:
+                return False
+            continue
         if not val or not _SAFE_CSS_VALUE_RE.match(val):
             return False
     return True
