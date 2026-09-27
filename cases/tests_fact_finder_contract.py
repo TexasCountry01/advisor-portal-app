@@ -305,6 +305,13 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         self.assertTrue(serializer.is_valid(), serializer.errors)
         self.assertEqual(serializer.validated_data["tsp"]["year_of_contribution"], 2026)
         self.assertEqual(serializer.validated_data["tsp"]["sal_percentage_in_contri_rounded"], 5)
+        # gfund_rate/ffund_rate/cfund_rate/sfund_rate/ifund_rate are CharField (Group B fix,
+        # 2026-09-27) — must round-trip as the exact same string, not be parsed into a Decimal.
+        self.assertEqual(serializer.validated_data["tsp"]["gfund_rate"], "2.500")
+        self.assertEqual(serializer.validated_data["tsp"]["ffund_rate"], "1.800")
+        self.assertEqual(serializer.validated_data["tsp"]["cfund_rate"], "12.900")
+        self.assertEqual(serializer.validated_data["tsp"]["sfund_rate"], "9.400")
+        self.assertEqual(serializer.validated_data["tsp"]["ifund_rate"], "5.600")
 
     def test_tsp_new_fields_are_optional_for_backward_compatibility(self):
         """Older golden-master fixtures captured before these fields existed must still
@@ -322,6 +329,50 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=payload)
         self.assertTrue(serializer.is_valid(), serializer.errors)
         self.assertEqual(serializer.validated_data["pension"]["retirement_date"], "12/31/2026")
+        # cola is CharField (Group B fix, 2026-09-27) — must round-trip as the exact same
+        # string, not be parsed into a Decimal that could normalize its precision.
+        self.assertEqual(serializer.validated_data["pension"]["cola"], "2.500")
+
+    def test_group_b_percentage_fields_preserve_original_string_precision_exactly(self):
+        """Group B fix (2026-09-27): pension.cola, social_security.ss_cola, the 5 TSP fund
+        rates, and fehb.average_premium_increase were changed from DecimalField to CharField
+        specifically because report_pdf.blade.php has always echoed them RAW (no
+        number_format() call), so their real source (an EmployeeConfig/AppLookup VARCHAR
+        column) may carry 1, 2, or more decimal digits inconsistently across rows — '13.9',
+        '13.90', and '8.70' are all real stored values. A DecimalField would silently
+        normalize/round these on validation; CharField must preserve them byte-for-byte.
+        See benefits-software's PDF_REGRESSION_FINDINGS_2026-09-27.md and
+        FactFinderDataContractBuilder::rawPct()."""
+        payload = _sample_contract()
+        payload["pension"]["cola"] = "13.90"
+        payload["social_security"]["ss_cola"] = "8.70"
+        payload["tsp"]["gfund_rate"] = "13.9"
+        payload["tsp"]["ffund_rate"] = "8.70"
+        payload["tsp"]["cfund_rate"] = "13.90"
+        payload["fehb"] = {"average_premium_increase": "4.830"}
+
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+
+        self.assertEqual(serializer.validated_data["pension"]["cola"], "13.90")
+        self.assertEqual(serializer.validated_data["social_security"]["ss_cola"], "8.70")
+        self.assertEqual(serializer.validated_data["tsp"]["gfund_rate"], "13.9")
+        self.assertEqual(serializer.validated_data["tsp"]["ffund_rate"], "8.70")
+        self.assertEqual(serializer.validated_data["tsp"]["cfund_rate"], "13.90")
+        self.assertEqual(serializer.validated_data["fehb"]["average_premium_increase"], "4.830")
+
+    def test_group_b_percentage_fields_accept_numeric_input_and_coerce_to_string(self):
+        """DRF's CharField explicitly allows int/float input, coercing via str() (same
+        precedent as fegli_arr's years_in_retirement field) — golden-master fixtures that
+        still store these as bare JSON numbers (e.g. 2.6) must keep validating."""
+        payload = _sample_contract()
+        payload["pension"]["cola"] = 2.6
+        payload["social_security"]["ss_cola"] = 2.5
+
+        serializer = FactFinderDataContractSerializer(data=payload)
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        self.assertEqual(serializer.validated_data["pension"]["cola"], "2.6")
+        self.assertEqual(serializer.validated_data["social_security"]["ss_cola"], "2.5")
 
     def test_retirement_date_is_a_charfield_not_a_dateformat(self):
         """retirement_date is deliberately a CharField carrying PHP's pre-formatted 'm/d/Y'

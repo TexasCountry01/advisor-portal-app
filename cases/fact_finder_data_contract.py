@@ -64,14 +64,21 @@ class PensionSerializer(serializers.Serializer):
         required=False, allow_null=True,
         help_text="The months component of MRA, alongside mra_year above — same source method.",
     )
-    cola = serializers.DecimalField(
-        max_digits=6, decimal_places=3, required=False, allow_null=True,
+    cola = serializers.CharField(
+        required=False, allow_null=True,
         help_text=(
             "Grounded in EmployeeRepository::getPensionDetailsPdf()['cola'] — the system-type-"
             "specific 10-year average COLA percentage ($empConf['FERSCola'] or "
             "$empConf['CSRSCola']). Used as a merge field in report_pdf.blade.php's pension "
             "narrative: '...A Cost of Living Adjustment (COLA) has been applied to your pension "
-            "...(the 10-year average is {{$pension['cola']}}%).'"
+            "...(the 10-year average is {{$pension['cola']}}%).' Deliberately a CharField (not "
+            "DecimalField): report_pdf.blade.php has always echoed this value RAW, with no "
+            "number_format() call, so its real source (an EmployeeConfig/AppLookup VARCHAR "
+            "column) may carry 1, 2, or more decimal digits inconsistently across rows ('13.9' "
+            "vs '13.90' are both real stored values) — a DecimalField's schema-level rounding "
+            "would silently destroy that original textual precision (added 2026-09-27, Group B "
+            "fix — see benefits-software's PDF_REGRESSION_FINDINGS_2026-09-27.md and "
+            "FactFinderDataContractBuilder::rawPct())."
         ),
     )
     retirement_date = serializers.CharField(
@@ -206,7 +213,10 @@ class SocialSecurityDetailRowSerializer(serializers.Serializer):
 
 
 class SocialSecuritySerializer(serializers.Serializer):
-    ss_cola = serializers.DecimalField(max_digits=6, decimal_places=3)
+    # Deliberately a CharField (not DecimalField) — see pension.cola's help_text above for
+    # the full rationale (raw-echo Blade fallback, inconsistent source-string precision,
+    # Group B fix added 2026-09-27).
+    ss_cola = serializers.CharField()
     ss_earned_income_limit = serializers.DecimalField(max_digits=12, decimal_places=2)
     ss_details = SocialSecurityDetailRowSerializer(many=True)
     ss_years_earning = serializers.IntegerField(
@@ -243,11 +253,15 @@ class TspSerializer(serializers.Serializer):
     year_of_contribution = serializers.IntegerField(required=False, allow_null=True)
     deff_limit = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
     catchup_limit = serializers.DecimalField(max_digits=12, decimal_places=2, required=False, allow_null=True)
-    gfund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
-    ffund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
-    cfund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
-    sfund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
-    ifund_rate = serializers.DecimalField(max_digits=6, decimal_places=3, required=False, allow_null=True)
+    # gfund_rate/ffund_rate/cfund_rate/sfund_rate/ifund_rate are deliberately CharField
+    # (not DecimalField) — see pension.cola's help_text above for the full rationale
+    # (raw-echo Blade fallback, inconsistent source-string precision, Group B fix added
+    # 2026-09-27).
+    gfund_rate = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    ffund_rate = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    cfund_rate = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    sfund_rate = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    ifund_rate = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     missing_out_amount = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     emp_min_contri_for_full_agency_contri = serializers.CharField(required=False, allow_null=True, allow_blank=True)
     # ^ Both of the above are CharField, not DecimalField, because EmployeeRepository::
@@ -269,10 +283,12 @@ class FehbSerializer(serializers.Serializer):
     applies that same fallback, so this field is effectively never null in practice,
     but it's still required=False/allow_null=True for consistency with every other
     passthrough field and to tolerate older fixtures captured before this field existed.
+
+    Deliberately a CharField (not DecimalField) — see pension.cola's help_text for the
+    full rationale (raw-echo Blade fallback, inconsistent source-string precision,
+    Group B fix added 2026-09-27).
     """
-    average_premium_increase = serializers.DecimalField(
-        max_digits=6, decimal_places=3, required=False, allow_null=True,
-    )
+    average_premium_increase = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
 
 class FltcipSerializer(serializers.Serializer):
