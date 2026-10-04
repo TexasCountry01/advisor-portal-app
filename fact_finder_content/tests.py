@@ -294,8 +294,8 @@ class ContentPanelViewTests(TestCase):
     def test_detail_page_shows_golden_master_gate_matching_all_24_when_no_rules(self):
         self.client.force_login(self.admin)
         response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
-        self.assertContains(response, 'Test Against Sample Cases')
-        self.assertContains(response, 'Will appear for 24 of 24 sample cases')
+        self.assertContains(response, 'Preview when this content appears')
+        self.assertContains(response, 'Included in 24 of 24 representative reports')
 
     def test_detail_page_golden_master_gate_reflects_display_condition(self):
         self.block.display_condition = {'rules': [
@@ -306,7 +306,73 @@ class ContentPanelViewTests(TestCase):
         response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
         # Grounded in the same real-data fact verified in fact_finder_content/tests_golden_master.py:
         # exactly 3 of the 24 golden-master cases have is_wep_applicable == True.
-        self.assertContains(response, 'Will appear for 3 of 24 sample cases')
+        self.assertContains(response, 'Included in 3 of 24 representative reports')
+
+    def test_detail_page_preview_case_detail_collapsed_but_accessible(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'View representative cases')
+        # The full 24-case breakdown is still rendered (accessible on demand) but
+        # not an enforced publication gate, and not expanded by default.
+        self.assertContains(response, '✓ Included')
+        self.assertContains(response, '✗ Not included')
+        self.assertNotContains(response, '<details open')
+
+    def test_detail_page_distinguishes_wording_status_from_pdf_wiring_status(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'Live in PDF')
+        self.assertContains(response, 'Report Content — ')
+        self.assertContains(response, 'Version History')
+
+    def test_detail_page_does_not_prominently_show_raw_content_key(self):
+        # The raw dotted content key must not sit next to the title/section label
+        # during normal editing; it's still available, just de-emphasized below
+        # a "Technical details" disclosure — never removed from the model/URL.
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertNotContains(response, '&middot;')
+        self.assertContains(response, 'Technical details')
+        self.assertContains(response, 'Content key: <code>tsp.agency_match_explanation</code>')
+
+    def test_plan_year_not_presented_as_an_editable_field(self):
+        from fact_finder_content.views import _default_plan_year
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        expected_year = _default_plan_year()
+        self.assertContains(response, f'id="plan_year" name="plan_year" value="{expected_year}"')
+        self.assertNotContains(response, 'type="number" id="plan_year"')
+        self.assertNotContains(response, 'for="plan_year" class="form-label"')
+
+    def test_plan_year_submission_behavior_is_unchanged(self):
+        # The hidden field's value round-trips through the exact same POST
+        # handling (views.content_block_detail's create_draft branch) as before.
+        from fact_finder_content.views import _default_plan_year
+        self.client.force_login(self.admin)
+        expected_year = _default_plan_year()
+        self.client.post(
+            reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
+            {'action': 'create_draft', 'plan_year': expected_year, 'body_html': '<p>[[match_percentage]]%</p>'},
+        )
+        version = ContentBlockVersion.objects.get(block=self.block, plan_year=expected_year)
+        self.assertEqual(version.status, ContentBlockVersion.STATUS_DRAFT)
+
+    def test_report_wording_label_and_concise_editing_instructions(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, '<label for="body_html" class="form-label">Report wording</label>')
+        self.assertNotContains(response, '>Body</label>')
+        self.assertContains(response, 'Edit the wording that appears in the Fact Finder report.')
+        self.assertContains(response, 'Your changes will not appear in the PDF until they are published.')
+
+    def test_editor_uses_small_autosizing_height_instead_of_fixed_large_box(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, "plugins: 'lists table autoresize'")
+        self.assertContains(response, 'min_height: 120')
+        self.assertContains(response, 'max_height: 450')
+        self.assertNotContains(response, 'height: 250')
+        self.assertContains(response, 'rows="3"')
 
 
 class DisplayConditionRuleBuilderViewTests(TestCase):
@@ -326,6 +392,68 @@ class DisplayConditionRuleBuilderViewTests(TestCase):
         self.assertContains(response, 'id="rule_field"')
         self.assertContains(response, '<option value="system.system_type">System Type</option>')
         self.assertContains(response, 'FIELD_VALUE_OPTIONS')
+
+    def test_zero_conditions_shows_business_language_and_hides_builder_by_default(self):
+        # Business decision: an empty display_condition is plain-language "always
+        # included", and the System Type/FERS rule-builder must not be visible by
+        # default — only revealed if the admin opts in via progressive disclosure.
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'When should this content appear in the report?')
+        self.assertContains(response, 'Always include this content')
+        self.assertContains(response, 'Change when this content appears')
+        # The builder is present in the DOM (so it can be revealed without a page
+        # reload) but collapsed — i.e. no <details open> anywhere on the page.
+        self.assertContains(response, '<details>')
+        self.assertNotContains(response, '<details open')
+        # Empty-rule semantics are unchanged: still null/no persisted condition.
+        self.block.refresh_from_db()
+        self.assertIsNone(self.block.display_condition)
+
+    def test_single_condition_shown_immediately_in_business_terms_not_raw_schema_path(self):
+        self.block.display_condition = {'rules': [
+            {'field': 'system.system_type', 'operator': 'equals', 'value': 'FERS'},
+        ]}
+        self.block.save()
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, 'Include this content in the report only when')
+        self.assertContains(response, '<td>System Type</td>')
+        self.assertContains(response, '<td>FERS</td>')
+        self.assertContains(response, 'Remove condition')
+        # The raw dotted schema path must not be the visible condition label.
+        self.assertNotContains(response, '<td>system.system_type</td>')
+        # Evaluator/stored data are unaffected by the presentation layer.
+        self.block.refresh_from_db()
+        self.assertEqual(
+            self.block.display_condition,
+            {'rules': [{'field': 'system.system_type', 'operator': 'equals', 'value': 'FERS'}]},
+        )
+
+    def test_multiple_conditions_all_displayed_with_all_must_match_language(self):
+        self.block.display_condition = {'rules': [
+            {'field': 'system.system_type', 'operator': 'equals', 'value': 'FERS'},
+            {'field': 'system.retirement_type', 'operator': 'equals', 'value': 'Regular'},
+        ]}
+        self.block.save()
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, '<td>System Type</td>')
+        self.assertContains(response, '<td>Retirement Type</td>')
+        self.assertContains(response, 'All conditions must be met')
+        self.assertContains(response, '+ Add another condition')
+        self.block.refresh_from_db()
+        self.assertEqual(len(self.block.display_condition['rules']), 2)
+
+    def test_boolean_condition_shown_as_yes_not_python_true(self):
+        self.block.display_condition = {'rules': [
+            {'field': 'computed_flags.is_wep_applicable', 'operator': 'equals', 'value': True},
+        ]}
+        self.block.save()
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse('fact_finder_content:content_block_detail', args=[self.block.id]))
+        self.assertContains(response, '<td>WEP Applies</td>')
+        self.assertContains(response, '<td>Yes</td>')
 
     def test_add_valid_choice_rule(self):
         self.client.force_login(self.admin)
@@ -366,13 +494,17 @@ class DisplayConditionRuleBuilderViewTests(TestCase):
         ]}
         self.block.save()
         self.client.force_login(self.admin)
-        self.client.post(
+        response = self.client.post(
             reverse('fact_finder_content:content_block_detail', args=[self.block.id]),
             {'action': 'remove_display_rule', 'rule_index': '0'},
+            follow=True,
         )
         self.block.refresh_from_db()
         self.assertEqual(len(self.block.display_condition['rules']), 1)
         self.assertEqual(self.block.display_condition['rules'][0]['field'], 'computed_flags.is_wep_applicable')
+        # The remaining condition renders in business terms; the removed one is gone.
+        self.assertContains(response, '<td>WEP Applies</td>')
+        self.assertNotContains(response, '<td>System Type</td>')
 
     def test_rule_builder_requires_admin(self):
         technician = User.objects.create_user(

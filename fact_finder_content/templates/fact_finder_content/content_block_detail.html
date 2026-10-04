@@ -13,7 +13,7 @@
                     <span class="badge bg-warning text-dark" title="Publishing changes here will NOT appear in the PDF yet — this section of the template hasn't been connected to this panel.">Not yet connected to PDF</span>
                 {% endif %}
             </h1>
-            <p class="text-muted">{{ content_block.group.label }} &middot; <code>{{ content_block.key }}</code></p>
+            <p class="text-muted">{{ content_block.group.label }}</p>
             {% if not is_wired %}
                 <div class="alert alert-warning py-2">
                     <strong>Heads up:</strong> this block exists in the content panel and can be edited/published, but
@@ -42,129 +42,20 @@
     {% endif %}
 
     <div class="card mb-4">
-        <div class="card-header"><strong>Display Condition</strong></div>
+        <div class="card-header"><strong>Report Content — {{ default_plan_year }}</strong></div>
         <div class="card-body">
             <p class="text-muted">
-                This block is shown only when ALL of the rules below are true (evaluated against the Fact Finder Data Contract).
-                No rules = always shown.
-            </p>
-
-            {% if display_rules %}
-            <table class="table table-sm mb-3" style="max-width: 700px;">
-                <thead><tr><th>Field</th><th>Operator</th><th>Value</th><th></th></tr></thead>
-                <tbody>
-                    {% for rule in display_rules %}
-                    <tr>
-                        <td>{{ rule.field }}</td>
-                        <td>{% if rule.operator == 'equals' %}is{% else %}is not{% endif %}</td>
-                        <td>{{ rule.value }}</td>
-                        <td>
-                            <form method="post" class="d-inline">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="remove_display_rule">
-                                <input type="hidden" name="rule_index" value="{{ forloop.counter0 }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p class="text-muted"><em>No rules — always shown.</em></p>
-            {% endif %}
-
-            <form method="post" class="row g-2 align-items-end" id="addRuleForm" style="max-width: 700px;">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="add_display_rule">
-                <div class="col-md-4">
-                    <label for="rule_field" class="form-label">Field</label>
-                    <select class="form-select" id="rule_field" name="rule_field">
-                        {% for opt in field_options %}
-                        <option value="{{ opt.key }}">{{ opt.label }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="rule_operator" class="form-label">Operator</label>
-                    <select class="form-select" id="rule_operator" name="rule_operator">
-                        <option value="equals">is</option>
-                        <option value="not_equals">is not</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="rule_value" class="form-label">Value</label>
-                    <select class="form-select" id="rule_value" name="rule_value"></select>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-outline-primary w-100">Add Rule</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header"><strong>Test Against Sample Cases</strong></div>
-        <div class="card-body">
-            <p class="text-muted">
-                Pre-publish safety net: this shows which of 24 real, representative Fact Finder
-                cases (spanning every real system-type / retirement-type / WEP / postal combination
-                found in production) will and won't see this block, based on the Display Condition
-                above <em>right now</em> — before anything is published. Confirm this matches your
-                intent before publishing a draft.
-            </p>
-            <p>
-                <span class="badge {% if golden_master_match_count == golden_master_total_count %}bg-secondary{% else %}bg-primary{% endif %}">
-                    Will appear for {{ golden_master_match_count }} of {{ golden_master_total_count }} sample cases
-                </span>
-            </p>
-            <div class="row">
-                <div class="col-md-6">
-                    <table class="table table-sm">
-                        <thead><tr><th colspan="2" class="text-success">✓ Will appear</th></tr></thead>
-                        <tbody>
-                            {% for result in golden_master_results %}
-                            {% if result.matches %}
-                            <tr><td>{{ result.emp_id }}</td><td>{{ result.label }}</td></tr>
-                            {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="col-md-6">
-                    <table class="table table-sm">
-                        <thead><tr><th colspan="2" class="text-muted">✗ Will NOT appear</th></tr></thead>
-                        <tbody>
-                            {% for result in golden_master_results %}
-                            {% if not result.matches %}
-                            <tr class="text-muted"><td>{{ result.emp_id }}</td><td>{{ result.label }}{% if result.error %} <span class="badge bg-danger">rule error: {{ result.error }}</span>{% endif %}</td></tr>
-                            {% endif %}
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-4">
-        <div class="card-header"><strong>Edit Content</strong></div>
-        <div class="card-body">
-            <p class="text-muted">
-                This box is pre-filled with the block's current content — edit it directly, then
-                save. Saving creates a new draft version; it does not go live until you Publish it
-                below in Version History. You can also load any older version back into this box
-                using its “Load into Editor” button.
+                Edit the wording that appears in the Fact Finder report.
+                Your changes will not appear in the PDF until they are published.
             </p>
             <form method="post" id="newDraftForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="create_draft">
-                <div class="row mb-3">
-                    <div class="col-md-3">
-                        <label for="plan_year" class="form-label">Plan Year</label>
-                        <input type="number" class="form-control" id="plan_year" name="plan_year" value="{{ default_plan_year }}">
-                    </div>
-                </div>
+                <!-- Plan year is intentionally not presented as an editable field here —
+                     changing which plan year a draft belongs to is not part of this
+                     screen's normal workflow. Still submitted as-is so POST handling in
+                     views.content_block_detail (create_draft) is unchanged. -->
+                <input type="hidden" id="plan_year" name="plan_year" value="{{ default_plan_year }}">
 
                 {% if content_block.required_placeholders %}
                 <div class="mb-3">
@@ -183,22 +74,23 @@
                 {% endif %}
 
                 <div class="mb-3">
-                    <label for="body_html" class="form-label">Body</label>
+                    <label for="body_html" class="form-label">Report wording</label>
                     <!-- The textarea (no name) is where TinyMCE mounts. The hidden input (has the
                          name) is what actually gets POSTed — kept in sync via JS below. This mirrors
                          the pattern already used for SystemSettings.technical_notes_template.
                          Pre-filled with the block's current content (see current_body_html in the
                          view) so editing means "modify what's live", not "start from a blank box". -->
                     <input type="hidden" id="body_html_hidden" name="body_html" form="newDraftForm" value="">
-                    <textarea class="form-control" id="body_html" rows="6">{{ current_body_html }}</textarea>
+                    <textarea class="form-control" id="body_html" rows="3">{{ current_body_html }}</textarea>
                 </div>
                 <button type="submit" class="btn btn-primary">Save Draft</button>
             </form>
         </div>
     </div>
 
-    <div class="card">
+    <div class="card mb-4">
         <div class="card-header"><strong>Version History</strong></div>
+        <p class="text-muted small px-3 pt-2 mb-0">Use “Load into Editor” to bring an older version back into the Report wording box above.</p>
         <table class="table table-hover mb-0">
             <thead>
                 <tr>
@@ -256,7 +148,149 @@
             </tbody>
         </table>
     </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>When should this content appear in the report?</strong></div>
+        <div class="card-body">
+            {% if presentable_rules %}
+            <p>Include this content in the report only when:</p>
+            <table class="table table-sm mb-2" style="max-width: 700px;">
+                <tbody>
+                    {% for rule in presentable_rules %}
+                    <tr>
+                        <td>{{ rule.field_label }}</td>
+                        <td>{{ rule.operator_label }}</td>
+                        <td>{{ rule.value_label }}</td>
+                        <td>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="remove_display_rule">
+                                <input type="hidden" name="rule_index" value="{{ rule.index }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove condition</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <p class="text-muted mb-3"><em>All conditions must be met for this content to be included.</em></p>
+            <details>
+                <summary class="btn btn-sm btn-outline-primary">+ Add another condition</summary>
+                <form method="post" class="row g-2 align-items-end mt-2" id="addRuleForm" style="max-width: 700px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_display_rule">
+                    <div class="col-md-4">
+                        <label for="rule_field" class="form-label">Retirement/benefits condition</label>
+                        <select class="form-select" id="rule_field" name="rule_field">
+                            {% for opt in field_options %}
+                            <option value="{{ opt.key }}">{{ opt.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="rule_operator" class="form-label">Comparison</label>
+                        <select class="form-select" id="rule_operator" name="rule_operator">
+                            <option value="equals">is</option>
+                            <option value="not_equals">is not</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="rule_value" class="form-label">Value</label>
+                        <select class="form-select" id="rule_value" name="rule_value"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">Add condition</button>
+                    </div>
+                </form>
+            </details>
+            {% else %}
+            <p><strong>Always include this content</strong> — no conditions are set, so this content is included in every report.</p>
+            <details>
+                <summary class="btn btn-sm btn-outline-secondary">Change when this content appears</summary>
+                <form method="post" class="row g-2 align-items-end mt-2" id="addRuleForm" style="max-width: 700px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_display_rule">
+                    <div class="col-md-4">
+                        <label for="rule_field" class="form-label">Retirement/benefits condition</label>
+                        <select class="form-select" id="rule_field" name="rule_field">
+                            {% for opt in field_options %}
+                            <option value="{{ opt.key }}">{{ opt.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="rule_operator" class="form-label">Comparison</label>
+                        <select class="form-select" id="rule_operator" name="rule_operator">
+                            <option value="equals">is</option>
+                            <option value="not_equals">is not</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="rule_value" class="form-label">Value</label>
+                        <select class="form-select" id="rule_value" name="rule_value"></select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">Add condition</button>
+                    </div>
+                </form>
+            </details>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><strong>Preview when this content appears</strong></div>
+        <div class="card-body">
+            <p class="text-muted">
+                This checks whether the content above would currently be included in 24
+                representative sample reports, covering common retirement scenarios (FERS, CSRS,
+                CSRS Offset, Transfers, WEP, Postal, and more). It's a quick sanity check based on
+                the conditions set above right now — it does not cover every possible case, and it
+                is not required in order to save or publish.
+            </p>
+            <p>
+                <span class="badge {% if golden_master_match_count == golden_master_total_count %}bg-secondary{% else %}bg-primary{% endif %}">
+                    Included in {{ golden_master_match_count }} of {{ golden_master_total_count }} representative reports
+                </span>
+            </p>
+            <details>
+                <summary class="btn btn-sm btn-outline-secondary">View representative cases</summary>
+                <div class="row mt-2">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <thead><tr><th colspan="2" class="text-success">✓ Included</th></tr></thead>
+                            <tbody>
+                                {% for result in golden_master_results %}
+                                {% if result.matches %}
+                                <tr><td>{{ result.emp_id }}</td><td>{{ result.label }}</td></tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <thead><tr><th colspan="2" class="text-muted">✗ Not included</th></tr></thead>
+                            <tbody>
+                                {% for result in golden_master_results %}
+                                {% if not result.matches %}
+                                <tr class="text-muted"><td>{{ result.emp_id }}</td><td>{{ result.label }}{% if result.error %} <span class="badge bg-danger">condition error: {{ result.error }}</span>{% endif %}</td></tr>
+                                {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <details class="mb-4">
+        <summary class="btn btn-sm btn-outline-secondary">Technical details</summary>
+        <p class="text-muted small mt-2 mb-0">Content key: <code>{{ content_block.key }}</code></p>
+    </details>
 </div>
+
 
 <!-- Restricted TinyMCE editor: bold/italic/underline/lists/paragraph/table only — still no
      images, no link, no raw HTML source view (per the analysis doc's Security notes: stored
@@ -309,11 +343,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
     tinymce.init({
         selector: '#body_html',
-        plugins: 'lists table',
+        plugins: 'lists table autoresize',
         toolbar: 'formatselect | bold italic underline | bullist numlist | styleselect | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
         menubar: false,
         statusbar: true,
-        height: 250,
+        // Short blocks (e.g. a one-line cover title) get a small editing canvas
+        // instead of the old fixed 250px box; longer blocks grow with their
+        // content up to max_height instead of forcing an inner scrollbar.
+        min_height: 120,
+        max_height: 450,
+        autoresize_bottom_margin: 16,
         branding: false,
         promotion: false,
         license_key: 'gpl',

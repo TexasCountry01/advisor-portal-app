@@ -30,6 +30,28 @@ def _default_plan_year():
     return datetime.date.today().year
 
 
+def _presentable_rules(rules):
+    """Map stored {field, operator, value} rows (dotted schema keys, raw
+    operator codes, raw values) to business-friendly display strings for the
+    "When should this content appear?" section — purely presentational; the
+    underlying stored rule list (field/operator/value) is never altered here."""
+    presented = []
+    for index, rule in enumerate(rules):
+        field_def = AVAILABLE_FIELDS.get(rule['field'], {})
+        value = rule['value']
+        if field_def.get('type') == 'boolean':
+            value_label = 'Yes' if value else 'No'
+        else:
+            value_label = value
+        presented.append({
+            'index': index,
+            'field_label': field_def.get('label', rule['field']),
+            'operator_label': 'is' if rule['operator'] == 'equals' else 'is not',
+            'value_label': value_label,
+        })
+    return presented
+
+
 @login_required
 def content_list(request):
     denied = _require_admin(request)
@@ -146,6 +168,7 @@ def content_block_detail(request, block_id):
     versions = block.versions.all()
 
     display_rules = (block.display_condition or {}).get('rules', [])
+    presentable_rules = _presentable_rules(display_rules)
     field_options = [
         {'key': key, 'label': field_def['label']}
         for key, field_def in AVAILABLE_FIELDS.items()
@@ -180,6 +203,7 @@ def content_block_detail(request, block_id):
         'current_body_html': current_body_html,
         'is_wired': is_wired(block.key),
         'display_rules': display_rules,
+        'presentable_rules': presentable_rules,
         'field_options': field_options,
         'field_value_options_json': json.dumps(field_value_options),
         'default_plan_year': _default_plan_year(),
