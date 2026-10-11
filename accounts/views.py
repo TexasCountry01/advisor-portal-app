@@ -34,6 +34,8 @@ def can_create_user(current_user, target_role):
     Rules:
     - Administrator: Can create Administrator, Technician, Manager, and Member users
     - Technician: Can create Member users
+    - Manager: Can create Member users (provisioning authority, see
+      can_manage_provisioning() below for the full provisioning permission)
     - Others: Cannot create users
     """
     if not current_user.is_authenticated:
@@ -47,7 +49,28 @@ def can_create_user(current_user, target_role):
         # Tech can create members
         return target_role == 'member'
     
+    if current_user.role == 'manager':
+        # Manager provisioning authority is scoped to Member accounts -- every
+        # GHL-eligible provisioning candidate resolves to 'member' (see
+        # accounts/sso.py determine_role_from_tags). This is deliberately NOT
+        # the same as Administrator's full create scope.
+        return target_role == 'member'
+    
     return False
+
+
+def can_manage_provisioning(user):
+    """
+    Can access GHL Sync Review and perform the related provisioning actions
+    (review GHL contacts, link a GHL contact to an existing user, trigger the
+    manual provisioning-alert sync).
+
+    This expresses provisioning authority specifically -- Administrator and
+    Manager only. It intentionally does NOT imply broader Administrator
+    access elsewhere in the application (system settings, editing other
+    users' roles, etc.).
+    """
+    return user.is_authenticated and user.role in ('administrator', 'manager')
 
 
 def can_edit_user(current_user, target_user):
@@ -84,7 +107,7 @@ def manage_users(request):
     current_user = request.user
     
     # Check if user has any user management permissions
-    if current_user.role not in ['administrator', 'technician']:
+    if current_user.role not in ['administrator', 'technician', 'manager']:
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('home')
     
@@ -157,6 +180,9 @@ def manage_users(request):
     elif current_user.role == 'technician':
         # Technician sees only members
         users = User.objects.filter(role='member').order_by('-created_at')
+    elif current_user.role == 'manager':
+        # Manager provisioning scope -- same list as Technician (members only)
+        users = User.objects.filter(role='member').order_by('-created_at')
     else:
         users = User.objects.none()
     
@@ -172,8 +198,8 @@ def manage_users(request):
 @login_required
 def sync_ghl_contacts(request):
     """Hybrid provisioning: pull GHL contacts for admin review without overriding app role assignment."""
-    if request.user.role != 'administrator':
-        messages.error(request, 'Only administrators can sync from GHL.')
+    if not can_manage_provisioning(request.user):
+        messages.error(request, 'You do not have permission to manage GHL provisioning.')
         return redirect('manage_users')
 
     from .services.provisioning_sync import get_relevant_contacts, compute_missing_tag_users
@@ -318,8 +344,8 @@ def link_ghl_contact(request, user_id):
     Does NOT change role or any other field — just links the immutable GHL ID
     so future logins match reliably instead of relying on email.
     """
-    if request.user.role != 'administrator':
-        messages.error(request, 'Only administrators can link GHL contacts.')
+    if not can_manage_provisioning(request.user):
+        messages.error(request, 'You do not have permission to manage GHL provisioning.')
         return redirect('manage_users')
 
     if request.method != 'POST':
@@ -364,37 +390,49 @@ def run_provisioning_alerts_now(request):
     governed only by this feature's own recipient toggles -- independent of
     the app's general email_notifications_enabled master toggle.
     """
-    if request.user.role != 'administrator':
-        messages.error(request, 'Only administrators can run this.')
-        return redirect('system_settings')
+    if not can_manage_provisioning(request.user):
+        messages.error(request, 'You do not have permission to run this.')
+        return redirect('manage_users')
 
     if request.method != 'POST':
-        return redirect('system_settings')
+        return redirect('manage_users')
 
     from django.urls import reverse
     from .services.provisioning_sync import run_provisioning_alert_cycle
 
     result = run_provisioning_alert_cycle(triggered_by=request.user, force=True)
 
+    existing_updated = result.get('existing_user_updated_count', 0)
+    existing_skipped = result.get('existing_user_skipped_count', 0)
+    existing_suffix = (
+        f" {existing_updated} existing user(s) refreshed from GHL, {existing_skipped} skipped."
+        if existing_updated or existing_skipped else ''
+    )
+
     if not result['success']:
         messages.error(request, f"Provisioning sync failed: {result['error']}")
     elif result['total_open'] == 0:
-        messages.success(request, 'Provisioning sync ran successfully — no open items to report, no email sent.')
+        messages.success(request, f'Provisioning sync ran successfully — no open items to report, no email sent.{existing_suffix}')
     elif result['email_sent']:
         messages.success(
             request,
             f"Provisioning sync ran: {result['open_new_count']} new-contact, "
-            f"{result['open_missing_count']} missing-tag item(s) open. Digest email sent."
+            f"{result['open_missing_count']} missing-tag item(s) open. Digest email sent.{existing_suffix}"
         )
     else:
         messages.warning(
             request,
             f"Provisioning sync ran: {result['open_new_count']} new-contact, "
             f"{result['open_missing_count']} missing-tag item(s) open, but the email was NOT sent "
-            f"({result.get('email_skip_reason') or 'unknown reason'}). Check recipient config and the master email toggle."
+            f"({result.get('email_skip_reason') or 'unknown reason'}). Check recipient config and the master email toggle.{existing_suffix}"
         )
 
-    return redirect(reverse('system_settings') + '?tab=provisioning')
+    # Administrators came from System Settings -> Provisioning Alerts; Managers
+    # don't have System Settings access, so send them back to GHL Sync Review
+    # (a page their provisioning authority already covers) instead.
+    if request.user.role == 'administrator':
+        return redirect(reverse('system_settings') + '?tab=provisioning')
+    return redirect('sync_ghl_contacts')
 
 
 @login_required

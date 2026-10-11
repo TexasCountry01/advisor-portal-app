@@ -10,13 +10,19 @@ Detects two kinds of drift (see accounts/services/provisioning_sync.py):
   2. Active, role='member' portal users whose GHL record no longer carries a
      portal access tag (needs Deactivate).
 
+Also refreshes GHL-owned fields (first_name, last_name, email, workshop_code)
+on already-existing matched portal users (sync_existing_user_ghl_fields) --
+this NEVER creates a new portal user and NEVER touches role/permissions/
+delegate relationships, which remain entirely Portal-owned.
+
 Sends a single digest email (subject: "Portal Access Changes - Action Required")
 to up to 3 configured recipients in System Settings, ONLY if something is open.
 Always writes an AuditLog entry summarizing the run, even a no-op run.
 
 The same detection/email logic is also available as an on-demand "Run Now"
-action in System Settings -> Provisioning Alerts (see accounts/views.py
-run_provisioning_alerts_now). Both call
+action, reachable by both Administrator (System Settings -> Provisioning
+Alerts) and Manager (GHL Sync Review page) -- see accounts/views.py
+run_provisioning_alerts_now. Both call
 accounts.services.provisioning_sync.run_provisioning_alert_cycle() so there
 is exactly one implementation of the actual sync + send logic.
 """
@@ -65,19 +71,31 @@ class Command(BaseCommand):
                 f"alert(s) open. Email sent: {result['email_sent']}{suffix}"
             ))
 
+        existing_updated = result.get('existing_user_updated_count', 0)
+        existing_skipped = result.get('existing_user_skipped_count', 0)
+        if existing_updated or existing_skipped:
+            self.stdout.write(self.style.SUCCESS(
+                f'Existing-user GHL refresh: {existing_updated} user(s) updated, {existing_skipped} skipped.'
+            ))
+
     def _handle_dry_run(self):
-        from accounts.services.provisioning_sync import compute_new_ghl_contacts, compute_missing_tag_users
+        from accounts.services.provisioning_sync import (
+            compute_new_ghl_contacts, compute_missing_tag_users, sync_existing_user_ghl_fields,
+        )
 
         try:
             new_contacts = compute_new_ghl_contacts()
             missing_tag_users = compute_missing_tag_users()
+            existing_sync_preview = sync_existing_user_ghl_fields(dry_run=True)
         except Exception as e:
             self.stdout.write(self.style.ERROR(f'GHL fetch failed: {e}'))
             return
 
         self.stdout.write(self.style.WARNING(
             f'DRY RUN: {len(new_contacts)} new GHL contact(s) needing provisioning, '
-            f'{len(missing_tag_users)} active member(s) missing GHL tag.'
+            f'{len(missing_tag_users)} active member(s) missing GHL tag, '
+            f'{len(existing_sync_preview["updated"])} existing user(s) would be refreshed, '
+            f'{len(existing_sync_preview["skipped"])} skipped (ambiguous/collision).'
         ))
 
         for item in new_contacts:
@@ -86,5 +104,13 @@ class Command(BaseCommand):
 
         for item in missing_tag_users:
             self.stdout.write(f"  [MISSING TAG]  {item['name']} <{item['email']}> (user_id={item['user_id']})")
+
+        for item in existing_sync_preview['updated']:
+            self.stdout.write(f"  [WOULD UPDATE]  {item['username']}: {list(item['changes'].keys())}")
+
+        for item in existing_sync_preview['skipped']:
+            self.stdout.write(
+                f"  [SKIPPED]  user_id={item.get('user_id')} email={item.get('email')} reason={item.get('reason')}"
+            )
 
         self.stdout.write(self.style.WARNING('DRY RUN: no database changes made, no email sent.'))

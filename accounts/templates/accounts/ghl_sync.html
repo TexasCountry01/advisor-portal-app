@@ -10,6 +10,12 @@
             <p class="text-muted mb-0">Review imported contacts and match them to portal users without overwriting app-assigned roles.</p>
         </div>
         <div>
+            <form method="post" action="{% url 'run_provisioning_alerts_now' %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-primary">
+                    <i class="bi bi-play-circle"></i> Run Sync Now
+                </button>
+            </form>
             <a href="{% url 'manage_users' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to User Management
             </a>

@@ -13,6 +13,11 @@
             <a href="{% if request.user.role == 'administrator' %}{% url 'cases:admin_dashboard' %}{% elif request.user.role == 'manager' %}{% url 'cases:manager_dashboard' %}{% else %}{% url 'cases:technician_dashboard' %}{% endif %}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> Back to Dashboard
             </a>
+            {% if request.user.role == 'administrator' or request.user.role == 'manager' %}
+            <a href="{% url 'sync_ghl_contacts' %}" class="btn btn-outline-primary" title="Review GHL contacts for Portal provisioning">
+                <i class="bi bi-arrow-repeat"></i> GHL Sync
+            </a>
+            {% endif %}
             <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#addDelegateModal">
                 <i class="bi bi-plus-circle"></i> Assign Delegate
             </button>

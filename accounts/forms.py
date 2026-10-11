@@ -118,6 +118,12 @@ class UserCreationForm(forms.Form):
                 self.fields['role'].choices = [
                     ('member', 'Member'),
                 ]
+            elif current_user.role == 'manager':
+                # Manager provisioning authority is scoped to Member accounts
+                # (see accounts/views.py can_create_user)
+                self.fields['role'].choices = [
+                    ('member', 'Member'),
+                ]
             else:
                 # Others can't create users
                 self.fields['role'].choices = []

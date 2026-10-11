@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 import requests
 from django.conf import settings
 
+from .name_utils import smart_case
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,8 +71,10 @@ def normalize_contact(raw_contact: Dict[str, Any]) -> Dict[str, Any]:
 
     contact_id = raw_contact.get('id') or raw_contact.get('contactId') or raw_contact.get('contact_id') or ''
     email = (raw_contact.get('email') or '').strip().lower()
-    first_name = (raw_contact.get('firstName') or raw_contact.get('first_name') or '').strip()
-    last_name = (raw_contact.get('lastName') or raw_contact.get('last_name') or '').strip()
+    # Normalized at this GHL -> Portal boundary (same rule used by the SSO path in
+    # accounts/sso.py) since GHL sometimes supplies names entirely in lowercase.
+    first_name = smart_case((raw_contact.get('firstName') or raw_contact.get('first_name') or '').strip())
+    last_name = smart_case((raw_contact.get('lastName') or raw_contact.get('last_name') or '').strip())
 
     custom_fields = raw_contact.get('customFields') or raw_contact.get('custom_fields') or []
     workshop_code = ''

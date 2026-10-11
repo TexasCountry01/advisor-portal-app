@@ -154,6 +154,125 @@ def compute_missing_tag_users(by_contact_id=None, by_email=None):
     return results
 
 
+def sync_existing_user_ghl_fields(contacts=None, dry_run=False):
+    """Refresh GHL-owned fields on ALREADY-EXISTING portal Users matched to a
+    GHL contact. NEVER creates a new User -- a GHL contact with no matching
+    portal_user is left entirely to compute_new_ghl_contacts()/the existing
+    controlled provisioning workflow.
+
+    Only writes first_name, last_name, email, workshop_code -- the only
+    fields GHL is authoritative for. role, is_pure_delegate, permissions
+    (can_manage_delegates, can_manage_review_settings), and MemberDelegate
+    relationships are Portal-owned and are never read or written here.
+
+    Safety rules:
+      - contact_id is the primary identity relationship. A value is written
+        only if the incoming GHL value is non-empty AND differs from the
+        current value (never erases a legitimate existing value with a
+        blank/missing GHL value).
+      - email is written only if it doesn't already belong to a DIFFERENT
+        existing portal User -- a collision skips the email field only (the
+        user's other fields may still update); it never updates the wrong
+        user and never corrupts the colliding user's record.
+      - A user matched only by the email fallback (no contact_id on file yet)
+        is skipped entirely if that email is shared by more than one
+        relevant GHL contact -- identity must be unambiguous before anything
+        is written.
+
+    Args:
+        contacts: pre-fetched GHL contacts to reuse (avoids a second API
+            call when the caller already fetched them, e.g. sync_provisioning_alerts()).
+        dry_run: when True, computes what would change but writes nothing.
+
+    Returns a dict: {
+        'updated': [{'user_id', 'username', 'changes': {...}}, ...],
+        'skipped': [{'user_id', 'email', 'reason', ...}, ...],
+        'unchanged_count': int,
+    }
+    """
+    relevant = get_relevant_contacts(contacts=contacts)
+
+    # How many *relevant* GHL contacts share each email -- used to detect
+    # ambiguous email-only matches. Not a concern for contact_id matches,
+    # which are unique and immutable by construction.
+    email_contact_counts = {}
+    for row in relevant:
+        email = (row.get('email') or '').strip().lower()
+        if email:
+            email_contact_counts[email] = email_contact_counts.get(email, 0) + 1
+
+    updated = []
+    skipped = []
+    unchanged_count = 0
+
+    for row in relevant:
+        portal_user = row.get('portal_user')
+        if portal_user is None:
+            # No existing portal user for this contact -- never create one
+            # here; left entirely to the existing provisioning workflow.
+            continue
+
+        email = (row.get('email') or '').strip().lower()
+
+        if not portal_user.contact_id:
+            # Identified only via the email fallback -- require the email to
+            # be unambiguous among relevant GHL contacts before trusting it.
+            if email and email_contact_counts.get(email, 0) > 1:
+                skipped.append({
+                    'user_id': portal_user.id,
+                    'email': email,
+                    'reason': 'ambiguous_email_matches_multiple_ghl_contacts',
+                })
+                continue
+
+        changes = {}
+
+        first_name = row.get('first_name') or ''
+        if first_name and first_name != portal_user.first_name:
+            changes['first_name'] = {'old': portal_user.first_name, 'new': first_name}
+            portal_user.first_name = first_name
+
+        last_name = row.get('last_name') or ''
+        if last_name and last_name != portal_user.last_name:
+            changes['last_name'] = {'old': portal_user.last_name, 'new': last_name}
+            portal_user.last_name = last_name
+
+        workshop_code = row.get('workshop_code') or ''
+        if workshop_code and workshop_code != portal_user.workshop_code:
+            changes['workshop_code'] = {'old': portal_user.workshop_code, 'new': workshop_code}
+            portal_user.workshop_code = workshop_code
+
+        raw_email = row.get('email') or ''
+        if email and email != (portal_user.email or '').strip().lower():
+            colliding_user = User.objects.filter(email__iexact=email).exclude(pk=portal_user.pk).first()
+            if colliding_user:
+                skipped.append({
+                    'user_id': portal_user.id,
+                    'email': email,
+                    'reason': 'email_already_belongs_to_another_portal_user',
+                    'colliding_user_id': colliding_user.id,
+                })
+            else:
+                changes['email'] = {'old': portal_user.email, 'new': raw_email}
+                portal_user.email = raw_email
+
+        if not changes:
+            unchanged_count += 1
+            continue
+
+        if not dry_run:
+            portal_user.save(update_fields=list(changes.keys()))
+            logger.info(f'GHL existing-user sync updated {portal_user.username}: {changes}')
+
+        updated.append({
+            'user_id': portal_user.id,
+            'username': portal_user.username,
+            'changes': changes,
+        })
+
+    return {'updated': updated, 'skipped': skipped, 'unchanged_count': unchanged_count}
+
+
 def sync_provisioning_alerts():
     """Run both detections and upsert ProvisioningAlert rows.
 
@@ -169,6 +288,9 @@ def sync_provisioning_alerts():
 
     new_contacts = compute_new_ghl_contacts(contacts=contacts)
     missing_tag_users = compute_missing_tag_users(by_contact_id=by_contact_id, by_email=by_email)
+    # Category 3 — refresh GHL-owned fields on already-existing matched users.
+    # Reuses the same fetched `contacts` list above; never creates a User.
+    existing_user_sync = sync_existing_user_ghl_fields(contacts=contacts)
 
     now = timezone.now()
     seen_alert_ids = []
@@ -233,6 +355,7 @@ def sync_provisioning_alerts():
         'new_alerts': new_alerts,
         'still_open_alerts': still_open_alerts,
         'resolved_count': resolved_count,
+        'existing_user_sync': existing_user_sync,
     }
 
 
@@ -263,6 +386,7 @@ def run_provisioning_alert_cycle(triggered_by=None, force=False):
         'open_new_count': 0, 'open_missing_count': 0, 'total_open': 0,
         'new_count': 0, 'still_open_count': 0, 'resolved_count': 0,
         'email_sent': False, 'email_skip_reason': None,
+        'existing_user_updated_count': 0, 'existing_user_skipped_count': 0,
     }
 
     if not force and not system_settings.provisioning_alerts_enabled:
@@ -292,6 +416,10 @@ def run_provisioning_alert_cycle(triggered_by=None, force=False):
     open_missing_count = open_missing_tag.count()
     total_open = open_new_count + open_missing_count
 
+    existing_user_sync = result.get('existing_user_sync', {'updated': [], 'skipped': [], 'unchanged_count': 0})
+    existing_user_updated_count = len(existing_user_sync['updated'])
+    existing_user_skipped_count = len(existing_user_sync['skipped'])
+
     email_sent = False
     email_skip_reason = None
     if total_open > 0:
@@ -306,7 +434,9 @@ def run_provisioning_alert_cycle(triggered_by=None, force=False):
         description=(
             f'Provisioning alert sync run: {len(result["new_alerts"])} new, '
             f'{len(result["still_open_alerts"])} still open, '
-            f'{result["resolved_count"]} resolved. Email sent: {email_sent}.'
+            f'{result["resolved_count"]} resolved. Email sent: {email_sent}. '
+            f'Existing-user GHL refresh: {existing_user_updated_count} updated, '
+            f'{existing_user_skipped_count} skipped.'
         ),
         metadata={
             'new_alerts_count': len(result['new_alerts']),
@@ -316,6 +446,10 @@ def run_provisioning_alert_cycle(triggered_by=None, force=False):
             'open_missing_tag_users': open_missing_count,
             'email_sent': email_sent,
             'manual': triggered_by is not None,
+            'existing_user_updated_count': existing_user_updated_count,
+            'existing_user_skipped_count': existing_user_skipped_count,
+            # Usernames/reasons only -- no secrets, matches existing metadata style.
+            'existing_user_sync': existing_user_sync,
         },
     )
 
@@ -331,6 +465,9 @@ def run_provisioning_alert_cycle(triggered_by=None, force=False):
         'resolved_count': result['resolved_count'],
         'email_sent': email_sent,
         'email_skip_reason': email_skip_reason,
+        'existing_user_updated_count': existing_user_updated_count,
+        'existing_user_skipped_count': existing_user_skipped_count,
+        'existing_user_sync': existing_user_sync,
     }
 
 
