@@ -4,11 +4,15 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
+    {% if invalid_year %}
+    <div class="alert alert-danger">Choose a valid plan year from the content list before editing.</div>
+    <a href="{{ back_to_list_url }}" class="btn btn-outline-secondary">Back to list</a>
+    {% else %}
     <div class="row mb-4">
         <div class="col-md-8">
             <h1>{{ content_block.label }}
                 {% if is_wired %}
-                    <span class="badge bg-success" title="This block's content is actually rendered into the real PDF today.">Live in PDF</span>
+                    <span class="badge bg-success" title="Configured for report integration. Actual use depends on report settings, year, and applicability.">Connected report section</span>
                 {% else %}
                     <span class="badge bg-warning text-dark" title="Publishing changes here will NOT appear in the PDF yet — this section of the template hasn't been connected to this panel.">Not yet connected to PDF</span>
                 {% endif %}
@@ -17,7 +21,7 @@
             {% if not is_wired %}
                 <div class="alert alert-warning py-2">
                     <strong>Heads up:</strong> this block exists in the content panel and can be edited/published, but
-                    <code>report_pdf.blade.php</code> doesn't read from it yet — any change you publish here will have
+                    report generation doesn't read from it yet — any change you publish here will have
                     <strong>no effect</strong> on the generated PDF until this block is wired in.
                 </div>
             {% endif %}
@@ -28,7 +32,7 @@
             {% endif %}
         </div>
         <div class="col-md-4 text-end">
-            <a href="{% url 'fact_finder_content:content_list' %}" class="btn btn-outline-secondary">← Back to list</a>
+            <a href="{{ back_to_list_url }}" class="btn btn-outline-secondary">← Back to list</a>
         </div>
     </div>
 
@@ -42,7 +46,7 @@
     {% endif %}
 
     <div class="card mb-4">
-        <div class="card-header"><strong>Report Content — {{ default_plan_year }}</strong></div>
+        <div class="card-header"><strong>Report Content — <span id="editing-year">{{ draft_form.plan_year.value }}</span></strong></div>
         <div class="card-body">
             <p class="text-muted">
                 Edit the wording that appears in the Fact Finder report.
@@ -51,11 +55,19 @@
             <form method="post" id="newDraftForm">
                 {% csrf_token %}
                 <input type="hidden" name="action" value="create_draft">
-                <!-- Plan year is intentionally not presented as an editable field here —
-                     changing which plan year a draft belongs to is not part of this
-                     screen's normal workflow. Still submitted as-is so POST handling in
-                     views.content_block_detail (create_draft) is unchanged. -->
-                <input type="hidden" id="plan_year" name="plan_year" value="{{ default_plan_year }}">
+                <input type="hidden" id="plan_year" name="plan_year" value="{{ draft_form.plan_year.value }}">
+                <input type="hidden" id="draft_version_id" name="version_id" value="{{ draft_form.version_id.value|default_if_none:'' }}">
+                <input type="hidden" id="source_version_id" name="source_version_id" value="{{ draft_form.source_version_id.value|default_if_none:'' }}">
+                <input type="hidden" id="editor_ready" name="editor_ready" value="">
+                {% if draft_form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    <strong>Draft not saved. Your attempted wording is still below.</strong>
+                    {% for error in draft_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                    {% for field in draft_form %}{% for error in field.errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+                </div>
+                {% endif %}
+                <div id="editor-error" class="alert alert-danger" role="alert" hidden></div>
+                <noscript><div class="alert alert-danger">JavaScript is required to save wording safely. Your stored wording has not changed.</div></noscript>
 
                 {% if content_block.required_placeholders %}
                 <div class="mb-3">
@@ -75,15 +87,10 @@
 
                 <div class="mb-3">
                     <label for="body_html" class="form-label">Report wording</label>
-                    <!-- The textarea (no name) is where TinyMCE mounts. The hidden input (has the
-                         name) is what actually gets POSTed — kept in sync via JS below. This mirrors
-                         the pattern already used for SystemSettings.technical_notes_template.
-                         Pre-filled with the block's current content (see current_body_html in the
-                         view) so editing means "modify what's live", not "start from a blank box". -->
-                    <input type="hidden" id="body_html_hidden" name="body_html" form="newDraftForm" value="">
-                    <textarea class="form-control" id="body_html" rows="3">{{ current_body_html }}</textarea>
+                    <textarea class="form-control" id="body_html" name="body_html" rows="3">{{ draft_form.body_html.value|default_if_none:'' }}</textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Save Draft</button>
+                <p id="draft-editor-mode" class="text-muted small">{% if draft_form.version_id.value %}Saving updates the selected draft only.{% else %}Saving creates a new draft; published versions are never edited in place.{% endif %}</p>
+                <button type="submit" id="save-draft-btn" class="btn btn-primary" disabled>Save Draft</button>
             </form>
         </div>
     </div>
@@ -123,7 +130,7 @@
                     <td>{{ version.created_by|default:'—' }}</td>
                     <td>{{ version.updated_at }}</td>
                     <td class="text-nowrap">
-                        <button type="button" class="btn btn-sm btn-outline-primary load-version-btn" data-body-html="{{ version.body_html }}">Load into Editor</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary load-version-btn" data-version-id="{{ version.id }}" data-version-status="{{ version.status }}" data-plan-year="{{ version.plan_year }}" data-body-html="{{ version.body_html }}">Load into Editor</button>
                         {% if version.status == 'draft' %}
                         <form method="post" class="d-inline">
                             {% csrf_token %}
@@ -132,7 +139,7 @@
                             <button type="submit" class="btn btn-sm btn-outline-info">Submit for Review</button>
                         </form>
                         {% endif %}
-                        {% if version.status == 'draft' or version.status == 'in_review' %}
+                        {% if version.status == 'in_review' %}
                         <form method="post" class="d-inline">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="publish">
@@ -289,6 +296,7 @@
         <summary class="btn btn-sm btn-outline-secondary">Technical details</summary>
         <p class="text-muted small mt-2 mb-0">Content key: <code>{{ content_block.key }}</code></p>
     </details>
+    {% endif %}
 </div>
 
 
@@ -299,6 +307,7 @@
      "structural reference tables" work — the server-side allow-list in
      fact_finder_content/sanitize.py is the actual security boundary; this toolbar just makes
      it convenient to author content that will actually be accepted. -->
+{% if not invalid_year %}
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -327,21 +336,52 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     var textarea = document.getElementById('body_html');
-    var hidden = document.getElementById('body_html_hidden');
-    if (!textarea || !hidden) { return; }
+    var form = document.getElementById('newDraftForm');
+    if (!textarea || !form) { return; }
+    var saveButton = document.getElementById('save-draft-btn');
+    var readyField = document.getElementById('editor_ready');
+    var errorBox = document.getElementById('editor-error');
+    var editorReady = false;
 
-    function pushContent() {
-        if (typeof tinymce !== 'undefined') {
-            var editor = tinymce.get('body_html');
-            if (editor) {
-                hidden.value = editor.getContent();
-                return;
-            }
-        }
-        hidden.value = textarea.value;
+    function editorFailure() {
+        editorReady = false;
+        readyField.value = '';
+        saveButton.disabled = true;
+        errorBox.textContent = 'The wording editor could not load or synchronize. Nothing was saved. Keep your text and reload the page before saving.';
+        errorBox.hidden = false;
     }
 
-    tinymce.init({
+    function pushContent() {
+        var editor = typeof tinymce !== 'undefined' && tinymce.get('body_html');
+        if (!editorReady || !editor) {
+            throw new Error('Editor not ready');
+        }
+        textarea.value = editor.getContent();
+    }
+
+    form.addEventListener('submit', function(e) {
+        readyField.value = '';
+        try {
+            pushContent();
+            if (!textarea.value.trim()) {
+                e.preventDefault();
+                errorBox.textContent = 'Enter report wording before saving. Nothing was saved.';
+                errorBox.hidden = false;
+                return;
+            }
+            readyField.value = 'ready';
+        } catch (error) {
+            e.preventDefault();
+            editorFailure();
+        }
+    });
+
+    if (typeof tinymce === 'undefined') {
+        editorFailure();
+        return;
+    }
+    try {
+    var initialization = tinymce.init({
         selector: '#body_html',
         plugins: 'lists table autoresize',
         toolbar: 'formatselect | bold italic underline | bullist numlist | styleselect | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
@@ -391,17 +431,17 @@ document.addEventListener('DOMContentLoaded', function() {
             },
         ],
         setup: function(editor) {
-            editor.on('init', pushContent);
-            editor.on('change keyup NodeChange', pushContent);
+            editor.on('init', function() {
+                editorReady = true;
+                saveButton.disabled = false;
+            });
         },
     });
-
-    var form = document.getElementById('newDraftForm');
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        pushContent();
-        HTMLFormElement.prototype.submit.call(form);
-    });
+    initialization.catch(editorFailure);
+    } catch (error) {
+        editorFailure();
+        return;
+    }
 
     // Merge-field picker: insert a safe [[token]] at the cursor — never hand-typed.
     var insertBtn = document.getElementById('insert_merge_field_btn');
@@ -411,9 +451,11 @@ document.addEventListener('DOMContentLoaded', function() {
             var token = picker.value;
             if (!token) { return; }
             var editor = tinymce.get('body_html');
-            if (editor) {
+            if (editorReady && editor) {
                 editor.execCommand('mceInsertContent', false, '[[' + token + ']]');
                 pushContent();
+            } else {
+                editorFailure();
             }
         });
     }
@@ -424,14 +466,28 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.load-version-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var html = btn.getAttribute('data-body-html');
+            var versionId = btn.getAttribute('data-version-id');
+            var isDraft = btn.getAttribute('data-version-status') === 'draft';
+            var year = btn.getAttribute('data-plan-year');
             var editor = tinymce.get('body_html');
-            if (editor) {
-                editor.setContent(html);
-                pushContent();
+            if (!editorReady || !editor) {
+                editorFailure();
+                return;
             }
+            if (!window.confirm('Load this saved version for plan year ' + year + '? Unsaved wording in the editor will be replaced.')) { return; }
+            editor.setContent(html);
+            pushContent();
+            document.getElementById('draft_version_id').value = isDraft ? versionId : '';
+            document.getElementById('source_version_id').value = versionId;
+            document.getElementById('plan_year').value = year;
+            document.getElementById('editing-year').textContent = year;
+            document.getElementById('draft-editor-mode').textContent = isDraft
+                ? 'Saving updates the selected draft only.'
+                : 'Saving creates a new draft; published and reviewed versions are never edited in place.';
             document.getElementById('body_html').scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
     });
 });
 </script>
+{% endif %}
 {% endblock %}

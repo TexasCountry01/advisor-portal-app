@@ -138,6 +138,7 @@ class ResolveContentBehaviorTests(TestCase):
     def test_published_block_with_no_condition_is_included(self):
         block = ContentBlock.objects.create(key='tsp.always_shown', group=self.group, label='Always Shown')
         version = ContentBlockVersion.objects.create(block=block, plan_year=2026, body_html='<p>Always visible.</p>')
+        version.submit_for_review()
         version.publish()
 
         response = self._post({'plan_year': 2026, 'data_contract': _valid_data_contract()})
@@ -153,6 +154,7 @@ class ResolveContentBehaviorTests(TestCase):
             display_condition={'rules': [{'field': 'system.system_type', 'operator': 'equals', 'value': 'CSRS'}]},
         )
         version = ContentBlockVersion.objects.create(block=block, plan_year=2026, body_html='<p>CSRS text.</p>')
+        version.submit_for_review()
         version.publish()
 
         # data_contract has system_type=FERS, so this CSRS-only block must be excluded.
@@ -165,6 +167,7 @@ class ResolveContentBehaviorTests(TestCase):
             display_condition={'rules': [{'field': 'system.system_type', 'operator': 'equals', 'value': 'FERS'}]},
         )
         version = ContentBlockVersion.objects.create(block=block, plan_year=2026, body_html='<p>FERS text.</p>')
+        version.submit_for_review()
         version.publish()
 
         response = self._post({'plan_year': 2026, 'data_contract': _valid_data_contract()})
@@ -175,6 +178,7 @@ class ResolveContentBehaviorTests(TestCase):
     def test_wrong_plan_year_excludes_block(self):
         block = ContentBlock.objects.create(key='tsp.year_2025_only', group=self.group, label='2025 Only')
         version = ContentBlockVersion.objects.create(block=block, plan_year=2025, body_html='<p>2025 text.</p>')
+        version.submit_for_review()
         version.publish()
 
         response = self._post({'plan_year': 2026, 'data_contract': _valid_data_contract()})
@@ -185,6 +189,7 @@ class ResolveContentBehaviorTests(TestCase):
             key='tsp.inactive', group=self.group, label='Inactive Block', is_active=False,
         )
         version = ContentBlockVersion.objects.create(block=block, plan_year=2026, body_html='<p>Hidden.</p>')
+        version.submit_for_review()
         version.publish()
 
         response = self._post({'plan_year': 2026, 'data_contract': _valid_data_contract()})
@@ -195,6 +200,7 @@ class ResolveContentBehaviorTests(TestCase):
         block_b = ContentBlock.objects.create(key='tsp.b', group=self.group, label='B')
         for block, text in [(block_a, 'A text'), (block_b, 'B text')]:
             v = ContentBlockVersion.objects.create(block=block, plan_year=2026, body_html=f'<p>{text}</p>')
+            v.submit_for_review()
             v.publish()
 
         response = self._post({'plan_year': 2026, 'data_contract': _valid_data_contract()})
