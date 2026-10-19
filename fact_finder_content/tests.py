@@ -707,7 +707,11 @@ class ContentPanelViewTests(TestCase):
         self.assertContains(response, "toolbar: 'formatselect | bold italic underline | bullist numlist | styleselect | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'")
         self.assertNotContains(response, 'id="body_html_hidden"')
         self.assertContains(response, 'id="body_html" name="body_html"')
-        self.assertContains(response, 'id="save-draft-btn" class="btn btn-primary" disabled')
+        self.assertContains(
+            response,
+            'id="save-draft-btn" name="action" value="create_draft" class="btn btn-outline-primary" disabled',
+        )
+        self.assertContains(response, 'id="save-publish-btn" name="action" value="save_and_publish"')
 
     def test_detail_page_shows_golden_master_gate_matching_all_24_when_no_rules(self):
         self.client.force_login(self.admin)

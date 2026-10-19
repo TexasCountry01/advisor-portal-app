@@ -235,8 +235,8 @@ class ContentBlockVersion(models.Model):
         self.status = version.status
         self.updated_at = version.updated_at
 
-    def publish(self, by_user=None):
-        """Atomically publish an in-review version, retaining prior history."""
+    def publish(self, by_user=None, allow_draft=False):
+        """Atomically publish an in-review version or an explicitly authorized draft."""
         if self.pk is None:
             raise ValidationError({'status': 'Only saved versions can be published.'})
 
@@ -257,14 +257,22 @@ class ContentBlockVersion(models.Model):
                 .select_related('block')
                 .get(pk=self.pk)
             )
-            if version.status != self.STATUS_IN_REVIEW:
+            allowed_statuses = {self.STATUS_IN_REVIEW}
+            if allow_draft:
+                allowed_statuses.add(self.STATUS_DRAFT)
+            if version.status not in allowed_statuses:
                 raise ValidationError({
-                    'status': 'Only versions in review can be published.',
+                    'status': (
+                        'Only draft or in-review versions can be published.'
+                        if allow_draft
+                        else 'Only versions in review can be published.'
+                    ),
                 })
 
             # Validate the persisted candidate while holding the block lock and
             # before touching its currently published predecessor.
             version.validate_publishable()
+            was_in_review = version.status == self.STATUS_IN_REVIEW
             type(self).objects.using(database).filter(
                 block_id=version.block_id,
                 plan_year=version.plan_year,
@@ -276,7 +284,7 @@ class ContentBlockVersion(models.Model):
 
             version.status = self.STATUS_PUBLISHED
             version.published_at = timezone.now()
-            if by_user is not None:
+            if by_user is not None and was_in_review:
                 version.reviewed_by = by_user
             version.save()
 

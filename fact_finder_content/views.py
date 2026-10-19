@@ -15,7 +15,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from django.http import HttpResponseForbidden, HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -458,6 +458,68 @@ def content_block_detail(request, block_id):
 
     if request.method == 'POST':
         action = request.POST.get('action')
+
+        if action == 'save_and_publish':
+            draft_form = WordingDraftForm(request.POST)
+            if draft_form.is_valid():
+                data = draft_form.cleaned_data
+                plan_year = data['plan_year']
+                try:
+                    with transaction.atomic():
+                        ContentBlock.objects.select_for_update().get(pk=block.pk)
+                        source_id = data['source_version_id'] or data['version_id']
+                        source = None
+                        if source_id:
+                            source = block.versions.select_for_update().filter(pk=source_id).first()
+                            if source is None or source.plan_year != plan_year:
+                                draft_form.add_error(
+                                    None,
+                                    'The source wording must belong to this content and plan year. '
+                                    'Cross-year copying is not available here.',
+                                )
+                        elif block.versions.filter(plan_year=plan_year).exists():
+                            draft_form.add_error(
+                                None,
+                                'Load a source version for this plan year before publishing.',
+                            )
+
+                        if not draft_form.errors:
+                            version = ContentBlockVersion(
+                                block=block,
+                                plan_year=plan_year,
+                                merge_field_policy=deepcopy(source.merge_field_policy) if source else None,
+                                created_by=request.user,
+                            )
+                            version.body_html = sanitize_body_html(data['body_html'])
+                            if not unescape(strip_tags(version.body_html)).strip():
+                                draft_form.add_error(
+                                    'body_html',
+                                    'Enter report wording before publishing. No changes were saved.',
+                                )
+                            else:
+                                version.full_clean()
+                                version.save()
+                                version.publish(by_user=request.user, allow_draft=True)
+                except ValidationError as exc:
+                    draft_form.add_error(
+                        None,
+                        _wording_workflow_error('publish', exc),
+                    )
+                except DatabaseError:
+                    draft_form.add_error(
+                        None,
+                        'Save & Publish could not be completed because of a database error. '
+                        'No changes were saved. Please try again or contact your technical administrator.',
+                    )
+
+                if not draft_form.errors:
+                    editing_year = plan_year
+                    messages.success(
+                        request,
+                        f'Published for plan year {editing_year}. '
+                        'The previous version remains in version history.',
+                    )
+                    return _redirect_to_self()
 
         if action == 'create_draft':
             draft_form = WordingDraftForm(request.POST)

@@ -54,7 +54,6 @@
             </p>
             <form method="post" id="newDraftForm">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="create_draft">
                 <input type="hidden" id="plan_year" name="plan_year" value="{{ draft_form.plan_year.value }}">
                 <input type="hidden" id="draft_version_id" name="version_id" value="{{ draft_form.version_id.value|default_if_none:'' }}">
                 <input type="hidden" id="source_version_id" name="source_version_id" value="{{ draft_form.source_version_id.value|default_if_none:'' }}">
@@ -90,7 +89,14 @@
                     <textarea class="form-control" id="body_html" name="body_html" rows="3">{{ draft_form.body_html.value|default_if_none:'' }}</textarea>
                 </div>
                 <p id="draft-editor-mode" class="text-muted small">{% if draft_form.version_id.value %}Saving updates the selected draft only.{% else %}Saving creates a new draft; published versions are never edited in place.{% endif %}</p>
-                <button type="submit" id="save-draft-btn" class="btn btn-primary" disabled>Save Draft</button>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" id="save-draft-btn" name="action" value="create_draft" class="btn btn-outline-primary" disabled>Save Draft</button>
+                    <button type="submit" id="save-publish-btn" name="action" value="save_and_publish"
+                            class="btn btn-primary" disabled
+                            data-confirm-message="Publish {{ content_block.label }} for plan year {{ draft_form.plan_year.value }}? This wording will become active in generated reports. The previous published version will remain in Version History.">
+                        Save &amp; Publish
+                    </button>
+                </div>
             </form>
         </div>
     </div>
@@ -339,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var form = document.getElementById('newDraftForm');
     if (!textarea || !form) { return; }
     var saveButton = document.getElementById('save-draft-btn');
+    var publishButton = document.getElementById('save-publish-btn');
     var readyField = document.getElementById('editor_ready');
     var errorBox = document.getElementById('editor-error');
     var editorReady = false;
@@ -347,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function() {
         editorReady = false;
         readyField.value = '';
         saveButton.disabled = true;
+        publishButton.disabled = true;
         errorBox.textContent = 'The wording editor could not load or synchronize. Nothing was saved. Keep your text and reload the page before saving.';
         errorBox.hidden = false;
     }
@@ -360,6 +368,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     form.addEventListener('submit', function(e) {
+        if (e.submitter === publishButton &&
+                !window.confirm(publishButton.getAttribute('data-confirm-message'))) {
+            e.preventDefault();
+            return;
+        }
         readyField.value = '';
         try {
             pushContent();
@@ -434,6 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
             editor.on('init', function() {
                 editorReady = true;
                 saveButton.disabled = false;
+                publishButton.disabled = false;
             });
         },
     });
