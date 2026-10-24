@@ -444,6 +444,7 @@ class ApplyAndRevertCorrectionsIntegrationTests(TestCase):
             block=block, plan_year=2026,
             body_html='<table><tbody><tr><th>x</th><th>&nbsp;&nbsp;&nbsp; Regular pay<br></th></tr></tbody></table>',
         )
+        original.submit_for_review()
         original.publish()
 
         _migration_module.apply_corrections(self.real_apps, None)
@@ -463,6 +464,7 @@ class ApplyAndRevertCorrectionsIntegrationTests(TestCase):
             block=block, plan_year=2026,
             body_html='<table><tbody><tr><td>multiply by the # of multiples selected (1-5)<br></td></tr></tbody></table>',
         )
+        already_fixed.submit_for_review()
         already_fixed.publish()
 
         _migration_module.apply_corrections(self.real_apps, None)
@@ -484,6 +486,7 @@ class ApplyAndRevertCorrectionsIntegrationTests(TestCase):
             block=block, plan_year=2026,
             body_html='<ul><li style="color: #285FBF;">Social Security and the FERS SRS<ul></ul></li></ul>',
         )
+        original.submit_for_review()
         original.publish()
 
         _migration_module.apply_corrections(self.real_apps, None)
@@ -504,6 +507,7 @@ class ApplyAndRevertCorrectionsIntegrationTests(TestCase):
         original = ContentBlockVersion.objects.create(
             block=block, plan_year=2026, body_html=ChecklistTopicsAfterSrsFixTests.BUGGY_INPUT,
         )
+        original.submit_for_review()
         original.publish()
 
         _migration_module.apply_corrections(self.real_apps, None)
@@ -528,6 +532,7 @@ class ApplyAndRevertCorrectionsIntegrationTests(TestCase):
                 ChecklistTopicsAfterSrsFixTests.BUGGY_INPUT
             ),
         )
+        already_corrected.submit_for_review()
         already_corrected.publish()
 
         _migration_module.apply_corrections(self.real_apps, None)
@@ -543,6 +548,7 @@ class ApplyAndRevertCorrectionsIntegrationTests(TestCase):
         original = ContentBlockVersion.objects.create(
             block=block, plan_year=2026, body_html=ChecklistTopicsAfterSrsFixTests.BUGGY_INPUT,
         )
+        original.submit_for_review()
         original.publish()
 
         _migration_module.apply_corrections(self.real_apps, None)

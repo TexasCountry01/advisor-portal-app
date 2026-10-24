@@ -115,20 +115,8 @@
 
     <!-- Statistics Cards + Filters (All in One Card) -->
     <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center gap-2">
-            <h5 class="mb-0 me-3">Quick Stats & Filters</h5>
-            <form method="get" action="{% url 'cases:member_dashboard' %}" class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 480px;">
-                <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
-                <input type="hidden" name="view" value="{{ active_view }}">
-                <input type="text" name="search" class="form-control form-control-sm"
-                       placeholder="Employee, Workshop..." value="{{ search_query|default:'' }}">
-                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
-                <a href="{% url 'cases:member_dashboard' %}?view={{ active_view }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-            </form>
-            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-toggle="collapse" data-bs-target="#filter-row">
-                <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
-            </button>
-            <a href="{% url 'cases:member_dashboard' %}?view={{ active_view }}" class="btn btn-sm btn-outline-secondary" title="Show all cases (clear filter)">All Cases ({{ stats.total_cases }})</a>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Quick Stats & Filters</h5>
             <button type="button" id="toggle-view-stats" class="btn btn-sm btn-outline-secondary" title="Show/hide stats">
                 <i class="bi bi-chevron-up"></i> Hide
             </button>
@@ -165,12 +153,21 @@
             </style>
             <!-- Clickable Fast-Filter Tiles -->
             <div class="row mb-3" id="top-row">
-                <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
+                <div class="col-auto ms-auto d-flex gap-2" style="flex-wrap: wrap; justify-content: flex-end;">
                     <a class="tile-link {% if quick_filter == 'ready_14d' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=ready_14d&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #198754 0%, #146c43 100%);"><div class="stat-mini-value">{{ member_quick_tiles.ready_14d }}</div><div class="stat-mini-label">Ready (14d)</div></div></a>
                     <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=pending&view={{ active_view }}"><div class="stat-mini"><div class="stat-mini-value">{{ member_quick_tiles.pending }}</div><div class="stat-mini-label">Pending</div></div></a>
                     <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=on_hold&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #e6a400 0%, #c48a14 100%);"><div class="stat-mini-value">{{ member_quick_tiles.on_hold }}</div><div class="stat-mini-label">On Hold</div></div></a>
                     <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=alerts&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #c00000 0%, #9a0000 100%);"><div class="stat-mini-value">{{ member_quick_tiles.alerts }}</div><div class="stat-mini-label">Alerts</div></div></a>
                     <a class="tile-link {% if quick_filter == 'drafts' %}active{% endif %}" href="{% url 'cases:member_dashboard' %}?quick_filter=drafts&view={{ active_view }}"><div class="stat-mini" style="background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);"><div class="stat-mini-value">{{ member_quick_tiles.drafts }}</div><div class="stat-mini-label">Drafts</div></div></a>
+                </div>
+            </div>
+
+            <!-- Filter Toggle Button -->
+            <div class="row g-3 mt-1 mb-2">
+                <div class="col-12">
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filter-row">
+                        <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
+                    </button>
                 </div>
             </div>
 
@@ -206,10 +203,6 @@
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="status" value="cancelled" id="status_cancelled" {% if 'cancelled' in status_filter %}checked{% endif %}>
                             <label class="form-check-label" for="status_cancelled">Canceled</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="status" value="declined" id="status_declined" {% if 'declined' in status_filter %}checked{% endif %}>
-                            <label class="form-check-label" for="status_declined">Declined</label>
                         </div>
                     </div>
                 </div>
@@ -360,12 +353,10 @@
                                     {% endif %}
                                 {% elif case.status == 'cancelled' %}
                                     <span class="badge bg-dark" title="Case canceled">Canceled</span>
-                                {% elif case.status == 'declined' %}
-                                    <span class="badge bg-danger" title="Case Declined">Declined</span>
                                 {% endif %}
                             </td>
                             <td class="column-credit {% if 'credit' not in visible_columns %}column-hidden{% endif %}">
-                                {% if case.credit_value and case.status != 'cancelled' and case.status != 'declined' %}
+                                {% if case.credit_value %}
                                     {{ case.credit_value }}
                                 {% else %}
                                     —

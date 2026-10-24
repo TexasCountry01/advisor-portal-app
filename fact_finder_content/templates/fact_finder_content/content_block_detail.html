@@ -4,11 +4,16 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
+    {% if invalid_year %}
+    <div class="alert alert-danger">Choose a valid plan year from the content list before editing.</div>
+    <a href="{{ back_to_list_url }}" class="btn btn-outline-secondary">Back to list</a>
+    {% else %}
     <div class="row mb-4">
         <div class="col-md-8">
             <h1>{{ content_block.label }}
+                {% if mockup_slot %}<span class="badge bg-primary">{{ mockup_slot }}</span>{% endif %}
                 {% if is_wired %}
-                    <span class="badge bg-success" title="This block's content is actually rendered into the real PDF today.">Live in PDF</span>
+                    <span class="badge bg-success" title="Configured for report integration. Actual use depends on report settings, year, and applicability.">Connected report section</span>
                 {% else %}
                     <span class="badge bg-warning text-dark" title="Publishing changes here will NOT appear in the PDF yet — this section of the template hasn't been connected to this panel.">Not yet connected to PDF</span>
                 {% endif %}
@@ -17,18 +22,13 @@
             {% if not is_wired %}
                 <div class="alert alert-warning py-2">
                     <strong>Heads up:</strong> this block exists in the content panel and can be edited/published, but
-                    <code>report_pdf.blade.php</code> doesn't read from it yet — any change you publish here will have
+                    report generation doesn't read from it yet — any change you publish here will have
                     <strong>no effect</strong> on the generated PDF until this block is wired in.
                 </div>
             {% endif %}
-            {% if content_block.required_placeholders %}
-                <p class="text-muted">Required placeholders:
-                    {% for token in content_block.required_placeholders %}<code>[[{{ token }}]]</code>{% if not forloop.last %}, {% endif %}{% endfor %}
-                </p>
-            {% endif %}
         </div>
         <div class="col-md-4 text-end">
-            <a href="{% url 'fact_finder_content:content_list' %}" class="btn btn-outline-secondary">← Back to list</a>
+            <a href="{{ back_to_list_url }}" class="btn btn-outline-secondary">← Back to list</a>
         </div>
     </div>
 
@@ -41,55 +41,105 @@
         {% endfor %}
     {% endif %}
 
+    {% if current_published_version %}
+    <div class="alert alert-success py-2">
+        <strong>Currently Published — {{ current_published_version.plan_year }}</strong>
+        {% if has_pending_version %}The published wording remains active until another version is published.{% endif %}
+    </div>
+    {% elif has_pending_version %}
+    <div class="alert alert-info py-2">Draft or review changes exist for this plan year. No published wording is currently active.</div>
+    {% endif %}
+
     <div class="card mb-4">
-        <div class="card-header"><strong>Report Content — {{ default_plan_year }}</strong></div>
+        <div class="card-header"><strong>Content &amp; Wording — Plan Year <span id="editing-year">{{ draft_form.plan_year.value }}</span></strong></div>
         <div class="card-body">
             <p class="text-muted">
                 Edit the wording that appears in the Fact Finder report.
                 Your changes will not appear in the PDF until they are published.
             </p>
+            <p class="small text-muted">Save Draft keeps the current published wording active. Save &amp; Publish makes your edited wording the published version now.</p>
+            {% if content_block.required_placeholders %}
+            <details class="mb-3">
+                <summary class="fw-semibold">Required Employee Information</summary>
+                <div class="mt-2">
+                    <p class="text-muted mb-2">These employee details are filled in automatically when a report is generated. Keep every required field in the wording. Use the field picker below to insert them; do not edit the field markers directly.</p>
+                    <ul class="mb-0">
+                        {% for item in placeholder_items %}<li>{{ item.label }}</li>{% endfor %}
+                    </ul>
+                </div>
+            </details>
+            {% endif %}
             <form method="post" id="newDraftForm">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="create_draft">
-                <!-- Plan year is intentionally not presented as an editable field here —
-                     changing which plan year a draft belongs to is not part of this
-                     screen's normal workflow. Still submitted as-is so POST handling in
-                     views.content_block_detail (create_draft) is unchanged. -->
-                <input type="hidden" id="plan_year" name="plan_year" value="{{ default_plan_year }}">
+                <input type="hidden" id="plan_year" name="plan_year" value="{{ draft_form.plan_year.value }}">
+                <input type="hidden" id="draft_version_id" name="version_id" value="{{ draft_form.version_id.value|default_if_none:'' }}">
+                <input type="hidden" id="source_version_id" name="source_version_id" value="{{ draft_form.source_version_id.value|default_if_none:'' }}">
+                <input type="hidden" id="editor_ready" name="editor_ready" value="">
+                {% if draft_form.errors %}
+                <div class="alert alert-danger" role="alert">
+                    <strong>Draft not saved. Your attempted wording is still below.</strong>
+                    {% for error in draft_form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                    {% for field in draft_form %}{% for error in field.errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+                </div>
+                {% endif %}
+                <div id="editor-error" class="alert alert-danger" role="alert" hidden></div>
+                <noscript><div class="alert alert-danger">JavaScript is required to save wording safely. Your stored wording has not changed.</div></noscript>
 
                 {% if content_block.required_placeholders %}
                 <div class="mb-3">
-                    <label for="merge_field_picker" class="form-label">Insert merge field</label>
+                    <label for="merge_field_picker" class="form-label">Add employee information field</label>
                     <div class="input-group" style="max-width: 400px;">
                         <select class="form-select" id="merge_field_picker">
                             <option value="">Choose a field…</option>
-                            {% for token in content_block.required_placeholders %}
-                            <option value="{{ token }}">{{ token }}</option>
+                            {% for item in placeholder_items %}
+                            <option value="{{ item.token }}">{{ item.label }}</option>
                             {% endfor %}
                         </select>
                         <button type="button" class="btn btn-outline-secondary" id="insert_merge_field_btn">Insert</button>
                     </div>
-                    <div class="form-text">Inserts a safe <code>[[token]]</code> merge field at the cursor — never hand-type these.</div>
+                    <div class="form-text" id="merge-field-help" aria-live="polite">Choose a field to see what information it supplies. Inserted values are filled in automatically when the report is generated.</div>
                 </div>
                 {% endif %}
 
                 <div class="mb-3">
                     <label for="body_html" class="form-label">Report wording</label>
-                    <!-- The textarea (no name) is where TinyMCE mounts. The hidden input (has the
-                         name) is what actually gets POSTed — kept in sync via JS below. This mirrors
-                         the pattern already used for SystemSettings.technical_notes_template.
-                         Pre-filled with the block's current content (see current_body_html in the
-                         view) so editing means "modify what's live", not "start from a blank box". -->
-                    <input type="hidden" id="body_html_hidden" name="body_html" form="newDraftForm" value="">
-                    <textarea class="form-control" id="body_html" rows="3">{{ current_body_html }}</textarea>
+                    <textarea class="form-control" id="body_html" name="body_html" rows="3">{{ draft_form.body_html.value|default_if_none:'' }}</textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">Save Draft</button>
+                <p id="draft-editor-mode" class="text-muted small">{% if draft_form.version_id.value %}Save Draft updates the selected draft only.{% else %}Save Draft creates a new draft.{% endif %} Save &amp; Publish always creates and publishes a new version; saved history is never overwritten.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" id="save-draft-btn" name="action" value="create_draft" class="btn btn-outline-primary" disabled>Save Draft</button>
+                    <button type="submit" id="save-publish-btn" name="action" value="save_and_publish" class="btn btn-primary" disabled
+                            data-confirm-title="Publish report wording?"
+                            data-confirm-message="Section: {{ content_block.label }}. Plan year: {{ draft_form.plan_year.value }}. This wording will become the published version. {% if is_wired %}Report setup and applicability may still control whether it appears in a generated PDF.{% else %}This section is not connected to generated PDFs yet, so publishing will not change PDF wording.{% endif %} The previous published wording will remain available in Version History."
+                            data-confirm-label="Publish Changes">
+                        Save &amp; Publish
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-header"><strong>Version History</strong></div>
+    <div class="modal fade" id="editorConfirmationModal" tabindex="-1" aria-labelledby="editorConfirmationTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="editorConfirmationTitle">Confirm change</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="editorConfirmationMessage"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" id="editorConfirmationCancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="editorConfirmationConfirm">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="editor-confirmation-error" class="alert alert-danger" role="alert" hidden>
+        This confirmation could not be opened. No changes were made. Reload the page and try again.
+    </div>
+
+    <details class="card mb-4">
+        <summary class="card-header"><strong>Version History</strong> <span class="text-muted small">({{ versions|length }} versions)</span></summary>
         <p class="text-muted small px-3 pt-2 mb-0">Use “Load into Editor” to bring an older version back into the Report wording box above.</p>
         <table class="table table-hover mb-0">
             <thead>
@@ -108,7 +158,11 @@
                     <td>{{ version.plan_year }}</td>
                     <td>
                         {% if version.status == 'published' %}
-                            <span class="badge bg-success">Published</span>
+                            {% if current_published_version and current_published_version.pk == version.pk %}
+                                <span class="badge bg-success">Currently Published</span>
+                            {% else %}
+                                <span class="badge bg-success">Published</span>
+                            {% endif %}
                         {% elif version.status == 'in_review' %}
                             <span class="badge bg-info text-dark">In Review</span>
                         {% elif version.status == 'draft' %}
@@ -123,7 +177,7 @@
                     <td>{{ version.created_by|default:'—' }}</td>
                     <td>{{ version.updated_at }}</td>
                     <td class="text-nowrap">
-                        <button type="button" class="btn btn-sm btn-outline-primary load-version-btn" data-body-html="{{ version.body_html }}">Load into Editor</button>
+                        <button type="button" class="btn btn-sm btn-outline-primary load-version-btn" data-version-id="{{ version.id }}" data-version-status="{{ version.status }}" data-plan-year="{{ version.plan_year }}" data-body-html="{{ version.body_html }}">Load into Editor</button>
                         {% if version.status == 'draft' %}
                         <form method="post" class="d-inline">
                             {% csrf_token %}
@@ -132,12 +186,15 @@
                             <button type="submit" class="btn btn-sm btn-outline-info">Submit for Review</button>
                         </form>
                         {% endif %}
-                        {% if version.status == 'draft' or version.status == 'in_review' %}
+                        {% if version.status == 'in_review' %}
                         <form method="post" class="d-inline">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="publish">
                             <input type="hidden" name="version_id" value="{{ version.id }}">
-                            <button type="submit" class="btn btn-sm btn-outline-success">Publish</button>
+                            <button type="submit" class="btn btn-sm btn-outline-success"
+                                    data-confirm-title="Publish reviewed wording?"
+                                    data-confirm-message="This wording will become the published version for plan year {{ version.plan_year }}. The previous published wording will remain available in Version History."
+                                    data-confirm-label="Publish Changes">Publish reviewed version</button>
                         </form>
                         {% endif %}
                     </td>
@@ -147,40 +204,46 @@
                 {% endfor %}
             </tbody>
         </table>
-    </div>
+    </details>
 
     <div class="card mb-4">
-        <div class="card-header"><strong>When should this content appear in the report?</strong></div>
+        <div class="card-header"><strong>When should this wording appear?</strong></div>
         <div class="card-body">
-            {% if presentable_rules %}
-            <p>Include this content in the report only when:</p>
+            <p class="mb-2"><strong>Advisor Portal conditions</strong> (maintained here):</p>
+            <div class="alert alert-warning py-2">
+                Changes to these conditions take effect immediately. They are not drafts and are not included in wording Version History. A condition here does not guarantee that wording will appear in a PDF; Benefits Software and report setup may apply additional conditions.
+            </div>
+            {% if not rule_configuration_supported %}
+            <div class="alert alert-warning">This wording has a more complex condition that cannot be safely changed here. Ask your technical administrator to review it.</div>
+            {% elif presentable_rules %}
+            <p>All of these conditions must be met:</p>
             <table class="table table-sm mb-2" style="max-width: 700px;">
                 <tbody>
                     {% for rule in presentable_rules %}
                     <tr>
-                        <td>{{ rule.field_label }}</td>
-                        <td>{{ rule.operator_label }}</td>
-                        <td>{{ rule.value_label }}</td>
+                        <td>{{ rule.condition_sentence }}</td>
                         <td>
                             <form method="post" class="d-inline">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="remove_display_rule">
                                 <input type="hidden" name="rule_index" value="{{ rule.index }}">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove condition</button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        data-confirm-title="Remove this condition?"
+                                        data-confirm-message="Removing this condition changes when the wording appears immediately. This change is not part of wording Version History."
+                                        data-confirm-label="Remove condition">Remove</button>
                             </form>
                         </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <p class="text-muted mb-3"><em>All conditions must be met for this content to be included.</em></p>
             <details>
                 <summary class="btn btn-sm btn-outline-primary">+ Add another condition</summary>
                 <form method="post" class="row g-2 align-items-end mt-2" id="addRuleForm" style="max-width: 700px;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="add_display_rule">
                     <div class="col-md-4">
-                        <label for="rule_field" class="form-label">Retirement/benefits condition</label>
+                        <label for="rule_field" class="form-label">Which information?</label>
                         <select class="form-select" id="rule_field" name="rule_field">
                             {% for opt in field_options %}
                             <option value="{{ opt.key }}">{{ opt.label }}</option>
@@ -188,30 +251,33 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="rule_operator" class="form-label">Comparison</label>
+                        <label for="rule_operator" class="form-label">Should it</label>
                         <select class="form-select" id="rule_operator" name="rule_operator">
                             <option value="equals">is</option>
                             <option value="not_equals">is not</option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="rule_value" class="form-label">Value</label>
+                        <label for="rule_value" class="form-label">match</label>
                         <select class="form-select" id="rule_value" name="rule_value"></select>
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-outline-primary w-100">Add condition</button>
+                        <button type="submit" class="btn btn-outline-primary w-100"
+                                data-confirm-title="Add this condition?"
+                                data-confirm-message="This condition changes when the wording appears immediately. It is not part of wording Version History, and report setup or Benefits Software may apply additional conditions."
+                                data-confirm-label="Add condition">Add condition</button>
                     </div>
                 </form>
             </details>
             {% else %}
-            <p><strong>Always include this content</strong> — no conditions are set, so this content is included in every report.</p>
+            <p><strong>No additional Advisor Portal condition is set.</strong> Report setup and Benefits Software may still determine whether this wording appears in a generated PDF.</p>
             <details>
-                <summary class="btn btn-sm btn-outline-secondary">Change when this content appears</summary>
+                <summary class="btn btn-sm btn-outline-secondary">Add an Advisor Portal condition</summary>
                 <form method="post" class="row g-2 align-items-end mt-2" id="addRuleForm" style="max-width: 700px;">
                     {% csrf_token %}
                     <input type="hidden" name="action" value="add_display_rule">
                     <div class="col-md-4">
-                        <label for="rule_field" class="form-label">Retirement/benefits condition</label>
+                        <label for="rule_field" class="form-label">Which information?</label>
                         <select class="form-select" id="rule_field" name="rule_field">
                             {% for opt in field_options %}
                             <option value="{{ opt.key }}">{{ opt.label }}</option>
@@ -219,76 +285,52 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="rule_operator" class="form-label">Comparison</label>
+                        <label for="rule_operator" class="form-label">Should it</label>
                         <select class="form-select" id="rule_operator" name="rule_operator">
                             <option value="equals">is</option>
                             <option value="not_equals">is not</option>
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <label for="rule_value" class="form-label">Value</label>
+                        <label for="rule_value" class="form-label">match</label>
                         <select class="form-select" id="rule_value" name="rule_value"></select>
                     </div>
                     <div class="col-md-2">
-                        <button type="submit" class="btn btn-outline-primary w-100">Add condition</button>
+                        <button type="submit" class="btn btn-outline-primary w-100"
+                                data-confirm-title="Add this condition?"
+                                data-confirm-message="This condition changes when the wording appears immediately. It is not part of wording Version History, and report setup or Benefits Software may apply additional conditions."
+                                data-confirm-label="Add condition">Add condition</button>
                     </div>
                 </form>
             </details>
             {% endif %}
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header"><strong>Preview when this content appears</strong></div>
-        <div class="card-body">
-            <p class="text-muted">
-                This checks whether the content above would currently be included in 24
-                representative sample reports, covering common retirement scenarios (FERS, CSRS,
-                CSRS Offset, Transfers, WEP, Postal, and more). It's a quick sanity check based on
-                the conditions set above right now — it does not cover every possible case, and it
-                is not required in order to save or publish.
-            </p>
-            <p>
-                <span class="badge {% if golden_master_match_count == golden_master_total_count %}bg-secondary{% else %}bg-primary{% endif %}">
-                    Included in {{ golden_master_match_count }} of {{ golden_master_total_count }} representative reports
-                </span>
-            </p>
-            <details>
-                <summary class="btn btn-sm btn-outline-secondary">View representative cases</summary>
-                <div class="row mt-2">
-                    <div class="col-md-6">
-                        <table class="table table-sm">
-                            <thead><tr><th colspan="2" class="text-success">✓ Included</th></tr></thead>
-                            <tbody>
-                                {% for result in golden_master_results %}
-                                {% if result.matches %}
-                                <tr><td>{{ result.emp_id }}</td><td>{{ result.label }}</td></tr>
-                                {% endif %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="col-md-6">
-                        <table class="table table-sm">
-                            <thead><tr><th colspan="2" class="text-muted">✗ Not included</th></tr></thead>
-                            <tbody>
-                                {% for result in golden_master_results %}
-                                {% if not result.matches %}
-                                <tr class="text-muted"><td>{{ result.emp_id }}</td><td>{{ result.label }}{% if result.error %} <span class="badge bg-danger">condition error: {{ result.error }}</span>{% endif %}</td></tr>
-                                {% endif %}
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <details class="mt-3">
+                <summary>Additional report conditions (read-only)</summary>
+                <p class="small text-muted mt-2">These documented report conditions are maintained outside this wording editor. Benefits Software may enforce other rules as well.</p>
+                <ul class="mb-0">
+                    {% for condition in rendering_conditions %}<li>{{ condition }}</li>{% endfor %}
+                </ul>
             </details>
         </div>
     </div>
 
     <details class="mb-4">
-        <summary class="btn btn-sm btn-outline-secondary">Technical details</summary>
-        <p class="text-muted small mt-2 mb-0">Content key: <code>{{ content_block.key }}</code></p>
+        <summary class="btn btn-sm btn-outline-secondary">Advanced technical details</summary>
+        <div class="text-muted small mt-2">
+            <p class="mb-1">Content key: <code>{{ content_block.key }}</code></p>
+            {% if content_block.required_placeholders %}
+            <p class="mb-1">Required merge-field identifiers:
+                {% for token in content_block.required_placeholders %}<code>[[{{ token }}]]</code>{% if not forloop.last %}, {% endif %}{% endfor %}
+            </p>
+            {% endif %}
+            {% if content_block.display_condition %}
+            <p class="mb-1">Technical rule definition:</p>
+            <pre class="mb-1"><code>{{ content_block.display_condition }}</code></pre>
+            {% endif %}
+            <p class="mb-0">Rule changes are immediate and separate from wording version history.</p>
+        </div>
     </details>
+    {% endif %}
 </div>
 
 
@@ -299,9 +341,78 @@
      "structural reference tables" work — the server-side allow-list in
      fact_finder_content/sanitize.py is the actual security boundary; this toolbar just makes
      it convenient to author content that will actually be accepted. -->
+{% if not invalid_year %}
 <script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var confirmationModalElement = document.getElementById('editorConfirmationModal');
+    var confirmationTitle = document.getElementById('editorConfirmationTitle');
+    var confirmationMessage = document.getElementById('editorConfirmationMessage');
+    var confirmationConfirm = document.getElementById('editorConfirmationConfirm');
+    var confirmationCancel = document.getElementById('editorConfirmationCancel');
+    var confirmationError = document.getElementById('editor-confirmation-error');
+    var confirmationModal = (
+        confirmationModalElement && window.bootstrap && window.bootstrap.Modal
+    ) ? window.bootstrap.Modal.getOrCreateInstance(confirmationModalElement) : null;
+    var pendingConfirmation = null;
+    var confirmedSubmitter = null;
+
+    function showConfirmation(title, message, confirmLabel, onConfirm) {
+        if (!confirmationModal || !confirmationConfirm) {
+            if (confirmationError) { confirmationError.hidden = false; }
+            return;
+        }
+        confirmationTitle.textContent = title;
+        confirmationMessage.textContent = message;
+        confirmationConfirm.textContent = confirmLabel;
+        pendingConfirmation = onConfirm;
+        confirmationModal.show();
+    }
+
+    if (confirmationConfirm) {
+        confirmationConfirm.addEventListener('click', function() {
+            var action = pendingConfirmation;
+            pendingConfirmation = null;
+            if (confirmationModal) { confirmationModal.hide(); }
+            if (action) { action(); }
+        });
+    }
+    if (confirmationCancel) {
+        confirmationCancel.addEventListener('click', function() {
+            pendingConfirmation = null;
+        });
+    }
+    if (confirmationModalElement) {
+        confirmationModalElement.addEventListener('hidden.bs.modal', function() {
+            pendingConfirmation = null;
+        });
+    }
+
+    document.addEventListener('submit', function(e) {
+        var submitter = e.submitter;
+        if (!submitter || !submitter.getAttribute('data-confirm-title') || confirmedSubmitter === submitter) {
+            return;
+        }
+        e.preventDefault();
+        showConfirmation(
+            submitter.getAttribute('data-confirm-title'),
+            submitter.getAttribute('data-confirm-message'),
+            submitter.getAttribute('data-confirm-label') || 'Confirm',
+            function() {
+                if (!e.target.requestSubmit) {
+                    if (confirmationError) { confirmationError.hidden = false; }
+                    return;
+                }
+                confirmedSubmitter = submitter;
+                try {
+                    e.target.requestSubmit(submitter);
+                } finally {
+                    confirmedSubmitter = null;
+                }
+            }
+        );
+    }, true);
+
     // ─── Display-condition rule builder: value <select> options depend on the
     // chosen field (choice fields get their declared choices; boolean fields get
     // true/false). Populated from a server-rendered registry — never free text. ───
@@ -327,21 +438,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     var textarea = document.getElementById('body_html');
-    var hidden = document.getElementById('body_html_hidden');
-    if (!textarea || !hidden) { return; }
+    var form = document.getElementById('newDraftForm');
+    if (!textarea || !form) { return; }
+    var saveButton = document.getElementById('save-draft-btn');
+    var publishButton = document.getElementById('save-publish-btn');
+    var readyField = document.getElementById('editor_ready');
+    var errorBox = document.getElementById('editor-error');
+    var editorReady = false;
 
-    function pushContent() {
-        if (typeof tinymce !== 'undefined') {
-            var editor = tinymce.get('body_html');
-            if (editor) {
-                hidden.value = editor.getContent();
-                return;
-            }
-        }
-        hidden.value = textarea.value;
+    function editorFailure() {
+        editorReady = false;
+        readyField.value = '';
+        saveButton.disabled = true;
+        publishButton.disabled = true;
+        errorBox.textContent = 'The wording editor could not load or synchronize. Nothing was saved. Keep your text and reload the page before saving.';
+        errorBox.hidden = false;
     }
 
-    tinymce.init({
+    function pushContent() {
+        var editor = typeof tinymce !== 'undefined' && tinymce.get('body_html');
+        if (!editorReady || !editor) {
+            throw new Error('Editor not ready');
+        }
+        textarea.value = editor.getContent();
+    }
+
+    form.addEventListener('submit', function(e) {
+        readyField.value = '';
+        try {
+            pushContent();
+            if (!textarea.value.trim()) {
+                e.preventDefault();
+                errorBox.textContent = 'Enter report wording before saving. Nothing was saved.';
+                errorBox.hidden = false;
+                return;
+            }
+            readyField.value = 'ready';
+        } catch (error) {
+            e.preventDefault();
+            editorFailure();
+        }
+    });
+
+    if (typeof tinymce === 'undefined') {
+        editorFailure();
+        return;
+    }
+    try {
+    var initialization = tinymce.init({
         selector: '#body_html',
         plugins: 'lists table autoresize',
         toolbar: 'formatselect | bold italic underline | bullist numlist | styleselect | table tableprops tabledelete | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol',
@@ -391,29 +535,41 @@ document.addEventListener('DOMContentLoaded', function() {
             },
         ],
         setup: function(editor) {
-            editor.on('init', pushContent);
-            editor.on('change keyup NodeChange', pushContent);
+            editor.on('init', function() {
+                editorReady = true;
+                saveButton.disabled = false;
+                publishButton.disabled = false;
+            });
         },
     });
-
-    var form = document.getElementById('newDraftForm');
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        pushContent();
-        HTMLFormElement.prototype.submit.call(form);
-    });
+    initialization.catch(editorFailure);
+    } catch (error) {
+        editorFailure();
+        return;
+    }
 
     // Merge-field picker: insert a safe [[token]] at the cursor — never hand-typed.
     var insertBtn = document.getElementById('insert_merge_field_btn');
     var picker = document.getElementById('merge_field_picker');
+    var mergeFieldHelp = document.getElementById('merge-field-help');
     if (insertBtn && picker) {
+        picker.addEventListener('change', function() {
+            if (mergeFieldHelp) {
+                mergeFieldHelp.textContent = picker.value
+                    ? picker.options[picker.selectedIndex].textContent
+                        + ' is supplied automatically when the report is generated. The required field marker will be inserted at the cursor.'
+                    : 'Choose a field to see what information it supplies. Inserted values are filled in automatically when the report is generated.';
+            }
+        });
         insertBtn.addEventListener('click', function() {
             var token = picker.value;
             if (!token) { return; }
             var editor = tinymce.get('body_html');
-            if (editor) {
+            if (editorReady && editor) {
                 editor.execCommand('mceInsertContent', false, '[[' + token + ']]');
                 pushContent();
+            } else {
+                editorFailure();
             }
         });
     }
@@ -424,14 +580,38 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.load-version-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var html = btn.getAttribute('data-body-html');
-            var editor = tinymce.get('body_html');
-            if (editor) {
-                editor.setContent(html);
-                pushContent();
-            }
-            document.getElementById('body_html').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            var versionId = btn.getAttribute('data-version-id');
+            var isDraft = btn.getAttribute('data-version-status') === 'draft';
+            var year = btn.getAttribute('data-plan-year');
+            showConfirmation(
+                'Load saved wording?',
+                'Load this saved version for plan year ' + year + '? Any unsaved wording in the editor will be replaced.',
+                'Load version',
+                function() {
+                    loadVersionIntoEditor(html, versionId, isDraft, year);
+                }
+            );
         });
     });
+
+    function loadVersionIntoEditor(html, versionId, isDraft, year) {
+        var editor = tinymce.get('body_html');
+        if (!editorReady || !editor) {
+            editorFailure();
+            return;
+        }
+        editor.setContent(html);
+        pushContent();
+        document.getElementById('draft_version_id').value = isDraft ? versionId : '';
+        document.getElementById('source_version_id').value = versionId;
+        document.getElementById('plan_year').value = year;
+        document.getElementById('editing-year').textContent = year;
+        document.getElementById('draft-editor-mode').textContent = isDraft
+            ? 'Save Draft updates the selected draft only. Save & Publish always creates and publishes a new version.'
+            : 'Save Draft creates a new draft. Save & Publish always creates and publishes a new version; saved history is never overwritten.';
+        document.getElementById('body_html').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
 });
 </script>
+{% endif %}
 {% endblock %}

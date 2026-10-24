@@ -111,6 +111,31 @@ class FactFinderDataContractSchemaTests(SimpleTestCase):
         serializer = FactFinderDataContractSerializer(data=_sample_contract())
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
+    def test_supported_c1_retirement_types_are_accepted_exactly(self):
+        for retirement_type in ('Regular', 'VERA / DSR', 'Deferred'):
+            with self.subTest(retirement_type=retirement_type):
+                payload = _sample_contract()
+                payload['system']['retirement_type'] = retirement_type
+                serializer = FactFinderDataContractSerializer(data=payload)
+                self.assertTrue(serializer.is_valid(), serializer.errors)
+                self.assertEqual(
+                    serializer.validated_data['system']['retirement_type'],
+                    retirement_type,
+                )
+
+    def test_missing_null_blank_and_unsupported_retirement_types_are_rejected(self):
+        invalid_values = ('missing', None, '', 'Optional')
+        for retirement_type in invalid_values:
+            with self.subTest(retirement_type=retirement_type):
+                payload = _sample_contract()
+                if retirement_type == 'missing':
+                    del payload['system']['retirement_type']
+                else:
+                    payload['system']['retirement_type'] = retirement_type
+                serializer = FactFinderDataContractSerializer(data=payload)
+                self.assertFalse(serializer.is_valid())
+                self.assertIn('retirement_type', serializer.errors.get('system', {}))
+
     def test_fegli_arr_years_in_retirement_accepts_asterisk_marker(self):
         """Grounded in a real end-to-end validation finding (2026-09-12, case #42293):
         EmployeeRepository::getFegliReport() emits a literal '*' marker for

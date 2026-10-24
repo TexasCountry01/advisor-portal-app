@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+
+{% block title %}Fact Finder PDF — Report Order Preview — ProFeds Report Portal{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <h1>Fact Finder Content — PDF Order</h1>
+            <p class="text-muted">Find and manage report wording in PDF order. The inventory includes content for every scenario.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <nav aria-label="Content view" class="mb-3">
+        <div class="nav nav-tabs">
+            <a class="nav-link {% if mode == 'all' %}active{% endif %}"
+               href="?mode=all&amp;plan_year={{ plan_year }}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
+               {% if mode == 'all' %}aria-current="page"{% endif %}>All Content</a>
+            <a class="nav-link {% if mode == 'preview' %}active{% endif %}"
+               href="?mode=preview&amp;plan_year={{ plan_year }}&amp;system_type={{ system_type|urlencode }}{% if retirement_type %}&amp;retirement_type={{ retirement_type|urlencode }}{% endif %}{% if query %}&amp;q={{ query|urlencode }}{% endif %}"
+               {% if mode == 'preview' %}aria-current="page"{% endif %}>Preview Scenario</a>
+        </div>
+    </nav>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-2 align-items-end">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <input type="hidden" name="q" value="{{ query }}">
+                {% if mode == 'preview' %}
+                <div class="col-auto">
+                    <label for="system_type" class="col-form-label">System Type</label>
+                    <select class="form-select" id="system_type" name="system_type">
+                        {% for st in system_types %}
+                        <option value="{{ st }}" {% if st == system_type %}selected{% endif %}>{{ st }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <label for="retirement_type" class="col-form-label">Retirement Type</label>
+                    <select class="form-select" id="retirement_type" name="retirement_type">
+                        <option value="" {% if not retirement_type %}selected{% endif %}>Any (show all variants)</option>
+                        {% for rt in retirement_types %}
+                        <option value="{{ rt }}" {% if rt == retirement_type %}selected{% endif %}>{{ rt }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                <div class="col-auto">
+                    <label for="plan_year" class="col-form-label">Plan Year</label>
+                    <input type="number" class="form-control" id="plan_year" name="plan_year" value="{{ plan_year }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary">{% if mode == 'preview' %}Preview Scenario{% else %}Apply Plan Year{% endif %}</button>
+                </div>
+            </form>
+            <form method="get" class="row g-2 align-items-end mt-2">
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <input type="hidden" name="plan_year" value="{{ plan_year }}">
+                {% if mode == 'preview' %}
+                <input type="hidden" name="system_type" value="{{ system_type }}">
+                <input type="hidden" name="retirement_type" value="{{ retirement_type }}">
+                {% endif %}
+                <div class="col-md-6">
+                    <label for="content-search" class="form-label">Search content</label>
+                    <input type="search" class="form-control" id="content-search" name="q" value="{{ query }}"
+                           placeholder="Title, section, keyword, or slot (for example B4 or MRA)">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                    {% if query %}
+                    <a class="btn btn-outline-secondary" href="?mode={{ mode }}&amp;plan_year={{ plan_year }}{% if mode == 'preview' %}&amp;system_type={{ system_type|urlencode }}{% if retirement_type %}&amp;retirement_type={{ retirement_type|urlencode }}{% endif %}{% endif %}">Clear search</a>
+                    {% endif %}
+                </div>
+            </form>
+            {% if mode == 'all' %}
+            <p class="form-text mb-0 mt-2">All Content shows the full active inventory; scenario choices do not hide blocks.</p>
+            {% else %}
+            <p class="form-text mb-0 mt-2">Preview Scenario keeps the full inventory visible and marks whether documented conditions match. This is not a generated employee PDF; additional Benefits Software rendering or calculation gates may apply.</p>
+            {% endif %}
+            {% if is_super_dev %}
+            <form method="post" action="" class="d-flex align-items-center gap-2 mt-3">
+                {% csrf_token %}
+                <input type="hidden" name="mode" value="{{ mode }}">
+                <input type="hidden" name="system_type" value="{{ system_type }}">
+                <input type="hidden" name="retirement_type" value="{{ retirement_type }}">
+                <input type="hidden" name="plan_year" value="{{ plan_year }}">
+                <input type="hidden" name="q" value="{{ query }}">
+                <input type="hidden" name="section" value="{{ requested_section }}">
+                <input type="hidden" name="row_block_id" value="{{ requested_row_block_id }}">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="show_technical_identifiers"
+                           name="show_technical_identifiers" value="1"
+                           {% if show_technical_identifiers %}checked{% endif %}>
+                    <label class="form-check-label small" for="show_technical_identifiers">Show technical identifiers</label>
+                </div>
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Apply</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if query and not has_search_results %}
+    <div class="alert alert-info" role="status">No content matched “{{ query }}”. Try a block title, section name, keyword, or verified slot number.</div>
+    {% endif %}
+
+    {% for section_row in sections %}
+        {% if show_ungoverned_sections and section_row.section.group_key == 'pension' %}
+            {% for ungoverned in ungoverned_sections %}
+            <div class="card mb-3 border-secondary">
+                <div class="card-header bg-secondary bg-opacity-10">
+                    <strong>{{ ungoverned.label }}</strong>
+                    <span class="badge bg-secondary ms-2">
+                        {% if ungoverned.label == 'Disclaimer & Release' %}
+                            Existing report content
+                        {% else %}
+                            Automatically generated
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body text-muted small">
+                    {% if ungoverned.label == 'Disclaimer & Release' %}
+                        The disclaimer is currently maintained separately. Administrator editing through this screen is planned.
+                    {% else %}
+                        This section is populated automatically with employee information and calculated retirement benefits. No manual editing is required.
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <button class="btn btn-link text-decoration-none p-0 fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#section-{{ section_row.section.group_key }}" aria-expanded="true">
+                    {{ section_row.section.section_label }}
+                </button>
+            </div>
+            <div class="collapse show" id="section-{{ section_row.section.group_key }}">
+                <div class="list-group list-group-flush">
+                    {% for row in section_row.rows %}
+                    {% if row.kind == 'governed' %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap">
+                            <div class="flex-grow-1 me-3">
+                                <button class="btn btn-link text-decoration-none p-0 text-start fw-semibold" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#{{ row.dom_id }}"
+                                        aria-expanded="false" aria-controls="{{ row.dom_id }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                    {% if row.entry.label and row.entry.label != row.entry.key %}
+                                        {{ row.entry.label }}
+                                    {% else %}
+                                        Unlabeled content
+                                    {% endif %}
+                                </button>
+                                {% if row.mockup_slot %}
+                                <span class="badge bg-primary ms-2">{{ row.mockup_slot }}</span>
+                                {% endif %}
+                                <div class="mt-1">
+                                    {% if row.published %}
+                                        <span class="badge bg-success">Published</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">None</span>
+                                    {% endif %}
+                                    {% if row.draft %}
+                                        <span class="badge bg-warning text-dark">Draft</span>
+                                    {% endif %}
+                                    {% if mode == 'preview' %}
+                                        {% if row.scenario_applicability is True %}
+                                            <span class="badge bg-success">Matches documented conditions</span>
+                                        {% elif row.scenario_applicability is False %}
+                                            <span class="badge bg-secondary">Does not match documented conditions</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark">More information needed</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                {% if row.block %}
+                                <a href="{{ row.edit_url }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="collapse mt-3" id="{{ row.dom_id }}">
+                            <div class="border rounded p-3 bg-white">
+                                <div class="published-html-preview">
+                                    {% if row.published %}
+                                        {{ row.published.body_html|safe }}
+                                    {% else %}
+                                        <p class="text-muted fst-italic mb-0">No published content for this plan year.</p>
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted">
+                                    <div><strong>Advisor Portal wording rule:</strong> {{ row.portal_condition_summary }}</div>
+                                    {% for rendering_condition in row.rendering_conditions %}
+                                    <div><strong>PDF rendering condition:</strong> {{ rendering_condition }}</div>
+                                    {% endfor %}
+                                </div>
+                                {% if row.tie_members %}
+                                <hr>
+                                <div class="small text-muted">
+                                    {% if row.tie_members %}
+                                    <div class="mt-1">
+                                        <strong>Mutually exclusive alternative{{ row.tie_members|length|pluralize }}:</strong>
+                                        {% for sibling in row.tie_members %}{% if sibling.label and sibling.label != sibling.key %}{{ sibling.label }}{% else %}Alternative content{% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}.
+                                        Exactly one of these versions appears in any single generated PDF, depending on the retiree's case.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                                {% if show_technical_identifiers %}
+                                <div class="small text-muted mt-2">Content key: <code>{{ row.entry.key }}</code></div>
+                                {% endif %}
+                                {% if not row.block %}
+                                <div class="small text-muted">No ContentBlock record found locally for this key.</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="list-group-item text-muted" style="border-left: 3px dashed #adb5bd;">
+                        <em>{{ row.entry.label|cut:" (computed)" }}</em>
+                        <span class="badge bg-light text-dark border ms-1">Automatically generated — not editable here</span>
+                        <div class="small mt-1">Generated automatically using the employee's report information.</div>
+                        {% if row.mockup_slot %}<span class="badge bg-primary mt-1">{{ row.mockup_slot }}</span>{% endif %}
+                        {% if mode == 'preview' %}
+                            {% if row.scenario_applicability is True %}
+                                <span class="badge bg-success mt-1">Matches documented conditions</span>
+                            {% elif row.scenario_applicability is False %}
+                                <span class="badge bg-secondary mt-1">Does not match documented conditions</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark mt-1">More information needed</span>
+                            {% endif %}
+                        {% endif %}
+                        <div class="small text-muted mt-1">This is a calculated report section, not wording maintained here.</div>
+                        {% if mode == 'preview' %}
+                            {% for rendering_condition in row.rendering_conditions %}
+                            <div class="small text-muted">{{ rendering_condition }}</div>
+                            {% endfor %}
+                        {% endif %}
+                        {% if show_technical_identifiers %}
+                        <div class="small text-muted mt-1">Internal identifier: <code>{{ row.entry.placeholder_id }}</code></div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% empty %}
+                    {% if not query %}<div class="list-group-item text-muted">No content blocks are mapped in this section.</div>{% endif %}
+                    {% endfor %}
+                </div>
+
+                {% if section_row.unwired_rows %}
+                {% if mode == 'all' %}
+                <div class="card-body border-top">
+                    <strong>Content not currently connected to the PDF</strong>
+                    <p class="small text-muted mb-2">These active editor records are included in the inventory, but publishing them will not change the generated PDF.</p>
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            {% for row in section_row.unwired_rows %}
+                            <tr>
+                                <td>{% if row.block.label and row.block.label != row.key %}{{ row.block.label }}{% else %}Unlabeled content{% endif %} <span class="badge bg-warning text-dark ms-1">Not connected</span></td>
+                                <td class="text-end"><a href="{{ row.edit_url }}" class="btn btn-sm btn-outline-primary">Edit</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="card-body border-top">
+                    <button class="btn btn-sm btn-outline-warning" type="button" data-bs-toggle="collapse" data-bs-target="#unwired-{{ section_row.section.group_key }}">
+                        <i class="bi bi-exclamation-triangle"></i> Not currently connected to the PDF ({{ section_row.unwired_rows|length }})
+                    </button>
+                    <div class="collapse mt-2" id="unwired-{{ section_row.section.group_key }}">
+                        <table class="table table-sm mb-0">
+                            <tbody>
+                                {% for row in section_row.unwired_rows %}
+                                <tr>
+                                    <td class="text-truncate">
+                                        {% if row.block.label and row.block.label != row.key %}
+                                            {{ row.block.label }}
+                                        {% else %}
+                                            Unlabeled content
+                                        {% endif %}
+                                        <span class="badge bg-warning text-dark ms-1" title="Publishing changes here will NOT appear in the PDF.">Not connected</span>
+                                    </td>
+                                    <td>
+                                        {% if row.block %}
+                                        <a href="{{ row.edit_url }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    {% empty %}
+    <p class="text-muted">No structure-map sections defined.</p>
+    {% endfor %}
+
+    {% if additional_rows %}
+    <div class="card mb-3">
+        <div class="card-header"><strong>Additional active content not in the verified PDF structure</strong></div>
+        <div class="list-group list-group-flush">
+            {% for row in additional_rows %}
+            <div class="list-group-item d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>{% if row.block.label and row.block.label != row.block.key %}{{ row.block.label }}{% else %}Unlabeled content{% endif %}</strong>
+                    <div class="small text-muted">{{ row.block.group.label }} · No verified PDF position</div>
+                    <div class="small text-muted">Advisor Portal wording rule: {{ row.portal_condition_summary }}</div>
+                    <span class="badge bg-warning text-dark">Not connected to a verified PDF position</span>
+                    {% if mode == 'preview' %}<span class="badge bg-secondary">Applicability not determined</span>{% endif %}
+                    {% if row.published %}<span class="badge bg-success">Published</span>{% endif %}
+                    {% if row.draft %}<span class="badge bg-warning text-dark">Draft</span>{% endif %}
+                </div>
+                <a href="{{ row.edit_url }}" class="btn btn-sm btn-outline-primary">Edit</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if scroll_to_dom_id %}
+<script>
+    // Phase 2C-2: when returning here from the content editor (e.g. after
+    // clicking "Back to list"), re-expand and scroll to the specific content
+    // row the administrator was editing, instead of requiring them to
+    // manually scroll/search through the list again. Uses only the Bootstrap
+    // Collapse API already loaded by base.html (bootstrap.bundle.min.js) —
+    // no new JavaScript library is introduced. The target id is computed and
+    // validated server-side (fact_finder_content/views.py::pdf_order_preview)
+    // against the rows actually rendered for the current scenario; this
+    // script only shows/scrolls to an id that already exists in the page.
+    document.addEventListener('DOMContentLoaded', function () {
+        var targetId = '{{ scroll_to_dom_id|escapejs }}';
+        var panel = document.getElementById(targetId);
+        if (!panel) { return; }
+        if (typeof bootstrap !== 'undefined') {
+            bootstrap.Collapse.getOrCreateInstance(panel, { toggle: false }).show();
+        }
+        panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+</script>
+{% endif %}
+{% endblock %}

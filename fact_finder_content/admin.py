@@ -21,4 +21,10 @@ class ContentBlockVersionAdmin(admin.ModelAdmin):
     list_display = ('block', 'plan_year', 'status', 'created_by', 'published_at', 'updated_at')
     list_filter = ('status', 'plan_year', 'block__group')
     search_fields = ('block__key', 'block__label')
-    readonly_fields = ('published_at', 'created_at', 'updated_at')
+    readonly_fields = tuple(field.name for field in ContentBlockVersion._meta.fields)
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False

@@ -11,6 +11,9 @@ fields must be one of the field's declared choices. This is what the analysis
 doc calls out as removing "an entire class of syntax-error bugs a non-engineer
 ... can introduce."
 """
+from dataclasses import dataclass
+from enum import Enum
+import math
 
 OP_EQUALS = 'equals'
 OP_NOT_EQUALS = 'not_equals'
@@ -160,3 +163,186 @@ def evaluate_rules(rules, data_contract):
         else:
             raise ValueError(f"Unknown operator: {rule['operator']}")
     return True
+
+
+class RuleOutcome(str, Enum):
+    MATCH = 'match'
+    NO_MATCH = 'no_match'
+    UNKNOWN = 'unknown'
+
+
+@dataclass(frozen=True)
+class RuleEvaluation:
+    outcome: RuleOutcome
+    unknown_facts: tuple[str, ...] = ()
+
+
+class RuleValidationError(ValueError):
+    """Raised when a v2 condition uses unsupported structure or rule values."""
+
+
+class RuleEvaluationError(ValueError):
+    """Raised when supplied known facts do not conform to their registered types."""
+
+
+def _validate_v2_rule(rule):
+    if not isinstance(rule, dict) or set(rule) != {'field', 'operator', 'value'}:
+        raise RuleValidationError('Each rule must contain exactly field, operator, and value.')
+
+    field_key = rule['field']
+    if not isinstance(field_key, str) or field_key not in AVAILABLE_FIELDS:
+        raise RuleValidationError(f'Unknown rule field: {field_key!r}.')
+
+    field_def = AVAILABLE_FIELDS[field_key]
+    field_type = field_def['type']
+    operator = rule['operator']
+    allowed_operators = OPERATORS_BY_TYPE.get(field_type)
+    if not isinstance(operator, str) or allowed_operators is None:
+        raise RuleValidationError(f'Unsupported rule field type for {field_key!r}.')
+    if operator not in {name for name, _label in allowed_operators}:
+        raise RuleValidationError(f'Unsupported operator {operator!r} for {field_key!r}.')
+
+    value = rule['value']
+    if field_type == 'choice':
+        valid_value = type(value) is str and value in field_def['choices']
+    elif field_type == 'boolean':
+        valid_value = type(value) is bool
+    elif field_type in ('number', 'numeric'):
+        valid_value = (
+            type(value) in (int, float)
+            and (type(value) is int or math.isfinite(value))
+        )
+    else:
+        valid_value = False
+    if not valid_value:
+        raise RuleValidationError(f'Invalid value type or value for rule field {field_key!r}.')
+
+
+def validate_condition_v2(condition: object) -> None:
+    """Validate a single rule, an AND group, or an OR of AND groups.
+
+    Empty AND groups are permitted as the identity condition (always true),
+    consistent with existing ContentSlotVersion configurations. Empty OR
+    groups are rejected because they can never match.
+    """
+    if isinstance(condition, dict) and set(condition) == {'field', 'operator', 'value'}:
+        _validate_v2_rule(condition)
+        return
+
+    if not isinstance(condition, dict):
+        raise RuleValidationError('A condition must be a rule or an all/any object.')
+
+    if set(condition) == {'all'}:
+        rules = condition['all']
+        if not isinstance(rules, list):
+            raise RuleValidationError('"all" must contain a list of rules.')
+        for rule in rules:
+            _validate_v2_rule(rule)
+        return
+
+    if set(condition) == {'any'}:
+        alternatives = condition['any']
+        if not isinstance(alternatives, list) or not alternatives:
+            raise RuleValidationError('"any" must contain at least one AND group.')
+        for alternative in alternatives:
+            if not isinstance(alternative, dict) or set(alternative) != {'all'}:
+                raise RuleValidationError('Each "any" alternative must contain only an "all" list.')
+            rules = alternative['all']
+            if not isinstance(rules, list):
+                raise RuleValidationError('Each "all" group must contain a list of rules.')
+            for rule in rules:
+                _validate_v2_rule(rule)
+        return
+
+    raise RuleValidationError('A condition must contain exactly one supported rule group.')
+
+
+def _validate_known_fact(field_key, value):
+    if value is None:
+        return
+
+    field_type = AVAILABLE_FIELDS[field_key]['type']
+    if field_type == 'choice':
+        is_valid = type(value) is str and value in AVAILABLE_FIELDS[field_key]['choices']
+    elif field_type == 'boolean':
+        is_valid = type(value) is bool
+    elif field_type in ('number', 'numeric'):
+        is_valid = (
+            type(value) in (int, float)
+            and (type(value) is int or math.isfinite(value))
+        )
+    else:
+        is_valid = False
+    if not is_valid:
+        raise RuleEvaluationError(f'Known fact {field_key!r} has an invalid value type or value.')
+
+
+def _evaluate_v2_rule(rule, data_contract):
+    field_key = rule['field']
+    actual = _get_nested(data_contract, field_key)
+    if actual is None:
+        return RuleEvaluation(RuleOutcome.UNKNOWN, (field_key,))
+
+    _validate_known_fact(field_key, actual)
+    expected = rule['value']
+    if rule['operator'] == OP_EQUALS:
+        matched = actual == expected
+    else:
+        matched = actual != expected
+    outcome = RuleOutcome.MATCH if matched else RuleOutcome.NO_MATCH
+    return RuleEvaluation(outcome)
+
+
+def _combine_and(results):
+    if any(result.outcome is RuleOutcome.NO_MATCH for result in results):
+        return RuleEvaluation(RuleOutcome.NO_MATCH)
+    unknown_facts = tuple(sorted({
+        fact
+        for result in results
+        if result.outcome is RuleOutcome.UNKNOWN
+        for fact in result.unknown_facts
+    }))
+    if unknown_facts:
+        return RuleEvaluation(RuleOutcome.UNKNOWN, unknown_facts)
+    return RuleEvaluation(RuleOutcome.MATCH)
+
+
+def _combine_or(results):
+    if any(result.outcome is RuleOutcome.MATCH for result in results):
+        return RuleEvaluation(RuleOutcome.MATCH)
+    unknown_facts = tuple(sorted({
+        fact
+        for result in results
+        if result.outcome is RuleOutcome.UNKNOWN
+        for fact in result.unknown_facts
+    }))
+    if unknown_facts:
+        return RuleEvaluation(RuleOutcome.UNKNOWN, unknown_facts)
+    return RuleEvaluation(RuleOutcome.NO_MATCH)
+
+
+def evaluate_rules_v2(condition: dict, data_contract: dict) -> RuleEvaluation:
+    """Evaluate a validated v2 condition using MATCH/NO_MATCH/UNKNOWN logic.
+
+    ``condition`` accepts one rule, ``{"all": [rules...]}``, or the stored
+    slot format ``{"any": [{"all": [rules...]}...]}``. Unknown-fact names
+    are returned only when the final result remains indeterminate.
+    """
+    validate_condition_v2(condition)
+    if not isinstance(data_contract, dict):
+        raise RuleEvaluationError('Facts must be supplied as a nested object.')
+
+    if set(condition) == {'field', 'operator', 'value'}:
+        return _evaluate_v2_rule(condition, data_contract)
+    if set(condition) == {'all'}:
+        return _combine_and([
+            _evaluate_v2_rule(rule, data_contract)
+            for rule in condition['all']
+        ])
+    return _combine_or([
+        _combine_and([
+            _evaluate_v2_rule(rule, data_contract)
+            for rule in alternative['all']
+        ])
+        for alternative in condition['any']
+    ])

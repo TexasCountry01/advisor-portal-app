@@ -10,6 +10,9 @@
             <p class="text-muted">Manage the verbiage used in the Fact Finder PDF, grouped by section — Plan Year {{ plan_year }}.</p>
         </div>
         <div class="col-md-4 text-end">
+            <a href="{% url 'fact_finder_content:pdf_order_preview' %}" class="btn btn-outline-info" title="Read-only preview of the PDF's actual report order">
+                <i class="bi bi-eye"></i> PDF Order Preview
+            </a>
             <a href="{% url 'cases:admin_dashboard' %}" class="btn btn-outline-secondary">← Back</a>
         </div>
     </div>
@@ -77,13 +80,13 @@
                     </td>
                     <td>
                         {% if entry.is_wired %}
-                            <span class="badge bg-success" title="This block's content is actually rendered into the real PDF today.">Live</span>
+                            <span class="badge bg-success" title="Configured for report integration. Actual use depends on report settings, year, and applicability.">Connected report section</span>
                         {% else %}
                             <span class="badge bg-warning text-dark" title="Publishing changes here will NOT appear in the PDF yet.">Not connected</span>
                         {% endif %}
                     </td>
                     <td>
-                        <a href="{% url 'fact_finder_content:content_block_detail' entry.block.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <a href="{% url 'fact_finder_content:content_block_detail' entry.block.id %}?plan_year={{ plan_year }}" class="btn btn-sm btn-outline-primary">Edit</a>
                     </td>
                 </tr>
                 {% empty %}

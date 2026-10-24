@@ -13,21 +13,7 @@
     <div class="row mb-4">
         <div class="col">
             <h2>Benefits Technician Dashboard</h2>
-            <p class="text-muted mb-1">
-                {% if assigned_filter == 'mine' %}
-                View and manage your assigned cases
-                {% else %}
-                View and manage all cases
-                {% endif %}
-            </p>
-            <small class="text-muted">
-                Scope:
-                {% if assigned_filter == 'mine' %}
-                My Cases
-                {% else %}
-                All Cases
-                {% endif %}
-            </small>
+            <p class="text-muted">View and manage all cases</p>
         </div>
         <div class="col-auto d-flex gap-2 align-items-center">
             <!-- Management Dropdown -->
@@ -55,96 +41,10 @@
         </div>
     </div>
 
-    <!-- REVIEW ALERT BANNERS -->
-    {% if my_cases_pending_review %}
-    <div class="alert alert-warning border-2 border-warning mb-3" role="alert">
-        <div class="d-flex align-items-center justify-content-between">
-            <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('pending-review-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
-                <i class="bi bi-hourglass-split"></i> {{ my_cases_pending_review|length }} Case{{ my_cases_pending_review|length|pluralize }} Pending Review
-                <i class="bi bi-chevron-down" style="margin-left: 8px;"></i>
-            </h5>
-            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
-        </div>
-        <div id="pending-review-content" class="mt-2 d-none">
-            <p class="mb-2 small text-muted">Your case{{ my_cases_pending_review|length|pluralize }} {{ my_cases_pending_review|length|pluralize:"is,are" }} awaiting quality review:</p>
-            <ul class="mb-0">
-                {% for c in my_cases_pending_review %}
-                <li>
-                    <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
-                    {% if c.reviewed_by %}<span class="text-muted small"> — Reviewer: {{ c.reviewed_by.get_full_name|default:c.reviewed_by.username }}</span>{% endif %}
-                    <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-warning ms-2"><i class="bi bi-eye"></i> See Case Details</a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if my_cases_needing_revision %}
-    <div class="alert alert-warning border-2 border-danger mb-3" role="alert">
-        <div class="d-flex align-items-center justify-content-between">
-            <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('revisions-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
-                <i class="bi bi-exclamation-triangle-fill"></i> {{ my_cases_needing_revision|length }} Case{{ my_cases_needing_revision|length|pluralize }} Need{{ my_cases_needing_revision|length|pluralize:"s," }} Revisions
-                <i class="bi bi-chevron-down" style="margin-left: 8px;"></i>
-            </h5>
-            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
-        </div>
-        <div id="revisions-content" class="mt-2 d-none">
-            <p class="mb-2 small text-muted">Revisions have been requested on your case{{ my_cases_needing_revision|length|pluralize }}:</p>
-            <ul class="mb-0">
-                {% for c in my_cases_needing_revision %}
-                <li>
-                    <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
-                    {% if c.reviewed_by %}<span class="text-muted small"> — Reviewer: {{ c.reviewed_by.get_full_name|default:c.reviewed_by.username }}</span>{% endif %}
-                    {% if c.review_notes %}<br><span class="small">Feedback: {{ c.review_notes|truncatewords:20 }}</span>{% endif %}
-                    <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-danger ms-2"><i class="bi bi-eye"></i> See Case Details</a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if user.user_level in 'level_2,level_3' and cases_awaiting_my_review %}
-    <div class="alert alert-warning border-2 border-warning mb-3" role="alert">
-        <div class="d-flex align-items-center justify-content-between">
-            <h5 class="alert-heading mb-0" style="cursor: pointer;" onclick="document.getElementById('awaiting-review-content').classList.toggle('d-none'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-down'); this.querySelector('.bi-chevron-down, .bi-chevron-up').classList.toggle('bi-chevron-up');">
-                <i class="bi bi-clipboard-check"></i> {{ cases_awaiting_my_review|length }} Case{{ cases_awaiting_my_review|length|pluralize }} Awaiting Your Review
-                <i class="bi bi-chevron-down" style="margin-left: 8px;"></i>
-            </h5>
-            <button type="button" class="btn-close" onclick="this.closest('.alert').remove()"></button>
-        </div>
-        <div id="awaiting-review-content" class="mt-2 d-none">
-            <p class="mb-2 small text-muted">The following case{{ cases_awaiting_my_review|length|pluralize }} {{ cases_awaiting_my_review|length|pluralize:"is,are" }} pending quality review:</p>
-            <ul class="mb-0">
-                {% for c in cases_awaiting_my_review %}
-                <li>
-                    <strong>{{ c.employee_first_name }} {{ c.employee_last_name }}</strong>
-                    {% if c.assigned_to %}<span class="text-muted small"> — Submitted by: {{ c.assigned_to.get_full_name|default:c.assigned_to.username }}</span>{% endif %}
-                    <a href="{% url 'cases:case_detail' c.pk %}" class="btn btn-sm btn-outline-warning ms-2"><i class="bi bi-eye"></i> Review Case</a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
-    {% endif %}
-
     <!-- Filters + View Options + Stats (All in One Card) -->
     <div class="card mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center gap-2">
-            <h5 class="mb-0 me-3">Filters & Quick Stats</h5>
-            <form method="get" action="{% url 'cases:technician_dashboard' %}" class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 480px;">
-                <input type="hidden" name="assigned" value="{{ assigned_filter }}">
-                <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
-                <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
-                <input type="text" name="search" class="form-control form-control-sm"
-                       placeholder="Employee, Workshop..." value="{{ search_query|default:'' }}">
-                <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
-                <a href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter={{ quick_filter }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-            </form>
-            <button type="button" class="btn btn-sm btn-outline-secondary ms-auto" data-bs-toggle="collapse" data-bs-target="#filter-row">
-                <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
-            </button>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Filters & Quick Stats</h5>
             <button type="button" id="toggle-view-stats" class="btn btn-sm btn-outline-secondary" title="Show/hide view options and stats">
                 <i class="bi bi-chevron-up"></i> Hide
             </button>
@@ -154,138 +54,121 @@
                 #view-stats-container .stat-mini {
                     background: linear-gradient(135deg, #285FBF 0%, #1E4D9E 100%);
                     color: white;
-                    flex: 0 0 76px !important;
-                    width: 76px !important;
-                    min-height: 60px !important;
-                    padding: 5px 3px 6px !important;
-                    border-radius: 6px;
+                    padding: 16px 24px;
+                    border-radius: 8px;
                     text-align: center;
+                    min-width: 130px;
                     flex-shrink: 0;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: opacity .15s;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                 }
                 #view-stats-container .stat-mini-value {
-                    font-size: 22px !important;
-                    font-weight: 700;
-                    line-height: 1.15;
+                    font-size: 2rem;
+                    font-weight: bold;
                 }
                 #view-stats-container .stat-mini-label {
-                    font-size: 10px !important;
-                    opacity: 0.93;
-                    line-height: 1.2;
-                    margin-top: 2px;
-                    white-space: normal;
-                    max-width: 72px !important;
+                    font-size: 0.9rem;
+                    opacity: 0.9;
+                    margin-top: 6px;
                 }
-                #view-stats-container .tile-link {
-                    text-decoration: none;
-                    display: inline-block;
-                }
-                #view-stats-container .stat-mini:hover { opacity: .85; }
-                #view-stats-container .tile-link.active .stat-mini {
-                    box-shadow: 0 0 0 3px white, 0 0 0 5px #0d6efd;
-                    outline: none;
-                }
-                #view-stats-container .tile-divider {
-                    width: 1px;
-                    background: #dee2e6;
-                    align-self: stretch;
-                    margin: 0 2px;
-                }
-                #view-stats-container .quick-tech-outline-btn {
-                    background-color: white;
-                    border-color: #285fbf;
-                    color: #285fbf;
-                }
-                #view-stats-container .quick-tech-outline-btn:hover {
-                    background-color: #285fbf;
-                    border-color: #285fbf;
-                    color: white;
-                }
-                #view-stats-container .quick-tech-outline-btn.active {
-                    background-color: #285fbf;
-                    border-color: #285fbf;
-                    color: white;
-                }
-                .tech-status-dot {
-                    display: inline-block;
-                    width: 8px; height: 8px;
-                    border-radius: 50%;
-                    margin-left: 4px;
-                    vertical-align: middle;
-                    flex-shrink: 0;
-                }
-                .tech-status-dot.status-active  { background-color: #28a745; }
-                .tech-status-dot.status-away    { background-color: #ffc107; }
-                .tech-status-dot.status-offline { background-color: #adb5bd; }
             </style>
             <!-- Build query string for status filters -->
             {% url 'cases:technician_dashboard' as base_url %}
             {% with status_query=status_filters|join:"&status=" %}
-            
-            <form method="get" action="{% url 'cases:technician_dashboard' %}">
-                <input type="hidden" name="assigned" value="{{ assigned_filter }}">
-                <input type="hidden" name="quick_filter" value="{{ quick_filter }}">
-                <input type="hidden" name="quick_tech" value="{{ quick_tech }}">
 
-                <!-- Row 1: Quick Tech Filters (Right-aligned) -->
+            <form method="get" action="{% url 'cases:technician_dashboard' %}">
+                <!-- Row 1: View Options (Left) | Stats (Right) -->
                 <div class="row mb-3" id="top-row">
-                    <!-- Quick Tech Filters -->
-                    <div class="col-auto ms-auto d-flex gap-2 align-items-center" style="flex-wrap: wrap; justify-content: flex-end;">
+                    <!-- LEFT: View Options -->
+                    <div class="col-auto d-flex align-items-center gap-2">
+                        <small class="text-muted">View:</small>
                         <div class="btn-group" role="group">
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all&quick_tech=all&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == 'all' %}active{% endif %}">All Techs</a>
-                            {% for tech in quick_technicians %}
-                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all&quick_tech={{ tech.username }}&quick_filter={{ quick_filter }}" class="btn btn-sm quick-tech-outline-btn {% if quick_tech == tech.username %}active{% endif %}" data-tech-username="{{ tech.username }}">{{ tech.first_name|default:tech.username }} <span class="tech-status-dot status-{{ tech.status }}" title="{{ tech.label }}"></span></a>
-                            {% endfor %}
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=all{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if custom_date_from %}&date_from={{ custom_date_from }}{% endif %}{% if custom_date_to %}&date_to={{ custom_date_to }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}"
+                               id="view-all-btn"
+                               class="btn btn-sm btn-outline-primary {% if assigned_filter == 'all' or not assigned_filter %}active{% endif %}"
+                               data-view-type="all"
+                               onclick="saveViewPreference('all'); return true;">
+                                <i class="bi bi-list-ul"></i> All Cases
+                            </a>
+                            <a href="{% url 'cases:technician_dashboard' %}?assigned=mine{% for s in status_filters %}&status={{ s }}{% endfor %}{% if urgency_filter %}&urgency={{ urgency_filter }}{% endif %}{% if date_range %}&date_range={{ date_range }}{% endif %}{% if custom_date_from %}&date_from={{ custom_date_from }}{% endif %}{% if custom_date_to %}&date_to={{ custom_date_to }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}"
+                               id="view-mine-btn"
+                               class="btn btn-sm btn-outline-primary {% if assigned_filter == 'mine' %}active{% endif %}"
+                               data-view-type="mine"
+                               onclick="saveViewPreference('mine'); return true;">
+                                <i class="bi bi-person-check"></i> My Cases
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Compact Stats -->
+                    <div class="col-auto ms-auto d-flex gap-1" style="flex-wrap: wrap; justify-content: flex-end;">
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.total }}</div>
+                            <div class="stat-mini-label">Total</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.submitted }}</div>
+                            <div class="stat-mini-label">Submitted</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.accepted }}</div>
+                            <div class="stat-mini-label">Accepted</div>
+                        </div>
+                        <div class="stat-mini" style="background: linear-gradient(135deg, #0dcaf0 0%, #0a9bc4 100%);">
+                            <div class="stat-mini-value">{{ stats.resubmitted }}</div>
+                            <div class="stat-mini-label">Resubmitted</div>
+                        </div>
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.pending_review }}</div>
+                            <div class="stat-mini-label">Pending</div>
+                        </div>
+                        {% if stats.needs_revision %}
+                        <div class="stat-mini" style="background: linear-gradient(135deg, #EDA618 0%, #C48A14 100%);">
+                            <div class="stat-mini-value">{{ stats.needs_revision }}</div>
+                            <div class="stat-mini-label">Needs Revision</div>
+                        </div>
+                        {% endif %}
+                        <div class="stat-mini">
+                            <div class="stat-mini-value">{{ stats.completed }}</div>
+                            <div class="stat-mini-label">Completed</div>
+                        </div>
+                        <div class="stat-mini" style="background: linear-gradient(135deg, #C00000 0%, #9A0000 100%);">
+                            <div class="stat-mini-value">{{ stats.rush }}</div>
+                            <div class="stat-mini-label">Rush</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Row 2: Clickable Fast-Filter Tiles -->
-                <div class="row mb-2">
-                    <div class="col d-flex gap-2 align-items-stretch" style="flex-wrap: nowrap; justify-content: flex-end; overflow-x: auto;">
-                        <a class="tile-link {% if quick_filter == 'flagged' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=flagged"><div class="stat-mini" style="background:#e67300;"><div class="stat-mini-value" style="font-size:26px; line-height:1;"><i class="bi bi-bookmark-fill"></i></div><div class="stat-mini-label">Pinned<br>Cases</div></div></a>
-                        <div class="tile-divider"></div>
-                        <a class="tile-link {% if quick_filter == 'submitted' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=submitted"><div class="stat-mini" style="background:#676777;"><div class="stat-mini-value">{{ quick_tiles.submitted }}</div><div class="stat-mini-label">Need to<br>Accept</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'pending' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=pending"><div class="stat-mini" style="background:#285fbf;"><div class="stat-mini-value">{{ quick_tiles.pending }}</div><div class="stat-mini-label">Pending<br>Completion</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'on_hold' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=on_hold"><div class="stat-mini" style="background:#eda618;"><div class="stat-mini-value">{{ quick_tiles.on_hold }}</div><div class="stat-mini-label">On<br>Hold</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'need_review' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=need_review"><div class="stat-mini" style="background:#4f1b8b;"><div class="stat-mini-value">{{ quick_tiles.need_review }}</div><div class="stat-mini-label">Need<br>Review</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'scheduled' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=scheduled"><div class="stat-mini" style="background:#198754;"><div class="stat-mini-value">{{ quick_tiles.scheduled }}</div><div class="stat-mini-label">Scheduled<br>Release</div></div></a>
-                        <div class="tile-divider"></div>
-                        <a class="tile-link {% if quick_filter == 'due_next_7d' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_next_7d"><div class="stat-mini" style="background:#062677;"><div class="stat-mini-value">{{ quick_tiles.due_next_7d }}</div><div class="stat-mini-label">Due Next<br>7 Days</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'due_today' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_today"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.due_today }}</div><div class="stat-mini-label">Due<br>Today</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'due_tomorrow' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=due_tomorrow"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.due_tomorrow }}</div><div class="stat-mini-label">Due<br>Tomorrow</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'past_due' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=past_due"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.past_due }}</div><div class="stat-mini-label">Past<br>Due</div></div></a>
-                        <a class="tile-link {% if quick_filter == 'alerts' %}active{% endif %}" href="{% url 'cases:technician_dashboard' %}?assigned={{ assigned_filter }}&quick_tech={{ quick_tech }}&quick_filter=alerts"><div class="stat-mini" style="background:#c00000;"><div class="stat-mini-value">{{ quick_tiles.alerts }}</div><div class="stat-mini-label">Active<br>Alerts</div></div></a>
+                <!-- Row 2: Filter Controls (Collapsible) -->
+                <div class="row g-3 mt-1 mb-2">
+                    <div class="col-12">
+                        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#filter-row">
+                            <i class="bi bi-funnel"></i> Filters <span id="filter-count">(0)</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Filter Dropdowns (Collapsed by default) -->
+                <!-- Row 3: Filter Dropdowns (Collapsed by default) -->
                 <div class="collapse" id="filter-row">
                 <div class="row g-3 mt-0" style="background-color: #f8f9fa; padding: 15px; border-radius: 5px;">
                     <div class="col-md-3">
-                        <label class="form-label">Status (Multiple)</label>
+                        <label class="form-label"><strong>Status (Multiple)</strong></label>
                         <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto; background-color: white;">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="status" value="submitted" 
+                                <input class="form-check-input" type="checkbox" name="status" value="submitted"
                                        id="status_submitted" {% if 'submitted' in status_filters %}checked{% endif %}>
                                 <label class="form-check-label" for="status_submitted">
                                     Submitted
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="status" value="accepted" 
+                                <input class="form-check-input" type="checkbox" name="status" value="accepted"
                                        id="status_accepted" {% if 'accepted' in status_filters %}checked{% endif %}>
                                 <label class="form-check-label" for="status_accepted">
                                     Accepted
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="status" value="pending_review" 
+                                <input class="form-check-input" type="checkbox" name="status" value="pending_review"
                                        id="status_pending" {% if 'pending_review' in status_filters %}checked{% endif %}>
                                 <label class="form-check-label" for="status_pending">
                                     Pending Review
@@ -299,31 +182,17 @@
                                 </label>
                             </div>
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="status" value="completed" 
+                                <input class="form-check-input" type="checkbox" name="status" value="completed"
                                        id="status_completed" {% if 'completed' in status_filters %}checked{% endif %}>
                                 <label class="form-check-label" for="status_completed">
                                     Completed
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="status" value="cancelled" 
-                                       id="status_cancelled" {% if 'cancelled' in status_filters %}checked{% endif %}>
-                                <label class="form-check-label" for="status_cancelled">
-                                    Cancelled
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="status" value="declined" 
-                                       id="status_declined" {% if 'declined' in status_filters %}checked{% endif %}>
-                                <label class="form-check-label" for="status_declined">
-                                    Declined
                                 </label>
                             </div>
                         </div>
                         <small class="text-muted d-block mt-1">Select multiple statuses</small>
                     </div>
                     <div class="col-md-2">
-                        <label for="urgency" class="form-label">Urgency</label>
+                        <label for="urgency" class="form-label"><strong>Urgency</strong></label>
                         <select name="urgency" id="urgency" class="form-select">
                             <option value="">All Urgencies</option>
                             <option value="normal" {% if urgency_filter == 'normal' %}selected{% endif %}>Normal</option>
@@ -340,41 +209,23 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label for="member" class="form-label">Member</label>
-                        <select name="member" id="member" class="form-select">
-                            <option value="">All Members</option>
-                            {% for m in members %}
-                            <option value="{{ m.id }}" {% if member_filter == m.id|stringformat:"s" %}selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>
-                            {% endfor %}
+                        <label for="date_range" class="form-label">Date Range</label>
+                        <select name="date_range" id="date_range" class="form-select">
+                            <option value="">All Time</option>
+                            <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
+                            <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
+                            <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label for="workshop_code" class="form-label">Code</label>
-                        <select name="workshop_code" id="workshop_code" class="form-select">
-                            <option value="">All Codes</option>
-                            {% for code in workshop_codes %}
-                            <option value="{{ code }}" {% if workshop_code_filter == code %}selected{% endif %}>{{ code }}</option>
-                            {% endfor %}
-                        </select>
+                        <label for="date_from" class="form-label">From Date</label>
+                        <input type="date" name="date_from" id="date_from" class="form-control"
+                               value="{{ custom_date_from|default:'' }}">
                     </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Date Range</label>
-                        <div class="row g-2">
-                            <div class="col-12 col-lg-4">
-                                <select name="date_range" id="date_range" class="form-select">
-                                    <option value="">All Time</option>
-                                    <option value="today" {% if date_range == 'today' %}selected{% endif %}>Today</option>
-                                    <option value="week" {% if date_range == 'week' %}selected{% endif %}>This Week</option>
-                                    <option value="month" {% if date_range == 'month' %}selected{% endif %}>This Month</option>
-                                </select>
-                            </div>
-                            <div class="col-6 col-lg-4">
-                                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ custom_date_from|default:'' }}" placeholder="From Date">
-                            </div>
-                            <div class="col-6 col-lg-4">
-                                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ custom_date_to|default:'' }}" placeholder="To Date">
-                            </div>
-                        </div>
+                    <div class="col-md-2">
+                        <label for="date_to" class="form-label">To Date</label>
+                        <input type="date" name="date_to" id="date_to" class="form-control"
+                               value="{{ custom_date_to|default:'' }}">
                     </div>
                     <div class="col-md-2">
                         <label for="sort" class="form-label">Sort By</label>
@@ -391,10 +242,10 @@
                             <option value="-tier" {% if sort_by == '-tier' %}selected{% endif %}>Tier (High to Low)</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label for="search" class="form-label">Search</label>
-                        <input type="text" name="search" id="search" class="form-control" 
-                               placeholder="Case ID, Employee..." 
+                        <input type="text" name="search" id="search" class="form-control"
+                               placeholder="Case ID, Employee..."
                                value="{{ search_query|default:'' }}">
                     </div>
                     <div class="col-md-3 d-flex align-items-end gap-2">
@@ -429,41 +280,42 @@
     <!-- Cases Table -->
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">{% if assigned_filter == 'mine' %}My Cases{% else %}All Cases{% endif %} ({{ all_columns|length }} Fields)</h5>
+            <h5 class="mb-0">All Cases (18 Fields)</h5>
         </div>
         <div class="card-body">
             {% if cases %}
             <style>
-                .table {
-                    margin-bottom: 0;
-                    border-collapse: separate;
-                    border-spacing: 0;
+                .stat-mini {
+                    background: linear-gradient(135deg, #285FBF 0%, #1E4D9E 100%);
+                    color: white;
+                    padding: 12px 16px;
+                    border-radius: 6px;
+                    text-align: center;
+                    min-width: 100px;
+                    flex-shrink: 0;
                 }
-                .table-responsive {
-                    max-height: 65vh;
-                    overflow: auto;
+                .stat-mini-value {
+                    font-size: 1.6rem;
+                    font-weight: bold;
                 }
-                .table thead th { 
-                    padding: 0.5rem 0.35rem; 
-                    font-size: 0.8rem; 
+                .stat-mini-label {
+                    font-size: 0.85rem;
+                    opacity: 0.9;
+                    margin-top: 4px;
+                }
+                .table { margin-bottom: 0; }
+                .table thead th {
+                    padding: 0.5rem 0.35rem;
+                    font-size: 0.8rem;
                     font-weight: 600;
                     vertical-align: middle;
-                    text-align: left;
-                    position: sticky;
-                    top: 0;
-                    background-color: #fff;
-                    z-index: 5;
-                    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
-                    border-bottom: 2px solid #dee2e6;
                 }
-                .table tbody td { 
-                    padding: 0.2rem 0.35rem; 
+                .table tbody td {
+                    padding: 0.2rem 0.35rem;
                     font-size: 0.85rem;
                     vertical-align: middle;
-                    border-bottom: 1px solid #dee2e6;
                 }
                 .table a { padding: 0.2rem 0.4rem; font-size: 0.85rem; }
-                .table thead th a { padding: 0; display: inline; color: inherit; text-decoration: none; }
                 #id-column { min-width: 40px; text-align: center; }
                 #code-column { min-width: 80px; text-align: left; }
             </style>
@@ -489,8 +341,6 @@
                             <th data-column-id="status" {% if 'status' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'status' %}sort=-status{% else %}sort=status{% endif %}" title="Click to sort by Status">Status</a></th>
                             <th data-column-id="assigned_to" {% if 'assigned_to' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'assigned_to' %}sort=-assigned_to{% else %}sort=assigned_to{% endif %}" title="Click to sort by Assigned To">Assigned To</a></th>
                             <th data-column-id="tier" {% if 'tier' not in visible_columns %}class="column-hidden"{% endif %}><a href="?{% if sort_by == 'tier' %}sort=-tier{% else %}sort=tier{% endif %}" title="Click to sort by Tier">Tier</a></th>
-                            <th data-column-id="credits" {% if 'credits' not in visible_columns %}class="column-hidden"{% endif %}>Credits</th>
-                            <th data-column-id="actions" {% if 'actions' not in visible_columns %}class="column-hidden"{% endif %} style="min-width:120px;"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -506,15 +356,19 @@
                             -->
                             <td id="code-column" class="column-code {% if 'code' not in visible_columns %}column-hidden{% endif %}">
                                 <div class="d-flex align-items-center gap-2">
-                                    {% if case.id in my_flagged_case_ids %}<i class="bi bi-bookmark-fill text-warning" title="Flagged for Follow-up" style="font-size:.85rem;"></i>{% endif %}
                                     <span>{{ case.workshop_code }}</span>
                                     {% if case.has_profeds_error %}
-                                    <span class="badge bg-danger" title="ProFeds Error">
-                                        PF ERR
+                                    <span class="badge bg-danger" title="Member flagged this as a ProFeds error — prioritize this modification">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Our Error
                                     </span>
-                                    {% elif case.original_case_id %}
-                                    <span class="badge bg-warning text-dark" title="Modification Case">
-                                        MOD
+                                    {% elif case.original_case and case.original_case.has_profeds_error %}
+                                    <span class="badge bg-danger" title="Member flagged this as a ProFeds error — prioritize this modification">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> Our Error
+                                    </span>
+                                    {% endif %}
+                                    {% if case.has_member_updates %}
+                                    <span class="badge bg-warning text-dark new-info-badge" data-case-id="{{ case.pk }}" title="Member has provided new information">
+                                        <i class="bi bi-info-circle"></i> New Info
                                     </span>
                                     {% endif %}
                                 </div>
@@ -526,9 +380,7 @@
                                     {{ case.member.username }}
                                 {% endif %}
                             </td>
-                            <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">
-                                {{ case.employee_first_name }} {{ case.employee_last_name }}
-                            </td>
+                            <td class="column-employee {% if 'employee' not in visible_columns %}column-hidden{% endif %}">{{ case.employee_first_name }} {{ case.employee_last_name }}</td>
                             <td class="column-reports {% if 'reports' not in visible_columns %}column-hidden{% endif %}" style="text-align: left;">{{ case.num_reports_requested }}</td>
                             <td class="column-urgency {% if 'urgency' not in visible_columns %}column-hidden{% endif %}">
                                 {% if case.urgency == 'rush' %}
@@ -604,16 +456,7 @@
                                     —
                                 {% endif %}
                             </td>
-                            <td data-column-id="credits" class="{% if 'credits' not in visible_columns %}column-hidden{% endif %}">
-                                {% with status_raw=case.status|default:''|lower status_label=case.get_status_display|default:''|lower %}
-                                    {% if 'cancel' in status_raw or 'declin' in status_raw or 'cancel' in status_label or 'declin' in status_label %}
-                                        0.0
-                                    {% else %}
-                                        {{ case.credit_value|default:"—" }}
-                                    {% endif %}
-                                {% endwith %}
-                            </td>
-                            <td data-column-id="actions" class="{% if 'actions' not in visible_columns %}column-hidden{% endif %}" style="min-width: 120px;">
+                            <td data-column-id="actions" style="min-width: 120px;">
                                 <a href="{% url 'cases:case_detail' case.pk %}" class="btn btn-sm btn-outline-primary" style="display: inline-block; min-width: 60px; padding: 0.375rem 0.5rem; font-size: 0.875rem; overflow: visible;">
                                     <i class="bi bi-eye"></i> View
                                     {% if case.unread_message_count > 0 %}
@@ -632,30 +475,6 @@
                 <p class="text-muted mt-3">No cases found matching your filters.</p>
                 <a href="{% url 'cases:technician_dashboard' %}" class="btn btn-outline-primary"><i class="bi bi-list"></i> View All Cases</a>
             </div>
-            {% endif %}
-            {% if page_obj.paginator.num_pages > 1 %}
-            <nav class="mt-3" aria-label="Case list pagination">
-                <ul class="pagination pagination-sm justify-content-center flex-wrap">
-                    {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&{{ filter_params }}">&#8249; Prev</a>
-                    </li>
-                    {% endif %}
-                    {% for num in page_obj.paginator.page_range %}
-                        {% if page_obj.number == num %}
-                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                        {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
-                        <li class="page-item"><a class="page-link" href="?page={{ num }}&{{ filter_params }}">{{ num }}</a></li>
-                        {% endif %}
-                    {% endfor %}
-                    {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&{{ filter_params }}">Next &#8250;</a>
-                    </li>
-                    {% endif %}
-                </ul>
-                <p class="text-center text-muted small">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} cases</p>
-            </nav>
             {% endif %}
         </div>
     </div>
@@ -703,16 +522,16 @@
         const reasonId = `reason${caseId}`;
         const technicianId = document.getElementById(selectId).value;
         const reason = document.getElementById(reasonId)?.value || '';
-        
+
         if (!technicianId) {
             alert('Please select a technician');
             return;
         }
-        
+
         const formData = new FormData();
         formData.append('assigned_to', technicianId);
         formData.append('reason', reason);
-        
+
         fetch(`/cases/${caseId}/reassign/`, {
             method: 'POST',
             body: formData,
@@ -738,7 +557,7 @@
             alert('An error occurred while reassigning the case');
         });
     }
-    
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -753,11 +572,11 @@
         }
         return cookieValue;
     }
-    
+
     // Save view preference asynchronously (don't block navigation)
     function saveViewPreference(viewType) {
         const csrftoken = getCookie('csrftoken');
-        
+
         // Save preference via AJAX without blocking page navigation
         fetch(`/cases/api/view-preference/save/${viewType}/`, {
             method: 'POST',
@@ -774,7 +593,7 @@
         .catch(error => {
             console.error('Error saving view preference:', error);
         });
-        
+
         // Return true to allow normal link navigation
         return true;
     }
@@ -796,8 +615,8 @@
         toggleBtn.addEventListener('click', function() {
             const isCurrentlyHidden = container.style.display === 'none';
             container.style.display = isCurrentlyHidden ? 'block' : 'none';
-            toggleBtn.innerHTML = isCurrentlyHidden ? 
-                '<i class="bi bi-chevron-up"></i> Hide' : 
+            toggleBtn.innerHTML = isCurrentlyHidden ?
+                '<i class="bi bi-chevron-up"></i> Hide' :
                 '<i class="bi bi-chevron-down"></i> Show';
             toggleBtn.classList.toggle('collapsed');
             localStorage.setItem('viewStatsHidden', !isCurrentlyHidden);
@@ -814,22 +633,47 @@
         text-align: center;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
-    
+
     .stat-card .stat-value {
         font-size: 2rem;
         font-weight: bold;
         margin-bottom: 5px;
     }
-    
+
     .stat-card .stat-label {
         font-size: 0.9rem;
         opacity: 0.9;
+    }
+
+    /* Mini stat cards for header */
+    .stat-mini {
+        background: linear-gradient(135deg, #285FBF 0%, #1E4D9E 100%);
+        color: white;
+        padding: 24px 32px;
+        border-radius: 5px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        min-width: 150px;
+    }
+
+    .stat-mini-value {
+        font-size: 2.8rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+
+    .stat-mini-label {
+        font-size: 1.1rem;
+        opacity: 0.95;
+        margin-top: 8px;
+        line-height: 1.1;
     }
 
     /* Larger buttons */
     .btn-sm {
         padding: 0.6rem 1rem !important;
         font-size: 1rem !important;
+    }
     }
 
     #toggle-view-stats {
@@ -839,7 +683,7 @@
     #toggle-view-stats.collapsed i::before {
         content: '\f07d'; /* chevron-down icon */
     }
-    
+
     /* Column-specific widths and alignment */
     table th:nth-child(1),
     table td:nth-child(1) {
@@ -880,18 +724,18 @@
         padding: 0.2rem 0.4rem;
         font-size: 0.7rem;
     }
-    
+
     table thead a {
         color: inherit;
         text-decoration: none;
         cursor: pointer;
     }
-    
+
     table thead a:hover {
         text-decoration: underline;
         color: #285FBF;
     }
-    
+
     /* Column visibility styles */
     .column-hidden {
         visibility: hidden !important;
@@ -899,15 +743,15 @@
         padding: 0 !important;
         margin: 0 !important;
     }
-    
+
     #columnMenu {
         min-width: 180px;
     }
-    
+
     #columnMenu .form-check {
         margin-bottom: 0.3rem;
     }
-    
+
     #hidden-count {
         font-size: 0.75rem;
     }
@@ -917,18 +761,18 @@
 // Column Visibility Management
 document.addEventListener('DOMContentLoaded', function() {
     const columnToggles = document.querySelectorAll('.column-toggle');
-    
+
     columnToggles.forEach(toggle => {
         toggle.addEventListener('change', function() {
             const colId = this.dataset.column;
             const isChecked = this.checked;
-            
+
             // Toggle all cells and headers for this column - use data-column-id for consistency
             const headers = document.querySelectorAll('th[data-column-id="' + colId + '"]');
             const cells = document.querySelectorAll('td[data-column-id="' + colId + '"]');
             // Also match cells with class-based naming for backward compatibility
             const cellsByClass = document.querySelectorAll('td.column-' + colId);
-            
+
             headers.forEach(header => {
                 if (isChecked) {
                     header.classList.remove('column-hidden');
@@ -938,7 +782,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     header.style.setProperty('display', 'none', 'important');
                 }
             });
-            
+
             cells.forEach(cell => {
                 if (isChecked) {
                     cell.classList.remove('column-hidden');
@@ -948,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     cell.style.setProperty('display', 'none', 'important');
                 }
             });
-            
+
             cellsByClass.forEach(cell => {
                 if (isChecked) {
                     cell.classList.remove('column-hidden');
@@ -958,15 +802,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     cell.style.setProperty('display', 'none', 'important');
                 }
             });
-            
+
             // Save preference
             saveColumnPreference();
-            
+
             // Update badge
             updateHiddenCountBadge();
         });
     });
-    
+
     updateHiddenCountBadge();
     updateFilterCount();
 });
@@ -980,7 +824,7 @@ function updateFilterCount() {
     const dateFromFilter = document.getElementById('date_from').value;
     const dateToFilter = document.getElementById('date_to').value;
     const searchFilter = document.getElementById('search').value;
-    
+
     let filterCount = statusFilters;
     if (urgencyFilter) filterCount++;
     if (tierFilter) filterCount++;
@@ -988,7 +832,7 @@ function updateFilterCount() {
     if (dateFromFilter) filterCount++;
     if (dateToFilter) filterCount++;
     if (searchFilter) filterCount++;
-    
+
     const filterCountSpan = document.getElementById('filter-count');
     if (filterCountSpan) {
         filterCountSpan.textContent = '(' + filterCount + ')';
@@ -1010,7 +854,7 @@ function saveColumnPreference() {
     document.querySelectorAll('.column-toggle:checked').forEach(checkbox => {
         visibleColumns.push(checkbox.dataset.column);
     });
-    
+
     // Send to server
     fetch('{% url "cases:save_column_preference" %}', {
         method: 'POST',
@@ -1036,7 +880,7 @@ function updateHiddenCountBadge() {
     const totalColumns = document.querySelectorAll('.column-toggle').length;
     const visibleColumns = document.querySelectorAll('.column-toggle:checked').length;
     const hiddenCount = totalColumns - visibleColumns;
-    
+
     const badge = document.getElementById('hidden-count');
     if (hiddenCount > 0) {
         badge.textContent = hiddenCount;
@@ -1072,28 +916,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 const formData = new FormData(form);
                 const params = new URLSearchParams(formData);
                 const currentParams = new URLSearchParams(window.location.search);
-                
+
                 // Extract sort parameter from link
                 const href = this.getAttribute('href');
                 const sortMatch = href.match(/sort=[^&]*/);
                 if (sortMatch) {
                     params.set('sort', sortMatch[0].replace('sort=', ''));
                 }
-                
+
                 // Get all status[] values from form
                 const statuses = [];
                 document.querySelectorAll('input[name="status"]:checked').forEach(cb => {
                     statuses.push(cb.value);
                 });
-                
+
                 // Remove all status params first
                 params.delete('status');
-                
+
                 // Add status[] params
                 statuses.forEach(status => {
                     params.append('status', status);
                 });
-                
+
                 e.preventDefault();
                 window.location.href = '?' + params.toString();
             });
@@ -1109,7 +953,7 @@ function refreshBadgeCounts() {
         .then(r => r.json())
         .then(data => {
             if (!data.success) return;
-            // Build lookup: case_id -> {unread_count}
+            // Build lookup: case_id -> {unread_count, has_member_updates}
             const lookup = {};
             (data.unread_by_case || []).forEach(item => {
                 lookup[item.case_id] = item;
@@ -1119,6 +963,7 @@ function refreshBadgeCounts() {
                 const caseId = parseInt(row.dataset.caseId);
                 const info = lookup[caseId];
                 const unreadCount = info ? info.unread_count : 0;
+                const hasUpdates = info ? info.has_member_updates : false;
 
                 // Update unread badge on View button
                 const viewLink = row.querySelector('a[href*="/cases/"]');
@@ -1127,12 +972,12 @@ function refreshBadgeCounts() {
                     if (unreadCount > 0) {
                         if (badge) {
                             badge.textContent = unreadCount;
-                            badge.title = `${unreadCount} unread message(s) on this case`;
+                            badge.title = `You have ${unreadCount} unread message(s)`;
                         } else {
                             badge = document.createElement('span');
                             badge.className = 'badge bg-danger ms-1 unread-badge';
                             badge.dataset.caseId = caseId;
-                            badge.title = `${unreadCount} unread message(s) on this case`;
+                            badge.title = `You have ${unreadCount} unread message(s)`;
                             badge.textContent = unreadCount;
                             viewLink.appendChild(badge);
                         }
@@ -1165,30 +1010,6 @@ function refreshBadgeCounts() {
 }
 // Poll every 30 seconds
 setInterval(refreshBadgeCounts, 30000);
-</script>
-
-<script>
-// Tech status dot polling — updates every 60 seconds without page reload
-(function() {
-    function refreshTechStatus() {
-        fetch('{% url "cases:api_technician_status" %}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(r => r.json())
-            .then(data => {
-                (data.techs || []).forEach(tech => {
-                    const btn = document.querySelector(`[data-tech-username="${tech.username}"]`);
-                    if (!btn) return;
-                    const d = btn.querySelector('.tech-status-dot');
-                    if (!d) return;
-                    d.className = `tech-status-dot status-${tech.status}`;
-                    d.title = tech.label;
-                });
-            })
-            .catch(() => {}); // Silent — status dots are non-critical
-    }
-    // Initial fetch + repeat every 60 s
-    refreshTechStatus();
-    setInterval(refreshTechStatus, 60000);
-})();
 </script>
 
 {% endblock %}
